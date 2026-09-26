@@ -13,6 +13,35 @@ if (process.env.NODE_ENV === "production") throw new Error("No se ejecuta en pro
 const db = createPrismaClient(databaseUrl);
 const storage = new LocalStorageProvider(process.env.STORAGE_LOCAL_ROOT ?? ".data/uploads");
 
+/**
+ * Rastro de moderación que apunta a contenido de prueba ya borrado: reportes, decisiones del equipo
+ * y propuestas de prueba («E2E …»), más las métricas diarias derivadas. Así /admin empieza limpio.
+ */
+async function cleanOrphanTrail() {
+  const reports = await db.$executeRaw`
+    DELETE FROM reports r WHERE
+      (r."targetType" = 'PRODUCT' AND NOT EXISTS (SELECT 1 FROM products p WHERE p.id = r."targetId"))
+      OR (r."targetType" = 'POST' AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.id = r."targetId"))
+      OR (r."targetType" = 'COMMENT' AND NOT EXISTS (SELECT 1 FROM comments c WHERE c.id = r."targetId"))
+      OR (r."targetType" = 'USER' AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = r."targetId"))`;
+  const decisions = await db.$executeRaw`
+    DELETE FROM platform_decisions d WHERE d.title LIKE 'E2E %'
+      OR (d.kind LIKE 'authenticity.%'
+        AND (d."newValue"->>'productId') IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM products p WHERE p.id::text = d."newValue"->>'productId'))
+      OR ((d.kind LIKE 'moderation.%' OR d.kind LIKE 'authenticity.%')
+        AND (d."newValue"->>'targetId') IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM products p WHERE p.id::text = d."newValue"->>'targetId')
+        AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.id::text = d."newValue"->>'targetId')
+        AND NOT EXISTS (SELECT 1 FROM comments c WHERE c.id::text = d."newValue"->>'targetId')
+        AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id::text = d."newValue"->>'targetId'))`;
+  // Las métricas diarias son derivadas: con los eventos de prueba borrados quedarían infladas. La
+  // siguiente `pnpm ops:daily` las vuelve a calcular.
+  const metrics = await db.dailyMetric.deleteMany({});
+
+  return { reports, decisions, metrics: metrics.count };
+}
+
 async function main() {
   const users = await db.user.findMany({
     where: { email: { startsWith: "e2e.", endsWith: "@example.com" } },
@@ -20,7 +49,10 @@ async function main() {
   });
   const userIds = users.map((user) => user.id);
   if (userIds.length === 0) {
-    console.warn("✓ No hay datos de pruebas E2E.");
+    const trail = await cleanOrphanTrail();
+    console.warn(
+      `✓ No hay cuentas de prueba; rastro limpio: ${trail.reports} reportes y ${trail.decisions} decisiones.`,
+    );
     return;
   }
 
@@ -36,7 +68,13 @@ async function main() {
   for (const { storageKey } of media) await storage.delete(storageKey);
 
   const events = await db.analyticsEvent.deleteMany({ where: { userId: { in: userIds } } });
+  // Cambios de modelo que las pruebas aprobaron desde /admin/ia (antes de borrar a quien los aprobó).
+  const routing = await db.platformDecision.deleteMany({
+    where: { kind: "ai.routing", approvedById: { in: userIds } },
+  });
   const deleted = await db.user.deleteMany({ where: { id: { in: userIds } } });
+
+  const trail = await cleanOrphanTrail();
 
   // Los contadores de miembros se recalculan desde las membresías reales.
   const communities = await db.community.findMany({
@@ -85,6 +123,9 @@ async function main() {
     `✓ Eliminadas ${deleted.count} cuentas de prueba, ${checkouts.count} compras, ${media.length} archivos y ${events.count} eventos.`,
   );
   console.warn(`✓ Contadores corregidos en ${posts} publicaciones y ${products} productos.`);
+  console.warn(
+    `✓ Rastro de prueba: ${trail.reports} reportes, ${trail.decisions + routing.count} decisiones y ${trail.metrics} métricas diarias.`,
+  );
 }
 
 main()
