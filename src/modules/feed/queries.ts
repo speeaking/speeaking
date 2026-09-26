@@ -8,6 +8,11 @@ const DAY = 24 * 60 * 60 * 1000;
 export const CANDIDATE_WINDOW_DAYS = 45;
 const MAX_CANDIDATES = 400;
 const SIGNAL_WINDOW_DAYS = 14;
+/**
+ * A quién sigue la persona, como máximo (las más recientes). Seguir tiene límite por hora pero no
+ * total: sin tope, «Siguiendo» mandaría miles de ids en un `IN` en cada página (SEC-38).
+ */
+export const MAX_FOLLOWING_CONTEXT = 1000;
 
 export const EMPTY_CONTEXT: ViewerContext = {
   communityIds: new Set(),
@@ -76,7 +81,12 @@ export async function loadViewerContext(viewerId: string, asOf: Date): Promise<V
       select: { personalizationEnabled: true },
     }),
     db.communityMembership.findMany({ where: { userId: viewerId }, select: { communityId: true } }),
-    db.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } }),
+    db.follow.findMany({
+      where: { followerId: viewerId },
+      orderBy: { createdAt: "desc" },
+      take: MAX_FOLLOWING_CONTEXT,
+      select: { followingId: true },
+    }),
     db.shoppingIntent.findMany({
       where: {
         userId: viewerId,

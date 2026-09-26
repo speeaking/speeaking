@@ -82,8 +82,9 @@ test.describe("cuenta", () => {
   test("una contraseña incorrecta muestra un error que no revela si la cuenta existe", async ({
     page,
   }) => {
+    // Correo único: el límite por correo (SEC-02) bloquearía uno fijo tras varias corridas.
     await page.goto("/entrar");
-    await page.getByLabel("Correo").fill("nadie@example.com");
+    await page.getByLabel("Correo").fill(uniqueUser().email);
     await page.getByLabel("Contraseña").fill("incorrecta-123");
     await page.getByRole("button", { name: "Entrar" }).click();
 

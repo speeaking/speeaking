@@ -57,3 +57,55 @@ export function createLimiter(concurrency: number, maxQueued: number): Limiter {
     },
   };
 }
+
+/** La fila propia de una llave (p. ej. una persona) está llena. */
+export class KeyBusyError extends BusyError {
+  override name = "KeyBusyError";
+}
+
+export type KeyedLimiter = {
+  run<T>(key: string, task: () => Promise<T>): Promise<T>;
+  /** Llaves con tareas activas o en espera (las demás no ocupan memoria). */
+  readonly keys: number;
+};
+
+/**
+ * Una fila por llave delante de `shared`: cada llave ocupa a lo más `perKey` lugares de la cola
+ * compartida y el resto espera en su propia fila (hasta `maxQueuedPerKey`). Así una sola cuenta, con
+ * muchas peticiones o conexiones lentas a propósito, no acapara los lugares de todos.
+ * Fila propia llena → `KeyBusyError`; cola compartida llena → `BusyError`.
+ */
+export function createKeyedLimiter(
+  shared: Limiter,
+  perKey: number,
+  maxQueuedPerKey: number,
+): KeyedLimiter {
+  const byKey = new Map<string, Limiter>();
+
+  return {
+    get keys() {
+      return byKey.size;
+    },
+    async run(key, task) {
+      let limiter = byKey.get(key);
+      if (!limiter) {
+        limiter = createLimiter(perKey, maxQueuedPerKey);
+        byKey.set(key, limiter);
+      }
+      let started = false;
+      try {
+        return await limiter.run(() => {
+          started = true;
+          return shared.run(task);
+        });
+      } catch (error) {
+        if (!started && error instanceof BusyError) throw new KeyBusyError();
+        throw error;
+      } finally {
+        if (limiter.active === 0 && limiter.queued === 0 && byKey.get(key) === limiter) {
+          byKey.delete(key);
+        }
+      }
+    },
+  };
+}

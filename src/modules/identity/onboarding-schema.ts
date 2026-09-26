@@ -48,7 +48,7 @@ const schema = z.object({
     .string()
     .trim()
     .min(2, "Escribe tu nombre.")
-    .max(50, "Máximo 50 caracteres.")
+    .max(50, { error: "Máximo 50 caracteres.", abort: true })
     // Nadie más se llama «Equipo VendeIA» o «Soporte» (SEC-18).
     .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE),
   goals: z.array(z.enum(UserGoal)).max(6),

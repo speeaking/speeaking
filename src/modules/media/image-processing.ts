@@ -12,11 +12,20 @@ export const MAX_DIMENSION = 1600;
  */
 export const MAX_INPUT_PIXELS = 40_000_000;
 /**
- * PNG, GIF y AVIF/HEIF se decodifican completos: el tope es la memoria de la imagen decodificada
- * (100 MB ≈ 25 Mpx RGBA de 8 bits). Un PNG RGBA de 16 bits de ~465 KB y 40 Mpx pedía ~320 MB y ocupaba
- * un hilo 4.6 s; hoy se rechaza sin decodificarlo. De todos modos se publica a 1600 px.
+ * PNG, GIF y AVIF/HEIF se decodifican completos: el tope es el tamaño de la imagen decodificada
+ * (100 MB ≈ 25 Mpx RGBA de 8 bits), que acota el tiempo. Un PNG RGBA de 16 bits de ~465 KB y 40 Mpx
+ * pedía ~320 MB y ocupaba un hilo 4.6 s; hoy se rechaza sin decodificarlo. De todos modos se publica
+ * a 1600 px.
  */
 export const MAX_DECODED_BYTES = 100 * 1024 * 1024;
+/**
+ * Tope del pico de memoria de decodificar una imagen (se procesan hasta `MAX_CONCURRENT` a la vez).
+ * La imagen decodificada no lo refleja: medido con sharp 0.35 / libvips 8.18 (pico de RSS por imagen,
+ * `.data/security/abuse-review/`), AVIF/HEIF usa ~18 bytes por píxel (~25 con 10–12 bits) y un AVIF
+ * de 1 KB y 25 Mpx pedía ~450 MB; un JPEG progresivo guarda todos sus coeficientes (2 bytes por
+ * muestra) aunque se decodifique reducido: 40 Mpx en 4:4:4, ~270 MB.
+ */
+export const MAX_DECODE_MEMORY_BYTES = 256 * 1024 * 1024;
 const SHRINK_ON_LOAD_FORMATS = new Set(["jpeg", "webp"]);
 const SUPPORTED_FORMATS = new Set(["jpeg", "png", "webp", "avif", "gif", "heif"]);
 /** Una imagen que tarda más que esto se rechaza en lugar de seguir ocupando un hilo. */
@@ -30,8 +39,24 @@ const MAX_CONCURRENT = 2;
 const MAX_QUEUED = 16;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 /** Marcas ISO-BMFF (`ftyp`) de AVIF y HEIF. */
-const HEIF_BRANDS = new Set(["avif", "avis", "heic", "heix", "heim", "heis", "hevc", "hevx", "mif1", "msf1"]);
-const BYTES_PER_SAMPLE: Partial<Record<string, number>> = { uchar: 1, char: 1, ushort: 2, short: 2 };
+const HEIF_BRANDS = new Set([
+  "avif",
+  "avis",
+  "heic",
+  "heix",
+  "heim",
+  "heis",
+  "hevc",
+  "hevx",
+  "mif1",
+  "msf1",
+]);
+const BYTES_PER_SAMPLE: Partial<Record<string, number>> = {
+  uchar: 1,
+  char: 1,
+  ushort: 2,
+  short: 2,
+};
 
 export type ImageValidationCode = "TOO_LARGE" | "TOO_COMPLEX" | "UNSUPPORTED_FORMAT" | "CORRUPT";
 
@@ -57,11 +82,6 @@ export type ProcessedImage = {
 };
 
 const queue = createLimiter(MAX_CONCURRENT, MAX_QUEUED);
-
-/** La cola está llena: se puede rechazar una subida antes de leer su cuerpo. */
-export function isImageQueueFull() {
-  return queue.full;
-}
 
 /**
  * Valida una imagen por su contenido real (no por la extensión ni el MIME declarado), la orienta,
@@ -140,21 +160,51 @@ async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
   }
 }
 
+type DecodeCostInput = Pick<
+  Metadata,
+  "format" | "width" | "height" | "pageHeight" | "channels" | "depth"
+> &
+  Partial<Pick<Metadata, "isProgressive" | "chromaSubsampling">>;
+
 /** Costo de decodificar la primera página según la cabecera (sharp no decodifica las demás). */
-export function exceedsDecodeBudget({
-  format,
-  width,
-  height,
-  pageHeight,
-  channels,
-  depth,
-}: Pick<Metadata, "format" | "width" | "height" | "pageHeight" | "channels" | "depth">) {
+export function exceedsDecodeBudget(metadata: DecodeCostInput) {
+  const { format, width, height, pageHeight, channels, depth } = metadata;
   if (!width || !height) return true;
   const pixels = width * (pageHeight ?? height);
   if (pixels > MAX_INPUT_PIXELS) return true;
+  if (estimatedDecodeMemory(metadata, pixels) > MAX_DECODE_MEMORY_BYTES) return true;
   if (SHRINK_ON_LOAD_FORMATS.has(format)) return false;
   const decodedBytes = pixels * (channels ?? 4) * (BYTES_PER_SAMPLE[depth] ?? 4);
   return decodedBytes > MAX_DECODED_BYTES;
+}
+
+/**
+ * Pico de memoria aproximado (bytes) de decodificar `pixels`, con los factores medidos (ver
+ * `MAX_DECODE_MEMORY_BYTES`). JPEG base y WebP se decodifican ya reducidos: su costo no crece así.
+ */
+function estimatedDecodeMemory(
+  { format, channels, depth, isProgressive, chromaSubsampling }: DecodeCostInput,
+  pixels: number,
+) {
+  const sampleBytes = BYTES_PER_SAMPLE[depth] ?? 4;
+  const bands = channels ?? 4;
+  switch (format) {
+    case "heif":
+      return pixels * (sampleBytes > 1 ? 25 : 18);
+    case "gif":
+      return pixels * 9;
+    case "png":
+      // Entrelazada (Adam7) se arma completa dos veces.
+      return pixels * bands * sampleBytes * (isProgressive ? 2 : 1.35);
+    case "jpeg": {
+      if (!isProgressive) return 0;
+      // Muestras por píxel: en 4:2:0 las dos de color van a un cuarto de resolución.
+      const samples = chromaSubsampling?.startsWith("4:2:0") ? bands - 1.5 : bands;
+      return pixels * samples * 2.3;
+    }
+    default:
+      return 0;
+  }
 }
 
 /** Familia por los primeros bytes (JPEG, PNG, GIF, WebP o AVIF/HEIF); `null` si no es ninguna. */

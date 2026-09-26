@@ -44,6 +44,60 @@ describe("serverEnvSchema", () => {
     expect(serverEnvSchema.safeParse({ DATABASE_URL: "mysql://localhost/x" }).success).toBe(false);
   });
 
+  describe("producción cifrada (SEC-21)", () => {
+    const production = {
+      NODE_ENV: "production",
+      APP_URL: "https://vendeia.mx",
+      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+      ALLOW_SIMULATED_PAYMENTS: "true",
+    };
+    const issues = (input: Record<string, string>) =>
+      (serverEnvSchema.safeParse(input).error?.issues ?? []).map((issue) => issue.path.join("."));
+
+    it("acepta https y una base remota con TLS", () => {
+      expect(issues(production)).toEqual([]);
+      expect(
+        issues({
+          ...production,
+          DATABASE_URL: production.DATABASE_URL.replace("require", "verify-full"),
+        }),
+      ).toEqual([]);
+    });
+
+    it("rechaza APP_URL http fuera de loopback y una base remota sin sslmode", () => {
+      expect(issues({ ...production, APP_URL: "http://vendeia.mx" })).toEqual(["APP_URL"]);
+      expect(
+        issues({ ...production, DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia" }),
+      ).toEqual(["DATABASE_URL"]);
+      expect(
+        issues({ ...production, DATABASE_URL: "postgresql://u:p@db.vendeia.mx/v?sslmode=disable" }),
+      ).toEqual(["DATABASE_URL"]);
+    });
+
+    it("permite loopback para probar el build de producción en local", () => {
+      expect(
+        issues({
+          ...production,
+          APP_URL: "http://localhost:3000",
+          DATABASE_URL: "postgresql://u:p@localhost:5434/vendeia",
+        }),
+      ).toEqual([]);
+      expect(issues({ ...production, APP_URL: "http://127.0.0.1:3000" })).toEqual([]);
+    });
+
+    it("en desarrollo no exige nada de esto", () => {
+      expect(
+        issues({
+          ...production,
+          NODE_ENV: "development",
+          APP_URL: "http://vendeia.test",
+          DATABASE_URL: "postgresql://u:p@db/x",
+        }),
+      ).toEqual([]);
+    });
+  });
+
   describe("pagos simulados (SEC-01)", () => {
     const production = {
       NODE_ENV: "production",
@@ -86,7 +140,9 @@ describe("serverEnvSchema", () => {
     });
 
     it("rechaza proveedores desconocidos y valores ambiguos", () => {
-      expect(serverEnvSchema.safeParse({ ...valid, PAYMENT_PROVIDER: "stripe" }).success).toBe(false);
+      expect(serverEnvSchema.safeParse({ ...valid, PAYMENT_PROVIDER: "stripe" }).success).toBe(
+        false,
+      );
       for (const value of ["", "quizá", "2"]) {
         expect(
           serverEnvSchema.safeParse({ ...valid, ALLOW_SIMULATED_PAYMENTS: value }).success,

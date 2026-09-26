@@ -26,13 +26,18 @@ tendrían que compartir la primera página en caché por request (`cache()` sobr
 
 ## «Gente de tus comunidades»
 
-- **Señales (solo de la plataforma, principio 6):** personas seguidas por quienes sigues, miembros de
-  tus comunidades y quienes comentaron tus publicaciones (los «me gusta» no cuentan: la app no
+- **Señales (solo de la plataforma, principio 6):** personas seguidas por tus seguidos mutuos, miembros
+  de tus comunidades y quienes comentaron tus publicaciones (los «me gusta» no cuentan: la app no
   revela quién dio «me gusta»). Cada consulta trae a
   lo sumo 50 candidatos.
+- **A quién sigue alguien no se delata (SEC-17):** los intermediarios de «La siguen personas que
+  sigues» son solo seguidos **mutuos** que participan en las sugerencias (`discoverable`); una persona
+  cuenta solo si la siguen al menos 2 intermediarios distintos (`MIN_FOLLOW_INTERMEDIARIES`) y la
+  razón nunca dice cuántos. Riesgo residual (cuentas títere de alguien a quien sigues de vuelta) y la
+  corrección completa (consentimiento propio del intermediario) en ADR-030.
 - **Exclusiones:** tú, cuentas editoriales, perfiles sin terminar, quienes ya sigues, quienes quitaste
   (`SuggestionDismissal`) y quienes desactivaron «Aparecer en sugerencias» (`Profile.discoverable`).
-- **Puntuación (`scoreSuggestion`):** 3 por persona en común (hasta 5), 4 + comentarios (hasta 3)
+- **Puntuación (`scoreSuggestion`):** 3 por persona en común (desde 2, hasta 5), 4 + comentarios (hasta 3)
   y 1 por comunidad compartida (hasta 4). La razón visible es la señal que
   más aportó; los empates se resuelven por id.
 - **Privacidad:** el ajuste vive en `/ajustes` y cada cambio se guarda en `UserConsent`

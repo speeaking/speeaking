@@ -1,7 +1,10 @@
 import "server-only";
+import { headers } from "next/headers";
 import { after } from "next/server";
+import { clientIp } from "@/server/client-ip";
 import { db } from "@/server/db";
 import { prepareEvent, type TrackedEvent } from "./event";
+import { filterTrustedEvents, needsClientIp, type TrackContext } from "./integrity";
 
 /**
  * ¿Se liga el evento a la persona? Solo si ya decidió y aceptó la personalización. Antes de terminar
@@ -17,13 +20,19 @@ async function isPersonalizationEnabled(userId: string | null | undefined) {
   return profile?.onboardedAt ? profile.personalizationEnabled : false;
 }
 
-/** Guarda eventos de inmediato (útil en pruebas y scripts). Nunca lanza errores al llamador. */
-export async function recordEvents(events: TrackedEvent[]) {
+/**
+ * Guarda eventos de inmediato (útil en pruebas y scripts). Nunca lanza errores al llamador. Antes
+ * descarta los repetidos y los que apuntan a algo que no existe (SEC-20, `integrity.ts`); `context.ip`
+ * es la IP del cliente para deduplicar lo anónimo.
+ */
+export async function recordEvents(events: TrackedEvent[], context: TrackContext = { ip: null }) {
   if (events.length === 0) return;
   try {
-    const enabled = await isPersonalizationEnabled(events[0]?.userId);
+    const trusted = await filterTrustedEvents(events, context);
+    if (trusted.length === 0) return;
+    const enabled = await isPersonalizationEnabled(trusted[0]?.userId);
     await db.analyticsEvent.createMany({
-      data: events.map((event) => prepareEvent(event, enabled)),
+      data: trusted.map((event) => prepareEvent(event, enabled)),
     });
   } catch (error) {
     console.error("[analytics] no se pudieron guardar eventos", error);
@@ -35,5 +44,16 @@ export async function recordEvents(events: TrackedEvent[]) {
  * Todos los eventos de una llamada deben pertenecer a la misma persona.
  */
 export function track(...events: TrackedEvent[]) {
-  after(() => recordEvents(events));
+  // Las cabeceras se leen ahora, dentro de la petición: en `after` un Server Component ya no puede.
+  const ip = needsClientIp(events) ? currentClientIp() : Promise.resolve(null);
+  after(async () => recordEvents(events, { ip: await ip }));
+}
+
+/** IP del cliente de esta petición (`null` sin proxies de confianza o fuera de una petición). */
+function currentClientIp(): Promise<string | null> {
+  try {
+    return headers().then(clientIp, () => null);
+  } catch {
+    return Promise.resolve(null);
+  }
 }

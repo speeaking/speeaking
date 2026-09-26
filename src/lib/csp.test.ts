@@ -23,11 +23,7 @@ describe("contentSecurityPolicy (SEC-06)", () => {
   const production = directives(contentSecurityPolicy("abc", { isDev: false, isHttps: true }));
 
   it("solo ejecuta scripts con el nonce (strict-dynamic), nunca en línea ni eval en producción", () => {
-    expect(production.get("script-src")).toEqual([
-      "'self'",
-      "'nonce-abc'",
-      "'strict-dynamic'",
-    ]);
+    expect(production.get("script-src")).toEqual(["'self'", "'nonce-abc'", "'strict-dynamic'"]);
   });
 
   it("cierra objetos, <base>, marcos, formularios externos y conexiones a terceros", () => {

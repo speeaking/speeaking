@@ -111,6 +111,13 @@ export function FeedList({
       if (community) params.set("community", community);
       if (following) params.set("following", "1");
       const response = await fetch(`/api/feed?${params}`);
+      // 400: el cursor venció (el feed solo cubre días recientes). Se toma como el final de la lista en
+      // vez de reintentar el mismo cursor una y otra vez.
+      if (response.status === 400) {
+        setCursor(null);
+        setStatus("idle");
+        return;
+      }
       if (!response.ok) throw new Error(String(response.status));
       const page = (await response.json()) as FeedPageDTO;
       setItems((current) => {
@@ -129,7 +136,8 @@ export function FeedList({
     if (!element) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) void loadMore();
+        // Tras un error solo se reintenta con el botón: el observador no debe insistir solo.
+        if (status === "idle" && entries.some((entry) => entry.isIntersecting)) void loadMore();
       },
       { rootMargin: "800px 0px" },
     );

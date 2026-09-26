@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { parsePesosToCents } from "@/modules/catalog/pricing";
+import { MAX_PROPOSAL_CENTS } from "./proposal-numbers";
 
 /**
  * Contrato de "Vende con IA". Cualquier proveedor (simulado o real) debe devolver exactamente
  * esta forma; se valida SIEMPRE antes de usarla. Las cifras financieras NO salen de aquí: las
- * calcula el código con los números que confirmó el vendedor (P2).
+ * calcula el código con los números que confirmó el vendedor (P2). El rango de precio y el
+ * presupuesto diario los pone el código (`proposal-numbers.ts`) sobre lo que devuelva la IA; el
+ * contenido lo revisa `output-guard.ts` (SEC-28).
  */
 export const saleProposalSchema = z.object({
   productName: z.string().min(2).max(120),
@@ -23,12 +26,16 @@ export const saleProposalSchema = z.object({
   contentIdeas: z.array(z.string().max(240)).min(1).max(8),
   adIdeas: z.array(z.string().max(240)).min(1).max(6),
   videoScript: z.string().max(1200),
-  suggestedPriceRange: z.object({
-    minCents: z.int().positive(),
-    maxCents: z.int().positive(),
-    rationale: z.string().max(400),
-  }),
-  suggestedDailyBudgetCents: z.int().min(0),
+  suggestedPriceRange: z
+    .object({
+      minCents: z.int().positive().max(MAX_PROPOSAL_CENTS),
+      maxCents: z.int().positive().max(MAX_PROPOSAL_CENTS),
+      rationale: z.string().max(400),
+    })
+    .refine((range) => range.minCents <= range.maxCents, {
+      message: "El mínimo del rango no puede ser mayor que el máximo.",
+    }),
+  suggestedDailyBudgetCents: z.int().min(0).max(MAX_PROPOSAL_CENTS),
   budgetRationale: z.string().max(400),
   objections: z
     .array(z.object({ objection: z.string().max(160), answer: z.string().max(300) }))

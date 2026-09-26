@@ -27,9 +27,10 @@ export function DiscoverableSwitch({
           Aparecer en sugerencias de «Gente de tus comunidades»
         </label>
         <p id={descriptionId} className="text-muted-foreground">
+          {/* Texto del consentimiento: cambiarlo es subir LEGAL_VERSIONS.discoverability. */}
           {enabled
-            ? "Otras personas pueden verte como sugerencia si comparten comunidades contigo, si alguien a quien siguen te sigue o si comentaste lo que publican."
-            : "No apareces como sugerencia para nadie. Tu perfil sigue siendo público y te pueden seguir."}
+            ? "Otras personas pueden verte como sugerencia si comparten comunidades contigo, si varias personas a quienes siguen te siguen o si comentaste lo que publican. Con quienes se siguen mutuamente, a quién sigues cuenta como señal, pero nunca se dice quién."
+            : "No apareces como sugerencia para nadie. Tampoco usamos a quién sigues para sugerir personas. Tu perfil sigue siendo público y te pueden seguir."}
         </p>
       </div>
       <Switch

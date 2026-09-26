@@ -7,6 +7,7 @@ import { track } from "@/modules/analytics/track";
 import { getViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
 import type { ToggleResult } from "./actions";
+import { checkSocialLimit } from "./limits";
 
 /**
  * Unirse o salir de una comunidad. Sin `join` alterna; con `join` deja la membresía en ese estado
@@ -23,6 +24,8 @@ export async function toggleMembershipAction(
   if (!z.uuid().safeParse(communityId).success || !z.boolean().optional().safeParse(join).success) {
     return { ok: false, error: "Comunidad inválida." };
   }
+  const limited = await checkSocialLimit("join", viewer.userId);
+  if (!limited.ok) return { ok: false, error: limited.error };
 
   const key = { userId: viewer.userId, communityId };
   let result: { active: boolean; count: number; changed: boolean };
@@ -77,7 +80,7 @@ export async function toggleMembershipAction(
     });
   }
   // Todo el layout social depende de las membresías: «Tus comunidades» y «Para descubrir» (columna
-  // izquierda), la columna derecha, la comunidad misma y Descubrir.
-  revalidatePath("/(social)", "layout");
+  // izquierda), la columna derecha, la comunidad misma y Descubrir. Solo si cambió (SEC-15).
+  if (result.changed) revalidatePath("/(social)", "layout");
   return { ok: true, active: result.active, count: result.count };
 }

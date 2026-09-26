@@ -5,21 +5,62 @@ import { FOLD_FROM, FOLD_TO, likePattern } from "./normalize";
  * Consultas de búsqueda como SQL parametrizado. Lo que escribe la persona SOLO viaja en
  * `values` (parámetros $n), nunca dentro del texto SQL: los nombres de tablas y columnas son
  * constantes de este archivo. Las pruebas lo verifican.
+ *
+ * Índices (SEC-32): cada documento plegado tiene un índice GIN de trigramas sobre la MISMA
+ * expresión (migración `20260926110000_search_trigram_indexes`), que `LIKE '%palabra%'` usa con
+ * palabras de 3+ letras. Por eso la tabla de plegado va como literal en el SQL y no como parámetro:
+ * un plan genérico con `$n` no coincidiría con la expresión del índice. Si cambias una expresión o la
+ * tabla, cambia también el índice (`sql.test.ts` compara ambos). Una búsqueda sin ninguna palabra
+ * indexable solo revisa las `UNINDEXED_SEARCH_WINDOW` filas más recientes.
  */
 
 /** Límites por sección de resultados. */
 export const SEARCH_LIMITS = { communities: 6, products: 6, posts: 10 } as const;
 
-/** Columna (o expresión fija) en minúsculas y sin acentos, con la tabla de `normalize.ts`. */
-function folded(expression: Prisma.Sql) {
-  return Prisma.sql`translate(lower(${expression}), ${FOLD_FROM}, ${FOLD_TO})`;
+/** Literal de SQL para una constante de este código (nunca para lo que escribe la persona). */
+function constantLiteral(value: string) {
+  return Prisma.raw(`'${value.replaceAll("'", "''")}'`);
 }
 
-/** Todas las palabras aparecen en el documento (en cualquier orden y posición). */
+/** Columna (o expresión fija) en minúsculas y sin acentos, con la tabla de `normalize.ts`. */
+function folded(expression: Prisma.Sql) {
+  return Prisma.sql`translate(lower(${expression}), ${constantLiteral(FOLD_FROM)}, ${constantLiteral(FOLD_TO)})`;
+}
+
+/** Una palabra más corta no tiene trigramas: con ella el índice tendría que recorrerse completo. */
+export const MIN_INDEXED_TERM_LENGTH = 3;
+/**
+ * `pg_trgm` solo arma trigramas con letras y dígitos ASCII (la base usa `LC_CTYPE` "C"; el plegado ya
+ * convirtió «ñ» y los acentos). «жжж» o «ßßß» miden 3 pero no tienen trigramas: el índice se
+ * recorría completo y la consulta tardaba lo mismo que sin índice.
+ */
+const INDEXABLE_TERM = new RegExp(`[a-z0-9]{${MIN_INDEXED_TERM_LENGTH}}`);
+/**
+ * Filas más recientes que revisa una búsqueda sin ninguna palabra indexable («tv», «xl de»): sin
+ * trigramas, el costo crecía con la tabla (~0.7 s con 20 mil publicaciones y 37 mil productos, sin
+ * sesión ni límite). Con la ventana queda acotado sin importar el volumen; a cambio, esas búsquedas
+ * solo encuentran lo reciente.
+ */
+export const UNINDEXED_SEARCH_WINDOW = 2000;
+
+/** La palabra tiene al menos un trigrama que el índice puede usar. */
+export function isIndexableTerm(term: string) {
+  return INDEXABLE_TERM.test(term);
+}
+
+/**
+ * Todas las palabras aparecen en el documento (en cualquier orden y posición). Las que no tienen
+ * trigramas («de», «xl», «жжж») se comparan contra `(documento || '')`, una expresión que el índice
+ * no cubre: así se filtran sobre las filas que el índice ya encontró con las demás, en lugar de hacer
+ * que PostgreSQL recorra el índice o la tabla completos.
+ */
 function matchesAll(document: Prisma.Sql, terms: string[]) {
   if (terms.length === 0) throw new Error("Una búsqueda necesita al menos una palabra.");
   return Prisma.join(
-    terms.map((term) => Prisma.sql`${document} LIKE ${likePattern(term)}`),
+    terms.map((term) => {
+      const target = isIndexableTerm(term) ? document : Prisma.sql`(${document} || '')`;
+      return Prisma.sql`${target} LIKE ${likePattern(term)}`;
+    }),
     " AND ",
   );
 }
@@ -35,10 +76,13 @@ export function communitySearchSql(terms: string[], limit: number = SEARCH_LIMIT
     LIMIT ${limit}`;
 }
 
-/** Solo productos de una categoría o de sus subcategorías (el slug también viaja como parámetro). */
-function inCategory(categorySlug: string) {
+/**
+ * Solo productos de una categoría o de sus subcategorías (el slug también viaja como parámetro).
+ * `alias` es una constante de este archivo.
+ */
+function inCategory(alias: "p" | "r", categorySlug: string) {
   return Prisma.sql`
-    AND p."categoryId" IN (
+    AND ${Prisma.raw(alias)}."categoryId" IN (
       SELECT c."id" FROM "categories" c
       LEFT JOIN "categories" parent ON parent."id" = c."parentId"
       WHERE c."slug" = ${categorySlug} OR parent."slug" = ${categorySlug}
@@ -56,11 +100,26 @@ export function productSearchSql(
   { categorySlug }: { categorySlug?: string } = {},
 ) {
   const title = folded(Prisma.sql`p."title"`);
-  const document = folded(Prisma.sql`p."title" || ' ' || array_to_string(p."tags", ' ')`);
+  // `search_tags_text` = `array_to_string(tags, ' ')` marcada IMMUTABLE (se puede indexar).
+  const document = folded(Prisma.sql`p."title" || ' ' || search_tags_text(p."tags")`);
+  const category = (alias: "p" | "r") =>
+    categorySlug ? inCategory(alias, categorySlug) : Prisma.empty;
+  // Sin palabras indexables: solo los productos más recientes (el id UUIDv7 sigue el orden de alta y
+  // la llave primaria se recorre al revés sin ordenar). El `LIMIT` de la subconsulta impide que
+  // PostgreSQL la aplane y filtre la tabla completa.
+  const products = terms.some(isIndexableTerm)
+    ? Prisma.sql`"products" p`
+    : Prisma.sql`(
+        SELECT r."id", r."title", r."tags", r."status", r."stock", r."categoryId", r."publishedAt"
+        FROM "products" r
+        WHERE r."status" = 'ACTIVE' AND r."stock" > 0 ${category("r")}
+        ORDER BY r."id" DESC
+        LIMIT ${UNINDEXED_SEARCH_WINDOW}
+      ) p`;
   return Prisma.sql`
-    SELECT p."id" FROM "products" p
+    SELECT p."id" FROM ${products}
     WHERE p."status" = 'ACTIVE' AND p."stock" > 0 AND ${matchesAll(document, terms)}
-    ${categorySlug ? inCategory(categorySlug) : Prisma.empty}
+    ${terms.some(isIndexableTerm) ? category("p") : Prisma.empty}
     ORDER BY (${matchesAll(title, terms)}) DESC, p."publishedAt" DESC NULLS LAST, p."id" DESC
     LIMIT ${limit}`;
 }
@@ -68,8 +127,17 @@ export function productSearchSql(
 /** Publicaciones visibles por su texto, las más recientes primero. */
 export function postSearchSql(terms: string[], limit: number = SEARCH_LIMITS.posts) {
   const body = folded(Prisma.sql`p."body"`);
+  // Sin palabras indexables: solo las publicaciones más recientes (índice por fecha de publicación).
+  const posts = terms.some(isIndexableTerm)
+    ? Prisma.sql`"posts" p`
+    : Prisma.sql`(
+        SELECT r."id", r."body", r."status", r."publishedAt" FROM "posts" r
+        WHERE r."status" = 'PUBLISHED'
+        ORDER BY r."publishedAt" DESC, r."id" DESC
+        LIMIT ${UNINDEXED_SEARCH_WINDOW}
+      ) p`;
   return Prisma.sql`
-    SELECT p."id" FROM "posts" p
+    SELECT p."id" FROM ${posts}
     WHERE p."status" = 'PUBLISHED' AND ${matchesAll(body, terms)}
     ORDER BY p."publishedAt" DESC, p."id" DESC
     LIMIT ${limit}`;

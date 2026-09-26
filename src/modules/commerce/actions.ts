@@ -126,7 +126,8 @@ const CHECKOUT_MESSAGES: Record<CheckoutError["code"], string> = {
   TOO_MANY_PENDING: `Ya tienes ${MAX_PENDING_CHECKOUTS_PER_BUYER} pedidos esperando pago. Págalos desde Mis pedidos o espera a que venzan para hacer otro.`,
   RESERVATION_LIMIT: `Ya apartaste el máximo de ${MAX_QUANTITY_PER_ITEM} piezas de uno de estos productos en pedidos sin pagar. Págalos desde Mis pedidos o espera a que venzan.`,
   TOTAL_TOO_LARGE: "El total es demasiado alto para un solo pedido. Divide tu compra en varios.",
-  PAYMENT_UNAVAILABLE: "No pudimos iniciar el pago y no se cobró nada. Intenta de nuevo en unos minutos.",
+  PAYMENT_UNAVAILABLE:
+    "No pudimos iniciar el pago y no se cobró nada. Intenta de nuevo en unos minutos.",
 };
 
 /**
@@ -168,6 +169,13 @@ export async function placeOrderAction(
     newAddress = parsedAddress.success ? parsedAddress.data : null;
   }
 
+  const limited = limitOrError(
+    await rateLimitMany([
+      { key: rateLimitKey("checkout", "user", viewer.userId), ...PLACE_ORDER_LIMIT },
+    ]),
+  );
+  if (limited) return { error: limited, values };
+
   let redirectUrl: string;
   try {
     ({ redirectUrl } = await placeOrder(viewer.userId, {
@@ -179,8 +187,11 @@ export async function placeOrderAction(
     }));
   } catch (error) {
     if (error instanceof CheckoutError) {
-      // Carrito distinto al que revisó: se vuelve a pintar /checkout con lo que hay ahora.
-      if (error.code === "CART_CHANGED") revalidatePath("/", "layout");
+      // Carrito distinto al que revisó (o devuelto tras un pago que no se pudo iniciar): se vuelve
+      // a pintar /checkout con lo que hay ahora.
+      if (error.code === "CART_CHANGED" || error.code === "PAYMENT_UNAVAILABLE") {
+        revalidatePath("/", "layout");
+      }
       return { error: CHECKOUT_MESSAGES[error.code], values };
     }
     throw error;
@@ -190,37 +201,73 @@ export async function placeOrderAction(
   redirect(redirectUrl as Route);
 }
 
-const simulatedOutcome = z.enum(["APPROVED", "DECLINED"]);
+const simulationSchema = z.object({
+  providerRef: z.string().max(100),
+  outcome: z.enum(["APPROVED", "DECLINED"]),
+});
 
-/** Simulación del proveedor de pagos (V0.1): entra por el mismo camino que un webhook real. */
+/**
+ * Simulación del proveedor de pagos (V0.1): entra por el mismo camino que un webhook real. Solo
+ * existe donde se permiten pagos simulados (SEC-01): en producción sin piloto responde 404.
+ */
 export async function simulatePaymentAction(providerRef: string, outcome: "APPROVED" | "DECLINED") {
+  if (!simulatedPaymentsEnabled()) notFound();
   const viewer = await requireOnboardedViewer("/pedidos");
   // Los argumentos llegan del navegador: solo se aceptan los dos resultados simulados.
-  if (typeof providerRef !== "string" || !simulatedOutcome.safeParse(outcome).success) {
-    redirect("/pedidos");
-  }
+  const parsed = simulationSchema.safeParse({ providerRef, outcome });
+  if (!parsed.success) redirect("/pedidos");
+  // Un checkout vencido ya no se puede pagar (SEC-23): se vence antes de aplicar el resultado.
+  await expireStaleCheckouts(new Date(), viewer.userId);
   const payment = await db.payment.findUnique({
-    where: { providerRef },
-    select: { provider: true, checkoutId: true, checkout: { select: { buyerId: true } } },
+    where: { providerRef: parsed.data.providerRef },
+    select: {
+      provider: true,
+      status: true,
+      amountCents: true,
+      currency: true,
+      checkoutId: true,
+      checkout: { select: { buyerId: true } },
+    },
   });
-  if (!payment || payment.provider !== "mock" || payment.checkout.buyerId !== viewer.userId) {
+  if (
+    !payment ||
+    !isSimulatedPayment(payment.provider) ||
+    payment.checkout.buyerId !== viewer.userId
+  ) {
     redirect("/pedidos");
   }
-  await applyPaymentEvent({
-    provider: "mock",
-    providerEventId: `sim_${randomUUID()}`,
-    providerRef,
-    status: outcome,
-    payload: { simulated: true },
-  });
+  if (payment.status === "PENDING") {
+    await applyPaymentEvent({
+      provider: SIMULATED_PAYMENT_PROVIDER,
+      // Un evento por pago: un doble clic o un reintento no agrega filas de auditoría.
+      providerEventId: `sim_${parsed.data.providerRef}`,
+      providerRef: parsed.data.providerRef,
+      status: parsed.data.outcome,
+      amountCents: payment.amountCents,
+      currency: payment.currency,
+      payload: { simulated: true },
+    });
+  }
   // Si se rechaza, los productos regresan al carrito: el contador de la navegación cambia.
   revalidatePath("/", "layout");
   redirect(`/pedidos/${payment.checkoutId}` as Route);
 }
 
+// `to` llega del navegador: solo las dos transiciones que existen (SEC-25).
+const advanceSchema = z.object({ orderId: z.uuid(), to: z.enum(["SHIPPED", "DELIVERED"]) });
+
 export async function advanceOrderAction(orderId: string, to: "SHIPPED" | "DELIVERED") {
   const viewer = await requireOnboardedViewer("/studio/pedidos");
+  const parsed = advanceSchema.safeParse({ orderId, to });
+  if (!parsed.success) return;
+  await advanceOrder(viewer.userId, parsed.data.orderId, parsed.data.to);
+  revalidatePath("/studio/pedidos");
+}
+
+/** El vendedor cancela un pedido pagado antes de enviarlo; las piezas regresan a su inventario. */
+export async function cancelOrderAction(orderId: string) {
+  const viewer = await requireOnboardedViewer("/studio/pedidos");
   if (!z.uuid().safeParse(orderId).success) return;
-  await advanceOrder(viewer.userId, orderId, to);
+  await cancelOrderBySeller(viewer.userId, orderId);
   revalidatePath("/studio/pedidos");
 }

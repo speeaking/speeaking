@@ -19,7 +19,9 @@ const handler = toNextJsHandler(auth);
 
 function isAllowed(request: Request) {
   const { pathname } = new URL(request.url);
-  return pathname.startsWith(`${BASE_PATH}/`) && ALLOWED_PATHS.has(pathname.slice(BASE_PATH.length));
+  return (
+    pathname.startsWith(`${BASE_PATH}/`) && ALLOWED_PATHS.has(pathname.slice(BASE_PATH.length))
+  );
 }
 
 function notFound() {

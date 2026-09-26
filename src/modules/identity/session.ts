@@ -8,8 +8,23 @@ import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import type { NavCommunities, ViewerSummary } from "./viewer-summary";
 
-/** Sesión actual (una sola consulta por request gracias a `cache`). */
-export const getSession = cache(async () => auth.api.getSession({ headers: await headers() }));
+/**
+ * Tope absoluto de una sesión (SEC-10): Better Auth la renueva mientras se use (30 días deslizantes),
+ * así que una sesión robada no vencería nunca. A los 90 días de iniciada hay que volver a entrar.
+ */
+export const MAX_SESSION_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+
+/** Sesión actual (una sola consulta por request gracias a `cache`). `null` si pasó el tope. */
+export const getSession = cache(async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  if (Date.now() - new Date(session.session.createdAt).getTime() < MAX_SESSION_AGE_MS) {
+    return session;
+  }
+  // Se borra para que tampoco sirva en `auth.api.*` ni en otra petición.
+  await db.session.deleteMany({ where: { id: session.session.id } });
+  return null;
+});
 
 export type Viewer = {
   userId: string;

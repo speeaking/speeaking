@@ -13,4 +13,12 @@ visibles por su texto. Límites por sección en `SEARCH_LIMITS`.
   Las publicaciones se hidratan con `hydratePosts` (social).
 - **P5.** Cada búsqueda registra `SEARCH` (superficie `DISCOVER`, `metadata.scope = "global"` y los
   resultados por sección, útil para detectar búsquedas sin resultados).
-- **Después:** índices de trigramas o búsqueda semántica (pgvector) cuando el volumen lo pida.
+- **Índices de trigramas (SEC-32).** Cada documento plegado tiene un índice GIN `pg_trgm` sobre la
+  misma expresión (migración `20260926110000_search_trigram_indexes`; `sql.test.ts` compara ambas y
+  `sql.db.test.ts` prueba con `EXPLAIN` que PostgreSQL los usa). La tabla de plegado va como literal
+  en el SQL (no como parámetro) para que la expresión coincida con la del índice. Una palabra sin 3
+  letras o dígitos ASCII seguidos («tv», «a.b», «жжж»: con `LC_CTYPE` "C" no tiene trigramas) se
+  filtra sobre lo que el índice encontró con las demás; si ninguna es indexable, productos y
+  publicaciones solo revisan las `UNINDEXED_SEARCH_WINDOW` (2,000) filas más recientes, así el costo
+  no crece con la tabla.
+- **Después:** búsqueda semántica (pgvector) cuando el volumen lo pida.

@@ -81,6 +81,19 @@ describe("prepareEvent sin personalización no deja con qué re-identificar (SEC
     expect(prepareEvent(base, false, NOW).createdAt).toEqual(new Date("2026-09-26T14:00:00.000Z"));
   });
 
+  it("usa un id aleatorio (v4): el UUIDv7 por omisión guardaría la hora exacta", () => {
+    const anonymous = prepareEvent(base, false, NOW);
+    const again = prepareEvent(base, false, NOW);
+
+    // Versión 4 y variante RFC 9562: los 48 bits de tiempo de un UUIDv7 no existen aquí.
+    expect(anonymous.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(again.id).not.toBe(anonymous.id);
+    // Con personalización, el id lo pone la base (UUIDv7, ordenable por tiempo).
+    expect(prepareEvent(base, true, NOW).id).toBeUndefined();
+  });
+
   it("en las propuestas de IA descarta la entidad: es el producto de la propia persona", () => {
     const generated = prepareEvent(
       { type: "AI_PROPOSAL_GENERATED", userId: base.userId, metadata: { responseId: "r" } },
@@ -118,14 +131,24 @@ describe("anonymousMetadata", () => {
         responseId: "0199a000-0000-7000-8000-000000000001",
         email: "ana@example.com",
       }),
-    ).toEqual({ channel: "copy", slot: "commerce", reason: "explore", scope: "global", quantity: 3 });
+    ).toEqual({
+      channel: "copy",
+      slot: "commerce",
+      scope: "global",
+      quantity: 3,
+    });
+  });
+
+  it("descarta la razón del ranking: «follow» o «intent» salen de a quién sigue y qué busca", () => {
+    expect(anonymousMetadata({ slot: "content", reason: "follow" })).toEqual({ slot: "content" });
+    expect(anonymousMetadata({ reason: "intent" })).toBeUndefined();
   });
 
   it("descarta un valor permitido que parezca id, teléfono o texto libre", () => {
     expect(
       anonymousMetadata({
         channel: "0199a000-0000-7000-8000-000000000001",
-        reason: "55 1234 5678",
+        slot: "55 1234 5678",
         scope: "busco a Ana López",
         quantity: Number.NaN,
       }),

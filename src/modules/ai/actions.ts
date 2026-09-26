@@ -4,6 +4,8 @@ import { z } from "zod";
 import { parsePesosToCents } from "@/modules/catalog/pricing";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
+import { limitOrError } from "@/server/rate-limit";
+import type { GuardFinding } from "./output-guard";
 import type { SaleProposal } from "./sale-proposal";
 import { AIError, generateSaleProposal, proposalEconomics } from "./service";
 
@@ -24,12 +26,16 @@ export type ProposalState = {
     proposal: SaleProposal;
     numbers: ReturnType<typeof proposalEconomics>;
     quantity: number;
+    /** Frases que el guardián de contenido quitó (SEC-28) y por qué. */
+    guard: { removed: number; findings: GuardFinding[] };
   };
 };
 
 const AI_MESSAGES: Record<AIError["code"], string> = {
   RATE_LIMITED: "Hiciste muchas solicitudes seguidas. Espera un momento y vuelve a intentar.",
-  BUDGET_EXCEEDED: "La IA alcanzó su presupuesto de este mes. Intenta más tarde.",
+  // Sin detalles internos y con una salida: publicar a mano no depende de la IA.
+  BUDGET_EXCEEDED:
+    "Vende con IA no está disponible por ahora. Puedes publicar tu producto a mano desde Productos.",
   INVALID_OUTPUT: "La IA respondió algo que no pudimos validar. Intenta de nuevo.",
   PROVIDER_ERROR: "La IA no está disponible en este momento. Intenta de nuevo.",
 };
@@ -81,7 +87,7 @@ export async function generateProposalAction(
     hasPhoto: Boolean(media),
   };
   try {
-    const { responseId, proposal } = await generateSaleProposal(viewer.userId, {
+    const { responseId, proposal, guard } = await generateSaleProposal(viewer.userId, {
       ...request,
       mediaId: media?.id ?? null,
     });
@@ -89,12 +95,17 @@ export async function generateProposalAction(
       result: {
         responseId,
         proposal,
-        numbers: proposalEconomics(request, proposal),
+        numbers: proposalEconomics(request),
         quantity: request.quantity,
+        guard,
       },
     };
   } catch (error) {
-    if (error instanceof AIError) return { error: AI_MESSAGES[error.code] };
-    throw error;
+    if (!(error instanceof AIError)) throw error;
+    const wait =
+      error.code === "RATE_LIMITED" && error.retryAfterSeconds
+        ? limitOrError({ ok: false, retryAfterSeconds: error.retryAfterSeconds })
+        : null;
+    return { error: wait ?? AI_MESSAGES[error.code] };
   }
 }

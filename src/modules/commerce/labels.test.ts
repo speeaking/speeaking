@@ -21,6 +21,12 @@ describe("buyerStatusLabel", () => {
     expect(buyerStatusLabel("PAID", ["DELIVERED"])).toBe("Entregado");
   });
 
+  it("pagado y cancelado por el vendedor: Cancelado (si solo cancela uno, cuenta el resto)", () => {
+    expect(buyerStatusLabel("PAID", ["CANCELLED"])).toBe("Cancelado");
+    expect(buyerStatusLabel("PAID", ["CANCELLED", "CANCELLED"])).toBe("Cancelado");
+    expect(buyerStatusLabel("PAID", ["CANCELLED", "SHIPPED"])).toBe("Enviado");
+  });
+
   it("sin pagar: el estado del pago", () => {
     expect(buyerStatusLabel("PENDING_PAYMENT", ["PENDING_PAYMENT"])).toBe("Esperando pago");
     expect(buyerStatusLabel("FAILED", ["CANCELLED"])).toBe("Pago rechazado");

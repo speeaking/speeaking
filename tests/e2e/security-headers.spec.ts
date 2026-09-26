@@ -8,6 +8,9 @@ import { expect, type Page, test } from "@playwright/test";
 
 type Collected = { violations: string[]; consoleErrors: string[]; pageErrors: string[] };
 
+/** Registro, onboarding y «Comprar ahora» tardan más con el servidor de desarrollo ocupado. */
+const ACTION_TIMEOUT = 45_000;
+
 const CSP_CONSOLE = /content security policy|refused to (load|execute|apply|connect|frame)/i;
 
 async function collect(page: Page): Promise<Collected> {
@@ -120,6 +123,8 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
   test("la CSP se aplica en modo estricto: un manejador en línea inyectado no corre", async ({
     page,
   }) => {
+    // La primera visita puede compilar la página en desarrollo.
+    test.setTimeout(120_000);
     const collected = await collect(page);
     await visit(page, collected, "/entrar");
 
@@ -148,7 +153,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
   test("ninguna página viola la CSP: visitante, registro, onboarding, Studio y checkout", async ({
     page,
   }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(360_000);
     const collected = await collect(page);
 
     // Visitante.
@@ -173,7 +178,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
     await page.getByLabel("Contraseña").fill(user.password);
     await page.getByLabel(/Acepto los/).check();
     await page.getByRole("button", { name: "Crear cuenta" }).click();
-    await expect(page).toHaveURL(/\/bienvenida/);
+    await expect(page).toHaveURL(/\/bienvenida/, { timeout: ACTION_TIMEOUT });
     await expectCleanPage(page, collected, "/bienvenida");
 
     await page.getByLabel("Nombre de usuario").fill(user.username);
@@ -184,7 +189,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
     }
     await page.getByRole("button", { name: "Siguiente" }).click();
     await page.getByRole("button", { name: "Empezar" }).click();
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/", { timeout: ACTION_TIMEOUT });
     await expectCleanPage(page, collected, "/ (con sesión)");
 
     // Studio.
@@ -194,7 +199,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
     // Checkout con un producto semilla en el carrito.
     await visit(page, collected, productPath);
     await page.getByRole("button", { name: "Comprar ahora" }).click();
-    await expect(page).toHaveURL("/checkout");
+    await expect(page).toHaveURL("/checkout", { timeout: ACTION_TIMEOUT });
     await expectCleanPage(page, collected, "/checkout");
 
     // Cambiar el tema inyecta un <style> temporal de next-themes (con nonce): no debe violar nada.

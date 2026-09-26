@@ -23,7 +23,10 @@ export type AuthFormState = {
 };
 
 /** Códigos de Better Auth cuando el correo ya tiene cuenta. */
-const EXISTING_ACCOUNT_CODES = new Set(["USER_ALREADY_EXISTS", "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"]);
+const EXISTING_ACCOUNT_CODES = new Set([
+  "USER_ALREADY_EXISTS",
+  "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+]);
 
 function formValues(formData: FormData) {
   return {
@@ -38,7 +41,10 @@ function errorCode(error: unknown) {
 
 function apiErrorState(error: unknown, values: AuthFormState["values"]): AuthFormState {
   if (isAPIError(error)) {
-    return { error: authErrorMessage({ code: errorCode(error), status: error.statusCode }), values };
+    return {
+      error: authErrorMessage({ code: errorCode(error), status: error.statusCode }),
+      values,
+    };
   }
   throw error;
 }

@@ -3,8 +3,9 @@
 Estados: ✅ hecho · 🟡 parcial · ⏳ pendiente. Cada fase cierra con typecheck, lint, formato, pruebas,
 build y revisión de rutas/UX; si algo falla se corrige antes de avanzar.
 
-Verificación vigente (2026-09-25, tras el rediseño): 653 pruebas unitarias y de componentes, 79 pruebas E2E
-(móvil y escritorio; 7 omitidas por ser de un solo tamaño), typecheck, lint, formato y build de producción en verde.
+Verificación vigente (2026-09-26, tras la auditoría y sus correcciones): 1,214 pruebas unitarias y de
+componentes, 119 pruebas E2E (móvil y escritorio; 7 omitidas por ser de un solo tamaño), typecheck,
+lint, formato y build de producción en verde. Seguridad: ver `security/auditoria-2026-09-26.md`.
 
 ## Sprint 1 — Fundación ✅
 

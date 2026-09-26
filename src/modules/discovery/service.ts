@@ -172,13 +172,13 @@ export async function getSocialRail(
 export const getPeopleSuggestions = cache(
   async (viewerId: string): Promise<PersonSuggestionDTO[]> => {
     // Sin «me gusta»: la app no revela quién los dio, y una sugerencia lo delataría.
-    const [followingIds, communityIds, commenters] = await Promise.all([
-      queries.listFollowingIds(viewerId),
+    const [mutualIds, communityIds, commenters] = await Promise.all([
+      queries.listMutualFollowIds(viewerId),
       queries.listMembershipCommunityIds(viewerId),
       queries.countCommentersOnPostsOf(viewerId),
     ]);
     const [followedByFollowing, peers] = await Promise.all([
-      queries.countFollowedByFollowing(viewerId, followingIds),
+      queries.countFollowedByFollowing(viewerId, mutualIds),
       queries.listActiveCommunityPeers(viewerId, communityIds),
     ]);
     // Del más activo al menos activo en tus comunidades: desempata la puntuación.

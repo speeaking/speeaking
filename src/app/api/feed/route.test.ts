@@ -4,13 +4,16 @@ const getFeed = vi.fn();
 const getViewer = vi.fn();
 const findCommunity = vi.fn();
 const trackImpressions = vi.fn();
+const checkSocialLimit = vi.fn();
 
 vi.mock("@/modules/feed/engine", () => ({ recommendationEngine: { getFeed } }));
 vi.mock("@/modules/feed/impressions", () => ({ trackImpressions }));
 vi.mock("@/modules/identity/session", () => ({ getViewer }));
+vi.mock("@/modules/social/limits", () => ({ checkSocialLimit }));
 vi.mock("@/server/db", () => ({ db: { community: { findUnique: findCommunity } } }));
 
 const { GET } = await import("./route");
+const { encodeCursor } = await import("@/modules/feed/ranking");
 
 const request = (query: string) => new Request(`http://localhost/api/feed?${query}`);
 const PAGE = { items: [], nextCursor: null };
@@ -19,7 +22,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   getFeed.mockResolvedValue(PAGE);
   getViewer.mockResolvedValue(null);
+  checkSocialLimit.mockResolvedValue({ ok: true });
 });
+
+/** Cursor como lo arma el motor: base64url de `{ v, o, t }`. */
+const rawCursor = (payload: unknown) => Buffer.from(JSON.stringify(payload)).toString("base64url");
 
 describe("GET /api/feed", () => {
   it("«Siguiendo» sin sesión: 401 sin calcular nada", async () => {
@@ -56,13 +63,45 @@ describe("GET /api/feed", () => {
   it("una comunidad que existe filtra por su id", async () => {
     findCommunity.mockResolvedValue({ id: "c1" });
 
-    await GET(request("community=gaming&cursor=abc"));
+    const cursor = encodeCursor({ offset: 10, asOf: Date.now() });
+
+    await GET(request(`community=gaming&cursor=${cursor}`));
 
     expect(getFeed).toHaveBeenCalledWith({
       viewerId: null,
-      cursor: "abc",
+      cursor,
       communityId: "c1",
       following: false,
     });
+  });
+
+  it("SEC-31: un cursor inválido o con fecha fuera de rango es 400, no 500", async () => {
+    for (const cursor of [
+      "abc",
+      rawCursor({ v: 1, o: 10, t: 9e15 }),
+      rawCursor({ v: 1, o: 10, t: Date.now() + 24 * 60 * 60 * 1000 }),
+    ]) {
+      const response = await GET(request(`cursor=${cursor}`));
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ error: "Cursor inválido." });
+    }
+    expect(getFeed).not.toHaveBeenCalled();
+  });
+
+  it("SEC-15: con el límite agotado responde 429 con Retry-After, sin calcular el feed", async () => {
+    getViewer.mockResolvedValue({ userId: "u1" });
+    checkSocialLimit.mockResolvedValue({
+      ok: false,
+      error: "Demasiados intentos.",
+      retryAfterSeconds: 42,
+    });
+
+    const response = await GET(request(""));
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("42");
+    expect(checkSocialLimit).toHaveBeenCalledWith("feed", "u1");
+    expect(getFeed).not.toHaveBeenCalled();
+    expect(trackImpressions).not.toHaveBeenCalled();
   });
 });

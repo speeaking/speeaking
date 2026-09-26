@@ -13,15 +13,16 @@ type Client = Prisma.TransactionClient | typeof db;
 /**
  * Desliga de la persona TODA su actividad ya guardada (SEC-27), con el mismo estándar que un evento
  * anónimo nuevo (`prepareEvent`, SEC-16): sin persona, sin texto de búsqueda, solo la metadata
- * permitida, sin la entidad cuando es suya y con la hora truncada. Los eventos siguen contando para
- * las métricas agregadas del vendedor, pero ya no alimentan la personalización. Devuelve cuántos
- * eventos desligó.
+ * permitida, sin la entidad cuando es suya, con la hora truncada y con un id nuevo aleatorio (el
+ * UUIDv7 original lleva la hora al milisegundo). Los eventos siguen contando para las métricas
+ * agregadas del vendedor, pero ya no alimentan la personalización. Devuelve cuántos eventos desligó.
  */
 export function anonymizeUserActivity(userId: string, client: Client = db): Promise<number> {
   const keys: string[] = [...ANONYMOUS_METADATA_KEYS];
   const ownEntityTypes: string[] = [...SELF_ENTITY_EVENT_TYPES];
   return client.$executeRaw`
     UPDATE "analytics_events" AS e SET
+      "id" = gen_random_uuid(),
       "userId" = NULL,
       "anonymousId" = NULL,
       "query" = NULL,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  MIN_FOLLOW_INTERMEDIARIES,
   rankSuggestions,
   scoreSuggestion,
   type SuggestionSignals,
@@ -27,16 +28,16 @@ describe("scoreSuggestion", () => {
     expect(ranked).toEqual({
       userId: "a",
       score: 3 * 2 + 2,
-      reason: { kind: "followed-by-following", count: 2 },
+      reason: { kind: "followed-by-following" },
     });
   });
 
-  it("un comentario pesa más que una persona en común", () => {
+  it("un comentario pesa más que dos personas en común", () => {
     const ranked = scoreSuggestion(
-      signals({ userId: "a", followedByFollowing: 1, commentsOnYourPosts: 1 }),
+      signals({ userId: "a", followedByFollowing: 2, commentsOnYourPosts: 3 }),
     );
     expect(ranked?.reason).toEqual({ kind: "commented" });
-    expect(ranked?.score).toBe(3 + 5);
+    expect(ranked?.score).toBe(3 * 2 + 7);
   });
 
   it("los topes impiden que una sola señal enorme lo decida todo", () => {
@@ -48,11 +49,24 @@ describe("scoreSuggestion", () => {
     ).toBe(4);
   });
 
-  it("en empate gana la señal de mayor prioridad (en común > comunidades)", () => {
+  it("en empate gana la señal de mayor prioridad (en común > comentó)", () => {
     const ranked = scoreSuggestion(
-      signals({ userId: "a", followedByFollowing: 1, sharedCommunities: ["A", "B", "C"] }),
+      signals({ userId: "a", followedByFollowing: 2, commentsOnYourPosts: 2 }),
     );
-    expect(ranked?.reason).toEqual({ kind: "followed-by-following", count: 1 });
+    expect(ranked?.reason).toEqual({ kind: "followed-by-following" });
+  });
+
+  it("con un solo intermediario la señal no cuenta: delataría a quién sigue esa persona (SEC-17)", () => {
+    expect(MIN_FOLLOW_INTERMEDIARIES).toBe(2);
+    expect(scoreSuggestion(signals({ userId: "a", followedByFollowing: 1 }))).toBeNull();
+    const ranked = scoreSuggestion(
+      signals({ userId: "a", followedByFollowing: 1, sharedCommunities: ["Gaming"] }),
+    );
+    expect(ranked).toEqual({
+      userId: "a",
+      score: 1,
+      reason: { kind: "communities", names: ["Gaming"] },
+    });
   });
 
   it("los «me gusta» no son una señal: nunca se revela quién dio «me gusta»", () => {
@@ -80,10 +94,10 @@ describe("rankSuggestions", () => {
     const ranked = rankSuggestions(
       [
         signals({ userId: "c", sharedCommunities: ["Gaming"] }),
-        signals({ userId: "b", followedByFollowing: 1 }),
-        signals({ userId: "a", followedByFollowing: 1 }),
+        signals({ userId: "b", followedByFollowing: 2 }),
+        signals({ userId: "a", followedByFollowing: 2 }),
         signals({ userId: "z" }),
-        signals({ userId: "d", commentsOnYourPosts: 2 }),
+        signals({ userId: "d", commentsOnYourPosts: 3 }),
       ],
       3,
     );
@@ -122,7 +136,7 @@ describe("rankSuggestions", () => {
     const ranked = rankSuggestions(
       [
         signals({ userId: "activa", sharedCommunities: ["Gaming"], activityRank: 0 }),
-        signals({ userId: "en-comun", followedByFollowing: 1, activityRank: 30 }),
+        signals({ userId: "en-comun", followedByFollowing: 2, activityRank: 30 }),
       ],
       10,
     );
@@ -132,8 +146,7 @@ describe("rankSuggestions", () => {
 
 describe("suggestionReasonText", () => {
   it.each([
-    [{ kind: "followed-by-following", count: 1 } as const, "La sigue 1 persona que sigues"],
-    [{ kind: "followed-by-following", count: 2 } as const, "La siguen 2 personas que sigues"],
+    [{ kind: "followed-by-following" } as const, "La siguen personas que sigues"],
     [{ kind: "commented" } as const, "Comentó tu publicación"],
     [{ kind: "communities", names: ["Gaming"] } as const, "También está en Gaming"],
     [

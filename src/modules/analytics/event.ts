@@ -20,6 +20,8 @@ export type TrackedEvent = {
  * Metadata que sobrevive en un evento anónimo (SEC-16): conteos y categorías cortas. Cualquier otra
  * llave se descarta, en especial los ids (`checkoutId`, `orderId`, `responseId`…), que se unen con
  * tablas que sí guardan a la persona. Agregar una llave aquí es decidir que no identifica a nadie.
+ * La razón del ranking (`reason`) tampoco: «follow» o «intent» salen de a quién sigue la persona y de
+ * lo que busca, y las impresiones de una misma página juntas (`follows` de por medio) la delatan.
  */
 export const ANONYMOUS_METADATA_KEYS = [
   "quantity",
@@ -29,7 +31,6 @@ export const ANONYMOUS_METADATA_KEYS = [
   "products",
   "posts",
   "slot",
-  "reason",
 ] as const;
 
 /**
@@ -50,8 +51,9 @@ const HOUR = 60 * 60 * 1000;
  * Prepara un evento para guardarlo respetando la privacidad:
  * - Sin personalización, el evento se anonimiza de verdad (SEC-16): sin persona, sin búsqueda en
  *   texto, sin ids en la metadata, sin la entidad cuando es suya y con la hora truncada (una marca al
- *   milisegundo se une con `checkouts.createdAt` o con los UUIDv7). Sirve para métricas agregadas del
- *   vendedor, pero no se vincula a la persona.
+ *   milisegundo se une con `checkouts.createdAt` o con los UUIDv7). El id también es aleatorio
+ *   (UUIDv4): el UUIDv7 por omisión lleva la hora al milisegundo y desharía el truncado. Sirve para
+ *   métricas agregadas del vendedor, pero no se vincula a la persona.
  * - Las búsquedas se recortan para no guardar textos largos que podrían contener datos personales.
  */
 export function prepareEvent(
@@ -77,6 +79,7 @@ export function prepareEvent(
   }
   const ownEntity = (SELF_ENTITY_EVENT_TYPES as readonly AnalyticsEventType[]).includes(event.type);
   return {
+    id: crypto.randomUUID(),
     type: event.type,
     userId: null,
     anonymousId: null,

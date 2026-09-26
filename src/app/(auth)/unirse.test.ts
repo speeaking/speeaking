@@ -39,9 +39,7 @@ describe("?unirse=", () => {
 
   // SEC-04: `/bienvenida?next=/.//evil.example/entrar` sacaba del sitio tras iniciar sesión.
   it("descarta un `next` anidado que se normaliza a otro dominio", () => {
-    expect(
-      unwrapOnboardingNext("/bienvenida?next=%2F.%2F%2Fevil.example%2Fentrar")?.next,
-    ).toBe("");
+    expect(unwrapOnboardingNext("/bienvenida?next=%2F.%2F%2Fevil.example%2Fentrar")?.next).toBe("");
     expect(unwrapOnboardingNext("/bienvenida?next=/a/..//evil.example")?.next).toBe("");
     expect(unwrapOnboardingNext("/./bienvenida?next=%2F%252e%2F%2Fevil.example")?.next).toBe("");
     // Dos niveles: el de adentro vuelve al onboarding y se descarta.

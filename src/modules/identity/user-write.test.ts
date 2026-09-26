@@ -15,7 +15,10 @@ describe("sanitizeUserWrite", () => {
     expect(sanitizeUserWrite({ image: "javascript:alert(document.domain)" })).toEqual({
       image: null,
     });
-    expect(sanitizeUserWrite({ emailVerified: true })).toEqual({ emailVerified: true, image: null });
+    expect(sanitizeUserWrite({ emailVerified: true })).toEqual({
+      emailVerified: true,
+      image: null,
+    });
   });
 
   it.each([

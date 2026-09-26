@@ -3,6 +3,7 @@ import { DEFAULT_FEED_POLICY } from "./policy";
 import {
   type Candidate,
   categoryIntentScores,
+  CURSOR_MAX_AGE_MS,
   decodeCursor,
   encodeCursor,
   fitsDeclaredBudget,
@@ -303,12 +304,29 @@ describe("cursor", () => {
   it("codifica y decodifica posición y momento de referencia", () => {
     const cursor = encodeCursor({ offset: 20, asOf: NOW.getTime() });
 
-    expect(decodeCursor(cursor)).toEqual({ offset: 20, asOf: NOW.getTime() });
+    expect(decodeCursor(cursor, NOW.getTime())).toEqual({ offset: 20, asOf: NOW.getTime() });
   });
 
   it("ignora cursores manipulados o inválidos", () => {
     expect(decodeCursor("no-es-un-cursor")).toBeNull();
     expect(decodeCursor(encodeCursor({ offset: -5, asOf: 1 }))).toBeNull();
     expect(decodeCursor(undefined)).toBeNull();
+  });
+
+  it("SEC-31: un momento de referencia fuera de rango es inválido (antes: Invalid Date → 500)", () => {
+    const now = NOW.getTime();
+    const at = (asOf: number) => decodeCursor(encodeCursor({ offset: 10, asOf }), now);
+
+    expect(at(9e15)).toBeNull();
+    expect(at(Number.MAX_SAFE_INTEGER)).toBeNull();
+    expect(at(now + 5 * 60 * 1000)).toBeNull();
+    expect(at(now - CURSOR_MAX_AGE_MS - 1)).toBeNull();
+    expect(at(now - CURSOR_MAX_AGE_MS)).toEqual({ offset: 10, asOf: now - CURSOR_MAX_AGE_MS });
+    expect(at(now + 30 * 1000)).toEqual({ offset: 10, asOf: now + 30 * 1000 });
+    const raw = (payload: unknown) =>
+      decodeCursor(Buffer.from(JSON.stringify(payload)).toString("base64url"), now);
+    expect(raw({ v: 1, o: 10, t: 1.5e308 })).toBeNull();
+    expect(raw({ v: 1, o: 10, t: String(now) })).toBeNull();
+    expect(raw({ v: 1, o: 1e20, t: now })).toBeNull();
   });
 });

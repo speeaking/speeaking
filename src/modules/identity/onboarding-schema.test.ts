@@ -29,6 +29,17 @@ describe("onboardingSchema.fromFormData", () => {
     expect(result.data.personalizationEnabled).toBe(false);
   });
 
+  it("un nombre demasiado largo solo muestra el máximo, sin revisar suplantación", () => {
+    const result = onboardingSchema.fromFormData(
+      form([
+        ...base.filter(([key]) => key !== "displayName"),
+        ["displayName", "Soporte ".repeat(1e5)],
+      ]),
+    );
+
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Máximo 50 caracteres."]);
+  });
+
   it("exige al menos 3 comunidades", () => {
     const result = onboardingSchema.fromFormData(form(base.slice(0, 5)));
 

@@ -2,3 +2,25 @@
 
 Registro, sesión, perfiles, activación de vendedor (P6) y consentimientos versionados.
 Fases: 1.3 (auth) y 1.4 (perfiles). Ver docs/architecture.md → Estructura.
+
+## Seguridad (auditoría 2026-09-26)
+
+- Registro, inicio y cierre de sesión van SOLO por Server Actions (`actions.ts`) que llaman
+  `auth.api.*`. El router HTTP `/api/auth/*` responde 404 a todo (SEC-09).
+- Límite de intentos antes de Better Auth (`auth-limits.ts`, SEC-02): inicio de sesión 10 fallidos por
+  IP y 5 por correo cada 15 min; registro 3 por IP por minuto y 5 por correo por hora. La IP sale de
+  `server/client-ip.ts` (`TRUSTED_PROXY_HOPS`, SEC-07); sin IP confiable solo aplican las de correo.
+- Nombres y usuarios que suplantan a la plataforma (`reserved-names.ts`, SEC-18) y contraseñas comunes
+  (`common-passwords.ts`, SEC-30) se rechazan en los esquemas del servidor. `user-write.ts` aplica el
+  mismo nombre y vacía `image` en toda escritura de Better Auth.
+- Los formularios se validan ANTES de contar intentos, así que un formulario inválido no tiene límite:
+  cada `.max()` que precede a una revisión cara (suplantación, contraseña común) lleva `abort: true`.
+- Registro con un correo ya usado: mismo mensaje que cualquier alta fallida y el mismo hash (SEC-11).
+  Sigue siendo distinguible (una cuenta nueva entra directo y la respuesta tarda distinto) hasta tener
+  verificación de correo.
+- «Tus sesiones» (`components/sessions-section.tsx`) lista dispositivos y cierra todas (SEC-10).
+- Tope absoluto de sesión: `getSession` (`session.ts`) ignora y borra una sesión con más de 90 días
+  de iniciada, aunque Better Auth la haya renovado (SEC-10).
+
+Pendiente: verificación de correo y restablecer contraseña (necesitan proveedor de correo); cambio de
+contraseña con cierre de otras sesiones (no lo necesita, falta la acción y su lugar en Ajustes).

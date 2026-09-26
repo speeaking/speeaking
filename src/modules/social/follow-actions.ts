@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { track } from "@/modules/analytics/track";
 import { getViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
+import { checkSocialLimit } from "./limits";
 
 const targetSchema = z.uuid();
 const followSchema = z.boolean().optional();
@@ -33,9 +34,12 @@ export async function toggleFollowAction(
   if (!parsed.success || parsed.data === viewer.userId || !followSchema.safeParse(follow).success) {
     return CANNOT_FOLLOW;
   }
+  const limited = await checkSocialLimit("follow", viewer.userId);
+  if (!limited.ok) return { ok: false, error: limited.error };
 
   const key = { followerId: viewer.userId, followingId: parsed.data };
   let following: boolean;
+  let changed = false;
   try {
     const [target, existing] = await Promise.all([
       db.user.findUnique({ where: { id: parsed.data }, select: { id: true } }),
@@ -48,16 +52,18 @@ export async function toggleFollowAction(
 
     following = follow ?? !existing;
     if (!following && existing) {
-      await db.follow.deleteMany({ where: key });
+      changed = (await db.follow.deleteMany({ where: key })).count > 0;
     } else if (following && !existing) {
-      await db.follow.createMany({ data: [key], skipDuplicates: true });
-      track({
-        type: "FOLLOW",
-        userId: viewer.userId,
-        entityType: "PROFILE",
-        entityId: parsed.data,
-        surface: "PROFILE",
-      });
+      changed = (await db.follow.createMany({ data: [key], skipDuplicates: true })).count > 0;
+      if (changed) {
+        track({
+          type: "FOLLOW",
+          userId: viewer.userId,
+          entityType: "PROFILE",
+          entityId: parsed.data,
+          surface: "PROFILE",
+        });
+      }
     }
   } catch (error) {
     // La cuenta se borró entre la consulta y el alta (llave foránea).
@@ -68,7 +74,8 @@ export async function toggleFollowAction(
   }
 
   // Seguir cambia el perfil (seguidores), «Siguiendo» del feed y «Gente de tus comunidades» en la
-  // columna derecha: se revalida todo el layout social.
-  revalidatePath("/(social)", "layout");
+  // columna derecha: se revalida todo el layout social. Solo si algo cambió: repetir el mismo estado
+  // en bucle no obliga a volver a renderizar todo (SEC-15).
+  if (changed) revalidatePath("/(social)", "layout");
   return { ok: true, following };
 }

@@ -84,11 +84,13 @@ test.describe("comercio", () => {
     await context.close();
   });
 
-  test("venta completa: comprar, pagar (simulado) y el vendedor ve el pedido y su beneficio", async ({
+  test("venta completa: comprar, pagar (simulado); el vendedor no envía lo que no se cobró y lo cancela", async ({
     page,
     browser,
     isMobile,
   }) => {
+    // Dos cuentas, venta, Studio, cancelación y regreso al producto: más que el tiempo por omisión.
+    test.slow();
     await registerAndOnboard(page);
     const productUrl = await sellWithAi(page);
 
@@ -120,20 +122,38 @@ test.describe("comercio", () => {
     await expect(buyer.getByText(/Pago simulado: no se cobró nada/)).toBeVisible();
     const orderUrl = buyer.url();
 
-    // Vendedor: el pedido aparece y el beneficio refleja la venta (3,499 − 2,400 − 3.5 % estimado).
-    await page.goto("/studio/pedidos");
-    await expect(page.getByText("1 × AirPods Pro 2")).toBeVisible();
-    await expect(page.getByText("Pagado", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Marcar enviado" }).click();
-    await expect(page.getByText("Enviado", { exact: true })).toBeVisible();
-
-    // El comprador ve el avance que marcó el vendedor.
-    await buyer.goto(orderUrl);
-    await expect(buyer.getByRole("heading", { level: 1, name: "Enviado" })).toBeVisible();
-    await context.close();
-
+    // Vendedor: el beneficio refleja la venta (3,499 − 2,400 − 3.5 % estimado), avisando que el pago
+    // fue simulado (SEC-01).
     await page.goto("/studio");
     await expect(page.getByText("$976.53")).toBeVisible();
+    await expect(
+      page.getByText("Incluye 1 venta con pago simulado: no se cobró dinero."),
+    ).toBeVisible();
+
+    // El pedido aparece pagado y marcado como simulado, sin "Marcar enviado" y sin el domicilio del
+    // comprador: no se cobró dinero, así que no hay nada que enviar (SEC-01, SEC-08).
+    await page.goto("/studio/pedidos");
+    const sale = page.getByRole("listitem").filter({ hasText: "Pago simulado" });
+    await expect(sale.getByText("1 × AirPods Pro 2")).toBeVisible();
+    await expect(sale.getByText("Pagado", { exact: true })).toBeVisible();
+    await expect(sale.getByText("Pago simulado", { exact: true })).toBeVisible();
+    await expect(sale.getByText(/No se cobró dinero: no envíes mercancía/)).toBeVisible();
+    await expect(page.getByText(/Insurgentes/)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Marcar enviado" })).toHaveCount(0);
+
+    // Lo cancela (SEC-25): la pieza regresa al inventario.
+    await sale.getByText("Cancelar pedido", { exact: true }).click();
+    await sale.getByRole("button", { name: "Sí, cancelar pedido" }).click();
+    await expect(sale.getByText("Cancelado", { exact: true })).toBeVisible();
+
+    // El comprador ve la cancelación y la pieza volvió a estar disponible.
+    await buyer.goto(orderUrl);
+    await expect(buyer.getByRole("heading", { level: 1, name: "Cancelado" })).toBeVisible();
+    await expect(buyer.getByText(/El vendedor canceló tu pedido/)).toBeVisible();
+    await buyer.goto(productUrl);
+    await buyer.getByRole("button", { name: "¿Sigue disponible?" }).click();
+    await expect(buyer.getByRole("status").filter({ hasText: "quedan 50 piezas" })).toBeVisible();
+    await context.close();
   });
 
   test("un pago rechazado cancela la compra y los productos regresan al carrito", async ({
@@ -141,6 +161,8 @@ test.describe("comercio", () => {
     browser,
     isMobile,
   }) => {
+    // Comprador y vendedor (que revisa sus pedidos al final): más que el tiempo por omisión.
+    test.slow();
     await registerAndOnboard(page);
     const productUrl = await sellWithAi(page);
 
@@ -164,6 +186,45 @@ test.describe("comercio", () => {
     await expect(cart.getByRole("link", { name: "AirPods Pro 2" })).toBeVisible();
     await expect(cart.getByText("Total con envío a domicilio")).toBeVisible();
     await expect(cart.getByText("$3,598")).toBeVisible();
+    await context.close();
+
+    // SEC-08: el vendedor no ve un intento de compra que nunca se pagó (ni el domicilio).
+    await page.goto("/studio/pedidos");
+    await expect(page.getByText("Sin pedidos todavía")).toBeVisible();
+    await expect(page.getByText(/Insurgentes/)).toHaveCount(0);
+  });
+
+  test("una cuenta no puede apartar más de 10 piezas de un producto sin pagar", async ({
+    page,
+    browser,
+    isMobile,
+  }) => {
+    // Dos checkouts completos de dos cuentas: más que el tiempo por omisión.
+    test.slow();
+    await registerAndOnboard(page);
+    const productUrl = await sellWithAi(page);
+
+    // SEC-05: aparta 10 piezas y no paga.
+    const { context, page: buyer } = await newBuyer(browser, isMobile);
+    await buyer.goto(productUrl);
+    const plus = buyer.getByRole("button", { name: "Agregar una pieza" });
+    const pieces = buyer.locator('span[aria-live="polite"]').first();
+    for (let piece = 2; piece <= 10; piece++) {
+      await plus.click();
+      await expect(pieces).toHaveText(String(piece));
+    }
+    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await fillAddress(buyer);
+    await buyer.getByRole("button", { name: "Continuar al pago" }).click();
+    await expect(buyer).toHaveURL(/\/checkout\/pago\/mock_/);
+
+    // Una pieza más del mismo producto ya no se aparta: el checkout avisa y no reserva.
+    await buyer.goto(productUrl);
+    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await expect(buyer).toHaveURL("/checkout");
+    await buyer.getByRole("button", { name: "Continuar al pago" }).click();
+    await expect(buyer.getByText(/Ya apartaste el máximo de 10 piezas/)).toBeVisible();
+    await expect(buyer).toHaveURL("/checkout");
     await context.close();
   });
 });

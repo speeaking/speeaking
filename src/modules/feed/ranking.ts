@@ -265,16 +265,30 @@ export function encodeCursor(cursor: FeedCursor): string {
   );
 }
 
-/** Decodifica el cursor; si fue manipulado o es inválido devuelve null (se empieza de nuevo). */
-export function decodeCursor(value: string | null | undefined): FeedCursor | null {
+/** Antigüedad máxima del momento de referencia de un cursor: una sesión de scroll, no más. */
+export const CURSOR_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Tolerancia hacia el futuro (relojes desfasados entre instancias). */
+const CURSOR_MAX_SKEW_MS = 60 * 1000;
+
+/**
+ * Decodifica el cursor; si fue manipulado o es inválido devuelve null. `asOf` debe caer en los
+ * últimos 7 días: un valor fuera de rango (p. ej. `9e15`) daba un `Invalid Date` y un 500 (SEC-31).
+ */
+export function decodeCursor(
+  value: string | null | undefined,
+  now: number = Date.now(),
+): FeedCursor | null {
   if (!value) return null;
   try {
     const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
     if (typeof parsed !== "object" || parsed === null) return null;
     const { v, o, t } = parsed as Record<string, unknown>;
-    if (v !== 1 || !Number.isInteger(o) || !Number.isInteger(t)) return null;
-    if ((o as number) < 0 || (o as number) > 10_000 || (t as number) <= 0) return null;
-    return { offset: o as number, asOf: t as number };
+    if (v !== 1 || !Number.isSafeInteger(o) || !Number.isSafeInteger(t)) return null;
+    const offset = o as number;
+    const asOf = t as number;
+    if (offset < 0 || offset > 10_000) return null;
+    if (asOf < now - CURSOR_MAX_AGE_MS || asOf > now + CURSOR_MAX_SKEW_MS) return null;
+    return { offset, asOf };
   } catch {
     return null;
   }

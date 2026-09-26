@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { sellerActivationSteps } from "@/modules/analytics/seller-metrics";
 import { getSellerDashboard } from "@/modules/analytics/seller-queries";
+import { countSimulatedSales } from "@/modules/commerce/seller-orders";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 
@@ -22,6 +23,8 @@ export default async function StudioPage() {
   if (!viewer.sellerProfileId) return <SellerActivation defaultName={viewer.profile.displayName} />;
 
   const metrics = await getSellerDashboard(viewer.sellerProfileId);
+  // Mismo periodo que el resumen: ventas cuyo pago fue simulado (SEC-01).
+  const simulatedSales = await countSimulatedSales(viewer.sellerProfileId, metrics.days);
   const steps = sellerActivationSteps({
     products: metrics.totalProducts,
     shares: metrics.shares,
@@ -60,6 +63,12 @@ export default async function StudioPage() {
           {(metrics.estimatedPaymentFeeBps / 100).toFixed(1)} %). Calculado con tus datos, no por
           IA.
         </p>
+        {simulatedSales > 0 ? (
+          <p className="text-xs font-semibold text-destructive">
+            Incluye {simulatedSales === 1 ? "1 venta" : `${simulatedSales} ventas`} con pago
+            simulado: no se cobró dinero.
+          </p>
+        ) : null}
       </section>
 
       <dl className="grid grid-cols-2 gap-3 md:grid-cols-3">

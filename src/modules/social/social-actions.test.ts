@@ -8,25 +8,34 @@ const db = vi.hoisted(() => {
     savedItem: { deleteMany: vi.fn(), create: vi.fn() },
     post: { update: vi.fn() },
     product: { update: vi.fn() },
+    like: { deleteMany: vi.fn(), create: vi.fn() },
   };
   return {
     tx,
     user: { findUnique: vi.fn() },
     follow: { findUnique: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
+    comment: { findFirst: vi.fn(), create: vi.fn() },
+    post: { update: vi.fn() },
     $transaction: vi.fn(async (run: (client: typeof tx) => unknown) => run(tx)),
   };
 });
 const revalidatePath = vi.hoisted(() => vi.fn());
 const getViewer = vi.hoisted(() => vi.fn());
+const requireOnboardedViewer = vi.hoisted(() => vi.fn());
+const checkSocialLimit = vi.hoisted(() => vi.fn());
+const track = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath, refresh: vi.fn() }));
-vi.mock("@/modules/identity/session", () => ({ getViewer, requireOnboardedViewer: vi.fn() }));
-vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
+vi.mock("@/modules/identity/session", () => ({ getViewer, requireOnboardedViewer }));
+vi.mock("@/modules/analytics/track", () => ({ track }));
+vi.mock("./limits", () => ({ checkSocialLimit }));
 
 const { toggleFollowAction } = await import("./follow-actions");
 const { toggleMembershipAction } = await import("./community-actions");
-const { toggleSaveAction } = await import("./actions");
+const { createCommentAction, createPostAction, toggleLikeAction, toggleSaveAction } =
+  await import("./actions");
+const { recordShareAction } = await import("./interaction-actions");
 
 const VIEWER = "0199a000-0000-7000-8000-00000000000a";
 const OTHER = "0199a000-0000-7000-8000-00000000000b";
@@ -44,7 +53,21 @@ beforeEach(() => {
   getViewer.mockResolvedValue({ userId: VIEWER });
   db.follow.createMany.mockResolvedValue({ count: 1 });
   db.tx.communityMembership.createMany.mockResolvedValue({ count: 1 });
+  checkSocialLimit.mockResolvedValue({ ok: true });
 });
+
+const LIMITED = {
+  ok: false,
+  error: "Demasiados intentos. Intenta de nuevo en 12 minutos.",
+  retryAfterSeconds: 700,
+} as const;
+
+function commentForm(body: string) {
+  const form = new FormData();
+  form.set("postId", TARGET);
+  form.set("body", body);
+  return form;
+}
 
 describe("toggleFollowAction", () => {
   it("una cuenta que no existe da un error amable, no una excepción", async () => {
@@ -73,6 +96,19 @@ describe("toggleFollowAction", () => {
     await expect(toggleFollowAction(OTHER, true)).resolves.toEqual({ ok: true, following: true });
     expect(db.follow.deleteMany).not.toHaveBeenCalled();
     expect(db.follow.createMany).not.toHaveBeenCalled();
+    // Nada cambió: no se vuelve a renderizar todo el layout (SEC-15, llamadas en bucle).
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("dejar de seguir revalida; si otra pestaña ya lo había hecho, no", async () => {
+    db.user.findUnique.mockResolvedValue({ id: OTHER });
+    db.follow.findUnique.mockResolvedValue({ followerId: VIEWER });
+    db.follow.deleteMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+
+    await expect(toggleFollowAction(OTHER, false)).resolves.toEqual({ ok: true, following: false });
+    expect(revalidatePath).toHaveBeenCalledTimes(1);
+    await expect(toggleFollowAction(OTHER, false)).resolves.toEqual({ ok: true, following: false });
+    expect(revalidatePath).toHaveBeenCalledTimes(1);
   });
 
   it("revalida todo el layout social (perfil, feed y «Gente de tus comunidades»)", async () => {
@@ -126,6 +162,8 @@ describe("toggleMembershipAction", () => {
     });
     expect(db.tx.communityMembership.createMany).not.toHaveBeenCalled();
     expect(db.tx.community.update).not.toHaveBeenCalled();
+    // Nada cambió: no se vuelve a renderizar todo el layout (SEC-15, llamadas en bucle).
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("salir resta uno", async () => {
@@ -213,5 +251,88 @@ describe("toggleSaveAction", () => {
         where: { id: TARGET, status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } },
       }),
     );
+  });
+});
+
+describe("límites de frecuencia (SEC-15)", () => {
+  it("like, guardar, seguir y unirse: con el límite agotado no tocan la base", async () => {
+    checkSocialLimit.mockResolvedValue(LIMITED);
+
+    await expect(toggleLikeAction(TARGET)).resolves.toEqual({ ok: false, error: LIMITED.error });
+    await expect(toggleSaveAction({ postId: TARGET })).resolves.toEqual({
+      ok: false,
+      error: LIMITED.error,
+    });
+    await expect(toggleFollowAction(OTHER)).resolves.toEqual({ ok: false, error: LIMITED.error });
+    await expect(toggleMembershipAction(TARGET)).resolves.toEqual({
+      ok: false,
+      error: LIMITED.error,
+    });
+    expect(checkSocialLimit.mock.calls.map(([action]) => action)).toEqual([
+      "like",
+      "save",
+      "follow",
+      "join",
+    ]);
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("comentar: con el límite agotado no crea el comentario", async () => {
+    getViewer.mockResolvedValue({ userId: VIEWER, profile: { onboarded: true } });
+    checkSocialLimit.mockResolvedValue(LIMITED);
+
+    await expect(createCommentAction({}, commentForm("hola"))).resolves.toEqual({
+      error: LIMITED.error,
+    });
+    expect(checkSocialLimit).toHaveBeenCalledWith("comment", VIEWER);
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("comentar dos veces seguidas el mismo texto en la misma publicación se rechaza", async () => {
+    getViewer.mockResolvedValue({ userId: VIEWER, profile: { onboarded: true } });
+    db.comment.findFirst.mockResolvedValue({ body: "¡Qué buena!" });
+
+    await expect(createCommentAction({}, commentForm("  ¡Qué buena!  "))).resolves.toEqual({
+      error: "Ya publicaste ese comentario.",
+    });
+    expect(db.comment.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { postId: TARGET, authorId: VIEWER } }),
+    );
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("publicar: con el límite agotado no consulta ni crea nada", async () => {
+    requireOnboardedViewer.mockResolvedValue({ userId: VIEWER });
+    checkSocialLimit.mockResolvedValue(LIMITED);
+    const form = new FormData();
+    form.set("body", "Mi publicación");
+
+    await expect(createPostAction({}, form)).resolves.toEqual({ error: LIMITED.error });
+    expect(checkSocialLimit).toHaveBeenCalledWith("post", VIEWER);
+  });
+
+  it("compartir sin cuenta cuenta por IP; con el límite agotado no registra el evento", async () => {
+    getViewer.mockResolvedValue(null);
+    checkSocialLimit.mockResolvedValue(LIMITED);
+
+    await recordShareAction(TARGET, "copy");
+
+    expect(checkSocialLimit).toHaveBeenCalledWith("share", null);
+    expect(track).not.toHaveBeenCalled();
+  });
+});
+
+describe("argumentos que llegan del cliente (SEC-38)", () => {
+  it("una superficie desconocida se registra como FEED en lugar de romper el evento", async () => {
+    db.tx.post.update.mockResolvedValue({ likeCount: 1 });
+    db.tx.like.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      toggleLikeAction(TARGET, "'; DROP TABLE" as unknown as "FEED"),
+    ).resolves.toMatchObject({ ok: true, active: true });
+    expect(track).toHaveBeenCalledWith(expect.objectContaining({ type: "LIKE", surface: "FEED" }));
   });
 });

@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
-import type { Surface } from "@/generated/prisma/enums";
+import { Surface } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
+import { checkSocialLimit } from "./limits";
 import { createPostSchema } from "./schemas";
 
 export type ToggleResult =
@@ -20,6 +21,8 @@ const AUTH_REQUIRED = {
   needsAuth: true,
 } as const;
 const id = z.uuid();
+/** La superficie llega del cliente: un valor desconocido no rompe el registro del evento (SEC-38). */
+const surfaceSchema = z.enum(Surface).catch("FEED");
 
 function isUniqueViolation(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -38,6 +41,8 @@ export async function toggleLikeAction(
   const viewer = await getViewer();
   if (!viewer) return AUTH_REQUIRED;
   if (!id.safeParse(postId).success) return { ok: false, error: "Publicación inválida." };
+  const limited = await checkSocialLimit("like", viewer.userId);
+  if (!limited.ok) return { ok: false, error: limited.error };
 
   const key = { userId: viewer.userId, postId };
   try {
@@ -57,7 +62,7 @@ export async function toggleLikeAction(
       entityType: "POST",
       entityId: postId,
       sourcePostId: postId,
-      surface,
+      surface: surfaceSchema.parse(surface),
     });
     return { ok: true, ...result };
   } catch (error) {
@@ -85,6 +90,8 @@ export async function toggleSaveAction(
   // El objeto llega del cliente: se valida su forma antes de usarlo (un `null` no rompe la acción).
   const parsed = saveTargetSchema.safeParse(target);
   if (!parsed.success) return { ok: false, error: "Elemento inválido." };
+  const limited = await checkSocialLimit("save", viewer.userId);
+  if (!limited.ok) return { ok: false, error: limited.error };
   const isPost = "postId" in parsed.data;
   const targetId = "postId" in parsed.data ? parsed.data.postId : parsed.data.productId;
 
@@ -124,7 +131,7 @@ export async function toggleSaveAction(
       entityType: isPost ? "POST" : "PRODUCT",
       entityId: targetId,
       sourcePostId: isPost ? targetId : null,
-      surface,
+      surface: surfaceSchema.parse(surface),
     });
     return { ok: true, ...result };
   } catch (error) {
@@ -159,6 +166,15 @@ export async function createCommentAction(
     body: formData.get("body"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Comentario inválido." };
+  const limited = await checkSocialLimit("comment", viewer.userId);
+  if (!limited.ok) return { error: limited.error };
+  // El mismo texto dos veces seguidas en la misma publicación es un doble envío o spam.
+  const last = await db.comment.findFirst({
+    where: { postId: parsed.data.postId, authorId: viewer.userId },
+    orderBy: { createdAt: "desc" },
+    select: { body: true },
+  });
+  if (last?.body === parsed.data.body) return { error: "Ya publicaste ese comentario." };
 
   try {
     await db.$transaction([
@@ -202,6 +218,8 @@ export async function createPostAction(
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
   const { body, communitySlug, mediaIds, productId } = parsed.data;
+  const limited = await checkSocialLimit("post", viewer.userId);
+  if (!limited.ok) return { error: limited.error };
 
   // Autorización: solo imágenes propias y productos propios (evita adjuntar contenido ajeno).
   const [media, community, product] = await Promise.all([

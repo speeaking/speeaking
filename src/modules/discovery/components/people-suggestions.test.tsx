@@ -56,7 +56,7 @@ describe("PeopleSuggestions", () => {
 
   it("en la columna muestra 3 personas con su razón y la insignia de tienda", async () => {
     vi.mocked(getPeopleSuggestions).mockResolvedValue([
-      person(1, { reason: "La siguen 2 personas que sigues" }),
+      person(1, { reason: "La siguen personas que sigues" }),
       person(2, { isStore: true, reason: "Comentó tu publicación" }),
       person(3),
       person(4),
@@ -65,7 +65,7 @@ describe("PeopleSuggestions", () => {
 
     const region = screen.getByRole("region", { name: "Gente de tus comunidades" });
     expect(within(region).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(region).getByText("La siguen 2 personas que sigues")).toBeInTheDocument();
+    expect(within(region).getByText("La siguen personas que sigues")).toBeInTheDocument();
     expect(within(region).getByText("Tienda")).toBeInTheDocument();
     expect(within(region).queryByText("Persona 4")).not.toBeInTheDocument();
     expect(within(region).getByRole("link", { name: /Persona 1/ })).toHaveAttribute(
@@ -137,7 +137,7 @@ describe("PeopleSuggestions", () => {
 
   it("el carrusel del feed trae tarjetas con avatar, nombre, razón, «Seguir» y «Quitar»", async () => {
     vi.mocked(getPeopleSuggestions).mockResolvedValue([
-      person(1, { reason: "La siguen 2 personas que sigues" }),
+      person(1, { reason: "La siguen personas que sigues" }),
       person(2),
       person(3),
     ]);
@@ -148,7 +148,7 @@ describe("PeopleSuggestions", () => {
     expect(cards).toHaveLength(3);
     const card = within(cards[0]!);
     expect(card.getByRole("link", { name: /Persona 1/ })).toHaveAttribute("href", "/u/persona1");
-    expect(card.getByText("La siguen 2 personas que sigues")).toBeInTheDocument();
+    expect(card.getByText("La siguen personas que sigues")).toBeInTheDocument();
     expect(card.getByRole("button", { name: "Seguir a Persona 1" })).toBeInTheDocument();
     expect(
       card.getByRole("button", { name: "Quitar a Persona 1 de tus sugerencias" }),

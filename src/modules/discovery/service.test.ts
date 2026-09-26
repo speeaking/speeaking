@@ -9,7 +9,7 @@ vi.mock("./queries", () => ({
   getIntentProductCard: vi.fn(),
   userExists: vi.fn(),
   createSuggestionDismissal: vi.fn(),
-  listFollowingIds: vi.fn(),
+  listMutualFollowIds: vi.fn(),
   listMembershipCommunityIds: vi.fn(),
   countCommentersOnPostsOf: vi.fn(),
   countFollowedByFollowing: vi.fn(),
@@ -143,7 +143,7 @@ describe("getPeopleSuggestions", () => {
   }
 
   function mockSignals() {
-    vi.mocked(queries.listFollowingIds).mockResolvedValue(["f1"]);
+    vi.mocked(queries.listMutualFollowIds).mockResolvedValue(["f1", "f2"]);
     vi.mocked(queries.listMembershipCommunityIds).mockResolvedValue(["gaming"]);
     vi.mocked(queries.countCommentersOnPostsOf).mockResolvedValue(new Map([["3", 1]]));
     vi.mocked(queries.countFollowedByFollowing).mockResolvedValue(new Map([["1", 2]]));
@@ -174,14 +174,14 @@ describe("getPeopleSuggestions", () => {
 
     const people = await getPeopleSuggestions("viewer-b");
     expect(people).toEqual([
-      expect.objectContaining({ userId: "1", reason: "La siguen 2 personas que sigues" }),
+      expect.objectContaining({ userId: "1", reason: "La siguen personas que sigues" }),
       expect.objectContaining({ userId: "3", reason: "Comentó tu publicación" }),
       expect.objectContaining({ userId: "2", reason: "También está en Gaming", isStore: true }),
     ]);
   });
 
   it("entre miembros con lo mismo en común, va primero quien tuvo actividad más reciente", async () => {
-    vi.mocked(queries.listFollowingIds).mockResolvedValue([]);
+    vi.mocked(queries.listMutualFollowIds).mockResolvedValue([]);
     vi.mocked(queries.listMembershipCommunityIds).mockResolvedValue(["gaming"]);
     vi.mocked(queries.countCommentersOnPostsOf).mockResolvedValue(new Map());
     vi.mocked(queries.countFollowedByFollowing).mockResolvedValue(new Map());
@@ -206,6 +206,33 @@ describe("getPeopleSuggestions", () => {
     expect(people.every((entry) => entry.reason === "También está en Gaming")).toBe(true);
   });
 
+  it("la señal de seguidos usa solo seguidos mutuos y nunca delata a uno solo (SEC-17)", async () => {
+    vi.mocked(queries.listMutualFollowIds).mockResolvedValue(["mutuo-1", "mutuo-2"]);
+    vi.mocked(queries.listMembershipCommunityIds).mockResolvedValue([]);
+    vi.mocked(queries.countCommentersOnPostsOf).mockResolvedValue(new Map());
+    // Aunque la consulta devolviera candidatos con un solo intermediario, no se sugieren.
+    vi.mocked(queries.countFollowedByFollowing).mockResolvedValue(
+      new Map([
+        ["t1", 1],
+        ["t2", 1],
+        ["t3", 1],
+      ]),
+    );
+    vi.mocked(queries.listActiveCommunityPeers).mockResolvedValue([]);
+    vi.mocked(queries.listSharedCommunityNames).mockResolvedValue(new Map());
+    vi.mocked(queries.listSuggestionProfiles).mockResolvedValue([
+      person("t1"),
+      person("t2"),
+      person("t3"),
+    ]);
+
+    await expect(getPeopleSuggestions("viewer-e")).resolves.toEqual([]);
+    expect(queries.countFollowedByFollowing).toHaveBeenCalledWith("viewer-e", [
+      "mutuo-1",
+      "mutuo-2",
+    ]);
+  });
+
   it("las únicas fuentes son personas en común, comunidades y comentarios (nunca «me gusta»)", async () => {
     mockSignals();
     vi.mocked(queries.listActiveCommunityPeers).mockResolvedValue(["2"]);
@@ -218,7 +245,7 @@ describe("getPeopleSuggestions", () => {
 
     const people = await getPeopleSuggestions("viewer-d");
     expect(people.map((entry) => entry.reason)).toEqual([
-      "La siguen 2 personas que sigues",
+      "La siguen personas que sigues",
       "Comentó tu publicación",
       "También está en Gaming",
     ]);

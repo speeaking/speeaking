@@ -260,3 +260,41 @@ describe("FeedList: variantes y separador de la portada", () => {
     expect(screen.queryByText("Versión nueva.")).not.toBeInTheDocument();
   });
 });
+
+describe("FeedList: páginas siguientes", () => {
+  it("si el cursor venció (400) termina la lista y no vuelve a pedir la misma página", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 400 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <FeedList
+        initialPage={{ items: [item({ body: "Única pieza." })], nextCursor: "cursor-viejo" }}
+        empty={null}
+        isSignedIn
+      />,
+    );
+
+    await act(async () => reachEnd());
+    await act(async () => reachEnd());
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Ya viste todo por ahora/)).toBeInTheDocument();
+  });
+
+  it("tras un error de red no reintenta solo: espera al botón «Reintentar»", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <FeedList
+        initialPage={{ items: [item({ body: "Única pieza." })], nextCursor: "cursor" }}
+        empty={null}
+        isSignedIn
+      />,
+    );
+
+    await act(async () => reachEnd());
+    await act(async () => reachEnd());
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+  });
+});

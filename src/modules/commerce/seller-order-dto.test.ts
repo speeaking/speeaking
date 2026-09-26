@@ -69,6 +69,12 @@ describe("toSellerOrderDto (SEC-01)", () => {
     expect(dto.actions).toEqual(["CANCELLED"]);
   });
 
+  it("con pago simulado no da el domicilio: no hay nada que enviar", () => {
+    const dto = toSellerOrderDto(row({ checkout: { payments: [{ provider: "mock" }] } }));
+    expect(dto.shippingAddress).toBeNull();
+    expect(JSON.stringify(dto)).not.toMatch(/Secreta|5512345678/);
+  });
+
   it("con cobro real ofrece enviar", () => {
     const dto = toSellerOrderDto(row());
     expect(dto.simulatedPayment).toBe(false);

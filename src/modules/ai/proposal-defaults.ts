@@ -3,9 +3,11 @@ import { z } from "zod";
 import type { ProductFormDefaults } from "@/modules/catalog/components/product-form";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
+import { guardProposal } from "./output-guard";
 import { saleProposalSchema } from "./sale-proposal";
 
 const inputSchema = z.object({
+  productName: z.string().min(2).max(120).optional(),
   quantity: z.int(),
   priceCents: z.int(),
   costCents: z.int(),
@@ -16,7 +18,9 @@ const pesos = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
 
 /**
  * P3: convierte una propuesta de IA (propia) en valores iniciales del formulario de producto.
- * El vendedor revisa todo antes de publicar (humano en el circuito).
+ * El vendedor revisa todo antes de publicar (humano en el circuito). El guardián de contenido
+ * (SEC-28) se aplica otra vez al leer: una propuesta guardada antes de él tampoco prellena datos
+ * de pago, urgencia ni afirmaciones sin respaldo. Pasada la retención (90 días) ya no prellena.
  */
 export async function getProposalDefaults(
   responseId: string,
@@ -31,11 +35,17 @@ export async function getProposalDefaults(
   const proposal = saleProposalSchema.safeParse(response.output);
   const input = inputSchema.safeParse(response.request.input);
   if (!proposal.success || !input.success) return null;
+  const { proposal: guarded } = guardProposal(proposal.data, {
+    productName: input.data.productName ?? proposal.data.productName,
+    priceCents: input.data.priceCents,
+    costCents: input.data.costCents,
+    quantity: input.data.quantity,
+  });
 
   const [category, media] = await Promise.all([
-    proposal.data.categorySlug
+    guarded.categorySlug
       ? db.category.findUnique({
-          where: { slug: proposal.data.categorySlug },
+          where: { slug: guarded.categorySlug },
           select: { id: true },
         })
       : null,
@@ -49,14 +59,14 @@ export async function getProposalDefaults(
 
   return {
     proposalId: response.id,
-    title: proposal.data.productName,
-    description: `${proposal.data.description}\n\n${proposal.data.valueProposition}`,
+    title: guarded.productName,
+    description: `${guarded.description}\n\n${guarded.valueProposition}`,
     price: pesos(input.data.priceCents),
     cost: pesos(input.data.costCents),
     stock: String(input.data.quantity),
-    tags: proposal.data.tags.join(", "),
+    tags: guarded.tags.join(", "),
     categoryId: category?.id,
-    postBody: proposal.data.adIdeas[0],
+    postBody: guarded.adIdeas[0],
     initialMedia: media
       ? [
           {

@@ -30,11 +30,17 @@ export function paidOrderProgress(orderStatuses: OrderStatus[]): PaidProgress {
     );
 }
 
-/** Estado que ve el comprador: ya pagado, cuenta cuándo lo enviaron o lo entregaron. */
+/** ¿El vendedor canceló todos los pedidos de un checkout pagado? (SEC-25) */
+export function allOrdersCancelled(orderStatuses: OrderStatus[]) {
+  return orderStatuses.length > 0 && orderStatuses.every((status) => status === "CANCELLED");
+}
+
+/** Estado que ve el comprador: ya pagado, cuenta cuándo lo enviaron, entregaron o cancelaron. */
 export function buyerStatusLabel(checkoutStatus: CheckoutStatus, orderStatuses: OrderStatus[]) {
-  return checkoutStatus === "PAID"
-    ? ORDER_STATUS_LABELS[paidOrderProgress(orderStatuses)]
-    : CHECKOUT_STATUS_LABELS[checkoutStatus];
+  if (checkoutStatus !== "PAID") return CHECKOUT_STATUS_LABELS[checkoutStatus];
+  return allOrdersCancelled(orderStatuses)
+    ? ORDER_STATUS_LABELS.CANCELLED
+    : ORDER_STATUS_LABELS[paidOrderProgress(orderStatuses)];
 }
 
 export const DELIVERY_LABELS: Record<DeliveryMethod, string> = {

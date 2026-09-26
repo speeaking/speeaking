@@ -78,8 +78,20 @@ export function SellWithAi() {
           placeholder="Cuéntalo como se lo dirías a un amigo: qué es, cuántos tienes, cuánto te costó y a cuánto lo quieres vender."
           className="text-base"
           aria-invalid={errors.text ? true : undefined}
+          // El error (si lo hay) se anuncia junto con el aviso de privacidad.
+          aria-describedby={
+            errors.text ? "que-vendes-privacidad que-vendes-error" : "que-vendes-privacidad"
+          }
         />
-        {errors.text ? <p className="text-sm text-destructive">{errors.text[0]}</p> : null}
+        {/* SEC-29: el texto se guarda (sin contactos ni cuentas) y lo procesa el proveedor de IA. */}
+        <p id="que-vendes-privacidad" className="text-xs text-ink-2">
+          Habla solo del producto: no incluyas teléfonos, correos, direcciones ni datos bancarios.
+        </p>
+        {errors.text ? (
+          <p id="que-vendes-error" className="text-sm text-destructive">
+            {errors.text[0]}
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((example) => (
             <button

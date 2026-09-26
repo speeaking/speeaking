@@ -30,7 +30,8 @@ export function SessionsList({
         Tus sesiones
       </h2>
       <p className="text-sm text-muted-foreground">
-        Dispositivos donde tu cuenta está abierta. Si no reconoces alguno, cierra la sesión en todos.
+        Dispositivos donde tu cuenta está abierta. Si no reconoces alguno, cierra la sesión en
+        todos.
       </p>
       <ul className="flex flex-col divide-y">
         {sessions.map((session) => (

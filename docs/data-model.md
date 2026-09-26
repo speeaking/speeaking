@@ -75,6 +75,17 @@ Diseño completo. Las tablas se crean en la fase que las usa; la fuente de verda
 | `Report` (\*)              | reporterId, target (post/producto/usuario), reason, status — moderación mínima                                                                                                          |
 | `PlatformLedgerEntry` (\*) | kind (COMMISSION, SUBSCRIPTION, PROMOTION, AI_PREMIUM, AI_COST, INFRA_COST, PAYMENT_FEE), amountCents, currency, reference, occurredAt — economía de la plataforma y cobertura de la IA |
 
+## Agregado en el rediseño y la auditoría (2026-09-25/26)
+
+| Entidad o campo                                | Para qué                                                                                                                                                         |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Media.creditName/creditUrl/sourceUrl/license` | Crédito de las fotos de stock con licencia libre (semilla)                                                                                                       |
+| `Profile.discoverable`                         | «Aparecer en sugerencias» (Gente de tus comunidades); consentimiento `DISCOVERABILITY`                                                                           |
+| `SuggestionDismissal`                          | userId + targetUserId (único): sugerencias que la persona quitó                                                                                                  |
+| `CommunityMembership.lastSeenAt`               | «N nuevas» por comunidad                                                                                                                                         |
+| `RateLimitBucket`                              | key (PK, sin datos personales: correos en sha256), count, expiresAt — limitador atómico propio (`src/server/rate-limit.ts`), separado de la tabla de Better Auth |
+| Índices trigram (`pg_trgm`)                    | Búsqueda global en comunidades, publicaciones y productos sobre la misma expresión normalizada que usa `src/modules/search`                                      |
+
 ## Sprints 3–4 y preparación
 
 - `Campaign` (sellerId, productId, objective, channel: INTERNAL | SHARE_KIT | META | GOOGLE | TIKTOK,

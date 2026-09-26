@@ -3,6 +3,7 @@ import { cache } from "react";
 import { siteConfig } from "@/config/site";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
+import { MIN_FOLLOW_INTERMEDIARIES } from "./suggestions";
 
 /**
  * Acceso a datos de la columna «Para ti» y de «Gente de tus comunidades». Todas las consultas están
@@ -206,9 +207,21 @@ function eligibleTarget(viewerId: string) {
   };
 }
 
-export async function listFollowingIds(viewerId: string) {
+/**
+ * Intermediarios de «La siguen personas que sigues» (SEC-17): solo seguidos MUTUOS (tú los sigues y
+ * te siguen) que además participan en las sugerencias. Con un seguimiento unilateral bastaría
+ * seguir a alguien para ver a quién sigue; y quien desactivó «Aparecer en sugerencias» tampoco
+ * presta a quién sigue como señal.
+ */
+export async function listMutualFollowIds(viewerId: string) {
   const rows = await db.follow.findMany({
-    where: { followerId: viewerId },
+    where: {
+      followerId: viewerId,
+      following: {
+        following: { some: { followingId: viewerId } },
+        profile: { is: { discoverable: true, onboardedAt: { not: null } } },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: MAX_FOLLOWING_SCANNED,
     select: { followingId: true },
@@ -216,16 +229,20 @@ export async function listFollowingIds(viewerId: string) {
   return rows.map((row) => row.followingId);
 }
 
-/** Personas seguidas por quienes sigues, con cuántas de ellas las siguen. */
-export async function countFollowedByFollowing(viewerId: string, followingIds: string[]) {
-  if (followingIds.length === 0) return new Map<string, number>();
+/**
+ * Personas seguidas por tus seguidos mutuos, con cuántos de ellos las siguen. Solo las que siguen al
+ * menos `MIN_FOLLOW_INTERMEDIARIES` distintos: con uno, la sugerencia delataría a quién sigue.
+ */
+export async function countFollowedByFollowing(viewerId: string, intermediaryIds: string[]) {
+  if (intermediaryIds.length < MIN_FOLLOW_INTERMEDIARIES) return new Map<string, number>();
   const rows = await db.follow.groupBy({
     by: ["followingId"],
     where: {
-      followerId: { in: followingIds },
+      followerId: { in: intermediaryIds },
       followingId: { not: viewerId },
       following: eligibleTarget(viewerId),
     },
+    having: { followingId: { _count: { gte: MIN_FOLLOW_INTERMEDIARIES } } },
     _count: { _all: true },
     orderBy: [{ _count: { followingId: "desc" } }, { followingId: "asc" }],
     take: SIGNAL_POOL,

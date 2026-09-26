@@ -37,8 +37,11 @@ describe("canSellerMoveOrder (SEC-25)", () => {
 });
 
 describe("sellerOrderActions (SEC-01, SEC-25)", () => {
-  const actions = (status: OrderStatus, deliveryMethod: DeliveryMethod, simulatedPayment: boolean) =>
-    sellerOrderActions({ status, deliveryMethod, simulatedPayment });
+  const actions = (
+    status: OrderStatus,
+    deliveryMethod: DeliveryMethod,
+    simulatedPayment: boolean,
+  ) => sellerOrderActions({ status, deliveryMethod, simulatedPayment });
 
   it("cobro real: enviar y entregar según la tabla; cancelar no, porque exige reembolso", () => {
     expect(actions("PAID", "NATIONAL_SHIPPING", false)).toEqual(["SHIPPED"]);

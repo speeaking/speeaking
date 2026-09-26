@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ImageUploader } from "./image-uploader";
 
+const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
+
 const initial = ["a", "b", "c"].map((id) => ({
   id: `media-${id}`,
   url: `/media/${id}.webp`,
@@ -20,6 +23,7 @@ function submittedIds(container: HTMLElement) {
 describe("ImageUploader", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it("marca la primera foto como portada y solo ofrece las flechas que aplican", () => {
@@ -80,6 +84,40 @@ describe("ImageUploader", () => {
     finish(Response.json(initial[0]));
     await waitFor(() => expect(submittedIds(container)).toEqual(["media-a"]));
     expect(container.querySelector("[data-uploading]")).toBeNull();
+  });
+
+  it("una imagen de más de 10 MB ni se manda: el servidor cortaría la conexión (SEC-03)", async () => {
+    const fetch = vi.spyOn(globalThis, "fetch");
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
+    const { container } = render(<ImageUploader name="mediaIds" max={10} initial={[]} />);
+    const heavy = new File(["x"], "pesada.jpg", { type: "image/jpeg" });
+    Object.defineProperty(heavy, "size", { value: 10 * 1024 * 1024 + 1 });
+
+    await userEvent.upload(screen.getByLabelText("Elegir imágenes"), heavy);
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("La imagen pesa más de 10 MB.");
+    expect(container.querySelectorAll("img")).toHaveLength(0);
+  });
+
+  it("una respuesta de error sin JSON (413 del proxy, 503) muestra un mensaje útil", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 413 }))
+      .mockResolvedValueOnce(new Response("<html>503</html>", { status: 503 }));
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
+    const { container } = render(<ImageUploader name="mediaIds" max={10} initial={[]} />);
+
+    await userEvent.upload(screen.getByLabelText("Elegir imágenes"), [
+      new File(["x"], "a.png", { type: "image/png" }),
+      new File(["y"], "b.png", { type: "image/png" }),
+    ]);
+
+    await waitFor(() => expect(screen.getAllByText("Error")).toHaveLength(2));
+    expect(toast.error).toHaveBeenCalledWith("La imagen pesa más de 10 MB.");
+    expect(toast.error).toHaveBeenCalledWith(
+      "Hay muchas subidas en este momento. Intenta en unos segundos.",
+    );
+    expect(submittedIds(container)).toEqual([]);
   });
 
   it("con una sola foto permitida no muestra portada ni flechas", () => {

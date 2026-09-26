@@ -126,13 +126,32 @@ describe("processImage", () => {
     await expect(processImage(tiff)).rejects.toMatchObject({ code: "UNSUPPORTED_FORMAT" });
   });
 
-  it("acepta AVIF (sharp lo identifica como HEIF)", async () => {
+  // Codificar y decodificar AVIF es caro: con toda la suite en paralelo pasa de los 5 s por omisión.
+  it("acepta AVIF (sharp lo identifica como HEIF)", { timeout: 30_000 }, async () => {
     const avif = await sharp({ create: { width: 32, height: 24, channels: 3, background: "#123" } })
       .avif()
       .toBuffer();
 
     await expect(processImage(avif)).resolves.toMatchObject({ width: 32, height: 24 });
   });
+
+  it(
+    "un AVIF de ~1 KB que declara 25 Mpx (~440 MB al decodificarlo) se rechaza por la cabecera",
+    {
+      timeout: 30_000,
+    },
+    async () => {
+      const bomb = await sharp({
+        create: { width: 5000, height: 5000, channels: 3, background: "#e4007c" },
+        limitInputPixels: false,
+      })
+        .avif({ effort: 0, quality: 30 })
+        .toBuffer();
+      expect(bomb.byteLength).toBeLessThan(4096);
+
+      await expect(processImage(bomb)).rejects.toMatchObject({ code: "TOO_COMPLEX" });
+    },
+  );
 });
 
 describe("exceedsDecodeBudget", () => {
@@ -145,14 +164,38 @@ describe("exceedsDecodeBudget", () => {
     expect(exceedsDecodeBudget(meta("jpeg", 8000, 5001, "uchar", 3))).toBe(true);
   });
 
-  it("PNG, GIF y HEIF (decodificación completa): hasta 100 MB decodificados", () => {
-    // 25 Mpx RGBA de 8 bits = 100 MB: justo cabe.
+  it("PNG y GIF (decodificación completa): hasta 100 MB decodificados", () => {
+    // 25 Mpx RGBA de 8 bits = 100 MB: justo cabe (~130 MB de pico real; entrelazado, ~200 MB).
     expect(exceedsDecodeBudget(meta("png", 5000, 5000))).toBe(false);
-    expect(exceedsDecodeBudget(meta("heif", 5000, 5000, "uchar", 3))).toBe(false);
+    expect(exceedsDecodeBudget({ ...meta("png", 5000, 5000), isProgressive: true })).toBe(false);
+    expect(exceedsDecodeBudget(meta("gif", 5000, 5000))).toBe(false);
     expect(exceedsDecodeBudget(meta("png", 6320, 6320))).toBe(true);
     // 16 bits por muestra: el doble de memoria.
     expect(exceedsDecodeBudget(meta("png", 4000, 4000, "ushort"))).toBe(true);
     expect(exceedsDecodeBudget(meta("png", 3000, 3000, "ushort"))).toBe(false);
+  });
+
+  it("AVIF/HEIF: por la memoria medida (~18 B/px), no por la imagen decodificada", () => {
+    // 25 Mpx RGB de 8 bits son 75 MB decodificados, pero ~440 MB de pico: antes pasaba.
+    expect(exceedsDecodeBudget(meta("heif", 5000, 5000, "uchar", 3))).toBe(true);
+    expect(exceedsDecodeBudget(meta("heif", 4000, 4000, "uchar", 3))).toBe(true);
+    // Una foto de 12 Mpx (~210 MB medidos) sí cabe; con 10 bits (~270 MB), ya no.
+    expect(exceedsDecodeBudget(meta("heif", 4000, 3000, "uchar", 3))).toBe(false);
+    expect(exceedsDecodeBudget(meta("heif", 4000, 3000, "ushort", 3))).toBe(true);
+    expect(exceedsDecodeBudget(meta("heif", 3000, 3000, "ushort", 3))).toBe(false);
+  });
+
+  it("JPEG progresivo: guarda todos los coeficientes aunque se decodifique reducido", () => {
+    const jpeg = (chromaSubsampling: string, isProgressive: boolean, channels = 3) => ({
+      ...meta("jpeg", 6320, 6320, "uchar", channels),
+      chromaSubsampling,
+      isProgressive,
+    });
+    // 40 Mpx 4:4:4 progresivo: ~270 MB medidos.
+    expect(exceedsDecodeBudget(jpeg("4:4:4", true))).toBe(true);
+    // El mismo en 4:2:0 (~155 MB) o sin progresivo (~45 MB) sí cabe.
+    expect(exceedsDecodeBudget(jpeg("4:2:0", true))).toBe(false);
+    expect(exceedsDecodeBudget(jpeg("4:4:4", false))).toBe(false);
   });
 
   it("un GIF animado cuenta solo la primera página (lo único que se decodifica)", () => {
@@ -166,7 +209,7 @@ describe("exceedsDecodeBudget", () => {
 });
 
 describe("sniffImageFormat", () => {
-  it("reconoce las firmas permitidas", async () => {
+  it("reconoce las firmas permitidas", { timeout: 30_000 }, async () => {
     const make = (format: "jpeg" | "png" | "gif" | "webp" | "avif") =>
       sharp({ create: { width: 4, height: 4, channels: 3, background: "#fff" } })
         .toFormat(format)

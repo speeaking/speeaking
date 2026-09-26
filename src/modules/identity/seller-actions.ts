@@ -13,7 +13,7 @@ const sellerSchema = z.object({
     .string()
     .trim()
     .min(2, "Escribe el nombre de tu tienda.")
-    .max(60)
+    .max(60, { abort: true })
     // Una tienda tampoco puede llamarse «VendeIA Oficial» o «Soporte» (SEC-18).
     .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE),
   city: z.string().trim().min(2, "Escribe tu ciudad.").max(60),

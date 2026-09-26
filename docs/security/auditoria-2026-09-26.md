@@ -21,7 +21,7 @@ El riesgo no está en el código de negocio, sino en **la frontera entre "listo 
 piloto simulado"**. Cuatro cosas destacan:
 
 1. **La pasarela de pago simulada no tiene ningún freno para producción.** Si este build se despliega tal cual,
-   cualquier comprador marca su propio pedido como *Pagado* sin pagar, y el vendedor ve "Pagado" sin ninguna
+   cualquier comprador marca su propio pedido como _Pagado_ sin pagar, y el vendedor ve "Pagado" sin ninguna
    señal de que fue simulado. Es intencional para V0.1 y está documentado, pero **nada falla al arrancar** si se
    despliega por error. Es el hallazgo número uno.
 
@@ -36,7 +36,7 @@ piloto simulado"**. Cuatro cosas destacan:
    300 MB consumió ~600 MB de RAM antes del 422.
 
 4. **La autonomía que preguntas ("que todo esto funcione solo") depende de piezas que aún son simulacros:**
-   pagos, IA y correo son *mocks*. Antes de que funcionen de verdad hay que cerrar los guardianes que hoy están
+   pagos, IA y correo son _mocks_. Antes de que funcionen de verdad hay que cerrar los guardianes que hoy están
    ciegos: el presupuesto de IA tiene una condición de carrera y no cuenta las llamadas fallidas (fuga de dinero
    el día que se conecte un proveedor real), y no existe verificación de correo ni recuperación de cuenta.
 
@@ -84,56 +84,104 @@ Los hallazgos duplicados entre especialidades se **fusionaron por causa raíz** 
 
 ## 3. Tabla de hallazgos
 
-| Ref | Severidad | Estado | Reproducido | Título |
-|-----|-----------|--------|-------------|--------|
-| SEC-01 | Crítica | Confirmado | Sí | Pasarela de pago simulada activa sin freno en producción: pedidos "pagados" sin pago |
-| SEC-02 | Alta | Confirmado | Sí | Login y registro sin límite de intentos: las Server Actions eluden el rateLimit de Better Auth |
-| SEC-03 | Alta | Confirmado | Sí | `/api/uploads` bufferiza cuerpos sin tope (chunked) → DoS por memoria de toda la app |
-| SEC-04 | Alta | Confirmado | Sí | Redirección abierta post-login: `safeRedirectPath` acepta `/.//dominio` |
-| SEC-05 | Media | Confirmado | Sí | Acaparamiento de inventario: checkouts pendientes ilimitados reservan stock |
-| SEC-06 | Media | Confirmado | Sí | Sin Content-Security-Policy (ni COOP/CORP) en las páginas HTML |
-| SEC-07 | Media | Confirmado | Sí | El rate limit y la IP de sesión confían en `X-Forwarded-For` sin proxies de confianza |
-| SEC-08 | Media | Confirmado | Sí | El vendedor ve nombre, domicilio y teléfono de compradores que nunca pagaron |
-| SEC-09 | Media | Confirmado | Sí | API HTTP de Better Auth abierta: registro sin consentimiento y `name`/`image` sin validar |
-| SEC-10 | Media | Confirmado | Sí | Sin verificación de correo, recuperación ni gestión de sesiones: squatting y bloqueo permanente |
-| SEC-11 | Media | Confirmado | Sí | Enumeración de cuentas por el registro (mensaje y tiempo distintos) |
-| SEC-12 | Media | Confirmado | Sí | Límite de 60 subidas/h con carrera (TOCTOU) que además ignora las subidas fallidas |
-| SEC-13 | Media | Confirmado | Sí | Pixel-flood: imágenes de pocos KB y ~40 Mpx bloquean el threadpool de libuv |
-| SEC-14 | Media | Confirmado | Sí | Subidas huérfanas nunca se borran y quedan públicas con caché inmutable de 1 año |
-| SEC-15 | Media | Confirmado | Sí | Escrituras sociales y `/api/feed` sin límite de frecuencia (spam, amplificación de caché) |
-| SEC-16 | Media | Confirmado | Sí | Eventos "anónimos" re-identificables por metadata (checkoutId/orderId/responseId, tiempo) |
-| SEC-17 | Media | Confirmado | Sí | "Gente de tus comunidades" revela a quién sigue una persona concreta |
-| SEC-18 | Media | Confirmado | Sí | Suplantación editorial: cualquiera se llama "Equipo VendeIA" con `equipo.*`/`vendeia.*` |
-| SEC-19 | Media | Confirmado | Sí (mecanismo) | Presupuesto de IA: carrera, costos no contabilizados y pool global (latente hasta proveedor real) |
-| SEC-20 | Media | Confirmado | Sí (parcial) | Métricas del vendedor manipulables: shares/vistas/impresiones anónimas y atribución sin verificar |
-| SEC-21 | Baja | Confirmado | Sí (mecanismo) | `env-schema` acepta `http`/`localhost` en producción: cookies sin `Secure`, base sin TLS |
-| SEC-22 | Baja | Confirmado | Sí | Node.js 22.16.0 sin parches de seguridad de 2026; `engines` permite runtimes vulnerables |
-| SEC-23 | Baja | Confirmado | Parcial | Robustez de checkout: doble envío, checkout huérfano, aprobación tardía, zona local, overflow int32 |
-| SEC-24 | Baja | Confirmado | Traza | `SellerStatus = SUSPENDED` no se aplica en ninguna acción ni consulta |
-| SEC-25 | Baja | Sin verificar | Traza | `advanceOrderAction` no valida `to`; no existe cancelación ni reembolso tras PAID |
-| SEC-26 | Baja | Confirmado | Sí | Derechos ARCO prometidos en el aviso pero no implementados (exportar/borrar) |
-| SEC-27 | Baja | Confirmado | Sí | Rechazar personalización no desliga la actividad previa; historial de búsqueda no borrable |
-| SEC-28 | Baja | Confirmado | Sí | Salida de IA solo validada en forma: afirmaciones P4 falsas, CLABE, urgencia, cifras como "Calculado" |
-| SEC-29 | Baja | Confirmado | Sí | `AIRequest.input` guarda texto libre con posible PII, sin retención; aviso omite al proveedor de IA |
-| SEC-30 | Baja | Sin verificar | No | Contraseñas sin verificación contra listas filtradas |
-| SEC-31 | Baja | Confirmado | Sí | Cursor de feed con timestamp fuera de rango provoca 500 (Invalid Date) |
-| SEC-32 | Baja | Sin verificar | No | Búsqueda `LIKE '%x%'` sin índice: escaneo completo por petición (DoS de crecimiento) |
-| SEC-33 | Baja | Confirmado | Sí | Los `userId` públicos (UUIDv7) revelan la fecha/hora exacta de creación de la cuenta |
-| SEC-34 | Baja | Sin verificar | No | El aviso de privacidad omite datos y transferencias que el sistema sí trata |
-| SEC-35 | Baja | Confirmado | Sí | El optimizador `/_next/image` acepta cualquier ruta local en vez de solo `/media/**` |
-| SEC-36 | Baja | Sin verificar | Sí | `sharp` pasa por librsvg/libtiff antes del filtro de formato (superficie nativa) |
-| SEC-37 | Baja | Confirmado | Sí | Cadena de suministro: Next 16.3.7 pendiente, CLI de Prisma con advisories, endurecer pnpm |
-| SEC-38 | Baja | Sin verificar | No | Filas sin tope (consentimientos/intenciones) y argumentos de Server Actions sin validar |
-| SEC-39 | Info | Confirmado | Parcial | Gobernanza sin roles/aprobación, BD como superusuario, seed reclamable, ledger bruto |
-| SEC-40 | Info | Mixto | Parcial | Endurecimientos varios: token de sesión en claro, guard de Studio, errores 500, CSRF de uploads, dev en `::` |
+| Ref    | Severidad | Estado        | Reproducido    | Título                                                                                                       |
+| ------ | --------- | ------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| SEC-01 | Crítica   | Confirmado    | Sí             | Pasarela de pago simulada activa sin freno en producción: pedidos "pagados" sin pago                         |
+| SEC-02 | Alta      | Confirmado    | Sí             | Login y registro sin límite de intentos: las Server Actions eluden el rateLimit de Better Auth               |
+| SEC-03 | Alta      | Confirmado    | Sí             | `/api/uploads` bufferiza cuerpos sin tope (chunked) → DoS por memoria de toda la app                         |
+| SEC-04 | Alta      | Confirmado    | Sí             | Redirección abierta post-login: `safeRedirectPath` acepta `/.//dominio`                                      |
+| SEC-05 | Media     | Confirmado    | Sí             | Acaparamiento de inventario: checkouts pendientes ilimitados reservan stock                                  |
+| SEC-06 | Media     | Confirmado    | Sí             | Sin Content-Security-Policy (ni COOP/CORP) en las páginas HTML                                               |
+| SEC-07 | Media     | Confirmado    | Sí             | El rate limit y la IP de sesión confían en `X-Forwarded-For` sin proxies de confianza                        |
+| SEC-08 | Media     | Confirmado    | Sí             | El vendedor ve nombre, domicilio y teléfono de compradores que nunca pagaron                                 |
+| SEC-09 | Media     | Confirmado    | Sí             | API HTTP de Better Auth abierta: registro sin consentimiento y `name`/`image` sin validar                    |
+| SEC-10 | Media     | Confirmado    | Sí             | Sin verificación de correo, recuperación ni gestión de sesiones: squatting y bloqueo permanente              |
+| SEC-11 | Media     | Confirmado    | Sí             | Enumeración de cuentas por el registro (mensaje y tiempo distintos)                                          |
+| SEC-12 | Media     | Confirmado    | Sí             | Límite de 60 subidas/h con carrera (TOCTOU) que además ignora las subidas fallidas                           |
+| SEC-13 | Media     | Confirmado    | Sí             | Pixel-flood: imágenes de pocos KB y ~40 Mpx bloquean el threadpool de libuv                                  |
+| SEC-14 | Media     | Confirmado    | Sí             | Subidas huérfanas nunca se borran y quedan públicas con caché inmutable de 1 año                             |
+| SEC-15 | Media     | Confirmado    | Sí             | Escrituras sociales y `/api/feed` sin límite de frecuencia (spam, amplificación de caché)                    |
+| SEC-16 | Media     | Confirmado    | Sí             | Eventos "anónimos" re-identificables por metadata (checkoutId/orderId/responseId, tiempo)                    |
+| SEC-17 | Media     | Confirmado    | Sí             | "Gente de tus comunidades" revela a quién sigue una persona concreta                                         |
+| SEC-18 | Media     | Confirmado    | Sí             | Suplantación editorial: cualquiera se llama "Equipo VendeIA" con `equipo.*`/`vendeia.*`                      |
+| SEC-19 | Media     | Confirmado    | Sí (mecanismo) | Presupuesto de IA: carrera, costos no contabilizados y pool global (latente hasta proveedor real)            |
+| SEC-20 | Media     | Confirmado    | Sí (parcial)   | Métricas del vendedor manipulables: shares/vistas/impresiones anónimas y atribución sin verificar            |
+| SEC-21 | Baja      | Confirmado    | Sí (mecanismo) | `env-schema` acepta `http`/`localhost` en producción: cookies sin `Secure`, base sin TLS                     |
+| SEC-22 | Baja      | Confirmado    | Sí             | Node.js 22.16.0 sin parches de seguridad de 2026; `engines` permite runtimes vulnerables                     |
+| SEC-23 | Baja      | Confirmado    | Parcial        | Robustez de checkout: doble envío, checkout huérfano, aprobación tardía, zona local, overflow int32          |
+| SEC-24 | Baja      | Confirmado    | Traza          | `SellerStatus = SUSPENDED` no se aplica en ninguna acción ni consulta                                        |
+| SEC-25 | Baja      | Sin verificar | Traza          | `advanceOrderAction` no valida `to`; no existe cancelación ni reembolso tras PAID                            |
+| SEC-26 | Baja      | Confirmado    | Sí             | Derechos ARCO prometidos en el aviso pero no implementados (exportar/borrar)                                 |
+| SEC-27 | Baja      | Confirmado    | Sí             | Rechazar personalización no desliga la actividad previa; historial de búsqueda no borrable                   |
+| SEC-28 | Baja      | Confirmado    | Sí             | Salida de IA solo validada en forma: afirmaciones P4 falsas, CLABE, urgencia, cifras como "Calculado"        |
+| SEC-29 | Baja      | Confirmado    | Sí             | `AIRequest.input` guarda texto libre con posible PII, sin retención; aviso omite al proveedor de IA          |
+| SEC-30 | Baja      | Sin verificar | No             | Contraseñas sin verificación contra listas filtradas                                                         |
+| SEC-31 | Baja      | Confirmado    | Sí             | Cursor de feed con timestamp fuera de rango provoca 500 (Invalid Date)                                       |
+| SEC-32 | Baja      | Sin verificar | No             | Búsqueda `LIKE '%x%'` sin índice: escaneo completo por petición (DoS de crecimiento)                         |
+| SEC-33 | Baja      | Confirmado    | Sí             | Los `userId` públicos (UUIDv7) revelan la fecha/hora exacta de creación de la cuenta                         |
+| SEC-34 | Baja      | Sin verificar | No             | El aviso de privacidad omite datos y transferencias que el sistema sí trata                                  |
+| SEC-35 | Baja      | Confirmado    | Sí             | El optimizador `/_next/image` acepta cualquier ruta local en vez de solo `/media/**`                         |
+| SEC-36 | Baja      | Sin verificar | Sí             | `sharp` pasa por librsvg/libtiff antes del filtro de formato (superficie nativa)                             |
+| SEC-37 | Baja      | Confirmado    | Sí             | Cadena de suministro: Next 16.3.7 pendiente, CLI de Prisma con advisories, endurecer pnpm                    |
+| SEC-38 | Baja      | Sin verificar | No             | Filas sin tope (consentimientos/intenciones) y argumentos de Server Actions sin validar                      |
+| SEC-39 | Info      | Confirmado    | Parcial        | Gobernanza sin roles/aprobación, BD como superusuario, seed reclamable, ledger bruto                         |
+| SEC-40 | Info      | Mixto         | Parcial        | Endurecimientos varios: token de sesión en claro, guard de Studio, errores 500, CSRF de uploads, dev en `::` |
 
 Los ítems **refutados** están en el **anexo A**.
+
+### 3.0 Resultado del retest (2026-09-26)
+
+Un pentester independiente repitió los PoC contra la app corregida (`.data/security/retest/`).
+
+| Estado                                    | Hallazgos                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Cerrados** (retest en vivo)             | SEC-01, 02, 03, 04, 05, 06, 07 (mecanismo), 08, 09, 12, 13, 14, 15, 16, 17, 18, 19, 20, 31, 32, 35                                                                                                                                                                                                                                   |
+| **Cerrados por el lead** (tras el retest) | SEC-21: en producción `APP_URL` debe ser https y la base remota debe usar `sslmode=require/verify-*` (loopback permitido para probar el build en local); cookies `Secure` con https (`advanced.useSecureCookies`). SEC-22: `engines.node` sube a `>=22.23.2 <23 \|\| >=24`; **hay que actualizar Node en la máquina** (hoy v22.16.0) |
+| **Parciales**                             | SEC-10 (tope absoluto de 90 días por sesión cerrado; verificación y recuperación de correo necesitan proveedor de correo), SEC-11 (mismo mensaje y tiempo; el cierre real llega con la verificación de correo), SEC-23 (doble envío, interbloqueo y huérfanos cerrados; reembolsos y validación de zona local pendientes)            |
+| **Pendientes de fase posterior**          | SEC-26 (exportar/borrar cuenta), SEC-39 (roles de administración y aprobación para el motor de automejora)                                                                                                                                                                                                                           |
+
+Compromisos documentados que dejó la corrección:
+
+- El límite de inicio de sesión por correo (5 en 15 min) deja que un tercero bloquee 15 min el acceso de un correo conocido. Es deliberado contra el relleno de credenciales; revisar con datos reales.
+- Un cursor del feed de más de 7 días responde 400; el feed lo toma como el final de la lista (sin reintentos automáticos).
+- Variables nuevas: `TRUSTED_PROXY_HOPS` (fijarla según la topología real antes de producción), `PAYMENT_PROVIDER` y `ALLOW_SIMULATED_PAYMENTS` (no fijarla en producción salvo piloto cerrado).
+- Tareas programadas que hay que agendar al desplegar: `expireStaleCheckouts`, `scripts/cleanup-orphan-media.ts` y la limpieza de entradas de IA vencidas.
+
+### 3.1 Estado de la corrección (2026-09-26)
+
+La corrección se hizo por frentes en paralelo. Esta tabla la mantiene el frente de privacidad (CSP,
+analítica, sugerencias, IA y aviso); los ítems de otros frentes se consolidan con su reporte. Leyenda:
+**Corregido** (con prueba de regresión y, si se reprodujo por HTTP, E2E o PoC re-ejecutado),
+**Parcial** (queda riesgo residual documentado), **Riesgo aceptado** (documentado en un ADR),
+**Pendiente de consolidar** (lo reporta otro frente).
+
+Una revisión adversarial posterior del frente (`.data/security/privacy-review/`) encontró que el id
+UUIDv7 de los eventos anónimos deshacía el truncado de la hora (SEC-16) y que el guardián de IA dejaba
+pasar frases comunes (SEC-28); ambos quedaron corregidos con pruebas. Las filas anónimas guardadas
+antes conservan su UUIDv7; en una base con datos, una limpieza única:
+`UPDATE analytics_events SET id = gen_random_uuid() WHERE "userId" IS NULL AND "createdAt" = date_trunc('hour', "createdAt");`
+
+| Ref    | Estado                  | Qué cambió                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Evidencia                                                                                                                                                                                                                           |
+| ------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-06 | Corregido               | CSP con nonce por petición en `src/proxy.ts` (`src/lib/csp.ts`), `strict-dynamic`, `object-src`/`base-uri 'none'`, `frame-ancestors 'none'`, `form-action`/`connect-src 'self'`; COOP y CORP `same-origin`. Modo de aplicación, no `Report-Only`. `style-src 'unsafe-inline'` como riesgo aceptado (ADR-029). Verificado contra `pnpm dev` (con `'unsafe-eval'`); falta correr la misma E2E contra `pnpm build && pnpm start`. El 404 HTML de `/api/*` sale sin CSP (página estática, sin datos del usuario).                                                                                                                 | `src/lib/csp.test.ts`; `tests/e2e/security-headers.spec.ts` (cero violaciones en todas las páginas, móvil y escritorio; un `onerror` inyectado no corre; nonce del cliente ignorado).                                               |
+| SEC-07 | Parcial                 | `src/server/client-ip.ts` con `TRUSTED_PROXY_HOPS` y cabecera interna para Better Auth. Falta el cableado en las acciones de autenticación.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Reporte del frente base; `.data/security/xff/poc-sec07-rerun-base.out.txt`.                                                                                                                                                         |
+| SEC-16 | Corregido               | `prepareEvent` sin personalización: metadata solo con llaves permitidas (sin `*Id` ni la razón del ranking), sin texto de búsqueda, hora truncada, sin la entidad en propuestas de IA y **con id aleatorio (UUIDv4)**. Revisión: el id UUIDv7 por omisión guardaba la hora al milisegundo y deshacía el truncado (PoC: 5 altas y 1 checkout re-identificados); `anonymizeUserActivity` también cambia el id. Residual: con poco volumen, entidad + hora sigue acotando (k pequeño) y el orden físico de inserción no se oculta. Las filas anónimas anteriores conservan su UUIDv7 (limpieza única en el reporte del revisor). | `analytics/event.test.ts`, `analytics/privacy.db.test.ts` (falla sin el id nuevo); `.data/security/privacy-review/reident-by-id.*`, `anon-id-versions.*`.                                                                           |
+| SEC-17 | Parcial                 | Intermediarios solo seguidos mutuos que participan en sugerencias; al menos 2 distintos; la razón no dice cuántos. Residual: cuentas títere de alguien a quien la víctima sigue de vuelta; la corrección completa (consentimiento del intermediario) requiere migración (ADR-030).                                                                                                                                                                                                                                                                                                                                            | `discovery/{suggestions,queries,service}.test.ts`; PoC re-ejecutado: unilateral y mutuo con 1 intermediario ya no muestran a nadie.                                                                                                 |
+| SEC-19 | Corregido               | Reserva antes de llamar: cuotas por hora y por día con `rateLimit`; presupuesto global con `pg_advisory_xact_lock` que cuenta el costo máximo de pendientes y fallidas; modelo sin precio no se llama; timeout; mensaje de respaldo. Pendiente antes de un proveedor de pago: `max_tokens` en el adaptador y correo verificado (ADR-031).                                                                                                                                                                                                                                                                                     | `ai/reservation.db.test.ts` (12 simultáneas con lugar para 3 → 3), `ai/service.test.ts`; PoC re-ejecutado: 60 en paralelo → 20 en total (antes 94).                                                                                 |
+| SEC-27 | Corregido               | Antes del onboarding nada se liga; desactivar la personalización desliga toda la actividad previa en la misma transacción (con id nuevo); historial de búsqueda visible y borrable en Ajustes; `z.boolean()` en la acción. Residual menor: un evento que ya leyó «personalización activa» y se inserta justo después del cambio queda ligado (ventana de milisegundos; cerrarla es un `FOR SHARE` en `track.ts`).                                                                                                                                                                                                             | `analytics/privacy.db.test.ts`; `tests/e2e/privacy-controls.spec.ts`; PoC re-ejecutado: nada ligado a quien rechazó la personalización.                                                                                             |
+| SEC-28 | Corregido               | El rango de precio y el presupuesto diario los calcula el código; guardián de contenido (contacto, pago, urgencia, afirmaciones P4, cifras) al generar y al prellenar; nombre confirmado por el vendedor; tarjetas etiquetadas «Calculado» o «Redactado por IA». Revisión: 22 de 24 frases comunes pasaban («hasta agotar existencias», «envío incluido», «meses sin intereses», «190 dólares», «deposítame»…); ahora se quitan, el texto se normaliza (NFKC, sin invisibles) y las cifras se revisan sin el nombre del producto. Es una lista de patrones: no sustituye la revisión del vendedor.                            | `ai/{output-guard,proposal-numbers,personal-data}.test.ts`, `ai/components/proposal-view.test.tsx`; `.data/security/ai-future/output-validation-rerun.out.txt`; `.data/security/privacy-review/guard-probe.{before,after}.out.txt`. |
+| SEC-29 | Parcial                 | Texto guardado sin correos, teléfonos, ligas ni cuentas (también con dígitos de ancho completo o invisibles); retención de 90 días (`{ redacted: true }`); aviso bajo el campo; el aviso de privacidad explica la IA. Falta: la retención solo corre cuando alguien usa «Vende con IA» (a lo más cada hora por proceso); sin uso, el texto pasa de 90 días. Hace falta una tarea programada que llame `redactExpiredAiInputs`. Pendiente también el comentario de `AIRequest.input` en el esquema.                                                                                                                            | `ai/personal-data.test.ts`, `ai/reservation.db.test.ts` (retención), `ai/service.test.ts`.                                                                                                                                          |
+| SEC-33 | Riesgo aceptado         | Los `userId` UUIDv7 siguen en DTOs públicos (feed, catálogo, sugerencias, seguir); cambiarlos toca cuatro módulos. Se revisa antes del lanzamiento público (ADR-030).                                                                                                                                                                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                   |
+| SEC-34 | Parcial                 | El aviso lista IP y dispositivo, domicilios y teléfono, lo público e indexable, «Vende con IA», retención y encargados (alojamiento, pagos, correo, IA) con la regla de nombrarlos antes de activarlos. Falta subir `LEGAL_VERSIONS.privacyNotice` y `discoverability` a `2026-09-26`: mientras no suba, quien acepta el texto nuevo queda registrado con la versión anterior.                                                                                                                                                                                                                                                | Revisión del texto (`src/app/(legal)/privacidad/page.tsx`).                                                                                                                                                                         |
+| SEC-35 | Corregido               | `images.localPatterns: [{ pathname: "/media/**", search: "" }]`, sin `remotePatterns` ni SVG.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `tests/e2e/security-headers.spec.ts` (200 en `/media`, 400 con query, íconos y SVG).                                                                                                                                                |
+| Resto  | Pendiente de consolidar | Lo corrigen otros frentes (autenticación, pagos, comercio, subidas, abuso, identidad).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Sus reportes.                                                                                                                                                                                                                       |
 
 ---
 
 ## 4. Detalle por hallazgo
 
 ### SEC-01 — Pasarela de pago simulada activa sin freno en producción (Crítica)
+
 **Estado:** Confirmado, reproducido de punta a punta. **Esfuerzo:** M.
 **Fuentes:** `authz-mock-payment-self-approval-prod`, `commerce-mock-payment-in-production`,
 `config-mock-payments-reachable-in-production`, `pentest-mock-payments-prod`, `abuse-mock-payments-fake-sales-metrics`.
@@ -166,6 +214,7 @@ cobra"); no existe un riel de pago real que saltarse. La criticidad viene de que
 la vista del vendedor presenta la venta simulada como real.
 
 **Corrección:**
+
 1. `env-schema.ts`: `PAYMENT_PROVIDER: z.enum(["mock"]).default("mock")` y
    `ALLOW_SIMULATED_PAYMENTS: z.stringbool().default(false)`, con `superRefine` que **falle al arrancar** si
    `NODE_ENV==="production" && PAYMENT_PROVIDER==="mock" && !ALLOW_SIMULATED_PAYMENTS`. Así un piloto simulado en
@@ -183,6 +232,7 @@ la vista del vendedor presenta la venta simulada como real.
 ---
 
 ### SEC-02 — Login y registro sin límite de intentos: las Server Actions eluden el rateLimit (Alta)
+
 **Estado:** Confirmado, reproducido en vivo. **Esfuerzo:** M.
 **Fuentes:** `authn-server-action-rate-limit-bypass`, `abuse-auth-ratelimit-bypassed-by-server-actions`,
 `config-auth-ratelimit-not-applied-to-server-actions`.
@@ -221,6 +271,7 @@ check) y reenviar `Set-Cookie` con `cookies()`. Añadir prueba E2E: 6 intentos p
 ---
 
 ### SEC-03 — `/api/uploads` bufferiza cuerpos sin tope (chunked) → DoS por memoria (Alta)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `uploads-chunked-body-unbounded`, `config-upload-body-size-content-length-only`,
 `abuse-upload-body-unbounded-and-uncounted-failures`.
@@ -255,6 +306,7 @@ el límite por usuario. En producción, fijar el tope también en el proxy (`cli
 ---
 
 ### SEC-04 — Redirección abierta post-login: `safeRedirectPath` acepta `/.//dominio` (Alta→Media)
+
 **Estado:** Confirmado, reproducido. **Severidad:** Media (primitiva de phishing, no toma de cuenta). **Esfuerzo:** S.
 **Fuentes:** `authn-open-redirect-dot-segments`, `injection-open-redirect-next`.
 
@@ -279,18 +331,21 @@ falsa que cosecha credenciales), y salida inmediata para quien ya tiene sesión 
 token hoy, pero se vuelve alta si se agrega OAuth/SSO o un token en la URL de retorno.
 
 **Corrección:** validar el resultado **ya normalizado**:
+
 ```ts
 const url = new URL(value, PLACEHOLDER_ORIGIN);
 const out = `${url.pathname}${url.search}`;
 if (url.origin !== PLACEHOLDER_ORIGIN || /^\/[/\\]/.test(out)) return fallback;
 return out;
 ```
+
 Añadir a `safe-redirect.test.ts` los casos `/.//x`, `/%2e//x`, `/%2E%2E//x`, `/..//x`, `/a/..//x`, `/./\x`
 esperando `/`, y una regresión para la cadena anidada de `/bienvenida`.
 
 ---
 
 ### SEC-05 — Acaparamiento de inventario: checkouts pendientes ilimitados reservan stock (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `commerce-stock-reservation-dos`, `abuse-inventory-hoarding-pending-checkouts`,
 `commerce-lazy-expiry-only-on-traffic`.
@@ -303,7 +358,7 @@ esperando `/`, y una regresión para la cadena anidada de `/bienvenida`.
 `SOLD_OUT`), el carrito se vacía y repite. No hay tope de checkouts `PENDING_PAYMENT` por comprador, ni de
 unidades reservadas, ni límite de frecuencia. Al vencer, `applyPaymentEvent` devuelve el stock **al carrito del
 atacante**, que vuelve a reservar con un clic. Agravante: el vencimiento es **perezoso** —
-`expireStaleCheckouts` global solo corre cuando *alguien* confirma un pedido; en un piloto de poco tráfico el
+`expireStaleCheckouts` global solo corre cuando _alguien_ confirma un pedido; en un piloto de poco tráfico el
 producto sigue `SOLD_OUT` mucho más de 30 min.
 
 **Evidencia:** PoC (`.data/security/abuse/poc-stock-hoarding.*`). Una cuenta agotó un producto de 25 piezas en
@@ -323,6 +378,7 @@ TTL corto para métodos instantáneos y verificación de correo antes del checko
 ---
 
 ### SEC-06 — Sin Content-Security-Policy (ni COOP/CORP) en las páginas HTML (Media)
+
 **Estado:** Confirmado. **Esfuerzo:** M.
 **Fuentes:** `injection-missing-csp`, `config-csp-missing`, `pentest-missing-csp`.
 
@@ -342,6 +398,7 @@ HttpOnly, pero un script puede invocar Server Actions y leer datos privados ya r
 pedidos).
 
 **Corrección:** dos pasos.
+
 1. **Rápido, hoy (S):** en `securityHeaders`, directivas estáticas sin nonce y sin forzar render dinámico:
    `object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob:;`
    (+ `upgrade-insecure-requests` en producción).
@@ -354,6 +411,7 @@ pedidos).
 ---
 
 ### SEC-07 — El rate limit y la IP de sesión confían en `X-Forwarded-For` sin proxies de confianza (Media)
+
 **Estado:** Confirmado (mecanismo). **Esfuerzo:** S.
 **Fuentes:** `authn-xff-ip-trust-production`, `abuse-auth-ip-resolution-shared-bucket`,
 `config-auth-ratelimit-xff-spoof`.
@@ -388,6 +446,7 @@ client IP".
 ---
 
 ### SEC-08 — El vendedor ve nombre, domicilio y teléfono de compradores que nunca pagaron (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `authz-seller-sees-address-of-unpaid-orders`, `privacy-seller-sees-unpaid-buyer-address`,
 `commerce-seller-sees-cancelled-addresses`.
@@ -420,6 +479,7 @@ días después de `DELIVERED`. (5) Prueba E2E: pago rechazado → el vendedor no
 ---
 
 ### SEC-09 — API HTTP de Better Auth abierta: registro sin consentimiento y `name`/`image` sin validar (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `authn-http-signup-bypasses-consent`, `privacy-signup-api-bypasses-consent`,
 `config-auth-http-surface-unused`, `injection-auth-api-input-bypass`.
@@ -455,6 +515,7 @@ Grabar el consentimiento en el mismo flujo que la creación. Recordar que cerrar
 ---
 
 ### SEC-10 — Sin verificación de correo, recuperación ni gestión de sesiones (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `authn-email-verification-disabled-squatting`, `authn-no-session-management-recovery`.
 
@@ -490,6 +551,7 @@ con correos verificados.
 ---
 
 ### SEC-11 — Enumeración de cuentas por el registro (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `authn-signup-enumeration`, `privacy-email-enumeration-signup`, `pentest-signup-enumeration`.
 
@@ -519,6 +581,7 @@ registro y cerrar el alta por HTTP (SEC-09).
 ---
 
 ### SEC-12 — Límite de 60 subidas/h con carrera (TOCTOU) que ignora los fallos (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `uploads-rate-limit-toctou`.
 
@@ -544,6 +607,7 @@ IP y exigir onboarding completo (y, más adelante, correo verificado).
 ---
 
 ### SEC-13 — Pixel-flood: imágenes de ~40 Mpx bloquean el threadpool de libuv (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `uploads-pixel-flood-threadpool`.
 
@@ -569,6 +633,7 @@ crece; `sharp.concurrency(1)` y subir `UV_THREADPOOL_SIZE`; `.timeout({ seconds:
 ---
 
 ### SEC-14 — Subidas huérfanas nunca se borran y quedan públicas con caché inmutable de 1 año (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `uploads-orphan-public-hosting`, `privacy-media-retention-no-deletion`, `uploads-no-revocation`.
 
@@ -600,6 +665,7 @@ cuenta/publicación, borrar los archivos.
 ---
 
 ### SEC-15 — Escrituras sociales y `/api/feed` sin límite de frecuencia (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `abuse-no-ratelimit-social-writes`, `pentest-no-ratelimit-actions`.
 
@@ -630,6 +696,7 @@ revalidaciones acotadas o `router.refresh()`. Límite por IP en `/api/feed`. Ant
 ---
 
 ### SEC-16 — Eventos "anónimos" re-identificables por metadata (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `privacy-anonymized-events-reidentifiable`.
 
@@ -661,6 +728,7 @@ Prueba: `prepareEvent({metadata:{checkoutId}}, false).metadata` sin ids.
 ---
 
 ### SEC-17 — "Gente de tus comunidades" revela a quién sigue una persona concreta (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `privacy-follow-graph-leak-suggestions`.
 
@@ -689,6 +757,7 @@ títere; por eso hace falta (c).)
 ---
 
 ### SEC-18 — Suplantación editorial: cualquiera se llama "Equipo VendeIA" (Media)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `ai-future-editorial-impersonation`.
 
@@ -717,6 +786,7 @@ lanzamiento. Añadir `isEditorial` al DTO de comentarios y su badge. Pruebas uni
 ---
 
 ### SEC-19 — Presupuesto de IA: carrera, costos no contabilizados y pool global (Media, latente)
+
 **Estado:** Confirmado (mecanismo; el impacto monetario es latente hasta un proveedor de pago). **Esfuerzo:** M.
 **Fuentes:** `ai-future-budget-guard-race`, `abuse-ai-budget-guard-race-and-uncounted-failures`,
 `pentest-ai-budget-dos`, `ai-future-global-budget-dos`, `ai-future-unmetered-failed-calls`.
@@ -754,6 +824,7 @@ perfil `ACTIVE`) antes de un proveedor de pago; `max_tokens` y timeout en el ada
 ---
 
 ### SEC-20 — Métricas del vendedor manipulables (shares/vistas/impresiones/atribución) (Media→Baja)
+
 **Estado:** Confirmado (parcial). **Esfuerzo:** M.
 **Fuentes:** `abuse-anonymous-product-view-and-impression-spam`, `abuse-anonymous-share-events-inflate-seller-metrics`,
 `authz-analytics-attribution-spoofing`, `commerce-sourcepost-attribution-spoof`,
@@ -789,6 +860,7 @@ acciones de tracking; muestreo de IMPRESSION anónimas.
 ---
 
 ### SEC-21 — `env-schema` acepta `http`/`localhost` en producción: cookies sin `Secure`, base sin TLS (Baja)
+
 **Estado:** Confirmado (mecanismo). **Esfuerzo:** S.
 **Fuentes:** `config-env-schema-production-defaults`, `authn-app-url-insecure-default-production`.
 
@@ -814,6 +886,7 @@ Casos en `env.test.ts`.
 ---
 
 ### SEC-22 — Node.js 22.16.0 sin parches de 2026; `engines` admite runtimes vulnerables (Baja)
+
 **Estado:** Confirmado. **Esfuerzo:** S.
 **Fuentes:** `config-node-runtime-outdated`.
 
@@ -832,12 +905,14 @@ compare `process.version`; suscribirse a nodejs-sec.
 ---
 
 ### SEC-23 — Robustez de checkout: doble envío, huérfano, aprobación tardía, zona local, overflow (Baja)
+
 **Estado:** Confirmado (traza; PoC de zona local). **Esfuerzo:** M (agregado).
 **Fuentes:** `commerce-double-submit-duplicate-checkout`, `commerce-orphan-checkout-without-payment`,
 `commerce-late-approval-dropped`, `commerce-local-delivery-zone-bypass`, `commerce-int32-total-overflow`,
 `commerce-buyer-deletion-cascade`.
 
 **Resumen de cada sub-ítem (todos bajos hoy, importantes con proveedor real):**
+
 - **Doble envío** (`checkout.ts:52,181-183`): dos confirmaciones simultáneas del mismo carrito crean dos
   checkouts y reservan stock dos veces (`deleteMany` sin comprobar `count`). Fix: borrar el carrito como primer
   write de la transacción y usarlo como candado (`if (removed.count !== lines.length) throw CART_CHANGED`).
@@ -860,6 +935,7 @@ compare `process.version`; suscribirse a nodejs-sec.
 ---
 
 ### SEC-24 — `SellerStatus = SUSPENDED` no se aplica en ninguna acción ni consulta (Baja)
+
 **Estado:** Confirmado (traza). **Esfuerzo:** S–M.
 **Fuentes:** `authz-seller-suspension-not-enforced`, `commerce-seller-suspension-not-enforced`,
 `ai-future-seller-suspension-noop`.
@@ -882,6 +958,7 @@ registrar la decisión (actor HUMAN). No condicionar la IA al estado de vendedor
 ---
 
 ### SEC-25 — `advanceOrderAction` no valida `to`; sin cancelación/reembolso tras PAID (Baja)
+
 **Estado:** Sin verificar (traza). **Esfuerzo:** S–M.
 **Fuentes:** `authz-advance-order-unvalidated-transition`, `commerce-no-cancel-refund-transition`.
 
@@ -900,6 +977,7 @@ fondos.
 ---
 
 ### SEC-26 — Derechos ARCO prometidos pero no implementados (Baja, bloqueador legal previo al lanzamiento)
+
 **Estado:** Confirmado. **Esfuerzo:** L.
 **Fuentes:** `privacy-arco-rights-missing`.
 
@@ -921,6 +999,7 @@ no existe.
 ---
 
 ### SEC-27 — Rechazar personalización no desliga la actividad previa; historial de búsqueda no borrable (Baja)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** S.
 **Fuentes:** `privacy-optout-not-retroactive-preonboarding`, `privacy-search-history-hidden-undeletable`.
 
@@ -943,6 +1022,7 @@ Ajustes.
 ---
 
 ### SEC-28 — Salida de IA solo validada en forma (P2/P4, CLABE, urgencia, cifras como "Calculado") (Baja)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `ai-future-output-content-unvalidated`.
 
@@ -965,6 +1045,7 @@ vendedor; etiquetar los campos redactados por IA (principio 5).
 ---
 
 ### SEC-29 — `AIRequest.input` guarda texto libre con posible PII sin retención; aviso omite la IA (Baja)
+
 **Estado:** Confirmado, reproducido. **Esfuerzo:** M.
 **Fuentes:** `ai-future-ai-log-pii-retention`.
 
@@ -992,7 +1073,7 @@ agregar el proveedor de IA al aviso (encargado, finalidad, transferencia interna
   local (top 10k) en el Zod o el plugin `haveIBeenPwned` (k-anonimato; documentarlo en el aviso).
 - **SEC-31 — Cursor de feed → 500** (`injection-feed-cursor-unhandled`, `abuse-feed-cursor-invalid-date-500`,
   `ranking.ts:269-281`): `{t:9e15}` → `new Date` inválido → 500 sin sesión. Fix: acotar `t ∈ [ahora-7d,
-  ahora+1min]` y `Number.isFinite`, o firmar el cursor con HMAC.
+ahora+1min]` y `Number.isFinite`, o firmar el cursor con HMAC.
 - **SEC-32 — Búsqueda `LIKE '%x%'` sin índice** (`abuse-search-unindexed-like-anonymous`, `search/sql.ts`):
   escaneo completo por petición, anónimo y sin límite; satura el pool con volumen. Fix: columna generada +
   índice GIN `pg_trgm` (o `tsvector` 'spanish'), términos ≥3, `statement_timeout`, límite por IP.
@@ -1012,7 +1093,7 @@ agregar el proveedor de IA al aviso (encargado, finalidad, transferencia interna
 - **SEC-37 — Cadena de suministro** (`config-next-pending-security-release`, `config-prisma-cli-transitive-advisories`,
   `config-pnpm-supply-chain-hardening`): planear Next 16.3.7 (30-sep, con `minimumReleaseAgeExclude` temporal);
   `overrides: { mysql2: "3.23.1" }` y `auditConfig.ignoreGhsas` para el advisory de `deepmerge-ts`; `pnpm prune
-  --prod`/`output:"standalone"` en el despliegue; `strictDepBuilds`, `trustPolicy`, `blockExoticSubdeps`,
+--prod`/`output:"standalone"` en el despliegue; `strictDepBuilds`, `trustPolicy`, `blockExoticSubdeps`,
   `pnpm audit --prod --audit-level high` en CI.
 - **SEC-38 — Filas sin tope y args sin validar** (`abuse-unbounded-row-growth-consents-intents`,
   `authz-unvalidated-action-args`, `abuse-like-save-toggle-event-inflation`): `setPersonalizationAction` sin
@@ -1023,12 +1104,14 @@ agregar el proveedor de IA al aviso (encargado, finalidad, transferencia interna
 ---
 
 ### SEC-39 — Gobernanza sin roles/aprobación, BD como superusuario, seed reclamable, ledger bruto (Info)
+
 **Estado:** Confirmado (parcial). **Esfuerzo:** M (agregado).
 **Fuentes:** `ai-future-governance-authz-model`, `ai-future-db-superuser`, `ai-future-seed-email-preclaim`,
 `ai-future-ai-content-unlabeled`, `ai-future-ledger-gross-revenue`, `ai-future-budget-aggregate-scan`,
 `ai-future-agents-indirect-injection`.
 
 **Resumen:** riesgos latentes del diseño futuro (Centro de decisiones, agentes de IA):
+
 - **Sin modelo de roles ni aprobación** para `PlatformSetting`/`PlatformDecision` (no hay `decidedById`, ni doble
   aprobación, ni registro clave→nivel de riesgo). Antes de construir el Centro de decisiones: tabla de roles,
   `applySetting(key, value, decisionId)` con validación de delta y riesgo (ALTO exige aprobación humana distinta),
@@ -1050,6 +1133,7 @@ agregar el proveedor de IA al aviso (encargado, finalidad, transferencia interna
 ---
 
 ### SEC-40 — Endurecimientos informativos varios (Info)
+
 **Fuentes:** `authn-plaintext-session-token-db`, `authn-studio-pages-no-server-guard`,
 `uploads-non-multipart-500`, `uploads-no-origin-check`, `uploads-prod-local-storage-same-origin`,
 `uploads-misleading-errors-heic`, `config-dev-server-all-interfaces`, `pentest-agents-md-agent-injection`,
@@ -1146,34 +1230,18 @@ de conectar pagos/IA/correo reales:
 ## 7. Recomendaciones de endurecimiento priorizadas
 
 **P0 — antes de cualquier despliegue público (hacen fallar el arranque o cierran el bypass):**
+
 1. `PAYMENTS_PROVIDER` + `ALLOW_SIMULATED_PAYMENTS` con `superRefine` que falle en producción con mock (SEC-01).
 2. Limitador propio en `signInAction`/`signUpAction` sobre `rate_limits`, con IP confiable (SEC-02, SEC-07).
 3. Tope de cuerpo real en `/api/uploads` (411/413 + lector acotado) (SEC-03).
 4. `superRefine` de `APP_URL`/`DATABASE_URL`/cookies en producción (SEC-21).
 5. `disabledPaths`/allowlist en `/api/auth/[...all]` (SEC-09).
 
-**P1 — antes de atraer usuarios reales:**
-6. **CSP** con nonce (o directivas estáticas + SRI como primer paso) + COOP/CORP (SEC-06).
-7. Corregir `safeRedirectPath` (SEC-04) — cambio de una línea + pruebas.
-8. Borrar `shippingAddress` en cancelaciones y no exponerla en pedidos no pagados (SEC-08).
-9. Tope de checkouts pendientes + job de expiración programado (SEC-05).
-10. `enforceRateLimit` compartido para escrituras sociales, `/api/feed`, subidas y tracking (SEC-12, SEC-15, SEC-20).
-11. EmailProvider + verificación + recuperación + gestión de sesiones (SEC-10, SEC-11).
-12. Anonimización real de eventos (SEC-16) y opt-out retroactivo (SEC-27).
-13. Reserva de sugerencias con consentimiento del intermediario (SEC-17) y reserva de usernames editoriales (SEC-18).
+**P1 — antes de atraer usuarios reales:** 6. **CSP** con nonce (o directivas estáticas + SRI como primer paso) + COOP/CORP (SEC-06). 7. Corregir `safeRedirectPath` (SEC-04) — cambio de una línea + pruebas. 8. Borrar `shippingAddress` en cancelaciones y no exponerla en pedidos no pagados (SEC-08). 9. Tope de checkouts pendientes + job de expiración programado (SEC-05). 10. `enforceRateLimit` compartido para escrituras sociales, `/api/feed`, subidas y tracking (SEC-12, SEC-15, SEC-20). 11. EmailProvider + verificación + recuperación + gestión de sesiones (SEC-10, SEC-11). 12. Anonimización real de eventos (SEC-16) y opt-out retroactivo (SEC-27). 13. Reserva de sugerencias con consentimiento del intermediario (SEC-17) y reserva de usernames editoriales (SEC-18).
 
-**P2 — antes de conectar proveedores reales (pago/IA):**
-14. Reserva atómica del presupuesto de IA + costos en fallos + cuota por usuario + verificación de correo (SEC-19).
-15. Webhook de pago firmado, `cancelPayment`, validación de monto, TTL por método (SEC-23).
-16. S3/R2 en dominio sin cookies + job de huérfanas + CORP + retención (SEC-14, SEC-40).
-17. Guardián de contenido de la salida de IA + cálculo de cifras en código (SEC-28) + retención de logs (SEC-29).
+**P2 — antes de conectar proveedores reales (pago/IA):** 14. Reserva atómica del presupuesto de IA + costos en fallos + cuota por usuario + verificación de correo (SEC-19). 15. Webhook de pago firmado, `cancelPayment`, validación de monto, TTL por método (SEC-23). 16. S3/R2 en dominio sin cookies + job de huérfanas + CORP + retención (SEC-14, SEC-40). 17. Guardián de contenido de la salida de IA + cálculo de cifras en código (SEC-28) + retención de logs (SEC-29).
 
-**P3 — endurecimiento y cumplimiento continuo:**
-18. Aplicar `SUSPENDED` (SEC-24), validar transiciones de pedido y cancelación/reembolso (SEC-25).
-19. Centro de privacidad ARCO + aviso completo (SEC-26, SEC-34).
-20. Contraseñas contra listas filtradas (SEC-30), cursor de feed acotado (SEC-31), índice de búsqueda (SEC-32).
-21. Roles/aprobación de gobernanza + rol de BD sin superusuario (SEC-39).
-22. Runtime de Node parcheado + parche de Next + endurecer pnpm/audit en CI (SEC-22, SEC-37).
+**P3 — endurecimiento y cumplimiento continuo:** 18. Aplicar `SUSPENDED` (SEC-24), validar transiciones de pedido y cancelación/reembolso (SEC-25). 19. Centro de privacidad ARCO + aviso completo (SEC-26, SEC-34). 20. Contraseñas contra listas filtradas (SEC-30), cursor de feed acotado (SEC-31), índice de búsqueda (SEC-32). 21. Roles/aprobación de gobernanza + rol de BD sin superusuario (SEC-39). 22. Runtime de Node parcheado + parche de Next + endurecer pnpm/audit en CI (SEC-22, SEC-37).
 
 ---
 

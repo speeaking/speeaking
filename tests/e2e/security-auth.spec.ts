@@ -29,6 +29,16 @@ async function submitSignIn(page: Page, email: string, password: string) {
   ]);
 }
 
+/**
+ * Un intento que se queda en /entrar. Espera a que React reinicie el formulario tras la acción (la
+ * contraseña queda vacía): si se escribe antes, el reinicio borra lo escrito.
+ */
+async function attemptSignIn(page: Page, email: string, password: string) {
+  await submitSignIn(page, email, password);
+  await expect(page.getByLabel("Contraseña")).toHaveValue("");
+  return page.locator("form").getByRole("alert");
+}
+
 async function fillSignUp(page: Page, user: Pick<TestUser, "name" | "email" | "password">) {
   await page.goto("/registro");
   await page.getByLabel("Nombre", { exact: true }).fill(user.name);
@@ -47,13 +57,12 @@ test.describe("límite de intentos (SEC-02)", () => {
     await page.context().clearCookies();
 
     await page.goto("/entrar");
-    const alert = page.locator("form").getByRole("alert");
     for (let attempt = 1; attempt <= 5; attempt += 1) {
-      await submitSignIn(page, user.email, `incorrecta-${attempt}-xyz`);
+      const alert = await attemptSignIn(page, user.email, `incorrecta-${attempt}-xyz`);
       await expect(alert).toHaveText("Correo o contraseña incorrectos.");
     }
 
-    await submitSignIn(page, user.email, user.password);
+    const alert = await attemptSignIn(page, user.email, user.password);
 
     await expect(alert).toHaveText(/^Demasiados intentos\. Intenta de nuevo en \d+ minutos?\.$/);
     await expect(page).toHaveURL(/\/entrar$/);
@@ -63,12 +72,11 @@ test.describe("límite de intentos (SEC-02)", () => {
     const { email } = fixUser();
 
     await page.goto("/entrar");
-    const alert = page.locator("form").getByRole("alert");
     for (let attempt = 1; attempt <= 5; attempt += 1) {
-      await submitSignIn(page, email, `incorrecta-${attempt}-xyz`);
+      const alert = await attemptSignIn(page, email, `incorrecta-${attempt}-xyz`);
       await expect(alert).toHaveText("Correo o contraseña incorrectos.");
     }
-    await submitSignIn(page, email, "incorrecta-6-xyz");
+    const alert = await attemptSignIn(page, email, "incorrecta-6-xyz");
 
     await expect(alert).toHaveText(/^Demasiados intentos\./);
   });
@@ -146,10 +154,8 @@ test.describe("API HTTP de Better Auth cerrada (SEC-09)", () => {
 
     // La cuenta nunca se creó: el correo sigue sin cuenta.
     await page.goto("/entrar");
-    await submitSignIn(page, user.email, user.password);
-    await expect(page.locator("form").getByRole("alert")).toHaveText(
-      "Correo o contraseña incorrectos.",
-    );
+    const alert = await attemptSignIn(page, user.email, user.password);
+    await expect(alert).toHaveText("Correo o contraseña incorrectos.");
   });
 });
 
@@ -176,6 +182,12 @@ test.describe("registro", () => {
     await expect(page.getByText("Ese nombre está reservado. Elige otro.")).toBeVisible();
     await expect(page.getByText(/Esa contraseña es muy común/)).toBeVisible();
     await expect(page).toHaveURL(/\/registro$/);
+
+    // Con una «l» minúscula en lugar de la «I» se ve igual en la tipografía de la app.
+    await fillSignUp(page, { ...user, name: "Equipo VendelA" });
+
+    await expect(page.getByText("Ese nombre está reservado. Elige otro.")).toBeVisible();
+    await expect(page).toHaveURL(/\/registro$/);
   });
 
   test("el onboarding no acepta usuarios ni nombres de la plataforma (SEC-18)", async ({
@@ -184,17 +196,11 @@ test.describe("registro", () => {
     const user = fixUser();
     await register(page, user);
 
+    await page.getByLabel("¿Cómo te llamas?").fill("Soporte VendeIA");
     await completeOnboarding(page, { ...user, username: "equipo.soporte" });
 
+    // El servidor rechaza los dos y el formulario vuelve al paso 1 para corregirlos.
     await expect(page.getByText("Ese nombre de usuario no está disponible.")).toBeVisible();
-    await expect(page).toHaveURL(/\/bienvenida/);
-
-    await page.getByLabel("¿Cómo te llamas?").fill("Soporte VendeIA");
-    await page.getByLabel("Nombre de usuario").fill(user.username);
-    await page.getByRole("button", { name: "Siguiente" }).click();
-    await page.getByRole("button", { name: "Siguiente" }).click();
-    await page.getByRole("button", { name: "Empezar" }).click();
-
     await expect(page.getByText("Ese nombre está reservado. Elige otro.")).toBeVisible();
     await expect(page).toHaveURL(/\/bienvenida/);
   });

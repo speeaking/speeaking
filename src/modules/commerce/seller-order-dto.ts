@@ -52,7 +52,7 @@ export type SellerOrderDto = {
   simulatedPayment: boolean;
   /** `null` si el pedido ya no está pagado (p. ej. cancelado). */
   buyerName: string | null;
-  /** `null` al recoger en persona o si el pedido ya no está pagado. */
+  /** `null` al recoger en persona, con pago simulado o si el pedido ya no está pagado. */
   shippingAddress: SellerShippingAddress | null;
   actions: SellerOrderAction[];
 };
@@ -62,7 +62,10 @@ export function toSellerOrderDto(row: SellerOrderRow): SellerOrderDto {
   const simulatedPayment = row.checkout.payments.some((payment) =>
     isSimulatedPayment(payment.provider),
   );
-  const address = buyerVisible ? sellerAddressSchema.safeParse(row.shippingAddress) : null;
+  // Un pago simulado no cobró nada: no hay entrega, así que el domicilio no sale del servidor y el
+  // vendedor no puede mandar mercancía que nadie pagó (SEC-01, SEC-08).
+  const address =
+    buyerVisible && !simulatedPayment ? sellerAddressSchema.safeParse(row.shippingAddress) : null;
   return {
     id: row.id,
     status: row.status,

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => ({
   post: { findMany: vi.fn() },
   communityMembership: { findMany: vi.fn() },
+  follow: { findMany: vi.fn(), groupBy: vi.fn() },
 }));
 
 vi.mock("@/server/db", () => ({ db }));
@@ -78,5 +79,35 @@ describe("listActiveCommunityPeers («Gente de tus comunidades»)", () => {
 
   it("ya no existe una consulta de quién dio «me gusta»", () => {
     expect(Object.keys(queries).filter((name) => /like/i.test(name))).toEqual([]);
+  });
+});
+
+describe("señal de seguidos de «Gente de tus comunidades» (SEC-17)", () => {
+  it("los intermediarios son solo seguidos mutuos que participan en las sugerencias", async () => {
+    db.follow.findMany.mockResolvedValue([{ followingId: "m1" }, { followingId: "m2" }]);
+
+    await expect(queries.listMutualFollowIds(VIEWER)).resolves.toEqual(["m1", "m2"]);
+    const { where } = db.follow.findMany.mock.calls[0]![0];
+    expect(where.followerId).toBe(VIEWER);
+    // Te sigue de vuelta: seguir a alguien no basta para ver a quién sigue.
+    expect(where.following.following).toEqual({ some: { followingId: VIEWER } });
+    // Quien desactivó «Aparecer en sugerencias» tampoco presta a quién sigue.
+    expect(where.following.profile.is.discoverable).toBe(true);
+  });
+
+  it("con menos de 2 intermediarios no consulta: la razón delataría a quién sigue uno solo", async () => {
+    await expect(queries.countFollowedByFollowing(VIEWER, ["m1"])).resolves.toEqual(new Map());
+    expect(db.follow.groupBy).not.toHaveBeenCalled();
+  });
+
+  it("solo devuelve personas seguidas por al menos 2 intermediarios distintos", async () => {
+    db.follow.groupBy.mockResolvedValue([{ followingId: "t1", _count: { _all: 2 } }]);
+
+    const counts = await queries.countFollowedByFollowing(VIEWER, ["m1", "m2"]);
+
+    expect(counts).toEqual(new Map([["t1", 2]]));
+    const args = db.follow.groupBy.mock.calls[0]![0];
+    expect(args.having).toEqual({ followingId: { _count: { gte: 2 } } });
+    expect(args.where.followerId).toEqual({ in: ["m1", "m2"] });
   });
 });

@@ -92,7 +92,9 @@ export default async function CartPage() {
                       </span>
                       {!line.product.available ? (
                         <span className="text-xs font-semibold text-destructive">
-                          Sin piezas suficientes
+                          {line.product.forSale
+                            ? "Sin piezas suficientes"
+                            : "Ya no está a la venta"}
                         </span>
                       ) : null}
                       <CartLineControls
@@ -142,7 +144,7 @@ export default async function CartPage() {
             </Link>
           ) : (
             <p className="text-sm text-destructive">
-              Ajusta las cantidades marcadas para continuar.
+              Ajusta o quita los productos marcados para continuar.
             </p>
           )}
         </div>

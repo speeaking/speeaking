@@ -4,14 +4,27 @@
  * comunidades y quién comentó tus publicaciones. Los «me gusta» NO cuentan: la app no revela quién
  * dio «me gusta» en ningún otro lugar, y una sugerencia lo delataría. Nunca contactos del teléfono
  * ni de otras redes.
+ *
+ * Una sugerencia tampoco puede delatar a quién sigue una persona concreta (SEC-17): la señal «la
+ * siguen personas que sigues» solo usa seguidos MUTUOS que participan en las sugerencias, exige al
+ * menos `MIN_FOLLOW_INTERMEDIARIES` distintos y su texto nunca dice cuántos son.
  */
 
 /** Con menos candidatos reales no se muestra nada (principio 5: nada de relleno). */
 export const MIN_SUGGESTIONS = 3;
 
+/**
+ * Intermediarios distintos que necesita la señal de seguidos (k-anonimato). Con uno solo, la razón
+ * diría exactamente a quién sigue esa persona.
+ */
+export const MIN_FOLLOW_INTERMEDIARIES = 2;
+
 export type SuggestionSignals = {
   userId: string;
-  /** Personas que tú sigues y que siguen a esta persona. */
+  /**
+   * Seguidos mutuos tuyos (participan en las sugerencias) que siguen a esta persona. Por debajo de
+   * `MIN_FOLLOW_INTERMEDIARIES` no cuenta.
+   */
   followedByFollowing: number;
   /** Nombres de las comunidades que comparten. */
   sharedCommunities: readonly string[];
@@ -25,7 +38,8 @@ export type SuggestionSignals = {
 };
 
 export type SuggestionReason =
-  | { kind: "followed-by-following"; count: number }
+  // Sin el número: aunque sean pocos, no se puede deducir quiénes son.
+  | { kind: "followed-by-following" }
   | { kind: "commented" }
   | { kind: "communities"; names: readonly string[] };
 
@@ -41,11 +55,10 @@ const collator = new Intl.Collator("es-MX", { sensitivity: "base" });
  * esta lista: te siguen en común > comentó > comunidades. `null` si no hay señales.
  */
 export function scoreSuggestion(signals: SuggestionSignals): RankedSuggestion | null {
+  const intermediaries =
+    signals.followedByFollowing >= MIN_FOLLOW_INTERMEDIARIES ? signals.followedByFollowing : 0;
   const parts: [points: number, reason: SuggestionReason][] = [
-    [
-      3 * Math.min(signals.followedByFollowing, CAP.followedByFollowing),
-      { kind: "followed-by-following", count: signals.followedByFollowing },
-    ],
+    [3 * Math.min(intermediaries, CAP.followedByFollowing), { kind: "followed-by-following" }],
     [
       signals.commentsOnYourPosts > 0
         ? 4 + Math.min(signals.commentsOnYourPosts, CAP.interactions)
@@ -98,13 +111,11 @@ export function rankSuggestions(
 
 const listFormat = new Intl.ListFormat("es-MX", { style: "long", type: "conjunction" });
 
-/** Texto de la razón: «La siguen 2 personas que sigues», «También está en Gaming y Deportes»… */
+/** Texto de la razón: «La siguen personas que sigues», «También está en Gaming y Deportes»… */
 export function suggestionReasonText(reason: SuggestionReason): string {
   switch (reason.kind) {
     case "followed-by-following":
-      return reason.count === 1
-        ? "La sigue 1 persona que sigues"
-        : `La siguen ${reason.count} personas que sigues`;
+      return "La siguen personas que sigues";
     case "commented":
       return "Comentó tu publicación";
     case "communities": {

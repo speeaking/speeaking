@@ -36,6 +36,55 @@ describe("isPlatformImpersonation (SEC-18)", () => {
     expect(isPlatformImpersonation(name)).toBe(true);
   });
 
+  // Revisión de SEC-18: variantes que se veían igual a la marca o a un rol y pasaban.
+  it.each([
+    // «l» minúscula por «I» mayúscula: mismo trazo en la tipografía de la app.
+    "Equipo VendelA",
+    "VendelA",
+    "Vende lA",
+    "Vendel A",
+    "VENDElA",
+    // Símbolos que imitan la I.
+    "Vende|A",
+    "Vende!A",
+    // Una I de otro alfabeto que no está en la tabla (palochka, i pequeña, i sin punto, I longa).
+    "VendeӀA",
+    "Vendeɪa",
+    "Vendeıa",
+    "VendeꟾA",
+    "ᏙendeꟾA",
+    // Un rol con contexto de la plataforma.
+    "Soporte de pagos",
+    "Moderación de la comunidad",
+    "Centro de ayuda",
+    "Mesa de ayuda",
+    "Soporte a vendedores",
+    "Equipo de pagos",
+    "Seguridad de cuentas",
+    "Trust & Safety",
+    // Letras separadas y la «l» dentro de una palabra de rol.
+    "S o p o r t e",
+    "Soporte Oflcial",
+  ])("rechaza la variante %j", (name) => {
+    expect(isPlatformImpersonation(name)).toBe(true);
+  });
+
+  it.each([
+    "Juan vende la mejor ropa",
+    "Véndela Ya",
+    "Compra y véndelas",
+    "Lupita vende lámparas",
+    "Pagos Hernández",
+    "Centro Joyero",
+    "Ayuda Mutua Lupita",
+    "Lalo Villalobos",
+    "¿Qué vende? Ana",
+    "佐藤 花子",
+    "Иван Петров",
+  ])("sigue permitiendo %j", (name) => {
+    expect(isPlatformImpersonation(name)).toBe(false);
+  });
+
   it.each([
     "Ana López",
     "Prueba Automática",
@@ -91,6 +140,10 @@ describe("isReservedUsername (SEC-18)", () => {
     "ana.soporte",
     "juan_admin",
     "nike.official",
+    // La «l» por la «i» (revisión de SEC-18).
+    "equlpo.gaming",
+    "admln",
+    "oflcial.mx",
   ])("rechaza %s", (username) => {
     expect(isReservedUsername(username)).toBe(true);
   });
@@ -104,6 +157,8 @@ describe("isReservedUsername (SEC-18)", () => {
     "adrian",
     "vendedora.ana",
     "soya.mx",
+    "lalo.lopez",
+    "leila_99",
   ])("permite %s", (username) => {
     expect(isReservedUsername(username)).toBe(false);
   });

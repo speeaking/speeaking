@@ -1,8 +1,11 @@
 import "server-only";
 import { db } from "@/server/db";
+import { SIMULATED_PAYMENT_PROVIDER } from "@/server/providers/payments/policy";
 import { toSellerOrderDto } from "./seller-order-dto";
 
 export type { SellerOrderDto } from "./seller-order-dto";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Pedidos del vendedor para el Studio, como DTO explícito (SEC-08): solo los que se pagaron alguna
@@ -29,4 +32,21 @@ export async function listSellerOrders(sellerId: string) {
     },
   });
   return rows.map(toSellerOrderDto);
+}
+
+/**
+ * Pedidos vendidos en los últimos `days` días cuyo pago fue simulado (SEC-01): el resumen del Studio
+ * los cuenta como ventas, pero no se cobró dinero, así que se avisa junto al beneficio.
+ */
+export function countSimulatedSales(sellerId: string, days: number) {
+  return db.order.count({
+    where: {
+      sellerId,
+      status: { in: ["PAID", "SHIPPED", "DELIVERED"] },
+      paidAt: { gte: new Date(Date.now() - days * DAY_MS) },
+      checkout: {
+        payments: { some: { status: "APPROVED", provider: SIMULATED_PAYMENT_PROVIDER } },
+      },
+    },
+  });
 }

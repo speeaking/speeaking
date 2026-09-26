@@ -1,30 +1,23 @@
-import { ReceiptText } from "lucide-react";
+import { ReceiptText, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { Button } from "@/components/ui/button";
 import { formatMoney, formatRelativeTime } from "@/lib/format";
-import { listSellerOrders } from "@/modules/analytics/seller-queries";
-import { advanceOrderAction } from "@/modules/commerce/actions";
+import { advanceOrderAction, cancelOrderAction } from "@/modules/commerce/actions";
+import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from "@/modules/commerce/labels";
+import { listSellerOrders } from "@/modules/commerce/seller-orders";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 
 export const metadata: Metadata = { title: "Pedidos" };
 
-type Address = {
-  street?: string;
-  exteriorNumber?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  recipientName?: string;
-};
-
 export default async function StudioOrdersPage() {
   const viewer = await requireOnboardedViewer("/studio/pedidos");
   if (!viewer.sellerProfileId) return <SellerActivation defaultName={viewer.profile.displayName} />;
+  // Las reservas vencidas regresan al inventario aunque su comprador no vuelva (SEC-05).
+  await expireStaleCheckouts();
   const orders = await listSellerOrders(viewer.sellerProfileId);
 
   return (
@@ -39,15 +32,20 @@ export default async function StudioOrdersPage() {
       ) : (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => {
-            const address = order.shippingAddress as Address | null;
+            const address = order.shippingAddress;
             return (
               <li key={order.id} className="flex flex-col gap-2 rounded-3xl border bg-card p-4">
                 <div className="flex items-center justify-between gap-2 text-sm">
-                  <span className="font-semibold">
-                    {order.buyer.profile?.displayName ?? "Comprador"}
-                  </span>
-                  <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-                    {ORDER_STATUS_LABELS[order.status]}
+                  <span className="font-semibold">{order.buyerName ?? "Comprador"}</span>
+                  <span className="flex gap-1.5">
+                    {order.simulatedPayment ? (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+                        Pago simulado
+                      </span>
+                    ) : null}
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                      {ORDER_STATUS_LABELS[order.status]}
+                    </span>
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -56,30 +54,41 @@ export default async function StudioOrdersPage() {
                 <ul className="text-sm">
                   {order.items.map((item) => (
                     <li key={item.id}>
-                      {item.quantity} × {item.titleSnapshot}
+                      {item.quantity} × {item.title}
                     </li>
                   ))}
                 </ul>
-                {address?.street ? (
-                  <p className="rounded-2xl bg-secondary p-3 text-xs">
-                    {address.recipientName} · {address.street} {address.exteriorNumber},{" "}
-                    {address.neighborhood}, {address.city}, {address.state} {address.postalCode}
+                {order.simulatedPayment && order.status === "PAID" ? (
+                  <p
+                    role="note"
+                    className="flex gap-2 rounded-2xl bg-destructive/10 p-3 text-xs text-destructive"
+                  >
+                    <TriangleAlert className="size-4 shrink-0" />
+                    No se cobró dinero: no envíes mercancía. Cancela el pedido para que las piezas
+                    regresen a tu inventario.
                   </p>
                 ) : null}
-                <div className="flex items-center justify-between">
+                {address ? (
+                  <p className="rounded-2xl bg-secondary p-3 text-xs">
+                    {address.recipientName} · {address.street} {address.exteriorNumber}
+                    {address.interiorNumber ? ` int. ${address.interiorNumber}` : null},{" "}
+                    {address.neighborhood}, {address.city}, {address.state} {address.postalCode}
+                    {address.references ? ` · ${address.references}` : null}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-heading text-lg font-bold">
                     {formatMoney(order.totalCents)}
                   </span>
                   <div className="flex gap-2">
-                    {order.status === "PAID" && order.deliveryMethod !== "PICKUP" ? (
+                    {order.actions.includes("SHIPPED") ? (
                       <form action={advanceOrderAction.bind(null, order.id, "SHIPPED")}>
                         <Button type="submit" size="sm">
                           Marcar enviado
                         </Button>
                       </form>
                     ) : null}
-                    {order.status === "SHIPPED" ||
-                    (order.status === "PAID" && order.deliveryMethod === "PICKUP") ? (
+                    {order.actions.includes("DELIVERED") ? (
                       <form action={advanceOrderAction.bind(null, order.id, "DELIVERED")}>
                         <Button type="submit" size="sm" variant="outline">
                           Marcar entregado
@@ -88,6 +97,25 @@ export default async function StudioOrdersPage() {
                     ) : null}
                   </div>
                 </div>
+                {order.actions.includes("CANCELLED") ? (
+                  // Cancelar no se deshace: se confirma en un segundo paso.
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground">
+                      Cancelar pedido
+                    </summary>
+                    <form
+                      action={cancelOrderAction.bind(null, order.id)}
+                      className="mt-2 flex flex-col gap-2"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        Las piezas regresan a tu inventario y no se puede deshacer.
+                      </p>
+                      <Button type="submit" size="sm" variant="destructive" className="self-start">
+                        Sí, cancelar pedido
+                      </Button>
+                    </form>
+                  </details>
+                ) : null}
               </li>
             );
           })}

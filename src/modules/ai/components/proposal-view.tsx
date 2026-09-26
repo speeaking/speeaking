@@ -5,6 +5,7 @@ import {
   Copy,
   Lightbulb,
   MessageSquareQuote,
+  ShieldCheck,
   Sparkles,
   Target,
   Users,
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import type { ProposalState } from "../actions";
+import { DAILY_BUDGET_RULE, PRICE_RANGE_RULE } from "../proposal-numbers";
 
 type Result = NonNullable<ProposalState["result"]>;
 
@@ -68,11 +70,26 @@ function CopyLine({ text }: { text: string }) {
   );
 }
 
-/** Propuesta de "Vende con IA": separa lo CALCULADO (código, P2) de las HIPÓTESIS de la IA. */
+/** Explicación que redactó la IA para una cifra calculada: se muestra como suya (principio 5). */
+function AiNote({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <p className="text-sm text-muted-foreground">
+      <span className="font-semibold">Nota de la IA:</span> {text}
+    </p>
+  );
+}
+
+const percent = (value: number) => `${Math.round(Math.abs(value) * 100)} %`;
+
+/**
+ * Propuesta de "Vende con IA": separa lo CALCULADO (código, P2) de lo que REDACTÓ la IA. Todas las
+ * cifras salen del código con tus datos (SEC-28); la IA solo escribe textos e hipótesis.
+ */
 export function ProposalView({ result, onReset }: { result: Result; onReset: () => void }) {
-  const { proposal, numbers, quantity } = result;
+  const { proposal, numbers, quantity, guard } = result;
   const { economics } = numbers;
-  const daily = proposal.suggestedDailyBudgetCents;
+  const daily = numbers.dailyBudgetCents;
 
   return (
     <div className="flex flex-col gap-4">
@@ -84,6 +101,17 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         <h2 className="font-heading text-2xl leading-tight font-extrabold">{proposal.headline}</h2>
         <p className="text-sm text-ink-2">{proposal.valueProposition}</p>
       </section>
+
+      {guard.removed > 0 ? (
+        <p className="flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2 text-sm">
+          <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {guard.removed === 1 ? "Quitamos 1 frase" : `Quitamos ${guard.removed} frases`} que la
+            IA no podía respaldar con tus datos: garantías, envíos o tiempos que no confirmaste,
+            datos de contacto o de pago, urgencia o cifras distintas a las tuyas.
+          </span>
+        </p>
+      ) : null}
 
       <Card icon={Calculator} title="Tus números" badge="Calculado, no estimado">
         <dl className="grid grid-cols-2 gap-3 text-sm">
@@ -125,20 +153,29 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card icon={Target} title="Precio sugerido" badge="Hipótesis">
+        <Card icon={Target} title="Precio para probar" badge="Calculado">
           <p className="font-heading text-xl font-extrabold">
             {formatMoney(proposal.suggestedPriceRange.minCents)} –{" "}
             {formatMoney(proposal.suggestedPriceRange.maxCents)}
           </p>
-          <p className="text-sm text-muted-foreground">{proposal.suggestedPriceRange.rationale}</p>
+          <p className="text-sm text-muted-foreground">
+            {percent(1 - PRICE_RANGE_RULE.below)} abajo y {percent(PRICE_RANGE_RULE.above - 1)}{" "}
+            arriba de tu precio, terminado en 9. No consultamos precios del mercado.
+          </p>
+          <AiNote text={proposal.suggestedPriceRange.rationale} />
         </Card>
-        <Card icon={Target} title="Presupuesto inicial" badge="Hipótesis">
+        <Card icon={Target} title="Presupuesto inicial" badge="Calculado">
           <p className="font-heading text-xl font-extrabold">{formatMoney(daily)} al día</p>
-          <p className="text-sm text-muted-foreground">{proposal.budgetRationale}</p>
+          <p className="text-sm text-muted-foreground">
+            {percent(DAILY_BUDGET_RULE.share)} de lo que ganas por pieza, entre{" "}
+            {formatMoney(DAILY_BUDGET_RULE.minCents)} y {formatMoney(DAILY_BUDGET_RULE.maxCents)} al
+            día. Es una prueba, no una garantía de ventas.
+          </p>
+          <AiNote text={proposal.budgetRationale} />
         </Card>
       </div>
 
-      <Card icon={Users} title="Público potencial" badge="Hipótesis">
+      <Card icon={Users} title="Público potencial" badge="Hipótesis de la IA">
         <ul className="flex flex-col gap-2 text-sm">
           {proposal.targetAudiences.map((audience) => (
             <li key={audience.name}>
@@ -148,7 +185,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </ul>
       </Card>
 
-      <Card icon={Lightbulb} title="Ideas de contenido">
+      <Card icon={Lightbulb} title="Ideas de contenido" badge="Redactado por IA">
         <ul className="flex flex-col gap-2">
           {proposal.contentIdeas.map((idea) => (
             <CopyLine key={idea} text={idea} />
@@ -160,7 +197,11 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </div>
       </Card>
 
-      <Card icon={MessageSquareQuote} title="Textos para anuncios y WhatsApp">
+      <Card
+        icon={MessageSquareQuote}
+        title="Textos para anuncios y WhatsApp"
+        badge="Redactado por IA"
+      >
         <ul className="flex flex-col gap-2">
           {proposal.adIdeas.map((ad) => (
             <CopyLine key={ad} text={ad} />
@@ -175,7 +216,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </div>
       </Card>
 
-      <Card icon={MessageSquareQuote} title="Lo que te van a preguntar">
+      <Card icon={MessageSquareQuote} title="Lo que te van a preguntar" badge="Redactado por IA">
         <ul className="flex flex-col gap-3 text-sm">
           {proposal.objections.map((item) => (
             <li key={item.objection}>

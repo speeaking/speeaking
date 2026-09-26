@@ -122,7 +122,9 @@ export async function placeOrder(userId: string, input: PlaceOrderInput) {
     if (removed.count !== lines.length) throw new CheckoutError("CART_CHANGED");
     await assertReservationLimits(tx, userId, lines);
 
-    for (const line of lines) {
+    // Siempre en el mismo orden (por id): dos compras simultáneas con los mismos productos en otro
+    // orden de carrito se forman en fila en vez de bloquearse mutuamente (PostgreSQL abortaría una).
+    for (const line of byProductId(lines, (line) => line.product.id)) {
       const updated = await tx.product.updateMany({
         where: {
           id: line.product.id,
@@ -539,9 +541,17 @@ async function releaseCheckout(
   return true;
 }
 
+/** Orden fijo para bloquear filas de productos: el mismo al apartar y al devolver stock. */
+function byProductId<T>(items: T[], productId: (item: T) => string) {
+  return [...items].sort((a, b) => {
+    const [left, right] = [productId(a), productId(b)];
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
+}
+
 /** Devuelve piezas apartadas; un producto agotado vuelve a estar a la venta. */
 async function restoreStock(tx: Tx, items: { productId: string; quantity: number }[]) {
-  for (const item of items) {
+  for (const item of byProductId(items, (item) => item.productId)) {
     await tx.product.update({
       where: { id: item.productId },
       data: { stock: { increment: item.quantity } },
@@ -557,6 +567,10 @@ async function restoreStock(tx: Tx, items: { productId: string; quantity: number
  * Vence checkouts sin pagar después del tiempo de reserva y devuelve su stock. Con `buyerId` solo
  * revisa los de esa persona (se llama al abrir carrito, checkout y pedidos, para que nunca vea como
  * pendiente algo ya vencido). También libera checkouts que se quedaron sin pago (SEC-23).
+ *
+ * Cada checkout se libera por separado y un error no detiene el resto: el barrido global corre
+ * dentro de páginas y compras de otras personas (y de un cron), que no deben fallar por un pedido
+ * ajeno. Lo que falle se reintenta en el siguiente barrido.
  */
 export async function expireStaleCheckouts(now = new Date(), buyerId?: string) {
   const stale = await db.payment.findMany({
@@ -572,14 +586,16 @@ export async function expireStaleCheckouts(now = new Date(), buyerId?: string) {
     select: { provider: true, providerRef: true, checkoutId: true },
   });
   for (const payment of stale) {
-    const result = await applyPaymentEvent({
-      provider: payment.provider,
-      providerEventId: `expire_${payment.checkoutId}`,
-      providerRef: payment.providerRef,
-      status: "EXPIRED",
-      payload: { reason: "timeout" },
+    await sweepOne(payment.checkoutId, async () => {
+      const result = await applyPaymentEvent({
+        provider: payment.provider,
+        providerEventId: `expire_${payment.checkoutId}`,
+        providerRef: payment.providerRef,
+        status: "EXPIRED",
+        payload: { reason: "timeout" },
+      });
+      if (result.applied) await cancelAtProvider(payment);
     });
-    if (result.applied) await cancelAtProvider(payment);
   }
 
   const orphans = await db.checkout.findMany({
@@ -593,9 +609,19 @@ export async function expireStaleCheckouts(now = new Date(), buyerId?: string) {
     select: { id: true },
   });
   for (const orphan of orphans) {
-    await db.$transaction((tx) =>
-      releaseCheckout(tx, orphan.id, "EXPIRED", { payments: { none: {} } }),
+    await sweepOne(orphan.id, () =>
+      db.$transaction((tx) =>
+        releaseCheckout(tx, orphan.id, "EXPIRED", { payments: { none: {} } }),
+      ),
     );
+  }
+}
+
+async function sweepOne(checkoutId: string, release: () => Promise<unknown>) {
+  try {
+    await release();
+  } catch (error) {
+    console.error(`[checkout] no se pudo vencer el checkout ${checkoutId}; se reintenta`, error);
   }
 }
 

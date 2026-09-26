@@ -60,6 +60,6 @@ export type PersonSuggestionDTO = {
   avatarUrl: string | null;
   /** Tiene tienda activa: se muestra la insignia «Tienda». */
   isStore: boolean;
-  /** Razón visible: «La siguen 2 personas que sigues», «Comentó tu publicación»… */
+  /** Razón visible: «La siguen personas que sigues», «Comentó tu publicación»… (sin conteos). */
   reason: string;
 };

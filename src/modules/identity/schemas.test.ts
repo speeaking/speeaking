@@ -42,6 +42,21 @@ describe("signUpSchema", () => {
     expect(signUpSchema.safeParse({ ...validSignUp, name: "a".repeat(61) }).success).toBe(false);
   });
 
+  // Validar antes de contar intentos (SEC-02) deja pasar sin límite los formularios inválidos: un
+  // texto de 1 MB no debe llegar a las revisiones de suplantación ni de contraseñas comunes.
+  it("un nombre o una contraseña demasiado largos solo muestran el máximo", () => {
+    const result = signUpSchema.safeParse({
+      ...validSignUp,
+      name: "Soporte ".repeat(100_000),
+      password: "password".repeat(100_000),
+    });
+
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+      "Máximo 60 caracteres.",
+      "Máximo 128 caracteres.",
+    ]);
+  });
+
   // SEC-18
   it.each(["Equipo VendeIA", "Soporte", "vende ia"])(
     "rechaza nombres que suplantan a la plataforma: %s",
@@ -61,7 +76,10 @@ describe("signUpSchema", () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.issues).toEqual([
-        expect.objectContaining({ path: ["password"], message: expect.stringMatching(/muy común/) }),
+        expect.objectContaining({
+          path: ["password"],
+          message: expect.stringMatching(/muy común/),
+        }),
       ]);
     },
   );
@@ -120,6 +138,12 @@ describe("usernameSchema", () => {
     "tienda.oficial",
   ])("rechaza %s", (value) => {
     expect(usernameSchema.safeParse(value).success).toBe(false);
+  });
+
+  it("un usuario demasiado largo solo muestra el máximo", () => {
+    const result = usernameSchema.safeParse(`equipo.${"a".repeat(1_000_000)}`);
+
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Máximo 30 caracteres."]);
   });
 
   it("normaliza a minúsculas sin espacios alrededor", () => {

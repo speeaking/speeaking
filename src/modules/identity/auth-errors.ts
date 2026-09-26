@@ -1,6 +1,7 @@
 // Mismo mensaje si el correo ya tiene cuenta o si el alta falló por otra causa: el texto no confirma
 // que la cuenta exista (SEC-11; el tiempo se iguala en `actions.ts`).
-const SIGN_UP_FAILED = "No pudimos crear la cuenta con ese correo. Si ya tienes cuenta, inicia sesión.";
+const SIGN_UP_FAILED =
+  "No pudimos crear la cuenta con ese correo. Si ya tienes cuenta, inicia sesión.";
 
 const MESSAGES: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "Correo o contraseña incorrectos.",

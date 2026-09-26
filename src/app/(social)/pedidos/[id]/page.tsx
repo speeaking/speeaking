@@ -6,6 +6,7 @@ import { z } from "zod";
 import { buttonVariants } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import {
+  allOrdersCancelled,
   buyerStatusLabel,
   DELIVERY_LABELS,
   ORDER_STATUS_LABELS,
@@ -14,6 +15,7 @@ import {
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
+import { isSimulatedPayment } from "@/server/providers/payments";
 
 export const metadata: Metadata = { title: "Detalle del pedido" };
 
@@ -54,31 +56,27 @@ export default async function OrderDetailPage({ params }: PageProps<"/pedidos/[i
   });
   if (!checkout) notFound();
 
-  const Icon =
-    checkout.status === "PAID"
-      ? CheckCircle2
-      : checkout.status === "PENDING_PAYMENT"
-        ? Clock
-        : XCircle;
-  const pendingPayment = checkout.payments.find((payment) => payment.status === "PENDING");
-  const simulated = checkout.payments.some((payment) => payment.provider === "mock");
   const orderStatuses = checkout.orders.map((order) => order.status);
+  // El vendedor canceló todo lo que se pagó (SEC-25).
+  const cancelled = checkout.status === "PAID" && allOrdersCancelled(orderStatuses);
+  const paid = checkout.status === "PAID" && !cancelled;
+  const Icon = paid ? CheckCircle2 : checkout.status === "PENDING_PAYMENT" ? Clock : XCircle;
+  const pendingPayment = checkout.payments.find((payment) => payment.status === "PENDING");
+  const simulated = checkout.payments.some((payment) => isSimulatedPayment(payment.provider));
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 md:px-0">
       <div className="flex flex-col items-center gap-2 rounded-3xl border bg-card p-6 text-center">
-        <Icon
-          className={
-            checkout.status === "PAID" ? "size-10 text-success" : "size-10 text-muted-foreground"
-          }
-        />
+        <Icon className={paid ? "size-10 text-success" : "size-10 text-muted-foreground"} />
         <h1 className="text-2xl font-extrabold">
           {buyerStatusLabel(checkout.status, orderStatuses)}
         </h1>
         {checkout.status === "PAID" ? (
           <p className="text-sm text-muted-foreground">
             {simulated ? "Pago simulado: no se cobró nada. " : null}
-            {PAID_MESSAGES[paidOrderProgress(orderStatuses)]}
+            {cancelled
+              ? "El vendedor canceló tu pedido."
+              : PAID_MESSAGES[paidOrderProgress(orderStatuses)]}
           </p>
         ) : null}
         {checkout.status === "FAILED" || checkout.status === "EXPIRED" ? (

@@ -2,7 +2,9 @@ import { after } from "next/server";
 import { z } from "zod";
 import { recommendationEngine } from "@/modules/feed/engine";
 import { trackImpressions } from "@/modules/feed/impressions";
+import { decodeCursor } from "@/modules/feed/ranking";
 import { getViewer } from "@/modules/identity/session";
+import { checkSocialLimit } from "@/modules/social/limits";
 import { markCommunitySeen } from "@/modules/social/unread";
 import { db } from "@/server/db";
 
@@ -21,8 +23,20 @@ export async function GET(request: Request) {
   const params = Object.fromEntries(new URL(request.url).searchParams);
   const parsed = querySchema.safeParse(params);
   if (!parsed.success) return Response.json({ error: "Parámetros inválidos." }, { status: 400 });
+  // Un cursor manipulado o vencido es un error del cliente, no del servidor (SEC-31).
+  if (parsed.data.cursor !== undefined && !decodeCursor(parsed.data.cursor)) {
+    return Response.json({ error: "Cursor inválido." }, { status: 400 });
+  }
 
   const viewer = await getViewer();
+  // Cada página calcula el ranking y registra impresiones: límite por IP y por cuenta (SEC-15).
+  const limited = await checkSocialLimit("feed", viewer?.userId ?? null);
+  if (!limited.ok) {
+    return Response.json(
+      { error: limited.error },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } },
+    );
+  }
   const following = parsed.data.following === "1";
   if (following && !viewer) {
     return Response.json({ error: "Entra para ver a quién sigues." }, { status: 401 });

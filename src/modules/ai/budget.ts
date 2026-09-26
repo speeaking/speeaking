@@ -16,6 +16,11 @@ export const aiBudgetSchema = z.object({
   mxnPerUsd: z.number().min(5).max(50).default(18),
   /** Solicitudes de IA por persona por hora (protege costo y abuso). */
   maxRequestsPerUserPerHour: z.int().min(1).max(500).default(20),
+  /**
+   * Solicitudes por persona por día (SEC-19): una sola cuenta no puede agotar el presupuesto global
+   * de todos los vendedores. Cuenta también las que fallan.
+   */
+  maxRequestsPerUserPerDay: z.int().min(1).max(2_000).default(60),
 });
 
 export type AIBudget = z.infer<typeof aiBudgetSchema>;
@@ -27,6 +32,7 @@ export const DEFAULT_AI_BUDGET: AIBudget = {
   hardCapMonthlyUsd: 500,
   mxnPerUsd: 18,
   maxRequestsPerUserPerHour: 20,
+  maxRequestsPerUserPerDay: 60,
 };
 
 const MICROS_PER_USD = 1_000_000;

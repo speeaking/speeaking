@@ -111,8 +111,11 @@ export function CheckoutForm({
                 <span className="flex flex-1 flex-col">
                   <span className="font-medium">{DELIVERY_LABELS[method]}</span>
                   {method === "LOCAL_DELIVERY" ? (
+                    // Las zonas son texto libre del vendedor: no se validan contra la dirección
+                    // (SEC-23), así que se avisa que fuera de ellas el vendedor puede cancelar.
                     <span className="text-xs text-muted-foreground">
-                      Zonas: {group.localZones.join(", ")}
+                      Zonas: {group.localZones.join(", ")}. Fuera de ellas, el vendedor puede
+                      cancelar tu pedido.
                     </span>
                   ) : method === "PICKUP" ? (
                     <span className="text-xs text-muted-foreground">

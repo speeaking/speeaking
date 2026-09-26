@@ -7,17 +7,23 @@ import { simulatePaymentAction } from "@/modules/commerce/actions";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
+import { isSimulatedPayment, simulatedPaymentsEnabled } from "@/server/providers/payments";
 
 export const metadata: Metadata = { title: "Pasarela de pago simulada" };
 
-/** Página del proveedor simulado: en producción aquí estaría la página de Mercado Pago o Stripe. */
+/**
+ * Página del proveedor simulado: con un proveedor real aquí estaría la página de Mercado Pago o
+ * Stripe. Solo existe donde se permiten pagos simulados (SEC-01).
+ */
 export default async function MockPaymentPage({ params }: PageProps<"/checkout/pago/[ref]">) {
+  if (!simulatedPaymentsEnabled()) notFound();
   const { ref } = await params;
   const viewer = await requireOnboardedViewer(`/checkout/pago/${ref}`);
   await expireStaleCheckouts(new Date(), viewer.userId);
   const payment = await db.payment.findUnique({
     where: { providerRef: ref },
     select: {
+      provider: true,
       status: true,
       amountCents: true,
       method: true,
@@ -25,7 +31,13 @@ export default async function MockPaymentPage({ params }: PageProps<"/checkout/p
       checkout: { select: { buyerId: true } },
     },
   });
-  if (!payment || payment.checkout.buyerId !== viewer.userId) notFound();
+  if (
+    !payment ||
+    !isSimulatedPayment(payment.provider) ||
+    payment.checkout.buyerId !== viewer.userId
+  ) {
+    notFound();
+  }
   if (payment.status !== "PENDING") redirect(`/pedidos/${payment.checkoutId}`);
 
   return (

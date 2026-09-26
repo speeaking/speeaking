@@ -41,7 +41,8 @@ export const auth = betterAuth({
   },
   // Segunda barrera por si algún día se abre el router HTTP (hoy responde 404 a todo, ver
   // app/api/auth/[...all]/route.ts): estas rutas se saltan el consentimiento, los límites propios o
-  // la validación de las Server Actions. Solo afecta al router; `auth.api.*` sigue funcionando.
+  // la validación de las Server Actions, o manejan cuentas y sesiones sin interfaz propia. Solo afecta
+  // al router; `auth.api.*` sigue funcionando. Al abrir una en `ALLOWED_PATHS`, quítala de aquí.
   disabledPaths: [
     "/sign-up/email",
     "/sign-in/email",
@@ -49,6 +50,16 @@ export const auth = betterAuth({
     "/change-email",
     "/change-password",
     "/delete-user",
+    "/request-password-reset",
+    "/reset-password",
+    "/list-sessions",
+    "/revoke-session",
+    "/revoke-sessions",
+    "/revoke-other-sessions",
+    "/update-session",
+    "/link-social",
+    "/unlink-account",
+    "/list-accounts",
   ],
   // Solo cubre el router HTTP `/api/auth/*`, hoy cerrado (ver app/api/auth/[...all]/route.ts). Los
   // límites del registro y el inicio de sesión reales viven en `modules/identity/auth-limits.ts`.
@@ -64,6 +75,9 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: AUTH_COOKIE_PREFIX,
+    // SEC-21: cookies Secure siempre que el sitio vaya por https (en producción es obligatorio,
+    // ver env-schema).
+    useSecureCookies: env.APP_URL.startsWith("https://"),
     // Los IDs los genera la base de datos (UUIDv7, ver prisma/schema.prisma).
     database: { generateId: false },
     // IP de la sesión y del limitador HTTP: solo la que resuelve `client-ip.ts` con los proxies de

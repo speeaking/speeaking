@@ -19,7 +19,11 @@ export const accountNameSchema = z
   .string()
   .trim()
   .min(2, "Escribe tu nombre.")
-  .max(MAX_ACCOUNT_NAME_LENGTH, `Máximo ${MAX_ACCOUNT_NAME_LENGTH} caracteres.`)
+  // `abort`: un texto demasiado largo no llega a la revisión de suplantación (costo de CPU).
+  .max(MAX_ACCOUNT_NAME_LENGTH, {
+    error: `Máximo ${MAX_ACCOUNT_NAME_LENGTH} caracteres.`,
+    abort: true,
+  })
   .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE);
 
 export const signUpSchema = z
@@ -29,7 +33,7 @@ export const signUpSchema = z
     password: z
       .string()
       .min(MIN_PASSWORD_LENGTH, `Usa al menos ${MIN_PASSWORD_LENGTH} caracteres.`)
-      .max(MAX_PASSWORD_LENGTH, `Máximo ${MAX_PASSWORD_LENGTH} caracteres.`)
+      .max(MAX_PASSWORD_LENGTH, { error: `Máximo ${MAX_PASSWORD_LENGTH} caracteres.`, abort: true })
       // SEC-30: lista local de contraseñas comunes (sin llamadas externas). Las cortas ya fallan arriba.
       .refine(
         (value) => value.length < MIN_PASSWORD_LENGTH || !isCommonPassword(value),
@@ -68,7 +72,7 @@ export const usernameSchema = z
     z
       .string()
       .min(3, "Usa al menos 3 caracteres.")
-      .max(30, "Máximo 30 caracteres.")
+      .max(30, { error: "Máximo 30 caracteres.", abort: true })
       .regex(
         /^[a-z0-9](?:[a-z0-9._]*[a-z0-9])?$/,
         "Solo letras sin acento, números, punto y guion bajo; sin empezar ni terminar en punto.",

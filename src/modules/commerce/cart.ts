@@ -85,6 +85,9 @@ export type CartLine = {
     priceCents: number;
     currency: string;
     stock: number;
+    /** A la venta: publicado y de un vendedor activo (SEC-24). */
+    forSale: boolean;
+    /** A la venta y con piezas suficientes para esta línea. */
     available: boolean;
     imageUrl: string | null;
     pickupAvailable: boolean;
@@ -134,6 +137,7 @@ export async function getCartLines(userId: string): Promise<CartLine[]> {
   const storage = getStorage();
   return items.map(({ product, ...item }) => {
     const cover = product.media[0]?.media.storageKey;
+    const forSale = product.status === "ACTIVE" && product.seller.status === "ACTIVE";
     return {
       itemId: item.id,
       quantity: item.quantity,
@@ -145,10 +149,8 @@ export async function getCartLines(userId: string): Promise<CartLine[]> {
         priceCents: product.priceCents,
         currency: product.currency,
         stock: product.stock,
-        available:
-          product.status === "ACTIVE" &&
-          product.seller.status === "ACTIVE" &&
-          product.stock >= item.quantity,
+        forSale,
+        available: forSale && product.stock >= item.quantity,
         imageUrl: cover ? storage.publicUrl(cover) : null,
         pickupAvailable: product.pickupAvailable,
         localDeliveryAvailable: product.localDeliveryAvailable,

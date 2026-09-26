@@ -291,3 +291,138 @@ Se detectó con los contadores «N nuevas» (F7).
 
 **Consecuencias.** Las fechas se guardan en UTC real y se presentan en `America/Mexico_City` solo en
 la interfaz (`siteConfig.timeZone`). En producción, la base gestionada también debe ir en UTC.
+
+## Decisiones de la corrección de seguridad (2026-09-26)
+
+Tras la auditoría `docs/security/auditoria-2026-09-26.md`.
+
+| #       | Decisión                                                                                              | Estado   |
+| ------- | ----------------------------------------------------------------------------------------------------- | -------- |
+| ADR-029 | CSP estricta con nonce por petición (`proxy.ts`), COOP/CORP `same-origin`, en modo de aplicación      | Aceptada |
+| ADR-030 | Privacidad de la actividad y de «Gente de tus comunidades»; `userId` UUIDv7 públicos: riesgo aceptado | Aceptada |
+| ADR-031 | Guardián de la IA: reserva atómica antes de llamar, cifras del código, contenido revisado, retención  | Aceptada |
+| ADR-032 | Pagos simulados con falla cerrada en producción (resumen de SEC-01)                                   | Aceptada |
+
+## ADR-029 · CSP con nonce
+
+**Contexto.** Las páginas HTML no tenían Content-Security-Policy ni COOP/CORP (SEC-06). No había XSS
+conocido, pero sin CSP cualquier regresión o dependencia comprometida ejecutaría scripts con la
+sesión de la persona (Server Actions, datos ya renderizados).
+
+**Decisión.**
+
+- `src/proxy.ts` genera un nonce de 128 bits por petición y pone la política (`src/lib/csp.ts`) en la
+  petición (de ahí Next toma el nonce para sus scripts) y en la respuesta. El cliente no puede fijar
+  el nonce: la cabecera `x-nonce` se pisa siempre. El layout raíz pasa el nonce a next-themes (script
+  que fija el tema antes de pintar) y al `CSPProvider` de Base UI.
+- Política: `default-src 'self'`; `script-src 'self' 'nonce-…' 'strict-dynamic'` (más `'unsafe-eval'`
+  solo en desarrollo, para las pilas de error de React); `style-src 'self' 'unsafe-inline'`;
+  `img-src 'self' data: blob:`; `font-src 'self'`; `connect-src 'self'`; `object-src 'none'`;
+  `base-uri 'none'`; `form-action 'self'`; `frame-ancestors 'none'`; `upgrade-insecure-requests` solo
+  si `APP_URL` es https.
+- `next.config.ts` agrega `Cross-Origin-Opener-Policy` y `Cross-Origin-Resource-Policy: same-origin`
+  a todas las rutas (además de las cabeceras que ya había). `/media` conserva su CSP de sandbox y las
+  API no llevan CSP de página.
+- El optimizador de imágenes solo acepta `/media/**` sin query, sin orígenes remotos ni SVG (SEC-35).
+- **Modo de aplicación desde el día uno**, no `Report-Only`: `tests/e2e/security-headers.spec.ts`
+  recorre como visitante, registro, onboarding, inicio con sesión, producto, comunidad, Studio,
+  Vende con IA, checkout y cambio de tema, y exige cero violaciones (evento
+  `securitypolicyviolation` y consola), hidratación completa y que un `onerror` inyectado no corra.
+
+**Riesgo aceptado.** `style-src 'unsafe-inline'`: la interfaz usa atributos `style` (tono de cada
+comunidad, proporción y desenfoque de fotos) y sonner inyecta un `<style>` sin nonce; un nonce en
+`style-src` desactivaría `'unsafe-inline'` y rompería todo eso. El CSS inyectado no ejecuta código.
+
+**Consecuencias.** Todas las páginas se renderizan por petición (el layout lee las cabeceras): no hay
+páginas estáticas ni ISR. Agregar un tercero (SDK de pagos, analítica, CDN de imágenes) es cambiar
+`contentSecurityPolicy` y su prueba. Las rutas que el proxy no toca (`/api/*`, prefetch de
+`next/link`) no llevan CSP; el 404 HTML de `/api/*` es estático y sin datos de la persona. La E2E se
+corrió contra `pnpm dev` (que permite `'unsafe-eval'`); hay que correrla también contra
+`pnpm build && pnpm start`, donde cualquier `eval` de una dependencia sí se bloquea. Pendiente: un
+endpoint `report-to` para recibir violaciones en producción.
+
+## ADR-030 · Privacidad de la actividad y de las sugerencias
+
+**Contexto.** Los eventos «anónimos» se podían re-identificar por su metadata y su hora (SEC-16);
+rechazar la personalización no desligaba lo anterior y el historial de búsqueda no se podía ver ni
+borrar (SEC-27); «Gente de tus comunidades» revelaba a quién sigue una persona concreta (SEC-17); los
+`userId` públicos son UUIDv7 (SEC-33).
+
+**Decisión.**
+
+- **Eventos anónimos de verdad** (`analytics/event.ts`): sin persona ni texto de búsqueda; metadata
+  solo con llaves permitidas (conteos y categorías cortas, nunca `*Id` ni la razón del ranking, que
+  sale de a quién sigue la persona); hora truncada a la hora; id aleatorio (UUIDv4, porque el UUIDv7
+  por omisión lleva la hora al milisegundo); en las propuestas de IA (producto propio) sin la entidad.
+- **Sin decisión no se liga:** antes de terminar el onboarding la actividad se guarda anónima.
+- **Opt-out retroactivo:** desactivar la personalización en Ajustes desliga, en la misma transacción,
+  toda la actividad previa con el mismo estándar (`anonymizeUserActivity`, un `UPDATE` en SQL).
+- **Historial de búsqueda** visible y borrable en Ajustes.
+- **Sugerencias:** los intermediarios de «La siguen personas que sigues» son solo seguidos mutuos que
+  participan en las sugerencias (`discoverable`); una persona cuenta solo con al menos 2
+  intermediarios distintos y la razón nunca dice cuántos.
+
+**Riesgo residual (SEC-16/27).** Anónimo no es agregado: con poco volumen, producto + hora todavía
+acota a pocas personas, y el orden físico de inserción (las impresiones de una página entran juntas)
+no se oculta; la protección fuerte son contadores agregados por día. Un evento que ya leyó
+«personalización activa» y se inserta justo después de desactivarla queda ligado (ventana de
+milisegundos; se cierra leyendo el perfil con `FOR SHARE` en la misma transacción del insert).
+
+**Riesgo residual (SEC-17).** Quien se sigue mutuamente con la víctima puede crear cuentas títere que
+también se sigan con él y deducir a quién sigue la víctima. La corrección completa es un
+consentimiento propio del intermediario (`Profile.useFollowsForSuggestions`, apagado por omisión), que
+requiere migración: decisión pendiente del fundador.
+
+**Riesgo aceptado (SEC-33).** Los `userId` que viajan en DTOs públicos (autor en el feed, vendedor del
+producto, sugerencias, botón de seguir) son UUIDv7 y revelan la fecha y hora de alta de la cuenta.
+Cambiarlos exige un `publicId` (o usar el `username`) en los DTOs y acciones de social, feed, catalog
+y discovery. Es un dato de baja sensibilidad (muchas redes muestran «se unió en…»); se revisa antes
+del lanzamiento público. La analítica anónima ya no guarda horas exactas.
+
+**Consecuencias.** Los textos de consentimiento de «Aparecer en sugerencias» y el aviso de privacidad
+cambiaron: sus versiones suben a `2026-09-26` (`LEGAL_VERSIONS`).
+
+## ADR-031 · Guardián de la IA
+
+**Contexto.** El presupuesto de IA tenía una carrera (contar y crear en pasos separados), no contaba
+las llamadas fallidas y un solo usuario podía agotar el pool global (SEC-19). La salida solo se
+validaba en forma (SEC-28) y la entrada guardaba texto libre sin retención (SEC-29). Todo es latente
+mientras el proveedor sea simulado, pero es bloqueador antes de uno de pago.
+
+**Decisión.**
+
+- **Reservar antes de llamar** (`ai/reservation.ts`): cuotas por persona por hora y por día con el
+  limitador atómico (`rateLimit`; cuentan todos los intentos) y, dentro de una transacción con
+  `pg_advisory_xact_lock`, el presupuesto global del mes: costo real de lo respondido + costo máximo de
+  cada solicitud pendiente o fallida + el costo máximo de esta. Si no cabe: `BLOCKED_BUDGET` y un
+  mensaje sin detalles internos que ofrece publicar a mano.
+- **Costo máximo por llamada** = tokens tope (`AI_MAX_INPUT_TOKENS`, `AI_MAX_OUTPUT_TOKENS`) × precio;
+  un modelo sin precio no se llama. Timeout de la llamada en el servicio (`AI_CALL_TIMEOUT_MS`).
+- **Cifras del código:** el rango de precio y el presupuesto diario los calcula el código y reemplazan
+  lo que devuelva la IA antes de validar; la IA solo redacta su explicación, marcada como suya.
+- **Guardián de contenido** (`ai/output-guard.ts`): quita frases con contacto, datos o instrucciones de
+  pago, urgencia inventada, afirmaciones que exigen un dato P4 (garantía, originalidad, envío gratis,
+  devoluciones, tiempos, entregas, descuentos, meses sin intereses) y montos o piezas distintos de los
+  confirmados, también en otra moneda; revisa el texto normalizado (NFKC, sin caracteres invisibles) y
+  las cifras sin el nombre del producto; usa el nombre confirmado por el vendedor. Se aplica al generar
+  y otra vez al prellenar el producto. Es una lista de patrones (mitiga, no garantiza): el vendedor
+  revisa todo antes de publicar.
+- **Retención:** el texto se guarda sin correos, teléfonos, ligas ni cuentas; a los 90 días la entrada
+  se reemplaza por `{ redacted: true }`. Hoy la limpieza es oportunista (al usar «Vende con IA», a lo
+  más cada hora por proceso): sin uso, nada la dispara. Falta una tarea programada que llame
+  `redactExpiredAiInputs` para cumplir los 90 días que promete el aviso.
+
+**Pendiente antes de un proveedor de pago.** El adaptador real debe mandar `max_tokens` y el timeout;
+exigir correo verificado (SEC-10); nombrar al proveedor en el aviso de privacidad (encargado, país,
+sin entrenamiento ni retención); decidir si se aparta parte del presupuesto para vendedores con ventas.
+
+## ADR-032 · Pagos simulados con falla cerrada
+
+Resumen de la corrección de SEC-01 (la implementa el módulo de pagos). `PAYMENT_PROVIDER` solo acepta
+proveedores conocidos (hoy `mock`); en producción el arranque falla con el simulador salvo
+`ALLOW_SIMULATED_PAYMENTS=true`, una decisión explícita para un piloto cerrado. El simulador tampoco se
+crea en tiempo de ejecución si no está permitido, y su pasarela y su acción responden 404. Un pago
+simulado no genera ingreso en el libro de la plataforma (no sube el presupuesto de IA), el vendedor lo
+ve marcado como «Pago simulado» (sin poder enviarlo ni entregarlo) y el comprador ve que no se cobra
+nada. Con un proveedor real, un
+pedido pasa a pagado solo por webhook con firma verificada, nunca por una acción del navegador.

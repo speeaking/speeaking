@@ -25,12 +25,40 @@ export const serverEnvSchema = z
       .default("0")
       .transform(Number),
     // Pagos (SEC-01). Hoy solo existe el proveedor simulado; el real se agrega en PAYMENT_PROVIDERS.
-    PAYMENT_PROVIDER: z.enum(PAYMENT_PROVIDERS).default("mock"),
+    PAYMENT_PROVIDER: z
+      .enum(PAYMENT_PROVIDERS, { error: `Debe ser uno de: ${PAYMENT_PROVIDERS.join(", ")}.` })
+      .default("mock"),
     // Pagos simulados en producción: solo para un piloto cerrado, como decisión explícita. En
     // desarrollo y pruebas no hace falta; en producción, sin ella el arranque falla con el simulador.
     ALLOW_SIMULATED_PAYMENTS: z.stringbool({ error: "Debe ser true o false." }).default(false),
   })
   .superRefine((env, ctx) => {
+    // SEC-21: en producción, fuera de loopback, todo viaja cifrado (cookies Secure y base con TLS).
+    // Loopback se permite para probar el build de producción en local (`pnpm start`, E2E en CI).
+    if (env.NODE_ENV === "production") {
+      const app = new URL(env.APP_URL);
+      if (app.protocol !== "https:" && !isLoopback(app.hostname)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["APP_URL"],
+          message:
+            "En producción APP_URL debe usar https (las cookies de sesión van marcadas Secure).",
+        });
+      }
+      const database = new URL(env.DATABASE_URL);
+      const sslmode = database.searchParams.get("sslmode");
+      if (
+        !isLoopback(database.hostname) &&
+        !["require", "verify-ca", "verify-full"].includes(sslmode ?? "")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["DATABASE_URL"],
+          message:
+            "En producción la base de datos remota debe usar TLS: agrega sslmode=require (o verify-full) a DATABASE_URL.",
+        });
+      }
+    }
     if (env.PAYMENT_PROVIDER === SIMULATED_PAYMENT_PROVIDER && !simulatedPaymentsAllowed(env)) {
       ctx.addIssue({
         code: "custom",
@@ -42,3 +70,8 @@ export const serverEnvSchema = z
   });
 
 export type ServerEnv = z.output<typeof serverEnvSchema>;
+
+/** `localhost`, `127.x.x.x` o `[::1]`: la conexión no sale de la máquina. */
+function isLoopback(hostname: string) {
+  return hostname === "localhost" || hostname === "[::1]" || /^127(\.\d{1,3}){3}$/.test(hostname);
+}
