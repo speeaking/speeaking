@@ -1,0 +1,552 @@
+/*
+ * GENERADO por `pnpm tint` desde src/styles/community-tint.ts. No lo edites a mano.
+ *
+ * Utilidades de color por comunidad: leen `--hue` (0–359) del elemento o de un ancestro.
+ * El croma se limita tono por tono para no salir de sRGB (así el contraste AA se cumple en
+ * cualquier pantalla) y --lift aclara los amarillos y verdes oliva.
+ */
+
+/* Fondo saturado para el emoji de la comunidad (sin texto encima). */
+@utility community-tile {
+  --_h: var(--hue, 358.9);
+  --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
+  --_c-tile: calc(
+    0.1207
+    - 0.0005791 * var(--_h)
+    + 0.0005506 * max(0, var(--_h) - 15)
+    + 0.0004809 * max(0, var(--_h) - 30)
+    - 0.0014651 * max(0, var(--_h) - 45)
+    + 0.0008542 * max(0, var(--_h) - 60)
+    + 0.0030449 * max(0, var(--_h) - 75)
+    - 0.0024936 * max(0, var(--_h) - 90)
+    - 0.0003929 * max(0, var(--_h) - 105)
+    - 0.0005519 * max(0, var(--_h) - 165)
+    - 0.0000677 * max(0, var(--_h) - 180)
+    + 0.0008378 * max(0, var(--_h) - 195)
+    - 0.0004991 * max(0, var(--_h) - 210)
+    - 0.0012631 * max(0, var(--_h) - 225)
+    + 0.0009516 * max(0, var(--_h) - 240)
+    + 0.0004198 * max(0, var(--_h) - 255)
+    + 0.0004678 * max(0, var(--_h) - 270)
+    + 0.0005124 * max(0, var(--_h) - 285)
+    + 0.001242 * max(0, var(--_h) - 300)
+    - 0.0016581 * max(0, var(--_h) - 315)
+    - 0.000975 * max(0, var(--_h) - 330)
+    - 0.0007857 * max(0, var(--_h) - 345)
+  );
+  background-color: oklch(calc(0.8 + 0.08 * var(--_lift)) min(0.15, var(--_c-tile)) var(--_h));
+  &:is(.dark *) {
+    --_c-tile: calc(
+      0.16
+      - 0.0000407 * max(0, var(--_h) - 60)
+      - 0.0001327 * max(0, var(--_h) - 75)
+      + 0.0003875 * max(0, var(--_h) - 90)
+      - 0.0002141 * max(0, var(--_h) - 105)
+      - 0.0008477 * max(0, var(--_h) - 150)
+      - 0.0005637 * max(0, var(--_h) - 165)
+      + 0.0009701 * max(0, var(--_h) - 180)
+      + 0.0005088 * max(0, var(--_h) - 195)
+      + 0.000728 * max(0, var(--_h) - 210)
+      + 0.000918 * max(0, var(--_h) - 225)
+      - 0.0026433 * max(0, var(--_h) - 240)
+      + 0.0007162 * max(0, var(--_h) - 255)
+      + 0.0007416 * max(0, var(--_h) - 270)
+      + 0.0002111 * max(0, var(--_h) - 285)
+      - 0.0007391 * max(0, var(--_h) - 300)
+    );
+    background-color: oklch(calc(0.72 + 0.06 * var(--_lift)) min(0.16, var(--_c-tile)) var(--_h));
+  }
+}
+
+/* Texto en el color de la comunidad; AA sobre card, background, secondary y soft. */
+@utility community-text {
+  --_h: var(--hue, 358.9);
+  --_c-text: calc(
+    0.2
+    - 0.0002261 * max(0, var(--_h) - 15)
+    - 0.0033941 * max(0, var(--_h) - 30)
+    + 0.002008 * max(0, var(--_h) - 45)
+    + 0.0008228 * max(0, var(--_h) - 60)
+    + 0.0005703 * max(0, var(--_h) - 75)
+    + 0.0004576 * max(0, var(--_h) - 90)
+    + 0.0005387 * max(0, var(--_h) - 105)
+    + 0.0011873 * max(0, var(--_h) - 120)
+    - 0.0026359 * max(0, var(--_h) - 135)
+    - 0.0016 * max(0, var(--_h) - 150)
+    + 0.0014561 * max(0, var(--_h) - 165)
+    + 0.0004228 * max(0, var(--_h) - 180)
+    + 0.0004701 * max(0, var(--_h) - 195)
+    + 0.0004121 * max(0, var(--_h) - 210)
+    + 0.0005239 * max(0, var(--_h) - 225)
+    + 0.0025751 * max(0, var(--_h) - 240)
+    - 0.0011211 * max(0, var(--_h) - 255)
+    - 0.0024676 * max(0, var(--_h) - 270)
+  );
+  color: oklch(0.52 min(0.2, var(--_c-text)) var(--_h));
+  &:is(.dark *) {
+    --_c-text: calc(
+      0.10609
+      - 0.0005054 * var(--_h)
+      + 0.0004863 * max(0, var(--_h) - 15)
+      + 0.0004075 * max(0, var(--_h) - 30)
+      + 0.0007439 * max(0, var(--_h) - 45)
+      + 0.0007989 * max(0, var(--_h) - 60)
+      - 0.0019311 * max(0, var(--_h) - 75)
+      - 0.0003124 * max(0, var(--_h) - 165)
+      - 0.0003227 * max(0, var(--_h) - 180)
+      + 0.0008587 * max(0, var(--_h) - 195)
+      - 0.0016817 * max(0, var(--_h) - 210)
+      + 0.0000763 * max(0, var(--_h) - 225)
+      + 0.0008513 * max(0, var(--_h) - 240)
+      + 0.000375 * max(0, var(--_h) - 255)
+      + 0.0004177 * max(0, var(--_h) - 270)
+      + 0.000457 * max(0, var(--_h) - 285)
+      + 0.001106 * max(0, var(--_h) - 300)
+      - 0.0003821 * max(0, var(--_h) - 315)
+      - 0.0031664 * max(0, var(--_h) - 330)
+      + 0.0005195 * max(0, var(--_h) - 345)
+    );
+    color: oklch(0.82 min(0.15, var(--_c-text)) var(--_h));
+  }
+}
+
+/* Tinta profunda con un toque del tono, para titulares. */
+@utility community-ink {
+  --_h: var(--hue, 358.9);
+  --_c-ink: calc(
+    0.035
+    - 0.000071 * max(0, var(--_h) - 165)
+    - 0.0000839 * max(0, var(--_h) - 180)
+    + 0.0002095 * max(0, var(--_h) - 195)
+    + 0.0001168 * max(0, var(--_h) - 210)
+    - 0.0001714 * max(0, var(--_h) - 225)
+  );
+  color: oklch(0.2 min(0.035, var(--_c-ink)) var(--_h));
+  &:is(.dark *) {
+    --_c-ink: calc(
+      0.0191
+      - 0.0001014 * var(--_h)
+      + 0.0001042 * max(0, var(--_h) - 15)
+      + 0.0000993 * max(0, var(--_h) - 30)
+      - 0.0000456 * max(0, var(--_h) - 45)
+      - 0.0000566 * max(0, var(--_h) - 60)
+      - 0.0000657 * max(0, var(--_h) - 225)
+      - 0.0000705 * max(0, var(--_h) - 240)
+      + 0.0001107 * max(0, var(--_h) - 255)
+      + 0.0000826 * max(0, var(--_h) - 270)
+      + 0.0001078 * max(0, var(--_h) - 285)
+      - 0.0001594 * max(0, var(--_h) - 300)
+      - 0.0000055 * max(0, var(--_h) - 315)
+      - 0.0000603 * max(0, var(--_h) - 345)
+    );
+    color: oklch(0.96 min(0.02, var(--_c-ink)) var(--_h));
+  }
+}
+
+/* Superficie suave con tinta profunda (selección, franjas). */
+@utility community-soft {
+  --_h: var(--hue, 358.9);
+  --_c-soft: calc(
+    0.01638
+    - 0.0000882 * var(--_h)
+    + 0.0000908 * max(0, var(--_h) - 15)
+    + 0.0000718 * max(0, var(--_h) - 30)
+    + 0.0001022 * max(0, var(--_h) - 45)
+    + 0.0002714 * max(0, var(--_h) - 60)
+    - 0.0001537 * max(0, var(--_h) - 75)
+    - 0.0002944 * max(0, var(--_h) - 90)
+    - 0.0001406 * max(0, var(--_h) - 195)
+    - 0.0004235 * max(0, var(--_h) - 210)
+    + 0.0003578 * max(0, var(--_h) - 225)
+    + 0.0000888 * max(0, var(--_h) - 240)
+    + 0.0000941 * max(0, var(--_h) - 255)
+    + 0.0000669 * max(0, var(--_h) - 270)
+    + 0.0000872 * max(0, var(--_h) - 285)
+    + 0.0001977 * max(0, var(--_h) - 300)
+    - 0.0000886 * max(0, var(--_h) - 315)
+    - 0.000672 * max(0, var(--_h) - 330)
+    + 0.000264 * max(0, var(--_h) - 345)
+  );
+  background-color: oklch(0.965 min(0.03, var(--_c-soft)) var(--_h));
+  --_c-ink: calc(
+    0.035
+    - 0.000071 * max(0, var(--_h) - 165)
+    - 0.0000839 * max(0, var(--_h) - 180)
+    + 0.0002095 * max(0, var(--_h) - 195)
+    + 0.0001168 * max(0, var(--_h) - 210)
+    - 0.0001714 * max(0, var(--_h) - 225)
+  );
+  color: oklch(0.2 min(0.035, var(--_c-ink)) var(--_h));
+  &:is(.dark *) {
+    --_c-soft: calc(
+      0.045
+      - 0.000205 * max(0, var(--_h) - 60)
+      + 0.0000976 * max(0, var(--_h) - 75)
+      + 0.0002424 * max(0, var(--_h) - 90)
+      + 0.0000425 * max(0, var(--_h) - 105)
+      - 0.0001775 * max(0, var(--_h) - 120)
+      - 0.0002303 * max(0, var(--_h) - 150)
+      - 0.0001815 * max(0, var(--_h) - 165)
+      + 0.000283 * max(0, var(--_h) - 180)
+      + 0.0001484 * max(0, var(--_h) - 195)
+      + 0.0002197 * max(0, var(--_h) - 210)
+      + 0.000262 * max(0, var(--_h) - 225)
+      - 0.0004914 * max(0, var(--_h) - 240)
+      - 0.0000101 * max(0, var(--_h) - 255)
+    );
+    background-color: oklch(0.21 min(0.045, var(--_c-soft)) var(--_h));
+    --_c-ink: calc(
+      0.0191
+      - 0.0001014 * var(--_h)
+      + 0.0001042 * max(0, var(--_h) - 15)
+      + 0.0000993 * max(0, var(--_h) - 30)
+      - 0.0000456 * max(0, var(--_h) - 45)
+      - 0.0000566 * max(0, var(--_h) - 60)
+      - 0.0000657 * max(0, var(--_h) - 225)
+      - 0.0000705 * max(0, var(--_h) - 240)
+      + 0.0001107 * max(0, var(--_h) - 255)
+      + 0.0000826 * max(0, var(--_h) - 270)
+      + 0.0001078 * max(0, var(--_h) - 285)
+      - 0.0001594 * max(0, var(--_h) - 300)
+      - 0.0000055 * max(0, var(--_h) - 315)
+      - 0.0000603 * max(0, var(--_h) - 345)
+    );
+    color: oklch(0.96 min(0.02, var(--_c-ink)) var(--_h));
+  }
+}
+
+/* Fondo vivo para barras, reglas e indicadores (sin texto encima). */
+@utility community-bar {
+  --_h: var(--hue, 358.9);
+  --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
+  --_c-bar: calc(
+    0.21
+    - 0.0016732 * max(0, var(--_h) - 30)
+    + 0.0006871 * max(0, var(--_h) - 45)
+    + 0.0001856 * max(0, var(--_h) - 60)
+    + 0.0015532 * max(0, var(--_h) - 75)
+    - 0.000694 * max(0, var(--_h) - 90)
+    + 0.0001767 * max(0, var(--_h) - 105)
+    + 0.0007822 * max(0, var(--_h) - 120)
+    - 0.0019412 * max(0, var(--_h) - 135)
+    - 0.0019593 * max(0, var(--_h) - 150)
+    + 0.0018481 * max(0, var(--_h) - 165)
+    + 0.0005367 * max(0, var(--_h) - 180)
+    + 0.0005967 * max(0, var(--_h) - 195)
+    + 0.0005231 * max(0, var(--_h) - 210)
+    + 0.001194 * max(0, var(--_h) - 225)
+    + 0.0004021 * max(0, var(--_h) - 240)
+    - 0.0025406 * max(0, var(--_h) - 255)
+    + 0.0009643 * max(0, var(--_h) - 270)
+    + 0.0009607 * max(0, var(--_h) - 285)
+    - 0.0015419 * max(0, var(--_h) - 300)
+    - 0.0000603 * max(0, var(--_h) - 315)
+  );
+  background-color: oklch(calc(0.66 + 0.18 * var(--_lift)) min(0.21, var(--_c-bar)) var(--_h));
+  &:is(.dark *) {
+    --_c-bar: calc(
+      0.16959
+      - 0.0008942 * var(--_h)
+      + 0.0008239 * max(0, var(--_h) - 15)
+      + 0.0006429 * max(0, var(--_h) - 30)
+      - 0.0014777 * max(0, var(--_h) - 45)
+      + 0.0017798 * max(0, var(--_h) - 60)
+      - 0.0007831 * max(0, var(--_h) - 75)
+      + 0.0001838 * max(0, var(--_h) - 90)
+      + 0.000474 * max(0, var(--_h) - 105)
+      - 0.0007494 * max(0, var(--_h) - 120)
+      - 0.0019046 * max(0, var(--_h) - 150)
+      + 0.0004539 * max(0, var(--_h) - 165)
+      + 0.0009971 * max(0, var(--_h) - 180)
+      + 0.000523 * max(0, var(--_h) - 195)
+      + 0.0008096 * max(0, var(--_h) - 210)
+      - 0.0002605 * max(0, var(--_h) - 225)
+      - 0.0015571 * max(0, var(--_h) - 240)
+      + 0.0007768 * max(0, var(--_h) - 255)
+      + 0.0005359 * max(0, var(--_h) - 270)
+      + 0.0009276 * max(0, var(--_h) - 285)
+      + 0.0003639 * max(0, var(--_h) - 300)
+      - 0.0016658 * max(0, var(--_h) - 315)
+      - 0.0006939 * max(0, var(--_h) - 345)
+    );
+    background-color: oklch(calc(0.74 + 0.08 * var(--_lift)) min(0.18, var(--_c-bar)) var(--_h));
+  }
+}
+
+/* Borde en el color vivo de la comunidad (estado seleccionado). */
+@utility community-border {
+  --_h: var(--hue, 358.9);
+  --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
+  --_c-bar: calc(
+    0.21
+    - 0.0016732 * max(0, var(--_h) - 30)
+    + 0.0006871 * max(0, var(--_h) - 45)
+    + 0.0001856 * max(0, var(--_h) - 60)
+    + 0.0015532 * max(0, var(--_h) - 75)
+    - 0.000694 * max(0, var(--_h) - 90)
+    + 0.0001767 * max(0, var(--_h) - 105)
+    + 0.0007822 * max(0, var(--_h) - 120)
+    - 0.0019412 * max(0, var(--_h) - 135)
+    - 0.0019593 * max(0, var(--_h) - 150)
+    + 0.0018481 * max(0, var(--_h) - 165)
+    + 0.0005367 * max(0, var(--_h) - 180)
+    + 0.0005967 * max(0, var(--_h) - 195)
+    + 0.0005231 * max(0, var(--_h) - 210)
+    + 0.001194 * max(0, var(--_h) - 225)
+    + 0.0004021 * max(0, var(--_h) - 240)
+    - 0.0025406 * max(0, var(--_h) - 255)
+    + 0.0009643 * max(0, var(--_h) - 270)
+    + 0.0009607 * max(0, var(--_h) - 285)
+    - 0.0015419 * max(0, var(--_h) - 300)
+    - 0.0000603 * max(0, var(--_h) - 315)
+  );
+  border-color: oklch(calc(0.66 + 0.18 * var(--_lift)) min(0.21, var(--_c-bar)) var(--_h));
+  &:is(.dark *) {
+    --_c-bar: calc(
+      0.16959
+      - 0.0008942 * var(--_h)
+      + 0.0008239 * max(0, var(--_h) - 15)
+      + 0.0006429 * max(0, var(--_h) - 30)
+      - 0.0014777 * max(0, var(--_h) - 45)
+      + 0.0017798 * max(0, var(--_h) - 60)
+      - 0.0007831 * max(0, var(--_h) - 75)
+      + 0.0001838 * max(0, var(--_h) - 90)
+      + 0.000474 * max(0, var(--_h) - 105)
+      - 0.0007494 * max(0, var(--_h) - 120)
+      - 0.0019046 * max(0, var(--_h) - 150)
+      + 0.0004539 * max(0, var(--_h) - 165)
+      + 0.0009971 * max(0, var(--_h) - 180)
+      + 0.000523 * max(0, var(--_h) - 195)
+      + 0.0008096 * max(0, var(--_h) - 210)
+      - 0.0002605 * max(0, var(--_h) - 225)
+      - 0.0015571 * max(0, var(--_h) - 240)
+      + 0.0007768 * max(0, var(--_h) - 255)
+      + 0.0005359 * max(0, var(--_h) - 270)
+      + 0.0009276 * max(0, var(--_h) - 285)
+      + 0.0003639 * max(0, var(--_h) - 300)
+      - 0.0016658 * max(0, var(--_h) - 315)
+      - 0.0006939 * max(0, var(--_h) - 345)
+    );
+    border-color: oklch(calc(0.74 + 0.08 * var(--_lift)) min(0.18, var(--_c-bar)) var(--_h));
+  }
+}
+
+/* Bloque de color con texto: vivo con tinta negra en claro, profundo en oscuro. */
+@utility community-block {
+  --_h: var(--hue, 358.9);
+  --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
+  --_c-block: calc(
+    0.10672
+    - 0.000547 * var(--_h)
+    + 0.0005278 * max(0, var(--_h) - 15)
+    + 0.000429 * max(0, var(--_h) - 30)
+    - 0.0012204 * max(0, var(--_h) - 45)
+    + 0.0006523 * max(0, var(--_h) - 60)
+    + 0.0030119 * max(0, var(--_h) - 75)
+    - 0.0010296 * max(0, var(--_h) - 90)
+    - 0.001824 * max(0, var(--_h) - 105)
+    - 0.000979 * max(0, var(--_h) - 165)
+    + 0.000344 * max(0, var(--_h) - 180)
+    + 0.0008587 * max(0, var(--_h) - 195)
+    - 0.0016817 * max(0, var(--_h) - 210)
+    + 0.0000763 * max(0, var(--_h) - 225)
+    + 0.0008513 * max(0, var(--_h) - 240)
+    + 0.000375 * max(0, var(--_h) - 255)
+    + 0.0004177 * max(0, var(--_h) - 270)
+    + 0.000457 * max(0, var(--_h) - 285)
+    + 0.001106 * max(0, var(--_h) - 300)
+    + 0.0001544 * max(0, var(--_h) - 315)
+    - 0.0043112 * max(0, var(--_h) - 330)
+    + 0.0012412 * max(0, var(--_h) - 345)
+  );
+  background-color: oklch(calc(0.82 + 0.07 * var(--_lift)) min(0.16, var(--_c-block)) var(--_h));
+  color: oklch(0.17 0.01 285);
+  &:is(.dark *) {
+    --_c-block: calc(
+      0.045
+      - 0.000205 * max(0, var(--_h) - 60)
+      + 0.0000976 * max(0, var(--_h) - 75)
+      + 0.0002424 * max(0, var(--_h) - 90)
+      + 0.0000425 * max(0, var(--_h) - 105)
+      - 0.0001775 * max(0, var(--_h) - 120)
+      - 0.0002303 * max(0, var(--_h) - 150)
+      - 0.0001815 * max(0, var(--_h) - 165)
+      + 0.000283 * max(0, var(--_h) - 180)
+      + 0.0001484 * max(0, var(--_h) - 195)
+      + 0.0002197 * max(0, var(--_h) - 210)
+      + 0.000262 * max(0, var(--_h) - 225)
+      - 0.0004914 * max(0, var(--_h) - 240)
+      - 0.0000101 * max(0, var(--_h) - 255)
+    );
+    background-color: oklch(0.21 min(0.045, var(--_c-block)) var(--_h));
+    color: oklch(0.97 0.003 285);
+  }
+}
+
+/* Texto secundario dentro de community-block. */
+@utility community-block-muted {
+  --_h: var(--hue, 358.9);
+  color: oklch(0.3 0.02 285);
+  &:is(.dark *) {
+    color: oklch(0.78 0.01 285);
+  }
+}
+
+/* Cartel: bloque de tinta con el tono y texto blanco. */
+@utility community-poster {
+  --_h: var(--hue, 358.9);
+  background-color: oklch(0.19 0.015 var(--_h));
+  color: oklch(0.98 0 0);
+  &:is(.dark *) {
+    --_c-poster: calc(
+      0.05
+      - 0.0000637 * max(0, var(--_h) - 45)
+      - 0.0002931 * max(0, var(--_h) - 60)
+      + 0.000275 * max(0, var(--_h) - 75)
+      + 0.0001878 * max(0, var(--_h) - 90)
+      + 0.0002703 * max(0, var(--_h) - 105)
+      - 0.0003565 * max(0, var(--_h) - 120)
+      - 0.0000198 * max(0, var(--_h) - 135)
+      - 0.0004254 * max(0, var(--_h) - 150)
+      - 0.0000059 * max(0, var(--_h) - 165)
+      + 0.0002965 * max(0, var(--_h) - 180)
+      + 0.0001555 * max(0, var(--_h) - 195)
+      + 0.0001916 * max(0, var(--_h) - 210)
+      + 0.0003906 * max(0, var(--_h) - 225)
+      - 0.0004469 * max(0, var(--_h) - 240)
+      - 0.0001559 * max(0, var(--_h) - 255)
+    );
+    background-color: oklch(0.22 min(0.05, var(--_c-poster)) var(--_h));
+    color: oklch(0.98 0 0);
+  }
+}
+
+/* Kicker claro dentro de community-poster. */
+@utility community-lite {
+  --_h: var(--hue, 358.9);
+  --_c-lite: calc(
+    0.09264
+    - 0.0004725 * var(--_h)
+    + 0.0004607 * max(0, var(--_h) - 15)
+    + 0.000357 * max(0, var(--_h) - 30)
+    + 0.0005005 * max(0, var(--_h) - 45)
+    + 0.0012237 * max(0, var(--_h) - 60)
+    - 0.0016882 * max(0, var(--_h) - 75)
+    - 0.0003812 * max(0, var(--_h) - 90)
+    - 0.0001311 * max(0, var(--_h) - 195)
+    - 0.002259 * max(0, var(--_h) - 210)
+    + 0.0012793 * max(0, var(--_h) - 225)
+    + 0.0005909 * max(0, var(--_h) - 240)
+    + 0.0003986 * max(0, var(--_h) - 255)
+    + 0.000344 * max(0, var(--_h) - 270)
+    + 0.0004129 * max(0, var(--_h) - 285)
+    + 0.0009684 * max(0, var(--_h) - 300)
+    + 0.0000651 * max(0, var(--_h) - 315)
+    - 0.0037561 * max(0, var(--_h) - 330)
+    + 0.0011585 * max(0, var(--_h) - 345)
+  );
+  color: oklch(0.84 min(0.14, var(--_c-lite)) var(--_h));
+  &:is(.dark *) {
+    --_c-lite: calc(
+      0.09264
+      - 0.0004725 * var(--_h)
+      + 0.0004607 * max(0, var(--_h) - 15)
+      + 0.000357 * max(0, var(--_h) - 30)
+      + 0.0005005 * max(0, var(--_h) - 45)
+      + 0.0012237 * max(0, var(--_h) - 60)
+      - 0.0016882 * max(0, var(--_h) - 75)
+      - 0.0003812 * max(0, var(--_h) - 90)
+      - 0.0001311 * max(0, var(--_h) - 195)
+      - 0.002259 * max(0, var(--_h) - 210)
+      + 0.0012793 * max(0, var(--_h) - 225)
+      + 0.0005909 * max(0, var(--_h) - 240)
+      + 0.0003986 * max(0, var(--_h) - 255)
+      + 0.000344 * max(0, var(--_h) - 270)
+      + 0.0004129 * max(0, var(--_h) - 285)
+      + 0.0009684 * max(0, var(--_h) - 300)
+      + 0.0000651 * max(0, var(--_h) - 315)
+      - 0.0037561 * max(0, var(--_h) - 330)
+      + 0.0011585 * max(0, var(--_h) - 345)
+    );
+    color: oklch(0.84 min(0.14, var(--_c-lite)) var(--_h));
+  }
+}
+
+/* Avatar de persona sin foto: fondo y texto del tono en --hue. */
+@utility avatar-tint {
+  --_h: var(--hue, 358.9);
+  --_c-avatar: calc(
+    0.10609
+    - 0.0005054 * var(--_h)
+    + 0.0004863 * max(0, var(--_h) - 15)
+    + 0.0004075 * max(0, var(--_h) - 30)
+    + 0.0007439 * max(0, var(--_h) - 45)
+    - 0.0005344 * max(0, var(--_h) - 60)
+    - 0.0005978 * max(0, var(--_h) - 75)
+    - 0.0008485 * max(0, var(--_h) - 210)
+    - 0.0005332 * max(0, var(--_h) - 225)
+    + 0.0008513 * max(0, var(--_h) - 240)
+    + 0.000375 * max(0, var(--_h) - 255)
+    + 0.0004177 * max(0, var(--_h) - 270)
+    + 0.0004724 * max(0, var(--_h) - 285)
+    + 0.0010639 * max(0, var(--_h) - 300)
+    - 0.0016773 * max(0, var(--_h) - 315)
+    - 0.0005111 * max(0, var(--_h) - 330)
+    - 0.0008138 * max(0, var(--_h) - 345)
+  );
+  background-color: oklch(0.82 min(0.13, var(--_c-avatar)) var(--_h));
+  --_c-avatarText: calc(
+    0.07
+    - 0.000676 * max(0, var(--_h) - 30)
+    - 0.0000871 * max(0, var(--_h) - 45)
+    + 0.0004651 * max(0, var(--_h) - 60)
+    + 0.0001931 * max(0, var(--_h) - 75)
+    + 0.0002111 * max(0, var(--_h) - 90)
+    + 0.0002206 * max(0, var(--_h) - 105)
+    + 0.0005056 * max(0, var(--_h) - 120)
+    - 0.0011169 * max(0, var(--_h) - 135)
+    - 0.0006764 * max(0, var(--_h) - 150)
+    + 0.0006161 * max(0, var(--_h) - 165)
+    + 0.0001789 * max(0, var(--_h) - 180)
+    + 0.0001989 * max(0, var(--_h) - 195)
+    + 0.0001744 * max(0, var(--_h) - 210)
+    + 0.0002395 * max(0, var(--_h) - 225)
+    + 0.0010414 * max(0, var(--_h) - 240)
+    - 0.0013297 * max(0, var(--_h) - 255)
+    - 0.0001585 * max(0, var(--_h) - 270)
+  );
+  color: oklch(0.22 min(0.07, var(--_c-avatarText)) var(--_h));
+  &:is(.dark *) {
+    --_c-avatar: calc(
+      0.14
+      - 0.0008434 * max(0, var(--_h) - 165)
+      + 0.0002857 * max(0, var(--_h) - 180)
+      + 0.0006724 * max(0, var(--_h) - 195)
+      + 0.0007176 * max(0, var(--_h) - 210)
+      - 0.0003786 * max(0, var(--_h) - 225)
+      - 0.0004538 * max(0, var(--_h) - 240)
+    );
+    background-color: oklch(0.72 min(0.14, var(--_c-avatar)) var(--_h));
+    --_c-avatarText: calc(
+      0.07
+      - 0.000676 * max(0, var(--_h) - 30)
+      - 0.0000871 * max(0, var(--_h) - 45)
+      + 0.0004651 * max(0, var(--_h) - 60)
+      + 0.0001931 * max(0, var(--_h) - 75)
+      + 0.0002111 * max(0, var(--_h) - 90)
+      + 0.0002206 * max(0, var(--_h) - 105)
+      + 0.0005056 * max(0, var(--_h) - 120)
+      - 0.0011169 * max(0, var(--_h) - 135)
+      - 0.0006764 * max(0, var(--_h) - 150)
+      + 0.0006161 * max(0, var(--_h) - 165)
+      + 0.0001789 * max(0, var(--_h) - 180)
+      + 0.0001989 * max(0, var(--_h) - 195)
+      + 0.0001744 * max(0, var(--_h) - 210)
+      + 0.0002395 * max(0, var(--_h) - 225)
+      + 0.0010414 * max(0, var(--_h) - 240)
+      - 0.0013297 * max(0, var(--_h) - 255)
+      - 0.0001585 * max(0, var(--_h) - 270)
+    );
+    color: oklch(0.22 min(0.07, var(--_c-avatarText)) var(--_h));
+  }
+}

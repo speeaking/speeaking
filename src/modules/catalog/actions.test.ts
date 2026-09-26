@@ -1,0 +1,113 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { updateProductAction } from "./actions";
+
+// La acción solo traduce: quién edita sale de la sesión (nunca del formulario) y los errores del
+// servicio se vuelven mensajes. Las reglas de propiedad e inventario se prueban en service.test.
+const { session, service, redirect, revalidatePath } = vi.hoisted(() => {
+  class ProductEditError extends Error {
+    constructor(
+      readonly code: string,
+      readonly currentStock?: number,
+    ) {
+      super(code);
+    }
+  }
+  return {
+    session: { requireOnboardedViewer: vi.fn() },
+    service: { ProductEditError, updateProduct: vi.fn(), setProductStatus: vi.fn() },
+    redirect: vi.fn((to: string) => {
+      throw new Error(`redirect:${to}`);
+    }),
+    revalidatePath: vi.fn(),
+  };
+});
+vi.mock("@/modules/identity/session", () => session);
+vi.mock("./service", () => service);
+vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next/cache", () => ({ revalidatePath }));
+vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
+vi.mock("@/server/db", () => ({ db: {} }));
+
+const SELLER = "0199a000-0000-7000-8000-00000000000a";
+const OTHER = "0199a000-0000-7000-8000-00000000000f";
+const PRODUCT = "0199a000-0000-7000-8000-00000000000b";
+const uuid = "0199a000-0000-7000-8000-000000000001";
+
+function editForm(overrides: Record<string, string> = {}) {
+  const values: Record<string, string> = {
+    productId: PRODUCT,
+    stockShown: "5",
+    title: "AirPods Pro 2",
+    description: "Audífonos con cancelación de ruido, nuevos y sellados.",
+    price: "3,499",
+    cost: "2,400",
+    stock: "6",
+    categoryId: uuid,
+    condition: "NEW",
+    tags: "",
+    city: "Ciudad de México",
+    state: "CDMX",
+    localDeliveryZones: "",
+    warrantyType: "NONE",
+    returnWindowDays: "0",
+    authenticity: "NOT_APPLICABLE",
+    mediaIds: uuid,
+    // Un navegador manipulado no puede elegir por quién edita.
+    sellerUserId: OTHER,
+    userId: OTHER,
+    ...overrides,
+  };
+  const data = new FormData();
+  for (const [key, value] of Object.entries(values)) data.append(key, value);
+  return data;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
+});
+
+describe("updateProductAction", () => {
+  it("edita como la persona de la sesión y guarda con el inventario que se mostró", async () => {
+    service.updateProduct.mockResolvedValue({ slug: "airpods-pro-2-abc123", status: "ACTIVE" });
+
+    await expect(updateProductAction({}, editForm())).rejects.toThrow(
+      "redirect:/studio/productos?guardado=1",
+    );
+    expect(service.updateProduct).toHaveBeenCalledWith(
+      SELLER,
+      PRODUCT,
+      expect.objectContaining({ stock: 6, priceCents: 349_900, unitCostCents: 240_000 }),
+      { stockShown: 5 },
+    );
+    expect(revalidatePath).toHaveBeenCalledWith("/producto/airpods-pro-2-abc123");
+  });
+
+  it("un producto ajeno o un ID inválido no revela nada", async () => {
+    service.updateProduct.mockRejectedValue(new service.ProductEditError("NOT_FOUND"));
+    await expect(updateProductAction({}, editForm())).resolves.toEqual({
+      error: "No encontramos este producto en tu tienda.",
+      stockShown: "5",
+    });
+
+    await expect(updateProductAction({}, editForm({ productId: "../otro" }))).resolves.toEqual({
+      error: "No encontramos este producto en tu tienda.",
+    });
+    expect(service.updateProduct).toHaveBeenCalledTimes(1);
+  });
+
+  it("si el inventario cambió mientras editaba, muestra el número real y lo usa al reintentar", async () => {
+    service.updateProduct.mockRejectedValue(new service.ProductEditError("STOCK_CHANGED", 1));
+
+    const state = await updateProductAction({}, editForm());
+
+    expect(state.stockShown).toBe("1");
+    expect(state.fieldErrors?.stock?.[0]).toContain("ahora tienes 1 disponible.");
+    expect(redirect).not.toHaveBeenCalled();
+
+    // Otro error después (un campo inválido) no regresa a la referencia vieja.
+    const next = await updateProductAction(state, editForm({ stockShown: "1", title: "" }));
+    expect(next.fieldErrors?.title).toBeDefined();
+    expect(next.stockShown).toBe("1");
+  });
+});

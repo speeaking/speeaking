@@ -1,0 +1,2743 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>VendeIA · Hoy en las comunidades</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ───────────── Revista de comunidades · tokens ───────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        color-scheme: light;
+        --bg: oklch(0.972 0.009 80);
+        --paper: oklch(0.997 0.003 85);
+        --ink: oklch(0.22 0.02 45);
+        --ink-2: oklch(0.36 0.02 50);
+        --muted: oklch(0.48 0.018 55);
+        --line: oklch(0.905 0.012 72);
+        --line-2: oklch(0.85 0.014 70);
+        --chip: oklch(0.944 0.013 75);
+        --chip-2: oklch(0.918 0.016 75);
+        --primary: oklch(0.55 0.2 12);
+        --on-primary: oklch(0.985 0.008 85);
+        --primary-soft: oklch(0.95 0.03 12);
+        --primary-text: oklch(0.5 0.19 12);
+        --ai: oklch(0.89 0.19 126);
+        --on-ai: oklch(0.27 0.07 132);
+        --ok: oklch(0.47 0.12 150);
+        --glass: oklch(0.985 0.006 82 / 88%);
+        --shadow: 0 1px 2px oklch(0.22 0.02 45 / 5%), 0 14px 30px -18px oklch(0.22 0.02 45 / 28%);
+        --shadow-lg:
+          0 1px 2px oklch(0.22 0.02 45 / 6%), 0 24px 48px -24px oklch(0.22 0.02 45 / 35%);
+        /* Color de comunidad: L y C dependen del tema, el tono (--h) viene de la base de datos. */
+        --h: 12;
+        --ci-l: 0.45;
+        --ci-c: 0.15; /* texto */
+        --cs-l: 0.957;
+        --cs-c: 0.03; /* fondo suave */
+        --ct-l: 0.89;
+        --ct-c: 0.08; /* mosaico del emoji */
+        --cb-l: 0.63;
+        --cb-c: 0.16; /* barras y reglas */
+        --cd-l: 0.33;
+        --cd-c: 0.09; /* tinta profunda (texto grande sobre fondo suave) */
+        --radius: 22px;
+        --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+        --body: "Figtree", ui-sans-serif, system-ui, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --bg: oklch(0.16 0.012 40);
+          --paper: oklch(0.205 0.014 40);
+          --ink: oklch(0.955 0.01 80);
+          --ink-2: oklch(0.86 0.012 75);
+          --muted: oklch(0.74 0.015 70);
+          --line: oklch(1 0 0 / 9%);
+          --line-2: oklch(1 0 0 / 16%);
+          --chip: oklch(0.25 0.014 42);
+          --chip-2: oklch(0.29 0.016 42);
+          --primary: oklch(0.68 0.19 12);
+          --on-primary: oklch(0.17 0.012 40);
+          --primary-soft: oklch(0.28 0.06 12);
+          --primary-text: oklch(0.8 0.13 12);
+          --ai: oklch(0.87 0.2 128);
+          --on-ai: oklch(0.22 0.06 132);
+          --ok: oklch(0.78 0.14 150);
+          --glass: oklch(0.17 0.012 40 / 86%);
+          --shadow: 0 1px 0 oklch(1 0 0 / 4%) inset, 0 14px 30px -18px oklch(0 0 0 / 60%);
+          --shadow-lg: 0 24px 48px -24px oklch(0 0 0 / 70%);
+          --ci-l: 0.84;
+          --ci-c: 0.11;
+          --cs-l: 0.245;
+          --cs-c: 0.035;
+          --ct-l: 0.35;
+          --ct-c: 0.075;
+          --cb-l: 0.72;
+          --cb-c: 0.14;
+          --cd-l: 0.93;
+          --cd-c: 0.04;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: oklch(0.16 0.012 40);
+        --paper: oklch(0.205 0.014 40);
+        --ink: oklch(0.955 0.01 80);
+        --ink-2: oklch(0.86 0.012 75);
+        --muted: oklch(0.74 0.015 70);
+        --line: oklch(1 0 0 / 9%);
+        --line-2: oklch(1 0 0 / 16%);
+        --chip: oklch(0.25 0.014 42);
+        --chip-2: oklch(0.29 0.016 42);
+        --primary: oklch(0.68 0.19 12);
+        --on-primary: oklch(0.17 0.012 40);
+        --primary-soft: oklch(0.28 0.06 12);
+        --primary-text: oklch(0.8 0.13 12);
+        --ai: oklch(0.87 0.2 128);
+        --on-ai: oklch(0.22 0.06 132);
+        --ok: oklch(0.78 0.14 150);
+        --glass: oklch(0.17 0.012 40 / 86%);
+        --shadow: 0 1px 0 oklch(1 0 0 / 4%) inset, 0 14px 30px -18px oklch(0 0 0 / 60%);
+        --shadow-lg: 0 24px 48px -24px oklch(0 0 0 / 70%);
+        --ci-l: 0.84;
+        --ci-c: 0.11;
+        --cs-l: 0.245;
+        --cs-c: 0.035;
+        --ct-l: 0.35;
+        --ct-c: 0.075;
+        --cb-l: 0.72;
+        --cb-c: 0.14;
+        --cd-l: 0.93;
+        --cd-c: 0.04;
+      }
+      .cm {
+        --c-ink: oklch(var(--ci-l) var(--ci-c) var(--h));
+        --c-soft: oklch(var(--cs-l) var(--cs-c) var(--h));
+        --c-tile: oklch(var(--ct-l) var(--ct-c) var(--h));
+        --c-bar: oklch(var(--cb-l) var(--cb-c) var(--h));
+        --c-deep: oklch(var(--cd-l) var(--cd-c) var(--h));
+        --c-num: oklch(calc(var(--cb-l) - 0.07) var(--cb-c) var(--h));
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        font-family: var(--body);
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        background-image:
+          radial-gradient(60rem 30rem at 110% -10%, oklch(0.55 0.2 12 / 6%), transparent),
+          radial-gradient(40rem 24rem at -20% 0%, oklch(0.89 0.19 126 / 9%), transparent);
+        background-attachment: fixed;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        background: none;
+        border: 0;
+        cursor: pointer;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .i {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .i.sm {
+        width: 16px;
+        height: 16px;
+      }
+      .i.xs {
+        width: 14px;
+        height: 14px;
+      }
+      .i.lg {
+        width: 24px;
+        height: 24px;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* Tipografía editorial */
+      .display {
+        font-family: var(--display);
+        font-optical-sizing: auto;
+        letter-spacing: -0.02em;
+      }
+      .kicker {
+        font-family: var(--body);
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--c-ink, var(--muted));
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Piezas comunes */
+      .tile {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        background: var(--c-tile);
+        font-size: 19px;
+        line-height: 1;
+        position: relative;
+      }
+      .tile.sm {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .tile.md {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        font-size: 16px;
+      }
+      .tile.lg {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        font-size: 22px;
+      }
+      .tile .seal {
+        position: absolute;
+        right: -4px;
+        bottom: -4px;
+        width: 17px;
+        height: 17px;
+        border-radius: 6px;
+        background: var(--paper);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 2px var(--paper);
+      }
+      .tile .seal svg {
+        width: 15px;
+        height: 15px;
+      }
+      .avatar {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 13px;
+        background: oklch(0.9 0.07 var(--h));
+        color: oklch(0.3 0.08 var(--h));
+      }
+      .avatar.sm {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+      .avatar.lg {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        padding: 2px 7px;
+        background: var(--chip);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .badge .i {
+        width: 11px;
+        height: 11px;
+        stroke-width: 2.5;
+      }
+      .badge.shop {
+        background: var(--primary-soft);
+        color: var(--primary-text);
+      }
+      .ai-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .ai-chip .spark {
+        display: grid;
+        place-items: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 5px;
+        background: var(--ai);
+        color: var(--on-ai);
+      }
+      .ai-chip .spark .i {
+        width: 11px;
+        height: 11px;
+        stroke-width: 2.4;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 14.5px;
+        white-space: nowrap;
+        transition:
+          transform 0.15s ease,
+          background 0.15s ease;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: var(--on-primary);
+        box-shadow: 0 8px 18px -10px oklch(0.55 0.2 12 / 70%);
+      }
+      .btn-ink {
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .btn-soft {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .btn-ghost {
+        color: var(--ink);
+      }
+      .btn-ghost:hover,
+      .btn-soft:hover {
+        background: var(--chip-2);
+      }
+      .btn.sm {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        color: var(--ink-2);
+        position: relative;
+      }
+      .icon-btn:hover {
+        background: var(--chip);
+      }
+      .count {
+        position: absolute;
+        top: 3px;
+        right: 2px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: var(--on-primary);
+        font-size: 10.5px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 2px var(--paper);
+      }
+
+      /* Acciones de publicación */
+      .acts {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: -8px;
+      }
+      .act {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 13.5px;
+        font-weight: 700;
+      }
+      .act:hover {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .act.liked {
+        color: var(--primary-text);
+      }
+      .act.liked .i {
+        fill: currentColor;
+      }
+      .acts .push {
+        margin-left: auto;
+      }
+      .reply {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        padding: 0 6px 0 6px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .reply .ph {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .reply .send {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        color: var(--muted);
+      }
+
+      /* Imagen con desenfoque de carga */
+      .media {
+        position: relative;
+        overflow: hidden;
+        background: var(--c-tile, var(--chip));
+      }
+      .media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 78%;
+      }
+      .price-tag {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 6px 0 12px;
+        border-radius: 999px;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 800;
+        font-size: 14px;
+        box-shadow: var(--shadow-lg);
+      }
+      .price-tag .go {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .price-tag .go .i {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2.6;
+      }
+
+      [data-new="true"] {
+        outline: 1.5px dashed oklch(0.7 0.16 290 / 0);
+      } /* marcador para revisión: ver notes.md */
+      .show-new [data-new="true"] {
+        outline-color: oklch(0.62 0.2 290 / 90%);
+        outline-offset: 2px;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /* ───────────── Escritorio (≥1280 px) ───────────── */
+      :root {
+        --col-l: 232px;
+        --col-c: 680px;
+        --col-r: 320px;
+        --gap: 28px;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: var(--col-l) var(--col-c) var(--col-r);
+        gap: var(--gap);
+        justify-content: center;
+        padding: 0 24px;
+      }
+
+      /* Barra superior */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: var(--glass);
+        backdrop-filter: blur(18px) saturate(1.4);
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar .shell {
+        height: 64px;
+        align-items: center;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 22px;
+        letter-spacing: -0.03em;
+      }
+      .brand svg {
+        width: 34px;
+        height: 34px;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        padding: 0 8px 0 16px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 14.5px;
+        border: 1px solid transparent;
+      }
+      .search .ph {
+        flex: 1;
+      }
+      .search kbd {
+        font-family: var(--body);
+        font-size: 11.5px;
+        font-weight: 700;
+        border: 1px solid var(--line-2);
+        border-radius: 7px;
+        padding: 1px 7px;
+        color: var(--muted);
+      }
+      .tb-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
+      }
+      .tb-actions .btn {
+        margin-right: 6px;
+      }
+      .me {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        margin-left: 4px;
+        box-shadow:
+          0 0 0 2px var(--paper),
+          0 0 0 3.5px var(--line-2);
+      }
+
+      /* Riel izquierdo */
+      .rail-l {
+        position: sticky;
+        top: 64px;
+        align-self: start;
+        max-height: calc(100vh - 64px);
+        overflow: auto;
+        scrollbar-width: none;
+        padding: 16px 0 16px;
+      }
+      .nav {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--ink-2);
+      }
+      .nav a:hover {
+        background: var(--chip);
+      }
+      .nav a.active {
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 800;
+        box-shadow: var(--shadow);
+      }
+      .nav a.active .i {
+        color: var(--primary);
+        stroke-width: 2.4;
+      }
+      .rail-sec {
+        margin-top: 12px;
+        padding-top: 11px;
+        border-top: 1px solid var(--line);
+      }
+      .rail-h {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 0 12px 4px;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .rail-h a {
+        font-size: 12.5px;
+        letter-spacing: 0;
+        text-transform: none;
+        font-weight: 700;
+        color: var(--primary-text);
+      }
+      .crow {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        height: 39px;
+        padding: 0 10px 0 8px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14.5px;
+      }
+      .crow:hover {
+        background: var(--chip);
+      }
+      .crow .nm {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .crow .new {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--c-ink);
+      }
+      .crow .new::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 9px;
+        background: var(--c-bar);
+      }
+      .crow .join {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--primary-text);
+        padding: 3px 9px 3px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--line-2);
+      }
+      .crow .join .i {
+        width: 12px;
+        height: 12px;
+        stroke-width: 3;
+      }
+      .crow.sell .tile {
+        background: var(--ai);
+        color: var(--on-ai);
+      }
+      .crow.sell .tile .i {
+        width: 17px;
+        height: 17px;
+      }
+      .crow.studio .tile {
+        background: var(--chip-2);
+        color: var(--ink-2);
+      }
+      .rail-foot {
+        margin-top: 12px;
+        padding: 0 12px;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .theme {
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        border-radius: 999px;
+        background: var(--chip);
+      }
+      .theme span {
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 24px;
+        border-radius: 999px;
+      }
+      .theme span.on {
+        background: var(--paper);
+        box-shadow: var(--shadow);
+        color: var(--ink);
+      }
+
+      /* Columna central */
+      .feed {
+        padding: 22px 0 60px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-width: 0;
+      }
+      .edition {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .ed-top {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .ed-title {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 44px;
+        line-height: 0.95;
+        letter-spacing: -0.035em;
+        font-stretch: 88%;
+      }
+      .ed-date {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-align: right;
+        line-height: 1.35;
+        padding-bottom: 3px;
+      }
+      .ed-date b {
+        color: var(--ink);
+        font-weight: 800;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        overflow: hidden;
+        mask-image: linear-gradient(90deg, #000 88%, transparent);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        font-weight: 700;
+        font-size: 14px;
+        white-space: nowrap;
+        color: var(--ink-2);
+      }
+      .chip.on {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--bg);
+      }
+      .chip.cm {
+        padding-left: 5px;
+      }
+      .chip.cm .tile {
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        font-size: 14px;
+      }
+
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .composer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 10px 10px 12px;
+      }
+      .composer .ph {
+        flex: 1;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 14.5px;
+      }
+      .composer .qa {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: var(--ink-2);
+      }
+      .composer .qa:hover {
+        background: var(--chip);
+      }
+      .composer .qa .i {
+        color: var(--c-ink);
+      }
+      .composer .qa.sell {
+        background: var(--ai);
+        color: var(--on-ai);
+      }
+      .composer .qa.sell .i {
+        color: var(--on-ai);
+      }
+
+      /* Encabezado de sección */
+      .sec {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+      }
+      .sec .kicker {
+        font-size: 12.5px;
+        color: var(--c-ink);
+      }
+      .sec .rule {
+        flex: 1;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--c-bar), transparent);
+      }
+      .sec .more {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--c-ink);
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      /* Firma */
+      .by {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-width: 0;
+      }
+      .by .who {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .by .nm {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 800;
+        font-size: 14.5px;
+        min-width: 0;
+      }
+      .by .nm a {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .by .meta {
+        font-size: 12.5px;
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .by .meta a {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+      .by .dots {
+        margin-left: auto;
+        color: var(--muted);
+      }
+
+      /* Portada (post destacado) */
+      .hero {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        overflow: hidden;
+        background: var(--c-soft);
+        border-color: transparent;
+      }
+      .hero .media {
+        border-radius: 0;
+        min-height: 100%;
+      }
+      .hero .media img {
+        position: absolute;
+        inset: 0;
+        object-position: 50% 60%;
+      }
+      .hero .body {
+        padding: 22px 24px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .h-hero {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 38px;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        font-stretch: 84%;
+        color: var(--c-deep);
+        text-wrap: balance;
+      }
+      .lede {
+        font-size: 15.5px;
+        line-height: 1.55;
+        color: var(--ink-2);
+      }
+      .hero .acts {
+        margin-top: auto;
+      }
+      .hero .reply {
+        background: var(--paper);
+      }
+
+      /* Ritmo a dos columnas */
+      .duo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+      .tc {
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .tc .media {
+        aspect-ratio: 4/3;
+      }
+      .tc .body {
+        padding: 14px 16px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .tc .txt {
+        font-size: 14.5px;
+        line-height: 1.5;
+        color: var(--ink-2);
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .tc .txt b {
+        font-family: var(--display);
+        font-weight: 750;
+        font-size: 17.5px;
+        line-height: 1.2;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        font-stretch: 92%;
+      }
+      .tc .foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 8px 8px 16px;
+        border-top: 1px solid var(--line);
+        margin-top: auto;
+      }
+      .tc .body {
+        flex: none;
+      }
+      .tc .body + .foot {
+        margin-top: auto;
+      }
+      .tc .foot .by .meta {
+        font-size: 12px;
+      }
+      .mini-acts {
+        display: flex;
+        align-items: center;
+      }
+      .mini-acts .act {
+        padding: 0 8px;
+        height: 34px;
+      }
+
+      /* Cartel de texto (publicación sin imagen) */
+      .poster {
+        position: relative;
+        overflow: hidden;
+        background: var(--c-soft);
+        border-color: transparent;
+        padding: 22px 24px 16px;
+      }
+      .poster::before {
+        content: "¿?";
+        position: absolute;
+        right: -6px;
+        top: -38px;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 190px;
+        line-height: 1;
+        letter-spacing: -0.06em;
+        color: var(--c-bar);
+        opacity: 0.18;
+        font-stretch: 75%;
+      }
+      .poster .q {
+        position: relative;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 31px;
+        line-height: 1.06;
+        letter-spacing: -0.03em;
+        font-stretch: 84%;
+        color: var(--c-deep);
+        max-width: 560px;
+        margin: 10px 0 16px;
+        text-wrap: balance;
+      }
+      .poster .reply {
+        background: var(--paper);
+      }
+      .poster .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .first {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-ink);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Hecho para ti */
+      .pick {
+        padding: 0;
+        overflow: hidden;
+      }
+      .pick-head {
+        padding: 18px 22px 14px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .pick-k {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--primary-text);
+      }
+      .h-pick {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        font-stretch: 84%;
+        margin-top: 6px;
+      }
+      .why {
+        font-size: 12.5px;
+        color: var(--muted);
+        text-align: right;
+        max-width: 220px;
+        line-height: 1.4;
+      }
+      .why b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .why a {
+        color: var(--primary-text);
+        font-weight: 800;
+      }
+      .pick-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.08fr;
+      }
+      .pick-read {
+        padding: 18px 20px 18px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border-right: 1px solid var(--line);
+      }
+      .pick-read .media {
+        aspect-ratio: 16/10;
+        border-radius: 14px;
+      }
+      .pick-read .txt {
+        font-size: 14.5px;
+        color: var(--ink-2);
+        line-height: 1.5;
+      }
+      .pick-read .txt b {
+        font-family: var(--display);
+        font-weight: 750;
+        font-size: 18px;
+        line-height: 1.2;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        font-stretch: 92%;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 800;
+        font-size: 13.5px;
+        color: var(--c-ink, var(--primary-text));
+      }
+      .pp {
+        padding: 18px 22px 20px 20px;
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        gap: 16px;
+        align-content: start;
+      }
+      .pp .media {
+        aspect-ratio: 4/5;
+        border-radius: 14px;
+      }
+      .pp .media img {
+        object-position: 50% 50%;
+      }
+      .pp .info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+      .pp .seller {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pp .title {
+        font-family: var(--display);
+        font-weight: 750;
+        font-size: 19px;
+        line-height: 1.15;
+        letter-spacing: -0.015em;
+        font-stretch: 92%;
+      }
+      .price {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 28px;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .price small {
+        font-family: var(--body);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0;
+        margin-left: 3px;
+      }
+      .fit {
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        align-self: flex-start;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--ok);
+        background: oklch(from var(--ok) l c h / 12%);
+        padding: 3px 9px 3px 7px;
+        border-radius: 999px;
+      }
+      .fit .i {
+        width: 13px;
+        height: 13px;
+        stroke-width: 3;
+      }
+      .facts {
+        grid-column: 1/-1;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line-2);
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      .facts li {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .facts .i {
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+      }
+      .facts b {
+        color: var(--ink);
+      }
+      .pp .cta {
+        grid-column: 1/-1;
+        display: flex;
+        gap: 8px;
+      }
+      .pp .cta .btn-primary {
+        flex: 1;
+      }
+
+      /* Resumen de comunidad */
+      .digest {
+        padding: 6px 0 0;
+      }
+      .dg {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 12px;
+      }
+      .dg-item {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 18px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+      .dg-item .media {
+        aspect-ratio: 16/10;
+        border-radius: 12px;
+      }
+      .dg-item .emo {
+        aspect-ratio: 16/10;
+        border-radius: 12px;
+        background: var(--c-soft);
+        display: grid;
+        place-items: center;
+        font-size: 44px;
+        position: relative;
+        overflow: hidden;
+      }
+      .dg-item .emo .qmark {
+        position: absolute;
+        right: 10px;
+        bottom: -14px;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 92px;
+        line-height: 1;
+        color: var(--c-bar);
+        opacity: 0.22;
+      }
+      .dg-item .t {
+        font-size: 14px;
+        line-height: 1.4;
+        font-weight: 600;
+        color: var(--ink);
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .dg-item .m {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .dg-item .m a {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+
+      /* Riel derecho */
+      .rail-r {
+        padding: 22px 0 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .box {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        padding: 16px 16px 14px;
+      }
+      .box-h {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .box-h h3 {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+        font-stretch: 90%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .box-h h3 .i {
+        color: var(--primary);
+      }
+      .box-h a {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: var(--primary-text);
+      }
+      .box-sub {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: -6px 0 10px;
+      }
+
+      .intent {
+        background: linear-gradient(135deg, var(--primary-soft), var(--paper) 70%);
+      }
+      .intent .q {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .intent .q .ic {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .intent .q .t {
+        font-weight: 800;
+        font-size: 15px;
+        line-height: 1.25;
+      }
+      .intent .q .s {
+        font-size: 12.5px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .intent .hit {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-radius: 14px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+      }
+      .intent .hit .media {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        flex: none;
+      }
+      .intent .hit .media img {
+        object-position: 50% 50%;
+      }
+      .intent .hit .tt {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .intent .hit .tt span {
+        display: block;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .intent .hit .p {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 16px;
+      }
+
+      .debates {
+        list-style: none;
+        counter-reset: d;
+      }
+      .debates li {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 10px;
+        padding: 10px 0;
+        border-top: 1px solid var(--line);
+      }
+      .debates li:first-child {
+        border-top: 0;
+        padding-top: 2px;
+      }
+      .debates .n {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        color: var(--c-num);
+        font-stretch: 80%;
+      }
+      .debates .t {
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      .debates .m {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .debates .m b {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+
+      .board {
+        list-style: none;
+      }
+      .board li {
+        display: grid;
+        grid-template-columns: 18px 30px 1fr 72px;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 0;
+      }
+      .board li > :last-child {
+        justify-self: end;
+      }
+      .board .rk {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 15px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .board .nm {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 1.1;
+      }
+      .board .nm small {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .board .bar {
+        margin-top: 5px;
+        height: 5px;
+        border-radius: 5px;
+        background: var(--chip);
+        overflow: hidden;
+      }
+      .board .bar i {
+        display: block;
+        height: 100%;
+        border-radius: 5px;
+        background: var(--c-bar);
+      }
+      .board .v {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-align: right;
+        white-space: nowrap;
+      }
+      .board .jn {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--primary-text);
+        background: var(--primary-soft);
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .board .in {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--ok);
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 4px 2px 4px 6px;
+      }
+      .board .in .i {
+        width: 13px;
+        height: 13px;
+        stroke-width: 3;
+      }
+
+      .ai-card {
+        background: var(--ai);
+        color: var(--on-ai);
+        border-color: transparent;
+        position: relative;
+        overflow: hidden;
+      }
+      .ai-card::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: radial-gradient(circle, oklch(1 0 0 / 45%), transparent 70%);
+      }
+      .ai-card .k {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .ai-card h3 {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 25px;
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+        font-stretch: 86%;
+        margin: 8px 0 6px;
+      }
+      .ai-card p {
+        font-size: 13.5px;
+        line-height: 1.45;
+        font-weight: 600;
+        opacity: 0.9;
+      }
+      .ai-card .btn {
+        margin-top: 12px;
+        background: var(--on-ai);
+        color: var(--ai);
+      }
+      .legal {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.7;
+        padding: 0 6px;
+      }
+      .legal a {
+        margin-right: 10px;
+      }
+
+      /* Fin del feed */
+      .loadmore {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .loadmore::before,
+      .loadmore::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--line-2);
+      }
+      .dg-item.text {
+        background: var(--c-soft);
+        border-color: transparent;
+        box-shadow: none;
+        padding: 16px;
+      }
+      .dg-item.text .t {
+        font-family: var(--display);
+        font-weight: 750;
+        font-size: 20px;
+        line-height: 1.14;
+        letter-spacing: -0.02em;
+        font-stretch: 86%;
+        color: var(--c-deep);
+        -webkit-line-clamp: 7;
+      }
+      .dg-item .m span:last-child {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+
+      .rail-r .stick {
+        position: sticky;
+        top: 80px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .finds {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .finds li {
+        display: grid;
+        grid-template-columns: 52px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 9px 0;
+        border-top: 1px solid var(--line);
+      }
+      .finds li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .finds .media {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+      }
+      .finds .media img {
+        object-position: 50% 45%;
+      }
+      .finds .t {
+        font-weight: 700;
+        font-size: 13.5px;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .finds .s {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .finds .s b {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+      .finds .p {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: -0.02em;
+        text-align: right;
+        line-height: 1.1;
+      }
+      .finds .p small {
+        display: block;
+        font-family: var(--body);
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--ok);
+        letter-spacing: 0;
+      }
+      .price-tag.top {
+        top: 12px;
+        right: 12px;
+        left: auto;
+        bottom: auto;
+      }
+
+      .h-hero.long {
+        font-size: 32px;
+        line-height: 1.02;
+      }
+      [id] {
+        scroll-margin-top: 84px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) .theme span.on {
+          background: none;
+          box-shadow: none;
+          color: inherit;
+        }
+        :root:not([data-theme="light"]) .theme span:last-child {
+          background: var(--paper);
+          box-shadow: var(--shadow);
+          color: var(--ink);
+        }
+      }
+
+      /* ───────────── Visitante: invitación integrada ───────────── */
+      .cgrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 4px;
+      }
+      .cgrid a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13.5px;
+        white-space: nowrap;
+      }
+      .cgrid a:hover {
+        background: var(--chip);
+      }
+      .cgrid .tile {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .invite {
+        position: relative;
+        overflow: hidden;
+        padding: 20px 22px 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px 20px;
+        align-items: end;
+        background:
+          radial-gradient(120% 140% at 100% 0%, oklch(0.55 0.2 12 / 10%), transparent 55%),
+          radial-gradient(80% 120% at 0% 100%, oklch(0.89 0.19 126 / 16%), transparent 60%),
+          var(--paper);
+      }
+      .invite .k {
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--primary-text);
+      }
+      .invite h2 {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        font-stretch: 84%;
+        margin: 6px 0 6px;
+      }
+      .invite p {
+        font-size: 14.5px;
+        color: var(--ink-2);
+        max-width: 450px;
+        line-height: 1.45;
+      }
+      .invite .cta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
+      }
+      .invite .cta .btn {
+        height: 44px;
+        padding: 0 20px;
+      }
+      .invite .cta small {
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
+        font-weight: 600;
+      }
+      .invite .pickers {
+        grid-column: 1/-1;
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 7px;
+        padding-top: 14px;
+        border-top: 1px dashed var(--line-2);
+      }
+      .invite .pickers .lbl {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        margin-right: 4px;
+      }
+      .pk {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 10px 0 4px;
+        border-radius: 999px;
+        border: 1px solid var(--line-2);
+        background: var(--paper);
+        font-weight: 700;
+        font-size: 13.5px;
+      }
+      .pk .tile {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+      .pk .i {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2.6;
+        color: var(--muted);
+      }
+      .pk.sel {
+        background: var(--c-soft);
+        border-color: var(--c-bar);
+        color: var(--c-deep);
+      }
+      .pk.sel .i {
+        color: var(--c-ink);
+      }
+      .gate {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 48px;
+        padding: 0 6px 0 16px;
+        border-radius: 999px;
+        background: var(--paper);
+        font-size: 14px;
+        color: var(--ink-2);
+        font-weight: 600;
+      }
+      .gate span {
+        flex: 1;
+      }
+      .gate .btn {
+        height: 36px;
+      }
+      .join-box {
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+      aria-hidden="true"
+    >
+      <symbol id="i-house" viewBox="0 0 24 24">
+        <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+        <path
+          d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+        />
+      </symbol>
+      <symbol id="i-compass" viewBox="0 0 24 24">
+        <path
+          d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"
+        />
+        <circle cx="12" cy="12" r="10" />
+      </symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24">
+        <path d="M16 10a4 4 0 0 1-8 0" />
+        <path d="M3.103 6.034h17.794" />
+        <path
+          d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"
+        />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="10" r="3" />
+        <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="M12 5v14" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24">
+        <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+        <path
+          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+        />
+      </symbol>
+      <symbol id="i-cart" viewBox="0 0 24 24">
+        <circle cx="8" cy="21" r="1" />
+        <circle cx="19" cy="21" r="1" />
+        <path
+          d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+        />
+      </symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24">
+        <path
+          d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+        />
+      </symbol>
+      <symbol id="i-comment" viewBox="0 0 24 24">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      </symbol>
+      <symbol id="i-bookmark" viewBox="0 0 24 24">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+      </symbol>
+      <symbol id="i-share" viewBox="0 0 24 24">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+        <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+      </symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path
+          d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+        />
+        <path d="M20 3v4" />
+        <path d="M22 5h-4" />
+        <path d="M4 17v2" />
+        <path d="M5 18H3" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </symbol>
+      <symbol id="i-truck" viewBox="0 0 24 24">
+        <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+        <path d="M15 18H9" />
+        <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+        <circle cx="17" cy="18" r="2" />
+        <circle cx="7" cy="18" r="2" />
+      </symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24">
+        <path
+          d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+        />
+        <circle cx="12" cy="10" r="3" />
+      </symbol>
+      <symbol id="i-image" viewBox="0 0 24 24">
+        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+        <circle cx="9" cy="9" r="2" />
+        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+      </symbol>
+      <symbol id="i-question" viewBox="0 0 24 24">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
+      </symbol>
+      <symbol id="i-dashboard" viewBox="0 0 24 24">
+        <rect width="7" height="9" x="3" y="3" rx="1" />
+        <rect width="7" height="5" x="14" y="3" rx="1" />
+        <rect width="7" height="9" x="14" y="12" rx="1" />
+        <rect width="7" height="5" x="3" y="16" rx="1" />
+      </symbol>
+      <symbol id="i-receipt" viewBox="0 0 24 24">
+        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+        <path d="M14 8H8" />
+        <path d="M16 12H8" />
+        <path d="M13 16H8" />
+      </symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24">
+        <path d="M12 20h9" />
+        <path
+          d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+        />
+      </symbol>
+      <symbol id="i-trend" viewBox="0 0 24 24">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
+      </symbol>
+      <symbol id="i-send" viewBox="0 0 24 24">
+        <path
+          d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+        />
+        <path d="m21.854 2.147-10.94 10.939" />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="m4.93 4.93 1.41 1.41" />
+        <path d="m17.66 17.66 1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="m6.34 17.66-1.41 1.41" />
+        <path d="m19.07 4.93-1.41 1.41" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-target" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+        <circle cx="5" cy="12" r="1" />
+      </symbol>
+      <symbol id="i-flame" viewBox="0 0 24 24">
+        <path
+          d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+        />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </symbol>
+      <symbol id="i-store" viewBox="0 0 24 24">
+        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+        <path d="M2 7h20" />
+        <path
+          d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"
+        />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </symbol>
+      <symbol id="mark" viewBox="0 0 64 64">
+        <path
+          d="M20 8h18a14 14 0 0 1 14 14v12a14 14 0 0 1-14 14H25l-11 8 2.5-9.2A14 14 0 0 1 6 34V22A14 14 0 0 1 20 8z"
+          fill="var(--primary)"
+          stroke="none"
+        />
+        <path
+          d="M19 24.5l9.5 11.5 9.5-11.5"
+          fill="none"
+          stroke="var(--on-primary)"
+          stroke-width="5.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M54 1.5c1.1 5.6 2.4 6.9 8 8-5.6 1.1-6.9 2.4-8 8-1.1-5.6-2.4-6.9-8-8 5.6-1.1 6.9-2.4 8-8z"
+          fill="var(--ai)"
+          stroke="var(--bg)"
+          stroke-width="3"
+          stroke-linejoin="round"
+        />
+      </symbol>
+    </svg>
+
+    <header class="topbar">
+      <div class="shell">
+        <a class="brand" href="#" aria-label="VendeIA, ir al inicio"
+          ><svg viewBox="0 0 64 64"><use href="#mark" /></svg>VendeIA</a
+        >
+        <label class="search"
+          ><svg class="i"><use href="#i-search" /></svg
+          ><span class="ph">Busca comunidades, temas o productos</span><kbd>/</kbd></label
+        >
+        <div class="tb-actions">
+          <a class="btn btn-ghost" href="#">Entrar</a>
+          <a class="btn btn-primary" href="#">Crear cuenta</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="shell">
+      <!-- ───────── Riel izquierdo ───────── -->
+      <nav class="rail-l" aria-label="Navegación principal">
+        <ul class="nav">
+          <li>
+            <a class="active" href="#" aria-current="page"
+              ><svg class="i"><use href="#i-house" /></svg>Inicio</a
+            >
+          </li>
+          <li>
+            <a href="#"
+              ><svg class="i"><use href="#i-compass" /></svg>Descubrir</a
+            >
+          </li>
+          <li>
+            <a href="#"
+              ><svg class="i"><use href="#i-bag" /></svg>Comprar</a
+            >
+          </li>
+        </ul>
+
+        <div class="rail-sec">
+          <div class="rail-h"><span>Comunidades</span></div>
+          <div class="cgrid">
+            <a class="cm" style="--h: 45" href="#"><span class="tile">😂</span>Humor</a>
+            <a class="cm" style="--h: 285" href="#"><span class="tile">🎮</span>Gaming</a>
+            <a class="cm" style="--h: 235" href="#"><span class="tile">💻</span>Tecnología</a>
+            <a class="cm" style="--h: 35" href="#"><span class="tile">🌮</span>Comida</a>
+            <a class="cm" style="--h: 330" href="#"><span class="tile">🎧</span>Música</a>
+            <a class="cm" style="--h: 145" href="#"><span class="tile">⚽</span>Deportes</a>
+            <a class="cm" style="--h: 60" href="#"><span class="tile">🐶</span>Mascotas</a>
+            <a class="cm" style="--h: 12" href="#"><span class="tile">👟</span>Moda</a>
+            <a class="cm" style="--h: 110" href="#"><span class="tile">🏡</span>Hogar</a>
+            <a class="cm" style="--h: 200" href="#"><span class="tile">🚗</span>Autos</a>
+            <a class="cm" style="--h: 350" href="#"><span class="tile">💄</span>Belleza</a>
+            <a class="cm" style="--h: 165" href="#"><span class="tile">🚀</span>Emprende</a>
+          </div>
+        </div>
+
+        <div class="rail-sec">
+          <div class="rail-h"><span>Para vender</span></div>
+          <a class="crow sell" href="#"
+            ><span class="tile md"
+              ><svg class="i"><use href="#i-sparkles" /></svg></span
+            ><span class="nm">Vende con IA</span
+            ><svg class="i sm" style="color: var(--muted)"><use href="#i-chevron" /></svg
+          ></a>
+        </div>
+
+        <div class="rail-foot">
+          <span>Hecho en México</span
+          ><span class="theme" aria-label="Tema"
+            ><span class="on"
+              ><svg class="i xs"><use href="#i-sun" /></svg></span
+            ><span
+              ><svg class="i xs"><use href="#i-moon" /></svg></span
+          ></span>
+        </div>
+      </nav>
+
+      <!-- ───────── Feed ───────── -->
+      <main class="feed" id="contenido">
+        <section class="edition">
+          <div class="ed-top">
+            <h1 class="ed-title">Hoy en VendeIA</h1>
+            <p class="ed-date"><b>Viernes 25 de septiembre</b><br />Edición abierta</p>
+          </div>
+          <nav class="chips" aria-label="Secciones">
+            <a class="chip on" href="#">Todo</a>
+            <a class="chip cm" style="--h: 45" href="#"><span class="tile">😂</span>Humor</a>
+            <a class="chip cm" style="--h: 285" href="#"><span class="tile">🎮</span>Gaming</a>
+            <a class="chip cm" style="--h: 35" href="#"><span class="tile">🌮</span>Comida</a>
+            <a class="chip cm" style="--h: 145" href="#"><span class="tile">⚽</span>Deportes</a>
+            <a class="chip cm" style="--h: 235" href="#"><span class="tile">💻</span>Tecnología</a>
+          </nav>
+        </section>
+
+        <section class="card invite" aria-labelledby="inv-t">
+          <div>
+            <span class="k">Gratis · una sola cuenta para todo</span>
+            <h2 id="inv-t">Arma tu propia edición</h2>
+            <p>
+              Elige tus comunidades y tu inicio se llena de memes, recetas, trucos y cosas que
+              puedes comprar sin salir de la conversación.
+            </p>
+          </div>
+          <div class="cta">
+            <a class="btn btn-primary" href="#">Crear cuenta gratis</a>
+            <small
+              >¿Ya tienes cuenta?
+              <a href="#" style="color: var(--primary-text); font-weight: 800">Entra</a></small
+            >
+          </div>
+          <div class="pickers" role="group" aria-label="Elige tus comunidades">
+            <span class="lbl">Elige:</span>
+            <button class="pk cm" style="--h: 45">
+              <span class="tile">😂</span>Humor<svg class="i"><use href="#i-plus" /></svg>
+            </button>
+            <button class="pk cm" style="--h: 285">
+              <span class="tile">🎮</span>Gaming<svg class="i"><use href="#i-plus" /></svg>
+            </button>
+            <button class="pk cm" style="--h: 35">
+              <span class="tile">🌮</span>Comida<svg class="i"><use href="#i-plus" /></svg>
+            </button>
+            <button class="pk cm" style="--h: 145">
+              <span class="tile">⚽</span>Deportes<svg class="i"><use href="#i-plus" /></svg>
+            </button>
+            <a class="link" href="#" style="margin-left: auto; color: var(--primary-text)"
+              >Ver las 12</a
+            >
+          </div>
+        </section>
+
+        <!-- Portada: Hoy en Gaming -->
+        <div class="sec cm" style="--h: 285">
+          <span class="kicker"><span class="tile sm">🎮</span>Hoy en Gaming</span
+          ><span class="rule"></span
+          ><a class="more" href="#"
+            >Ir a la comunidad<svg class="i sm"><use href="#i-chevron" /></svg
+          ></a>
+        </div>
+        <article class="card hero cm" style="--h: 285">
+          <figure class="media">
+            <img
+              src="http://localhost:3000/media/seed/27598020-9f9a-405c-ab63-52ee3457fe16.webp"
+              alt="Top 5 juegos cooperativos"
+            />
+          </figure>
+          <div class="body">
+            <div class="by">
+              <span class="tile lg"
+                >🎮<span class="seal"
+                  ><svg viewBox="0 0 64 64"><use href="#mark" /></svg></span
+              ></span>
+              <div class="who">
+                <span class="nm"
+                  ><a href="#">Equipo VendeIA</a
+                  ><span class="badge"
+                    ><svg class="i"><use href="#i-pen" /></svg>Editorial</span
+                  ></span
+                >
+                <span class="meta">en <a href="#">Gaming</a> · hace 11 h</span>
+              </div>
+              <button class="icon-btn dots" aria-label="Más opciones">
+                <svg class="i"><use href="#i-more" /></svg>
+              </button>
+            </div>
+            <h2 class="h-hero">¿Algo para jugar con amigos este fin?</h2>
+            <p class="lede">
+              Nuestro top: 1) It Takes Two 2) Overcooked 2 3) Minecraft 4) Stardew Valley 5) Among
+              Us. ¿Cuál agregarías?
+            </p>
+            <span class="ai-chip"
+              ><span class="spark"
+                ><svg class="i"><use href="#i-sparkles" /></svg></span
+              >Creado con ayuda de IA</span
+            >
+            <div class="acts">
+              <button class="act">
+                <svg class="i"><use href="#i-heart" /></svg>3
+              </button>
+              <button class="act">
+                <svg class="i"><use href="#i-comment" /></svg>Comentar
+              </button>
+              <button class="act push" aria-label="Guardar">
+                <svg class="i"><use href="#i-bookmark" /></svg>
+              </button>
+              <button class="act" aria-label="Compartir">
+                <svg class="i"><use href="#i-share" /></svg>
+              </button>
+            </div>
+            <div class="gate">
+              <span>¿Cuál agregarías tú?</span><a class="btn btn-ink sm" href="#">Responder</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dos columnas -->
+        <div class="duo">
+          <article class="card tc cm" style="--h: 45">
+            <figure class="media">
+              <img
+                src="http://localhost:3000/media/seed/331d3b4a-bfff-4bae-b880-c599a26d171f.webp"
+                alt="Lunes, otra vez"
+              />
+            </figure>
+            <div class="body">
+              <span class="kicker"><span class="tile sm">😂</span>Humor</span>
+              <p class="txt">
+                <b
+                  >Cuando suena la alarma del lunes y tu cuerpo decide que hoy no es buen día para
+                  existir.</b
+                >
+                ¿A quién más le pasa? 😅
+              </p>
+            </div>
+            <div class="foot">
+              <div class="by">
+                <svg viewBox="0 0 64 64" width="26" height="26"><use href="#mark" /></svg>
+                <div class="who">
+                  <span class="nm" style="font-size: 13px">Equipo VendeIA</span
+                  ><span class="meta">Editorial · hace 9 h</span>
+                </div>
+              </div>
+              <div class="mini-acts">
+                <button class="act" aria-label="Me gusta">
+                  <svg class="i"><use href="#i-heart" /></svg></button
+                ><button class="act" aria-label="Comentar">
+                  <svg class="i"><use href="#i-comment" /></svg></button
+                ><button class="act" aria-label="Guardar">
+                  <svg class="i"><use href="#i-bookmark" /></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+          <article class="card tc cm" style="--h: 235">
+            <figure class="media">
+              <img
+                src="http://localhost:3000/media/seed/9e20cd2f-a320-46ea-9f25-9c83b43ea1ec.webp"
+                alt="5 trucos para tu batería"
+              />
+            </figure>
+            <div class="body">
+              <span class="kicker"><span class="tile sm">💻</span>Tecnología</span>
+              <p class="txt">
+                Brillo automático, ubicación solo en las apps que la necesitan, modo oscuro en
+                pantallas OLED, menos actualización en segundo plano y evita cargar al 100 % todas
+                las noches.
+              </p>
+            </div>
+            <div class="foot">
+              <div class="by">
+                <svg viewBox="0 0 64 64" width="26" height="26"><use href="#mark" /></svg>
+                <div class="who">
+                  <span class="nm" style="font-size: 13px">Equipo VendeIA</span
+                  ><span class="meta">Editorial · hace 13 h</span>
+                </div>
+              </div>
+              <div class="mini-acts">
+                <button class="act" aria-label="Me gusta">
+                  <svg class="i"><use href="#i-heart" /></svg></button
+                ><button class="act" aria-label="Comentar">
+                  <svg class="i"><use href="#i-comment" /></svg></button
+                ><button class="act" aria-label="Guardar">
+                  <svg class="i"><use href="#i-bookmark" /></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Cartel de texto -->
+        <article class="card poster cm" style="--h: 285">
+          <div class="by">
+            <span class="tile"
+              >🎮<span class="seal"
+                ><svg viewBox="0 0 64 64"><use href="#mark" /></svg></span
+            ></span>
+            <div class="who">
+              <span class="kicker">Gaming · Pregunta abierta</span>
+              <span class="meta">Equipo VendeIA · Editorial · hace 23 h</span>
+            </div>
+          </div>
+          <p class="q">
+            Debate del día: ¿control o teclado y mouse para shooters? Argumenta tu respuesta. 🎯
+          </p>
+          <div class="gate">
+            <span>¿Tú qué opinas? Da tu argumento</span
+            ><a class="btn btn-ink sm" href="#">Responder</a>
+          </div>
+          <div class="row">
+            <span class="first"
+              ><svg class="i sm"><use href="#i-comment" /></svg>Aún sin respuestas: abre la
+              conversación</span
+            >
+            <div class="mini-acts">
+              <button class="act" aria-label="Me gusta">
+                <svg class="i"><use href="#i-heart" /></svg></button
+              ><button class="act" aria-label="Guardar">
+                <svg class="i"><use href="#i-bookmark" /></svg></button
+              ><button class="act" aria-label="Compartir">
+                <svg class="i"><use href="#i-share" /></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Resumen de comunidad -->
+        <section class="digest cm" style="--h: 145">
+          <div class="sec">
+            <span class="kicker"><span class="tile sm">⚽</span>Esta semana en Deportes</span
+            ><span class="rule"></span
+            ><a class="more" href="#"
+              >Ir a Deportes<svg class="i sm"><use href="#i-chevron" /></svg
+            ></a>
+          </div>
+          <div class="dg">
+            <a class="dg-item" href="#">
+              <figure class="media">
+                <img
+                  src="http://localhost:3000/media/seed/2a2cac51-4e72-4934-9e8f-ce0461f2fc32.webp"
+                  alt="Rutina de 20 minutos sin equipo"
+                />
+              </figure>
+              <p class="t">
+                Sentadillas, lagartijas, plancha, zancadas y burpees: 40 segundos de trabajo, 20 de
+                descanso, 4 rondas.
+              </p>
+              <p class="m"><span>hace 2 d</span><span>Comentar</span></p>
+            </a>
+            <a class="dg-item text" href="#">
+              <p class="t">
+                ¿Quién gana el clásico este fin? Se aceptan predicciones y marcadores. ⚽
+              </p>
+              <p class="m"><span>hace 1 d</span><span>Predecir marcador</span></p>
+            </a>
+            <a class="dg-item text" href="#">
+              <p class="t">
+                Hidratarte no es solo tomar agua: después de entrenar fuerte, repón electrolitos. Tu
+                cuerpo te lo agradece.
+              </p>
+              <p class="m"><span>hace 2 d</span><span>Comentar</span></p>
+            </a>
+          </div>
+        </section>
+
+        <!-- Dos columnas (comercio 2 dentro del ritmo) -->
+        <div class="duo">
+          <article class="card tc cm" style="--h: 35">
+            <figure class="media">
+              <img
+                src="http://localhost:3000/media/seed/4434a138-a96f-405b-8b07-68aa502c2e58.webp"
+                alt="Tacos al pastor en casa"
+              />
+            </figure>
+            <div class="body">
+              <span class="kicker"><span class="tile sm">🌮</span>Comida</span>
+              <p class="txt">
+                <b>Marinada rápida: chile guajillo, achiote, piña, vinagre, ajo y orégano.</b> Deja
+                reposar la carne toda la noche y dórala en sartén bien caliente. Piña asada al
+                final, ¡no la olvides!
+              </p>
+            </div>
+            <div class="foot">
+              <div class="by">
+                <svg viewBox="0 0 64 64" width="26" height="26"><use href="#mark" /></svg>
+                <div class="who">
+                  <span class="nm" style="font-size: 13px">Equipo VendeIA</span
+                  ><span class="meta">Editorial · hace 15 h</span>
+                </div>
+              </div>
+              <div class="mini-acts">
+                <button class="act" aria-label="Me gusta">
+                  <svg class="i"><use href="#i-heart" /></svg></button
+                ><button class="act" aria-label="Comentar">
+                  <svg class="i"><use href="#i-comment" /></svg></button
+                ><button class="act" aria-label="Guardar">
+                  <svg class="i"><use href="#i-bookmark" /></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+          <article class="card tc cm" style="--h: 235">
+            <figure class="media">
+              <img
+                src="http://localhost:3000/media/seed/b549c586-0f34-49d5-a80e-656ef886eabb.webp"
+                alt="AirPods Pro 2"
+              /><a class="price-tag top" href="#"
+                >$3,499<span class="go"
+                  ><svg class="i"><use href="#i-arrow" /></svg></span
+              ></a>
+            </figure>
+            <div class="body">
+              <span class="kicker"><span class="tile sm">💻</span>Tecnología</span>
+              <p class="txt">
+                <b>Silencio total en el metro 🎧</b> AirPods Pro 2 nuevos, con entrega en CDMX o
+                envío a todo México.
+              </p>
+            </div>
+            <div class="foot">
+              <div class="by">
+                <span class="avatar sm" style="--h: 17">ED</span>
+                <div class="who">
+                  <span class="nm" style="font-size: 13px"
+                    >Electro Demo CDMX <span class="badge shop">Tienda</span></span
+                  ><span class="meta">Ciudad de México · hace 13 h</span>
+                </div>
+              </div>
+              <div class="mini-acts">
+                <button class="act" aria-label="Guardar">
+                  <svg class="i"><use href="#i-bookmark" /></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <p class="loadmore" id="mas">Cargando más de las comunidades</p>
+      </main>
+
+      <!-- ───────── Riel derecho ───────── -->
+      <aside class="rail-r" aria-label="Para ti">
+        <section class="box">
+          <div class="box-h">
+            <h3>
+              <svg class="i"><use href="#i-question" /></svg>Debates abiertos
+            </h3>
+            <a href="#">Ver más</a>
+          </div>
+          <p class="box-sub">Preguntas de las comunidades que esperan una respuesta.</p>
+          <ol class="debates">
+            <li class="cm" style="--h: 200">
+              <span class="n">01</span>
+              <div>
+                <p class="t">¿Manual o automático? Que empiece el debate. 🚗</p>
+                <p class="m"><b>🚗 Autos</b>· aún sin respuestas</p>
+              </div>
+            </li>
+            <li class="cm" style="--h: 35">
+              <span class="n">02</span>
+              <div>
+                <p class="t">Pregunta seria: ¿los chilaquiles van con frijoles al lado o no? 🍳</p>
+                <p class="m"><b>🌮 Comida</b>· aún sin respuestas</p>
+              </div>
+            </li>
+            <li class="cm" style="--h: 145">
+              <span class="n">03</span>
+              <div>
+                <p class="t">
+                  ¿Quién gana el clásico este fin? Se aceptan predicciones y marcadores.
+                </p>
+                <p class="m"><b>⚽ Deportes</b>· aún sin respuestas</p>
+              </div>
+            </li>
+            <li class="cm" style="--h: 330">
+              <span class="n">04</span>
+              <div>
+                <p class="t">¿El mejor concierto al que has ido? Cuéntanos quién y dónde.</p>
+                <p class="m"><b>🎧 Música</b>· aún sin respuestas</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="box">
+          <div class="box-h">
+            <h3>
+              <svg class="i"><use href="#i-trend" /></svg>Comunidades en movimiento
+            </h3>
+          </div>
+          <p class="box-sub">Publicaciones nuevas esta semana</p>
+          <ol class="board">
+            <li class="cm" style="--h: 285">
+              <span class="rk">1</span><span class="tile md">🎮</span>
+              <div>
+                <p class="nm">Gaming<small>6</small></p>
+                <div class="bar"><i style="width: 100%"></i></div>
+              </div>
+              <span class="jn">Unirme</span>
+            </li>
+            <li class="cm" style="--h: 235">
+              <span class="rk">2</span><span class="tile md">💻</span>
+              <div>
+                <p class="nm">Tecnología<small>6</small></p>
+                <div class="bar"><i style="width: 100%"></i></div>
+              </div>
+              <span class="jn">Unirme</span>
+            </li>
+            <li class="cm" style="--h: 110">
+              <span class="rk">3</span><span class="tile md">🏡</span>
+              <div>
+                <p class="nm">Hogar<small>6</small></p>
+                <div class="bar"><i style="width: 100%"></i></div>
+              </div>
+              <span class="jn">Unirme</span>
+            </li>
+            <li class="cm" style="--h: 145">
+              <span class="rk">4</span><span class="tile md">⚽</span>
+              <div>
+                <p class="nm">Deportes<small>5</small></p>
+                <div class="bar"><i style="width: 83%"></i></div>
+              </div>
+              <span class="jn">Unirme</span>
+            </li>
+            <li class="cm" style="--h: 60">
+              <span class="rk">5</span><span class="tile md">🐶</span>
+              <div>
+                <p class="nm">Mascotas<small>5</small></p>
+                <div class="bar"><i style="width: 83%"></i></div>
+              </div>
+              <span class="jn">Unirme</span>
+            </li>
+          </ol>
+        </section>
+
+        <div class="stick">
+          <section class="box">
+            <div class="box-h">
+              <h3>
+                <svg class="i"><use href="#i-store" /></svg>Se vende en las comunidades
+              </h3>
+            </div>
+            <p class="box-sub">Publicado por vendedores de Gaming y Tecnología</p>
+            <ul class="finds">
+              <li class="cm" style="--h: 285">
+                <figure class="media">
+                  <img
+                    src="http://localhost:3000/media/seed/834ea03a-19c2-4001-9b0f-a3d575edd93e.webp"
+                    alt=""
+                  />
+                </figure>
+                <div>
+                  <p class="t">Control inalámbrico para consola y PC</p>
+                  <p class="s"><b>🎮 Gaming</b> · CDMX</p>
+                </div>
+                <p class="p">$1,199</p>
+              </li>
+              <li class="cm" style="--h: 285">
+                <figure class="media">
+                  <img
+                    src="http://localhost:3000/media/seed/eb9c90f2-2080-4b7e-9a6e-1e5407bf75ab.webp"
+                    alt=""
+                  />
+                </figure>
+                <div>
+                  <p class="t">Teclado mecánico compacto 65 %</p>
+                  <p class="s"><b>🎮 Gaming</b> · CDMX</p>
+                </div>
+                <p class="p">$1,299</p>
+              </li>
+              <li class="cm" style="--h: 235">
+                <figure class="media">
+                  <img
+                    src="http://localhost:3000/media/seed/3460ba09-2ac0-434d-b4a8-52cc88ebfc01.webp"
+                    alt=""
+                  />
+                </figure>
+                <div>
+                  <p class="t">Cargador rápido USB-C 30 W</p>
+                  <p class="s"><b>💻 Tecnología</b> · CDMX</p>
+                </div>
+                <p class="p">$349<small>Envío gratis</small></p>
+              </li>
+            </ul>
+          </section>
+
+          <section class="box ai-card">
+            <span class="k"
+              ><svg class="i sm"><use href="#i-sparkles" /></svg>Vende con IA</span
+            >
+            <h3>¿Tienes algo que vender?</h3>
+            <p>
+              Tú tienes el producto. La IA encuentra cómo venderlo. Con la misma cuenta, cuando
+              quieras.
+            </p>
+            <a class="btn sm" href="#"
+              >Conoce Vende con IA<svg class="i sm"><use href="#i-arrow" /></svg
+            ></a>
+          </section>
+
+          <p class="legal">
+            <a href="#">Ayuda</a><a href="#">Privacidad</a><a href="#">Términos</a><br />© 2026
+            VendeIA · Hecho en México
+          </p>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

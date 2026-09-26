@@ -1,0 +1,14 @@
+pnpm-lock.yaml
+.next
+coverage
+playwright-report
+test-results
+blob-report
+next-env.d.ts
+# Bloque administrado por `next dev`
+AGENTS.md
+.data
+src/generated
+
+# Generado por `pnpm tint`
+src/styles/community-tint.css

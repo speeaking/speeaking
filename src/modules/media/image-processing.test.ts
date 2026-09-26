@@ -1,0 +1,187 @@
+import { deflateSync } from "node:zlib";
+import sharp from "sharp";
+import { describe, expect, it } from "vitest";
+import {
+  exceedsDecodeBudget,
+  ImageValidationError,
+  MAX_UPLOAD_BYTES,
+  processImage,
+  sniffImageFormat,
+} from "./image-processing";
+
+async function jpegWithGps(width = 64, height = 48) {
+  return sharp({ create: { width, height, channels: 3, background: "#ca2352" } })
+    .jpeg()
+    .withExif({ IFD3: { GPSLatitudeRef: "N", GPSLatitude: "19/1 25/1 0/1" } })
+    .toBuffer();
+}
+
+function crc32(bytes: Buffer) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type: string, data: Buffer) {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length);
+  const body = Buffer.concat([Buffer.from(type, "latin1"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body));
+  return Buffer.concat([length, body, crc]);
+}
+
+/**
+ * PNG de ~70 bytes cuya cabecera declara `width`×`height` RGBA (el PoC de SEC-13 usaba uno real de
+ * 465 KB y 6320×6320 de 16 bits). Sus píxeles no existen: si se intentara decodificar, fallaría como
+ * CORRUPT; que falle como TOO_COMPLEX prueba que se rechazó solo con la cabecera.
+ */
+function pngHeaderOnly(width: number, height: number, bitDepth: 8 | 16) {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = bitDepth;
+  header[9] = 6;
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", header),
+    pngChunk("IDAT", deflateSync(Buffer.alloc(16))),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+describe("processImage", () => {
+  it("re-codifica a WebP y elimina los metadatos EXIF (incluido el GPS)", async () => {
+    const input = await jpegWithGps();
+    expect((await sharp(input).metadata()).exif).toBeDefined();
+
+    const result = await processImage(input);
+    const meta = await sharp(result.buffer).metadata();
+
+    expect(result.mimeType).toBe("image/webp");
+    expect(meta.format).toBe("webp");
+    expect(meta.exif).toBeUndefined();
+    expect(result.sizeBytes).toBe(result.buffer.byteLength);
+  });
+
+  it("reduce imágenes grandes sin deformarlas y conserva las pequeñas", async () => {
+    const big = await jpegWithGps(4000, 2000);
+    const small = await jpegWithGps(300, 200);
+
+    const resized = await processImage(big);
+    const untouched = await processImage(small);
+
+    expect([resized.width, resized.height]).toEqual([1600, 800]);
+    expect([untouched.width, untouched.height]).toEqual([300, 200]);
+  });
+
+  it("genera una miniatura borrosa en base64 para la carga progresiva", async () => {
+    const result = await processImage(await jpegWithGps());
+
+    expect(result.blurDataUrl).toMatch(/^data:image\/webp;base64,/);
+  });
+
+  it("rechaza archivos que no son imágenes aunque digan serlo", async () => {
+    const fake = Buffer.from("<html>no soy una imagen</html>");
+
+    await expect(processImage(fake)).rejects.toMatchObject({ code: "UNSUPPORTED_FORMAT" });
+  });
+
+  it("rechaza SVG (puede contener scripts)", async () => {
+    const svg = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><script>alert(1)</script></svg>',
+    );
+
+    await expect(processImage(svg)).rejects.toBeInstanceOf(ImageValidationError);
+    await expect(processImage(svg)).rejects.toMatchObject({ code: "UNSUPPORTED_FORMAT" });
+  });
+
+  it("rechaza archivos más pesados que el límite", async () => {
+    const tooBig = Buffer.alloc(MAX_UPLOAD_BYTES + 1);
+
+    await expect(processImage(tooBig)).rejects.toMatchObject({ code: "TOO_LARGE" });
+  });
+
+  it("pixel-flood (SEC-13): rechaza por las dimensiones de la cabecera, sin decodificar", async () => {
+    const started = performance.now();
+
+    await expect(processImage(pngHeaderOnly(6320, 6320, 16))).rejects.toMatchObject({
+      code: "TOO_COMPLEX",
+    });
+    await expect(processImage(pngHeaderOnly(8000, 8000, 8))).rejects.toMatchObject({
+      code: "TOO_COMPLEX",
+    });
+    // Decodificar 40 Mpx de 16 bits tardaba ~4.6 s; leer la cabecera, milisegundos.
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it("rechaza TIFF antes de pasarlo a sharp (solo firmas permitidas, SEC-36)", async () => {
+    const tiff = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#000" } })
+      .tiff()
+      .toBuffer();
+
+    await expect(processImage(tiff)).rejects.toMatchObject({ code: "UNSUPPORTED_FORMAT" });
+  });
+
+  it("acepta AVIF (sharp lo identifica como HEIF)", async () => {
+    const avif = await sharp({ create: { width: 32, height: 24, channels: 3, background: "#123" } })
+      .avif()
+      .toBuffer();
+
+    await expect(processImage(avif)).resolves.toMatchObject({ width: 32, height: 24 });
+  });
+});
+
+describe("exceedsDecodeBudget", () => {
+  const meta = (format: string, width: number, height: number, depth = "uchar", channels = 4) =>
+    ({ format, width, height, depth, channels }) as Parameters<typeof exceedsDecodeBudget>[0];
+
+  it("JPEG y WebP (shrink-on-load): hasta 40 Mpx", () => {
+    expect(exceedsDecodeBudget(meta("jpeg", 8000, 5000, "uchar", 3))).toBe(false);
+    expect(exceedsDecodeBudget(meta("webp", 8000, 5000))).toBe(false);
+    expect(exceedsDecodeBudget(meta("jpeg", 8000, 5001, "uchar", 3))).toBe(true);
+  });
+
+  it("PNG, GIF y HEIF (decodificación completa): hasta 100 MB decodificados", () => {
+    // 25 Mpx RGBA de 8 bits = 100 MB: justo cabe.
+    expect(exceedsDecodeBudget(meta("png", 5000, 5000))).toBe(false);
+    expect(exceedsDecodeBudget(meta("heif", 5000, 5000, "uchar", 3))).toBe(false);
+    expect(exceedsDecodeBudget(meta("png", 6320, 6320))).toBe(true);
+    // 16 bits por muestra: el doble de memoria.
+    expect(exceedsDecodeBudget(meta("png", 4000, 4000, "ushort"))).toBe(true);
+    expect(exceedsDecodeBudget(meta("png", 3000, 3000, "ushort"))).toBe(false);
+  });
+
+  it("un GIF animado cuenta solo la primera página (lo único que se decodifica)", () => {
+    const gif = { ...meta("gif", 1000, 1000), pageHeight: 1000 };
+    expect(exceedsDecodeBudget(gif)).toBe(false);
+  });
+
+  it("sin dimensiones no se procesa", () => {
+    expect(exceedsDecodeBudget(meta("png", 0, 0))).toBe(true);
+  });
+});
+
+describe("sniffImageFormat", () => {
+  it("reconoce las firmas permitidas", async () => {
+    const make = (format: "jpeg" | "png" | "gif" | "webp" | "avif") =>
+      sharp({ create: { width: 4, height: 4, channels: 3, background: "#fff" } })
+        .toFormat(format)
+        .toBuffer();
+
+    expect(sniffImageFormat(await make("jpeg"))).toBe("jpeg");
+    expect(sniffImageFormat(await make("png"))).toBe("png");
+    expect(sniffImageFormat(await make("gif"))).toBe("gif");
+    expect(sniffImageFormat(await make("webp"))).toBe("webp");
+    expect(sniffImageFormat(await make("avif"))).toBe("heif");
+  });
+
+  it("rechaza SVG, PDF y archivos diminutos", () => {
+    expect(sniffImageFormat(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).toBeNull();
+    expect(sniffImageFormat(Buffer.from("%PDF-1.7 documento"))).toBeNull();
+    expect(sniffImageFormat(Buffer.from([0xff, 0xd8]))).toBeNull();
+  });
+});

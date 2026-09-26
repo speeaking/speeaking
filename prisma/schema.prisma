@@ -1,0 +1,995 @@
+// Modelo de datos del Sprint 1. Diseño completo y fases siguientes: docs/data-model.md.
+// Convenciones: IDs UUIDv7, fechas timestamptz (UTC), dinero en centavos (Int) + moneda.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────── Identidad ───────────────────────────────
+// User, Session, Account, Verification y RateLimit siguen el esquema de Better Auth.
+
+model User {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions             Session[]
+  accounts             Account[]
+  profile              Profile?
+  sellerProfile        SellerProfile?
+  consents             UserConsent[]
+  interests            UserInterest[]
+  shoppingIntents      ShoppingIntent[]
+  memberships          CommunityMembership[]
+  posts                Post[]
+  comments             Comment[]
+  likes                Like[]
+  savedItems           SavedItem[]
+  following            Follow[]              @relation("follower")
+  followers            Follow[]              @relation("following")
+  media                Media[]
+  aiRequests           AIRequest[]
+  cart                 Cart?
+  addresses            Address[]
+  checkouts            Checkout[]
+  orders               Order[]               @relation("buyerOrders")
+  /// Sugerencias de «Gente de tus comunidades» que la persona quitó, y las veces que otros la quitaron.
+  dismissedSuggestions SuggestionDismissal[] @relation("dismisser")
+  dismissedBy          SuggestionDismissal[] @relation("dismissedTarget")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  expiresAt DateTime @db.Timestamptz(3)
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  accountId             String
+  providerId            String
+  userId                String    @db.Uuid
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model RateLimit {
+  id          String @id @default(uuid(7)) @db.Uuid
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limits")
+}
+
+// Límite de frecuencia propio de la app (src/server/rate-limit.ts): Server Actions y route handlers.
+// No reutiliza `RateLimit`: Better Auth borra de esa tabla toda fila con `lastRequest` más vieja que su
+// ventana más larga (60 s) sin filtrar por llave, y se llevaría ventanas de 15 min o más. La llave es
+// natural ("signin:email:<sha256>"), por eso no lleva UUID. Una fila por llave con ventana fija que
+// empieza en el primer intento; `expiresAt` indexado para la limpieza oportunista.
+model RateLimitBucket {
+  key       String   @id @db.VarChar(200)
+  count     Int
+  expiresAt DateTime @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
+
+enum UserGoal {
+  ENTERTAINMENT
+  DISCOVER
+  BUY_SOMETHING
+  SELL
+  CREATE_CONTENT
+  LEARN
+}
+
+model Profile {
+  id                     String     @id @default(uuid(7)) @db.Uuid
+  userId                 String     @unique @db.Uuid
+  user                   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Siempre en minúsculas; único.
+  username               String     @unique
+  displayName            String
+  bio                    String?
+  avatarUrl              String?
+  city                   String?
+  state                  String?
+  goals                  UserGoal[] @default([])
+  /// Preferencia de personalización (consentimiento); si es false no se registran eventos personales.
+  personalizationEnabled Boolean    @default(true)
+  /// Cuenta editorial de la plataforma: se muestra identificada como tal (ADR-018).
+  isEditorial            Boolean    @default(false)
+  /// Aparecer en «Gente de tus comunidades» de otras personas (ajuste de privacidad, activo por omisión).
+  discoverable           Boolean    @default(true)
+  onboardedAt            DateTime?  @db.Timestamptz(3)
+  createdAt              DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@map("profiles")
+}
+
+enum PaymentMethod {
+  CARD
+  TRANSFER
+  CASH_ON_DELIVERY
+  OXXO
+}
+
+enum SellerStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model SellerProfile {
+  id                     String          @id @default(uuid(7)) @db.Uuid
+  userId                 String          @unique @db.Uuid
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName            String
+  description            String?
+  city                   String?
+  state                  String?
+  /// Métodos de pago aceptados (P4): el agente de IA solo puede citar estos.
+  acceptedPaymentMethods PaymentMethod[] @default([])
+  status                 SellerStatus    @default(ACTIVE)
+  createdAt              DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime        @updatedAt @db.Timestamptz(3)
+
+  products Product[]
+  orders   Order[]
+
+  @@map("seller_profiles")
+}
+
+enum ConsentType {
+  TERMS
+  PRIVACY_NOTICE
+  PERSONALIZATION
+  /// «Aparecer en sugerencias» de «Gente de tus comunidades» (Profile.discoverable).
+  DISCOVERABILITY
+}
+
+/// Historial inmutable de consentimientos: cada cambio agrega un registro.
+model UserConsent {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  userId    String      @db.Uuid
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ConsentType
+  version   String
+  granted   Boolean
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, type, createdAt])
+  @@map("user_consents")
+}
+
+enum InterestKind {
+  BRAND
+  TOPIC
+}
+
+/// Gustos declarados por la persona (onboarding y microconsultas). Editables y borrables.
+model UserInterest {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      InterestKind
+  /// Valor normalizado (minúsculas, sin acentos) para comparar.
+  value     String
+  label     String
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, kind, value])
+  @@map("user_interests")
+}
+
+enum IntentSource {
+  ONBOARDING
+  SEARCH
+  AI_COMPANION
+}
+
+enum IntentStatus {
+  ACTIVE
+  FULFILLED
+  DISMISSED
+  EXPIRED
+}
+
+/// "¿Buscas algo ahora?": intención de compra declarada; la señal más fuerte del Commerce Engine.
+model ShoppingIntent {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query          String
+  categoryId     String?      @db.Uuid
+  category       Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  budgetMaxCents Int?
+  source         IntentSource @default(ONBOARDING)
+  status         IntentStatus @default(ACTIVE)
+  expiresAt      DateTime?    @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, status])
+  @@map("shopping_intents")
+}
+
+// ─────────────────────────── Comunidades y contenido ───────────────────────────
+
+model Community {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  slug        String   @unique
+  name        String
+  description String
+  emoji       String
+  /// Tono (0–360) para el color de la comunidad en la interfaz.
+  hue         Int      @default(12)
+  sortOrder   Int      @default(0)
+  isOfficial  Boolean  @default(true)
+  memberCount Int      @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  memberships CommunityMembership[]
+  categories  CommunityCategory[]
+  posts       Post[]
+
+  @@map("communities")
+}
+
+model CommunityMembership {
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  communityId String    @db.Uuid
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// Última vez que la persona abrió la comunidad («N nuevas», F7). Sin visitas cuenta desde que
+  /// se unió (`createdAt`). El índice de posts (communityId, status, publishedAt) sirve al conteo.
+  lastSeenAt  DateTime? @db.Timestamptz(3)
+
+  @@id([userId, communityId])
+  @@index([communityId])
+  @@map("community_memberships")
+}
+
+/// Conecta intereses sociales con categorías de producto (Commerce Engine).
+model CommunityCategory {
+  communityId String    @db.Uuid
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  categoryId  String    @db.Uuid
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, categoryId])
+  @@index([categoryId])
+  @@map("community_categories")
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+enum MediaStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Media {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  ownerId     String      @db.Uuid
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  kind        MediaKind   @default(IMAGE)
+  /// Clave en el StorageProvider (nunca una ruta del sistema de archivos).
+  storageKey  String      @unique
+  mimeType    String
+  width       Int
+  height      Int
+  sizeBytes   Int
+  /// Miniatura diminuta en base64 para el efecto de carga.
+  blurDataUrl String?
+  altText     String?
+  /// Crédito de fotos de terceros (stock con licencia libre): autor, su perfil y la fuente.
+  creditName  String?
+  creditUrl   String?
+  /// Página original de la foto y licencia bajo la que se usa (p. ej. "Unsplash").
+  sourceUrl   String?
+  license     String?
+  status      MediaStatus @default(READY)
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+
+  postLinks    PostMedia[]
+  productLinks ProductMedia[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("media")
+}
+
+enum PostType {
+  POST
+  VIDEO
+  PRODUCT
+}
+
+enum PostStatus {
+  PUBLISHED
+  HIDDEN
+  REMOVED
+}
+
+model Post {
+  id            String     @id @default(uuid(7)) @db.Uuid
+  authorId      String     @db.Uuid
+  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  communityId   String?    @db.Uuid
+  community     Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  type          PostType   @default(POST)
+  body          String
+  productId     String?    @db.Uuid
+  product       Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  status        PostStatus @default(PUBLISHED)
+  /// Contenido generado o asistido por IA: se etiqueta en la interfaz (ADR-018).
+  isAiGenerated Boolean    @default(false)
+  likeCount     Int        @default(0)
+  commentCount  Int        @default(0)
+  saveCount     Int        @default(0)
+  publishedAt   DateTime   @default(now()) @db.Timestamptz(3)
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+
+  media    PostMedia[]
+  likes    Like[]
+  comments Comment[]
+  saves    SavedItem[]
+
+  @@index([status, publishedAt(sort: Desc), id])
+  @@index([communityId, status, publishedAt(sort: Desc)])
+  @@index([authorId, publishedAt(sort: Desc)])
+  @@index([productId])
+  @@map("posts")
+}
+
+model PostMedia {
+  postId   String @db.Uuid
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mediaId  String @db.Uuid
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  position Int    @default(0)
+
+  @@id([postId, mediaId])
+  @@index([mediaId])
+  @@map("post_media")
+}
+
+model Like {
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String   @db.Uuid
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("likes")
+}
+
+enum CommentStatus {
+  PUBLISHED
+  HIDDEN
+  REMOVED
+}
+
+model Comment {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  postId    String        @db.Uuid
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String        @db.Uuid
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  status    CommentStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+model Follow {
+  followerId  String   @db.Uuid
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String   @db.Uuid
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+/// Persona que alguien quitó de «Gente de tus comunidades»: no se le vuelve a sugerir.
+model SuggestionDismissal {
+  userId       String   @db.Uuid
+  user         User     @relation("dismisser", fields: [userId], references: [id], onDelete: Cascade)
+  targetUserId String   @db.Uuid
+  target       User     @relation("dismissedTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([userId, targetUserId])
+  @@index([targetUserId])
+  @@map("suggestion_dismissals")
+}
+
+/// Guardado de una publicación o de un producto (exactamente uno; restricción CHECK en la migración).
+model SavedItem {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String?  @db.Uuid
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  productId String?  @db.Uuid
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, postId])
+  @@unique([userId, productId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("saved_items")
+}
+
+// ─────────────────────────────── Catálogo ───────────────────────────────
+
+model Category {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  slug      String     @unique
+  name      String
+  parentId  String?    @db.Uuid
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+
+  products        Product[]
+  communities     CommunityCategory[]
+  shoppingIntents ShoppingIntent[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SOLD_OUT
+  ARCHIVED
+}
+
+enum ProductCondition {
+  NEW
+  LIKE_NEW
+  USED_GOOD
+  USED_FAIR
+  REFURBISHED
+}
+
+enum WarrantyType {
+  NONE
+  SELLER
+  MANUFACTURER
+}
+
+enum Authenticity {
+  NOT_APPLICABLE
+  DECLARED_ORIGINAL
+  GENERIC
+}
+
+model Product {
+  id                        String           @id @default(uuid(7)) @db.Uuid
+  sellerId                  String           @db.Uuid
+  seller                    SellerProfile    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  slug                      String           @unique
+  title                     String
+  description               String
+  priceCents                Int
+  compareAtPriceCents       Int?
+  currency                  String           @default("MXN") @db.Char(3)
+  stock                     Int              @default(0)
+  status                    ProductStatus    @default(ACTIVE)
+  condition                 ProductCondition @default(NEW)
+  categoryId                String           @db.Uuid
+  category                  Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tags                      String[]         @default([])
+  /// Ubicación pública solo a nivel ciudad/estado (privacidad).
+  city                      String
+  state                     String
+  // Datos verificables de entrega, garantía y autenticidad (P4, ADR-007).
+  pickupAvailable           Boolean          @default(false)
+  localDeliveryAvailable    Boolean          @default(false)
+  localDeliveryZones        String[]         @default([])
+  nationalShippingAvailable Boolean          @default(false)
+  /// Costo de envío nacional en centavos; 0 = envío gratis; null = no aplica.
+  shippingPriceCents        Int?
+  deliveryMinDays           Int?
+  deliveryMaxDays           Int?
+  warrantyType              WarrantyType     @default(NONE)
+  warrantyDays              Int?
+  /// Días para devolver; 0 = sin devoluciones.
+  returnWindowDays          Int              @default(0)
+  authenticity              Authenticity     @default(NOT_APPLICABLE)
+  saveCount                 Int              @default(0)
+  publishedAt               DateTime?        @db.Timestamptz(3)
+  createdAt                 DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime         @updatedAt @db.Timestamptz(3)
+
+  cost       ProductCost?
+  media      ProductMedia[]
+  posts      Post[]
+  saves      SavedItem[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([status, categoryId, createdAt(sort: Desc)])
+  @@index([sellerId, status])
+  @@map("products")
+}
+
+/// Costo interno del producto. Tabla aparte para que ninguna consulta pública lo incluya por error.
+model ProductCost {
+  productId     String   @id @db.Uuid
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitCostCents Int
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("product_costs")
+}
+
+model ProductMedia {
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mediaId   String  @db.Uuid
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  position  Int     @default(0)
+
+  @@id([productId, mediaId])
+  @@index([mediaId])
+  @@map("product_media")
+}
+
+// ──────────────────────────────── IA ────────────────────────────────
+
+enum AIFeature {
+  SALE_PROPOSAL
+  CONTENT_GENERATION
+  CAMPAIGN_STRATEGY
+  PLATFORM_ANALYSIS
+}
+
+enum AIRequestStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  BLOCKED_BUDGET
+}
+
+model AIRequest {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  userId        String?         @db.Uuid
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  feature       AIFeature
+  provider      String
+  model         String
+  promptVersion String
+  /// Entrada saneada (sin datos sensibles innecesarios).
+  input         Json
+  status        AIRequestStatus @default(PENDING)
+  errorCode     String?
+  latencyMs     Int?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+
+  response AIResponse?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([feature, createdAt(sort: Desc)])
+  @@map("ai_requests")
+}
+
+model AIResponse {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  requestId     String    @unique @db.Uuid
+  request       AIRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  /// Salida ya validada con su esquema de Zod.
+  output        Json
+  inputTokens   Int       @default(0)
+  outputTokens  Int       @default(0)
+  /// Costo en micro-dólares (1 USD = 1,000,000) para medir el autofinanciamiento (ADR-020).
+  costMicrosUsd Int       @default(0)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@map("ai_responses")
+}
+
+// ───────────────────────────── Eventos (P5) ─────────────────────────────
+
+enum AnalyticsEventType {
+  IMPRESSION
+  VIEW
+  CLICK
+  SEARCH
+  LIKE
+  UNLIKE
+  SAVE
+  UNSAVE
+  COMMENT
+  FOLLOW
+  SHARE
+  NOT_INTERESTED
+  COMMUNITY_JOIN
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_STARTED
+  PURCHASE
+  SIGN_UP
+  ONBOARDING_COMPLETED
+  AI_PROPOSAL_GENERATED
+  AI_PROPOSAL_ACCEPTED
+}
+
+enum EntityType {
+  POST
+  PRODUCT
+  PROFILE
+  COMMUNITY
+  CATEGORY
+}
+
+enum Surface {
+  FEED
+  COMMUNITY
+  DISCOVER
+  SHOP
+  PROFILE
+  PRODUCT_PAGE
+  POST_PAGE
+  SHARE_LINK
+  STUDIO
+  ONBOARDING
+}
+
+/// Sin llave foránea a User a propósito: se escribe en segundo plano y se borra por userId al
+/// ejercer el derecho de cancelación.
+model AnalyticsEvent {
+  id               String             @id @default(uuid(7)) @db.Uuid
+  type             AnalyticsEventType
+  userId           String?            @db.Uuid
+  anonymousId      String?
+  entityType       EntityType?
+  entityId         String?            @db.Uuid
+  /// Publicación que originó la acción (atribución a contenido y creadores).
+  sourcePostId     String?            @db.Uuid
+  surface          Surface?
+  /// Posición en el feed, puntuación y versión del algoritmo al servir el elemento.
+  position         Int?
+  score            Float?
+  algorithmVersion String?
+  query            String?
+  metadata         Json?
+  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([type, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([userId, createdAt])
+  @@index([sourcePostId])
+  @@map("analytics_events")
+}
+
+// ──────────────────── Plataforma: motor de automejora (ADR-019/020) ────────────────────
+
+enum Actor {
+  AI
+  HUMAN
+  SYSTEM
+}
+
+/// Parámetros ajustables con esquema y límites (p. ej. "feed.policy", "ai.budget").
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  version   Int      @default(1)
+  updatedBy Actor    @default(SYSTEM)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("platform_settings")
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DecisionStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  APPLIED
+  REVERTED
+}
+
+/// Bitácora de decisiones del motor de automejora: toda propuesta o cambio queda registrado.
+model PlatformDecision {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  actor          Actor
+  kind           String
+  title          String
+  hypothesis     String
+  settingKey     String?
+  previousValue  Json?
+  newValue       Json?
+  riskLevel      RiskLevel
+  status         DecisionStatus @default(PROPOSED)
+  expectedImpact String?
+  measuredImpact Json?
+  decidedAt      DateTime?      @db.Timestamptz(3)
+  appliedAt      DateTime?      @db.Timestamptz(3)
+  revertedAt     DateTime?      @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("platform_decisions")
+}
+
+// ─────────────────────────── Comercio (fases 8–9) ───────────────────────────
+
+model Cart {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  userId    String     @unique @db.Uuid
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  cartId       String   @db.Uuid
+  cart         Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId    String   @db.Uuid
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity     Int
+  /// Publicación que llevó a agregarlo (atribución, P5).
+  sourcePostId String?  @db.Uuid
+  addedAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+model Address {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientName  String
+  phone          String
+  street         String
+  exteriorNumber String
+  interiorNumber String?
+  /// Colonia.
+  neighborhood   String
+  city           String
+  state          String
+  postalCode     String   @db.Char(5)
+  references     String?
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+enum CheckoutStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  EXPIRED
+}
+
+/// Un pago que agrupa una orden por vendedor (ADR-011).
+model Checkout {
+  id            String         @id @default(uuid(7)) @db.Uuid
+  buyerId       String         @db.Uuid
+  buyer         User           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  status        CheckoutStatus @default(PENDING_PAYMENT)
+  totalCents    Int
+  currency      String         @default("MXN") @db.Char(3)
+  paymentMethod PaymentMethod
+  expiresAt     DateTime       @db.Timestamptz(3)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @db.Timestamptz(3)
+
+  orders   Order[]
+  payments Payment[]
+
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([status, expiresAt])
+  @@map("checkouts")
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryMethod {
+  NATIONAL_SHIPPING
+  LOCAL_DELIVERY
+  PICKUP
+}
+
+model Order {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  checkoutId       String         @db.Uuid
+  checkout         Checkout       @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  buyerId          String         @db.Uuid
+  buyer            User           @relation("buyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId         String         @db.Uuid
+  seller           SellerProfile  @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  status           OrderStatus    @default(PENDING_PAYMENT)
+  deliveryMethod   DeliveryMethod
+  subtotalCents    Int
+  shippingCents    Int
+  platformFeeCents Int
+  totalCents       Int
+  currency         String         @default("MXN") @db.Char(3)
+  /// Copia de la dirección al momento de comprar (no cambia si la persona edita la suya).
+  shippingAddress  Json?
+  paidAt           DateTime?      @db.Timestamptz(3)
+  shippedAt        DateTime?      @db.Timestamptz(3)
+  deliveredAt      DateTime?      @db.Timestamptz(3)
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+
+  items OrderItem[]
+
+  @@index([sellerId, createdAt(sort: Desc)])
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([checkoutId])
+  @@map("orders")
+}
+
+/// Precio, costo y comisión se congelan al comprar (P2: el beneficio se calcula con estos datos).
+model OrderItem {
+  id             String  @id @default(uuid(7)) @db.Uuid
+  orderId        String  @db.Uuid
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String  @db.Uuid
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  titleSnapshot  String
+  unitPriceCents Int
+  /// Privado del vendedor: nunca se muestra a compradores.
+  unitCostCents  Int
+  quantity       Int
+  commissionBps  Int
+  sourcePostId   String? @db.Uuid
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([sourcePostId])
+  @@map("order_items")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  EXPIRED
+  REFUNDED
+}
+
+model Payment {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  checkoutId  String         @db.Uuid
+  checkout    Checkout       @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  provider    String
+  providerRef String         @unique
+  status      PaymentStatus  @default(PENDING)
+  amountCents Int
+  currency    String         @default("MXN") @db.Char(3)
+  method      PaymentMethod
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @db.Timestamptz(3)
+  events      PaymentEvent[]
+
+  @@index([checkoutId])
+  @@map("payments")
+}
+
+/// Idempotencia de notificaciones del proveedor de pagos: cada evento se procesa una sola vez.
+model PaymentEvent {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  paymentId       String?  @db.Uuid
+  payment         Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  provider        String
+  providerEventId String
+  status          String
+  payload         Json
+  receivedAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([provider, providerEventId])
+  @@map("payment_events")
+}
+
+enum LedgerKind {
+  COMMISSION
+  SUBSCRIPTION
+  PROMOTION
+  AI_PREMIUM
+  AI_COST
+  INFRA_COST
+  PAYMENT_FEE
+}
+
+/// Libro de la plataforma: ingresos (positivos) y costos (negativos) para medir la cobertura de la
+/// IA (ADR-020).
+model PlatformLedgerEntry {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  kind        LedgerKind
+  amountCents Int
+  currency    String     @default("MXN") @db.Char(3)
+  reference   String?
+  occurredAt  DateTime   @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@index([kind, occurredAt])
+  @@map("platform_ledger_entries")
+}

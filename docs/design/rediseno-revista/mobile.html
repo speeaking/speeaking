@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#1c1614" />
+    <title>Para ti · VendeIA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ───────────── Revista de comunidades · tokens ───────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        color-scheme: light;
+        --bg: oklch(0.972 0.009 80);
+        --paper: oklch(0.997 0.003 85);
+        --ink: oklch(0.22 0.02 45);
+        --ink-2: oklch(0.36 0.02 50);
+        --muted: oklch(0.48 0.018 55);
+        --line: oklch(0.905 0.012 72);
+        --line-2: oklch(0.85 0.014 70);
+        --chip: oklch(0.944 0.013 75);
+        --chip-2: oklch(0.918 0.016 75);
+        --primary: oklch(0.55 0.2 12);
+        --on-primary: oklch(0.985 0.008 85);
+        --primary-soft: oklch(0.95 0.03 12);
+        --primary-text: oklch(0.5 0.19 12);
+        --ai: oklch(0.89 0.19 126);
+        --on-ai: oklch(0.27 0.07 132);
+        --ok: oklch(0.47 0.12 150);
+        --glass: oklch(0.985 0.006 82 / 88%);
+        --shadow: 0 1px 2px oklch(0.22 0.02 45 / 5%), 0 14px 30px -18px oklch(0.22 0.02 45 / 28%);
+        --shadow-lg:
+          0 1px 2px oklch(0.22 0.02 45 / 6%), 0 24px 48px -24px oklch(0.22 0.02 45 / 35%);
+        /* Color de comunidad: L y C dependen del tema, el tono (--h) viene de la base de datos. */
+        --h: 12;
+        --ci-l: 0.45;
+        --ci-c: 0.15; /* texto */
+        --cs-l: 0.957;
+        --cs-c: 0.03; /* fondo suave */
+        --ct-l: 0.89;
+        --ct-c: 0.08; /* mosaico del emoji */
+        --cb-l: 0.63;
+        --cb-c: 0.16; /* barras y reglas */
+        --cd-l: 0.33;
+        --cd-c: 0.09; /* tinta profunda (texto grande sobre fondo suave) */
+        --radius: 22px;
+        --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+        --body: "Figtree", ui-sans-serif, system-ui, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --bg: oklch(0.16 0.012 40);
+          --paper: oklch(0.205 0.014 40);
+          --ink: oklch(0.955 0.01 80);
+          --ink-2: oklch(0.86 0.012 75);
+          --muted: oklch(0.74 0.015 70);
+          --line: oklch(1 0 0 / 9%);
+          --line-2: oklch(1 0 0 / 16%);
+          --chip: oklch(0.25 0.014 42);
+          --chip-2: oklch(0.29 0.016 42);
+          --primary: oklch(0.68 0.19 12);
+          --on-primary: oklch(0.17 0.012 40);
+          --primary-soft: oklch(0.28 0.06 12);
+          --primary-text: oklch(0.8 0.13 12);
+          --ai: oklch(0.87 0.2 128);
+          --on-ai: oklch(0.22 0.06 132);
+          --ok: oklch(0.78 0.14 150);
+          --glass: oklch(0.17 0.012 40 / 86%);
+          --shadow: 0 1px 0 oklch(1 0 0 / 4%) inset, 0 14px 30px -18px oklch(0 0 0 / 60%);
+          --shadow-lg: 0 24px 48px -24px oklch(0 0 0 / 70%);
+          --ci-l: 0.84;
+          --ci-c: 0.11;
+          --cs-l: 0.245;
+          --cs-c: 0.035;
+          --ct-l: 0.35;
+          --ct-c: 0.075;
+          --cb-l: 0.72;
+          --cb-c: 0.14;
+          --cd-l: 0.93;
+          --cd-c: 0.04;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: oklch(0.16 0.012 40);
+        --paper: oklch(0.205 0.014 40);
+        --ink: oklch(0.955 0.01 80);
+        --ink-2: oklch(0.86 0.012 75);
+        --muted: oklch(0.74 0.015 70);
+        --line: oklch(1 0 0 / 9%);
+        --line-2: oklch(1 0 0 / 16%);
+        --chip: oklch(0.25 0.014 42);
+        --chip-2: oklch(0.29 0.016 42);
+        --primary: oklch(0.68 0.19 12);
+        --on-primary: oklch(0.17 0.012 40);
+        --primary-soft: oklch(0.28 0.06 12);
+        --primary-text: oklch(0.8 0.13 12);
+        --ai: oklch(0.87 0.2 128);
+        --on-ai: oklch(0.22 0.06 132);
+        --ok: oklch(0.78 0.14 150);
+        --glass: oklch(0.17 0.012 40 / 86%);
+        --shadow: 0 1px 0 oklch(1 0 0 / 4%) inset, 0 14px 30px -18px oklch(0 0 0 / 60%);
+        --shadow-lg: 0 24px 48px -24px oklch(0 0 0 / 70%);
+        --ci-l: 0.84;
+        --ci-c: 0.11;
+        --cs-l: 0.245;
+        --cs-c: 0.035;
+        --ct-l: 0.35;
+        --ct-c: 0.075;
+        --cb-l: 0.72;
+        --cb-c: 0.14;
+        --cd-l: 0.93;
+        --cd-c: 0.04;
+      }
+      .cm {
+        --c-ink: oklch(var(--ci-l) var(--ci-c) var(--h));
+        --c-soft: oklch(var(--cs-l) var(--cs-c) var(--h));
+        --c-tile: oklch(var(--ct-l) var(--ct-c) var(--h));
+        --c-bar: oklch(var(--cb-l) var(--cb-c) var(--h));
+        --c-deep: oklch(var(--cd-l) var(--cd-c) var(--h));
+        --c-num: oklch(calc(var(--cb-l) - 0.07) var(--cb-c) var(--h));
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        font-family: var(--body);
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        background-image:
+          radial-gradient(60rem 30rem at 110% -10%, oklch(0.55 0.2 12 / 6%), transparent),
+          radial-gradient(40rem 24rem at -20% 0%, oklch(0.89 0.19 126 / 9%), transparent);
+        background-attachment: fixed;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        background: none;
+        border: 0;
+        cursor: pointer;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .i {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .i.sm {
+        width: 16px;
+        height: 16px;
+      }
+      .i.xs {
+        width: 14px;
+        height: 14px;
+      }
+      .i.lg {
+        width: 24px;
+        height: 24px;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* Tipografía editorial */
+      .display {
+        font-family: var(--display);
+        font-optical-sizing: auto;
+        letter-spacing: -0.02em;
+      }
+      .kicker {
+        font-family: var(--body);
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--c-ink, var(--muted));
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Piezas comunes */
+      .tile {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        background: var(--c-tile);
+        font-size: 19px;
+        line-height: 1;
+        position: relative;
+      }
+      .tile.sm {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .tile.md {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        font-size: 16px;
+      }
+      .tile.lg {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        font-size: 22px;
+      }
+      .tile .seal {
+        position: absolute;
+        right: -4px;
+        bottom: -4px;
+        width: 17px;
+        height: 17px;
+        border-radius: 6px;
+        background: var(--paper);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 2px var(--paper);
+      }
+      .tile .seal svg {
+        width: 15px;
+        height: 15px;
+      }
+      .avatar {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 13px;
+        background: oklch(0.9 0.07 var(--h));
+        color: oklch(0.3 0.08 var(--h));
+      }
+      .avatar.sm {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+      .avatar.lg {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        padding: 2px 7px;
+        background: var(--chip);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .badge .i {
+        width: 11px;
+        height: 11px;
+        stroke-width: 2.5;
+      }
+      .badge.shop {
+        background: var(--primary-soft);
+        color: var(--primary-text);
+      }
+      .ai-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .ai-chip .spark {
+        display: grid;
+        place-items: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 5px;
+        background: var(--ai);
+        color: var(--on-ai);
+      }
+      .ai-chip .spark .i {
+        width: 11px;
+        height: 11px;
+        stroke-width: 2.4;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 14.5px;
+        white-space: nowrap;
+        transition:
+          transform 0.15s ease,
+          background 0.15s ease;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: var(--on-primary);
+        box-shadow: 0 8px 18px -10px oklch(0.55 0.2 12 / 70%);
+      }
+      .btn-ink {
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .btn-soft {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .btn-ghost {
+        color: var(--ink);
+      }
+      .btn-ghost:hover,
+      .btn-soft:hover {
+        background: var(--chip-2);
+      }
+      .btn.sm {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        color: var(--ink-2);
+        position: relative;
+      }
+      .icon-btn:hover {
+        background: var(--chip);
+      }
+      .count {
+        position: absolute;
+        top: 3px;
+        right: 2px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: var(--on-primary);
+        font-size: 10.5px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 2px var(--paper);
+      }
+
+      /* Acciones de publicación */
+      .acts {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: -8px;
+      }
+      .act {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 13.5px;
+        font-weight: 700;
+      }
+      .act:hover {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .act.liked {
+        color: var(--primary-text);
+      }
+      .act.liked .i {
+        fill: currentColor;
+      }
+      .acts .push {
+        margin-left: auto;
+      }
+      .reply {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        padding: 0 6px 0 6px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .reply .ph {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .reply .send {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        color: var(--muted);
+      }
+
+      /* Imagen con desenfoque de carga */
+      .media {
+        position: relative;
+        overflow: hidden;
+        background: var(--c-tile, var(--chip));
+      }
+      .media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 78%;
+      }
+      .price-tag {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 6px 0 12px;
+        border-radius: 999px;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 800;
+        font-size: 14px;
+        box-shadow: var(--shadow-lg);
+      }
+      .price-tag .go {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+      .price-tag .go .i {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2.6;
+      }
+
+      [data-new="true"] {
+        outline: 1.5px dashed oklch(0.7 0.16 290 / 0);
+      } /* marcador para revisión: ver notes.md */
+      .show-new [data-new="true"] {
+        outline-color: oklch(0.62 0.2 290 / 90%);
+        outline-offset: 2px;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      /* ───────────── Móvil (≤ 767 px) ───────────── */
+      body {
+        font-size: 15px;
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+      }
+      .m-top {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 8px 0 16px;
+        background: var(--glass);
+        backdrop-filter: blur(18px) saturate(1.4);
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 21px;
+        letter-spacing: -0.03em;
+      }
+      .brand svg {
+        width: 30px;
+        height: 30px;
+      }
+      .m-top .acts-top {
+        display: flex;
+        align-items: center;
+      }
+
+      /* Tira de secciones: comunidades como pestañas de la revista */
+      .strip {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 12px 16px 10px;
+      }
+      .strip::-webkit-scrollbar {
+        display: none;
+      }
+      .st {
+        flex: none;
+        width: 68px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink-2);
+      }
+      .st .tile {
+        width: 58px;
+        height: 58px;
+        border-radius: 19px;
+        font-size: 28px;
+      }
+      .st.on .tile {
+        background: var(--chip);
+        box-shadow:
+          0 0 0 2.5px var(--bg),
+          0 0 0 5px var(--primary);
+      }
+      .st.on .tile svg {
+        width: 30px;
+        height: 30px;
+      }
+      .st.on {
+        color: var(--ink);
+        font-weight: 800;
+      }
+      .st .dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 9px;
+        background: var(--c-bar);
+        box-shadow: 0 0 0 3px var(--bg);
+      }
+      .st.more .tile {
+        background: var(--chip);
+        color: var(--ink-2);
+      }
+
+      .m-ed {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 4px 16px 10px;
+      }
+      .m-ed h1 {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 32px;
+        line-height: 0.95;
+        letter-spacing: -0.035em;
+        font-stretch: 86%;
+      }
+      .m-ed p {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-align: right;
+        line-height: 1.35;
+      }
+      .m-ed p b {
+        color: var(--ink);
+      }
+
+      .m-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 0 12px;
+      }
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .sec {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 4px 0;
+      }
+      .sec .kicker {
+        font-size: 12px;
+        color: var(--c-ink);
+      }
+      .sec .rule {
+        flex: 1;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--c-bar), transparent);
+      }
+      .sec .more {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--c-ink);
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .by {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .by .who {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .by .nm {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 800;
+        font-size: 14px;
+      }
+      .by .meta {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .by .meta a {
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+
+      .hero {
+        background: var(--c-soft);
+        border-color: transparent;
+      }
+      .hero .media {
+        aspect-ratio: 16/11;
+      }
+      .hero .body {
+        padding: 14px 16px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .h-hero {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 29px;
+        line-height: 1.02;
+        letter-spacing: -0.035em;
+        font-stretch: 84%;
+        color: var(--c-deep);
+      }
+      .lede {
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--ink-2);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .hero .acts {
+        margin: 0 -4px;
+      }
+
+      .duo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .tc {
+        display: flex;
+        flex-direction: column;
+      }
+      .tc .media {
+        aspect-ratio: 1/1;
+      }
+      .tc .body {
+        padding: 10px 12px 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .tc .kicker {
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+      }
+      .tc .txt {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 15.5px;
+        line-height: 1.18;
+        letter-spacing: -0.015em;
+        font-stretch: 92%;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .tc .foot {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 4px 4px 12px;
+        font-size: 11.5px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .tc .foot .act {
+        height: 34px;
+        padding: 0 8px;
+      }
+
+      .poster {
+        position: relative;
+        background: var(--c-soft);
+        border-color: transparent;
+        padding: 16px 16px 10px;
+      }
+      .poster::before {
+        content: "¿?";
+        position: absolute;
+        right: -4px;
+        top: -26px;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 140px;
+        line-height: 1;
+        letter-spacing: -0.06em;
+        color: var(--c-bar);
+        opacity: 0.16;
+        font-stretch: 75%;
+      }
+      .poster .q {
+        position: relative;
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 25px;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+        font-stretch: 84%;
+        color: var(--c-deep);
+        margin: 10px 0 12px;
+      }
+      .poster .reply {
+        background: var(--paper);
+      }
+      .poster .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+      }
+      .first {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--c-ink);
+      }
+
+      .pick-head {
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .pick-k {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--primary-text);
+      }
+      .h-pick {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 26px;
+        line-height: 1;
+        letter-spacing: -0.035em;
+        font-stretch: 84%;
+        margin: 6px 0 4px;
+      }
+      .why {
+        font-size: 12.5px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .why b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .pp {
+        padding: 14px 16px 16px;
+        display: grid;
+        grid-template-columns: 104px 1fr;
+        gap: 14px;
+      }
+      .pp .media {
+        aspect-ratio: 4/5;
+        border-radius: 14px;
+      }
+      .pp .media img {
+        object-position: 50% 50%;
+      }
+      .pp .info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+      }
+      .pp .seller {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .pp .title {
+        font-family: var(--display);
+        font-weight: 750;
+        font-size: 18px;
+        line-height: 1.12;
+        letter-spacing: -0.015em;
+        font-stretch: 92%;
+      }
+      .price {
+        font-family: var(--display);
+        font-weight: 800;
+        font-size: 26px;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .price small {
+        font-family: var(--body);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0;
+        margin-left: 3px;
+      }
+      .fit {
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        align-self: flex-start;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--ok);
+        background: oklch(from var(--ok) l c h / 14%);
+        padding: 3px 9px 3px 7px;
+        border-radius: 999px;
+      }
+      .fit .i {
+        width: 13px;
+        height: 13px;
+        stroke-width: 3;
+      }
+      .facts {
+        grid-column: 1/-1;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line-2);
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      .facts li {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .facts .i {
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+      }
+      .facts b {
+        color: var(--ink);
+      }
+      .pp .cta {
+        grid-column: 1/-1;
+        display: flex;
+        gap: 8px;
+      }
+      .pp .cta .btn-primary {
+        flex: 1;
+        height: 44px;
+      }
+      .pp .cta .btn-soft {
+        height: 44px;
+      }
+      .pick-read {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--line);
+        background: var(--c-soft);
+      }
+      .pick-read .media {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        flex: none;
+      }
+      .pick-read .t {
+        font-size: 13.5px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .pick-read .t span {
+        display: block;
+        font-size: 12px;
+        color: var(--c-ink);
+        font-weight: 800;
+      }
+
+      /* Barra inferior: 5 pestañas, Crear al centro */
+      .bnav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        background: var(--glass);
+        backdrop-filter: blur(18px) saturate(1.4);
+        border-top: 1px solid var(--line);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .bnav ul {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        height: 64px;
+        align-items: center;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      .bnav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .bnav a .i {
+        width: 24px;
+        height: 24px;
+      }
+      .bnav a.on {
+        color: var(--ink);
+      }
+      .bnav a.on .i {
+        stroke-width: 2.5;
+      }
+      .bnav a.on::after {
+        content: "";
+        width: 4px;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--primary);
+        margin-top: 1px;
+      }
+      .bnav .create {
+        margin-top: -22px;
+      }
+      .bnav .create span.fab {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 18px;
+        background: var(--primary);
+        color: var(--on-primary);
+        box-shadow:
+          0 10px 24px -8px oklch(0.68 0.19 12 / 70%),
+          0 0 0 4px var(--bg);
+      }
+      .bnav .create span.fab .i {
+        width: 26px;
+        height: 26px;
+        stroke-width: 2.6;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+      aria-hidden="true"
+    >
+      <symbol id="i-house" viewBox="0 0 24 24">
+        <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+        <path
+          d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+        />
+      </symbol>
+      <symbol id="i-compass" viewBox="0 0 24 24">
+        <path
+          d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"
+        />
+        <circle cx="12" cy="12" r="10" />
+      </symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24">
+        <path d="M16 10a4 4 0 0 1-8 0" />
+        <path d="M3.103 6.034h17.794" />
+        <path
+          d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"
+        />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="10" r="3" />
+        <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="M12 5v14" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24">
+        <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+        <path
+          d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+        />
+      </symbol>
+      <symbol id="i-cart" viewBox="0 0 24 24">
+        <circle cx="8" cy="21" r="1" />
+        <circle cx="19" cy="21" r="1" />
+        <path
+          d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+        />
+      </symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24">
+        <path
+          d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+        />
+      </symbol>
+      <symbol id="i-comment" viewBox="0 0 24 24">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      </symbol>
+      <symbol id="i-bookmark" viewBox="0 0 24 24">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+      </symbol>
+      <symbol id="i-share" viewBox="0 0 24 24">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+        <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+      </symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path
+          d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+        />
+        <path d="M20 3v4" />
+        <path d="M22 5h-4" />
+        <path d="M4 17v2" />
+        <path d="M5 18H3" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </symbol>
+      <symbol id="i-truck" viewBox="0 0 24 24">
+        <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+        <path d="M15 18H9" />
+        <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+        <circle cx="17" cy="18" r="2" />
+        <circle cx="7" cy="18" r="2" />
+      </symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24">
+        <path
+          d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+        />
+        <circle cx="12" cy="10" r="3" />
+      </symbol>
+      <symbol id="i-image" viewBox="0 0 24 24">
+        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+        <circle cx="9" cy="9" r="2" />
+        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+      </symbol>
+      <symbol id="i-question" viewBox="0 0 24 24">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
+      </symbol>
+      <symbol id="i-dashboard" viewBox="0 0 24 24">
+        <rect width="7" height="9" x="3" y="3" rx="1" />
+        <rect width="7" height="5" x="14" y="3" rx="1" />
+        <rect width="7" height="9" x="14" y="12" rx="1" />
+        <rect width="7" height="5" x="3" y="16" rx="1" />
+      </symbol>
+      <symbol id="i-receipt" viewBox="0 0 24 24">
+        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+        <path d="M14 8H8" />
+        <path d="M16 12H8" />
+        <path d="M13 16H8" />
+      </symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24">
+        <path d="M12 20h9" />
+        <path
+          d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+        />
+      </symbol>
+      <symbol id="i-trend" viewBox="0 0 24 24">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
+      </symbol>
+      <symbol id="i-send" viewBox="0 0 24 24">
+        <path
+          d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+        />
+        <path d="m21.854 2.147-10.94 10.939" />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="m4.93 4.93 1.41 1.41" />
+        <path d="m17.66 17.66 1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="m6.34 17.66-1.41 1.41" />
+        <path d="m19.07 4.93-1.41 1.41" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-target" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+        <circle cx="5" cy="12" r="1" />
+      </symbol>
+      <symbol id="i-flame" viewBox="0 0 24 24">
+        <path
+          d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+        />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </symbol>
+      <symbol id="i-store" viewBox="0 0 24 24">
+        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+        <path d="M2 7h20" />
+        <path
+          d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"
+        />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </symbol>
+      <symbol id="mark" viewBox="0 0 64 64">
+        <path
+          d="M20 8h18a14 14 0 0 1 14 14v12a14 14 0 0 1-14 14H25l-11 8 2.5-9.2A14 14 0 0 1 6 34V22A14 14 0 0 1 20 8z"
+          fill="var(--primary)"
+          stroke="none"
+        />
+        <path
+          d="M19 24.5l9.5 11.5 9.5-11.5"
+          fill="none"
+          stroke="var(--on-primary)"
+          stroke-width="5.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M54 1.5c1.1 5.6 2.4 6.9 8 8-5.6 1.1-6.9 2.4-8 8-1.1-5.6-2.4-6.9-8-8 5.6-1.1 6.9-2.4 8-8z"
+          fill="var(--ai)"
+          stroke="var(--bg)"
+          stroke-width="3"
+          stroke-linejoin="round"
+        />
+      </symbol>
+    </svg>
+
+    <header class="m-top">
+      <a class="brand" href="#" aria-label="VendeIA, ir al inicio"
+        ><svg viewBox="0 0 64 64"><use href="#mark" /></svg>VendeIA</a
+      >
+      <div class="acts-top">
+        <a class="icon-btn" href="#" aria-label="Buscar"
+          ><svg class="i lg"><use href="#i-search" /></svg
+        ></a>
+        <a class="icon-btn" href="#" aria-label="Notificaciones" data-new="true"
+          ><svg class="i lg"><use href="#i-bell" /></svg
+        ></a>
+        <a class="icon-btn" href="#" aria-label="Carrito"
+          ><svg class="i lg"><use href="#i-cart" /></svg
+        ></a>
+      </div>
+    </header>
+
+    <nav class="strip" aria-label="Secciones">
+      <a class="st on" href="#" aria-current="page"
+        ><span class="tile"
+          ><svg viewBox="0 0 64 64"><use href="#mark" /></svg></span
+        >Para ti</a
+      >
+      <a class="st cm" style="--h: 285" href="#"
+        ><span class="tile">🎮<span class="dot" data-new="true"></span></span>Gaming</a
+      >
+      <a class="st cm" style="--h: 145" href="#"
+        ><span class="tile">⚽<span class="dot" data-new="true"></span></span>Deportes</a
+      >
+      <a class="st cm" style="--h: 235" href="#"
+        ><span class="tile">💻<span class="dot" data-new="true"></span></span>Tecnología</a
+      >
+      <a class="st cm" style="--h: 60" href="#"><span class="tile">🐶</span>Mascotas</a>
+      <a class="st more" href="#"
+        ><span class="tile"
+          ><svg class="i lg"><use href="#i-compass" /></svg></span
+        >Explorar</a
+      >
+    </nav>
+
+    <div class="m-ed">
+      <h1>Para ti</h1>
+      <p><b>Viernes 25 sep</b><br />Tu edición de hoy</p>
+    </div>
+
+    <main class="m-feed" id="contenido">
+      <div class="sec cm" style="--h: 285">
+        <span class="kicker"><span class="tile sm">🎮</span>Hoy en Gaming</span
+        ><span class="rule"></span
+        ><a class="more" href="#"
+          >Ver<svg class="i sm"><use href="#i-chevron" /></svg
+        ></a>
+      </div>
+      <article class="card hero cm" style="--h: 285">
+        <figure class="media">
+          <img
+            src="http://localhost:3000/media/seed/27598020-9f9a-405c-ab63-52ee3457fe16.webp"
+            alt="Top 5 juegos cooperativos"
+          />
+        </figure>
+        <div class="body">
+          <div class="by">
+            <span class="tile"
+              >🎮<span class="seal"
+                ><svg viewBox="0 0 64 64"><use href="#mark" /></svg></span
+            ></span>
+            <div class="who">
+              <span class="nm"
+                >Equipo VendeIA<span class="badge"
+                  ><svg class="i"><use href="#i-pen" /></svg>Editorial</span
+                ></span
+              >
+              <span class="meta">en <a href="#">Gaming</a> · hace 11 h</span>
+            </div>
+          </div>
+          <h2 class="h-hero">¿Algo para jugar con amigos este fin?</h2>
+          <p class="lede">
+            Nuestro top: 1) It Takes Two 2) Overcooked 2 3) Minecraft 4) Stardew Valley 5) Among Us.
+            ¿Cuál agregarías?
+          </p>
+          <span class="ai-chip"
+            ><span class="spark"
+              ><svg class="i"><use href="#i-sparkles" /></svg></span
+            >Creado con ayuda de IA</span
+          >
+          <div class="acts">
+            <button class="act">
+              <svg class="i"><use href="#i-heart" /></svg>3
+            </button>
+            <button class="act">
+              <svg class="i"><use href="#i-comment" /></svg>Comentar
+            </button>
+            <button class="act push" aria-label="Guardar">
+              <svg class="i"><use href="#i-bookmark" /></svg>
+            </button>
+            <button class="act" aria-label="Compartir">
+              <svg class="i"><use href="#i-share" /></svg>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <div class="duo">
+        <article class="card tc cm" style="--h: 45">
+          <figure class="media">
+            <img
+              src="http://localhost:3000/media/seed/331d3b4a-bfff-4bae-b880-c599a26d171f.webp"
+              alt="Lunes, otra vez"
+            />
+          </figure>
+          <div class="body">
+            <span class="kicker">😂 Humor</span>
+            <p class="txt">
+              Cuando suena la alarma del lunes y tu cuerpo decide que hoy no es buen día para
+              existir. ¿A quién más le pasa? 😅
+            </p>
+          </div>
+          <div class="foot">
+            <span>Editorial · 9 h</span
+            ><button class="act" aria-label="Me gusta">
+              <svg class="i"><use href="#i-heart" /></svg>
+            </button>
+          </div>
+        </article>
+        <article class="card tc cm" style="--h: 235">
+          <figure class="media">
+            <img
+              src="http://localhost:3000/media/seed/b549c586-0f34-49d5-a80e-656ef886eabb.webp"
+              alt="AirPods Pro 2"
+            /><a
+              class="price-tag"
+              style="top: 8px; right: 8px; left: auto; bottom: auto; height: 30px; font-size: 13px"
+              href="#"
+              >$3,499<span class="go"
+                ><svg class="i"><use href="#i-arrow" /></svg></span
+            ></a>
+          </figure>
+          <div class="body">
+            <span class="kicker">💻 Tecnología</span>
+            <p class="txt">
+              Silencio total en el metro 🎧 AirPods Pro 2 nuevos, con entrega en CDMX o envío a todo
+              México.
+            </p>
+          </div>
+          <div class="foot">
+            <span>Electro Demo · <span style="color: var(--primary-text)">Tienda</span></span
+            ><button class="act" aria-label="Guardar">
+              <svg class="i"><use href="#i-bookmark" /></svg>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <article class="card poster cm" style="--h: 285">
+        <div class="by">
+          <span class="tile"
+            >🎮<span class="seal"
+              ><svg viewBox="0 0 64 64"><use href="#mark" /></svg></span
+          ></span>
+          <div class="who">
+            <span class="kicker">Gaming · Pregunta abierta</span
+            ><span class="meta">Equipo VendeIA · Editorial · hace 23 h</span>
+          </div>
+        </div>
+        <p class="q">
+          Debate del día: ¿control o teclado y mouse para shooters? Argumenta tu respuesta. 🎯
+        </p>
+        <div class="reply">
+          <span class="avatar sm" style="--h: 48">SR</span
+          ><span class="ph">Escribe tu argumento…</span
+          ><span class="send"
+            ><svg class="i sm"><use href="#i-send" /></svg
+          ></span>
+        </div>
+        <div class="row">
+          <span class="first">Aún sin respuestas: abre la conversación</span
+          ><button class="act" aria-label="Guardar">
+            <svg class="i"><use href="#i-bookmark" /></svg>
+          </button>
+        </div>
+      </article>
+
+      <section class="card pick" aria-labelledby="pick-m">
+        <header class="pick-head">
+          <span class="pick-k"
+            ><span class="ai-chip"
+              ><span class="spark"
+                ><svg class="i"><use href="#i-sparkles" /></svg></span></span
+            >Hecho para ti · selección con IA</span
+          >
+          <h3 class="h-pick" id="pick-m" data-new="true">Para tus primeros 5 km</h3>
+          <p class="why">Porque buscas <b>tenis para correr</b> de hasta <b>$2,000</b>.</p>
+        </header>
+        <article class="pp">
+          <figure class="media">
+            <img
+              src="http://localhost:3000/media/seed/8f619a4e-365a-4ed6-9bc5-09bf10e25240.webp"
+              alt="Tenis para correr ultraligeros"
+            />
+          </figure>
+          <div class="info">
+            <span class="seller">Casa y Estilo Demo · Guadalajara</span>
+            <h4 class="title">Tenis para correr ultraligeros</h4>
+            <p class="price">$1,499<small>MXN</small></p>
+            <span class="fit"
+              ><svg class="i"><use href="#i-check" /></svg>En tu presupuesto</span
+            >
+          </div>
+          <ul class="facts">
+            <li>
+              <svg class="i"><use href="#i-truck" /></svg>Envío a todo México: <b>$149</b> · 3 a 7
+              días
+            </li>
+            <li>
+              <svg class="i"><use href="#i-undo" /></svg><b>15 días</b> para devolverlo
+            </li>
+          </ul>
+          <div class="cta">
+            <a class="btn btn-primary" href="#">Ver los tenis</a
+            ><button class="btn btn-soft" aria-label="Guardar">
+              <svg class="i"><use href="#i-bookmark" /></svg>
+            </button>
+          </div>
+        </article>
+        <a class="pick-read cm" style="--h: 145" href="#">
+          <figure class="media">
+            <img
+              src="http://localhost:3000/media/seed/970e70b4-7771-40cf-a2dd-eb7e186708d4.webp"
+              alt=""
+            />
+          </figure>
+          <p class="t">
+            <span>⚽ Deportes · el plan</span>Plan de 6 semanas: 3 días por semana alternando
+            caminar y trotar.
+          </p>
+          <svg class="i sm" style="color: var(--c-ink); margin-left: auto">
+            <use href="#i-chevron" />
+          </svg>
+        </a>
+      </section>
+    </main>
+
+    <nav class="bnav" aria-label="Navegación principal">
+      <ul>
+        <li>
+          <a class="on" href="#" aria-current="page"
+            ><svg class="i"><use href="#i-house" /></svg>Inicio</a
+          >
+        </li>
+        <li>
+          <a href="#"
+            ><svg class="i"><use href="#i-compass" /></svg>Descubrir</a
+          >
+        </li>
+        <li>
+          <a class="create" href="#" aria-label="Crear"
+            ><span class="fab"
+              ><svg class="i"><use href="#i-plus" /></svg></span
+          ></a>
+        </li>
+        <li>
+          <a href="#"
+            ><svg class="i"><use href="#i-bag" /></svg>Comprar</a
+          >
+        </li>
+        <li>
+          <a href="#"
+            ><svg class="i"><use href="#i-user" /></svg>Perfil</a
+          >
+        </li>
+      </ul>
+    </nav>
+  </body>
+</html>

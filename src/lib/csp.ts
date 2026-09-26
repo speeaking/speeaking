@@ -1,0 +1,49 @@
+/**
+ * Content-Security-Policy de las páginas HTML (SEC-06, ADR-029). La aplica `src/proxy.ts` con un
+ * nonce por petición; Next lee el nonce de la cabecera CSP de la PETICIÓN y lo pone en sus propios
+ * scripts, y el layout raíz lo lee de `NONCE_HEADER` para el script del tema y los de Base UI.
+ */
+
+/** Cabecera interna con el nonce de la petición. La escribe solo el proxy (pisa la del cliente). */
+export const NONCE_HEADER = "x-nonce";
+
+/** 128 bits aleatorios en base64: impredecible y distinto en cada petición. */
+export function createNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes));
+}
+
+/**
+ * La política.
+ *
+ * - `script-src`: solo scripts con el nonce y los que ellos carguen (`strict-dynamic`); `'self'`
+ *   queda de respaldo para navegadores sin CSP 3. Nunca `unsafe-inline`. En desarrollo React
+ *   necesita `unsafe-eval` para reconstruir las pilas de error del servidor.
+ * - `style-src 'unsafe-inline'`: el HTML trae atributos `style` (el `--hue` de cada comunidad, las
+ *   proporciones de las fotos, el desenfoque de carga) y sonner inyecta su `<style>` sin nonce. Un
+ *   nonce aquí apagaría `unsafe-inline` y rompería todo eso. Riesgo aceptado (ADR-029): el CSS
+ *   inyectado no ejecuta código.
+ * - Imágenes, fuentes y conexiones solo del propio origen: `/media` sirve las fotos, `next/font`
+ *   aloja las fuentes y no hay servicios de terceros. Agregar uno (pagos, analítica) es cambiar
+ *   esta función y su prueba.
+ */
+export function contentSecurityPolicy(
+  nonce: string,
+  { isDev, isHttps }: { isDev: boolean; isHttps: boolean },
+): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    // Solo si el sitio se sirve por https: en http (desarrollo, `next start` de las pruebas en CI)
+    // subiría las peticiones a https y nada cargaría.
+    ...(isHttps ? ["upgrade-insecure-requests"] : []),
+  ].join("; ");
+}

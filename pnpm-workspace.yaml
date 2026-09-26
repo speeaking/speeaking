@@ -1,0 +1,8 @@
+# Cadena de suministro: no instalar versiones publicadas hace menos de 24 h
+# (mitiga paquetes comprometidos que se retiran en horas). Ver docs/decisions.md.
+minimumReleaseAge: 1440
+
+# Paquetes con binarios precompilados: no necesitan scripts de instalación.
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
