@@ -10,6 +10,8 @@ import { PostCard } from "@/modules/social/components/post-card";
 import { findCoverIndex, pickCardVariant } from "../card-variant";
 import type { FeedItemDTO, FeedPageDTO } from "../dto";
 import { isSameLocalDay } from "../feed-date";
+import { useVisibleImpressions } from "./use-visible-impressions";
+import { IMPRESSION_POSITION_ATTRIBUTE, IMPRESSION_POST_ATTRIBUTE } from "./visible-impressions";
 
 /**
  * Separador antes de la portada: «Hoy en Gaming · Ir a la comunidad». Solo dice «Hoy» si la
@@ -66,7 +68,8 @@ export type FeedSlot = { key: string; after: number; node: ReactNode };
 
 /**
  * Feed con scroll infinito (cursor estable del servidor). Sigue siendo una lista plana: cada pieza
- * solo elige cómo pintarse (portada, tipográfica o estándar) y las posiciones no cambian.
+ * solo elige cómo pintarse (portada, tipográfica o estándar) y las posiciones no cambian. Cada pieza
+ * servida por el ranking se mide como impresión VISIBLE (T5, `use-visible-impressions.ts`).
  */
 export function FeedList({
   initialPage,
@@ -89,6 +92,8 @@ export function FeedList({
   const [cursor, setCursor] = useState(initialPage.nextCursor);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const sentinel = useRef<HTMLDivElement>(null);
+  // Antes del observador del scroll infinito: sus efectos no se pisan.
+  const observeImpression = useVisibleImpressions(community ? "COMMUNITY" : "FEED");
 
   // El servidor puede volver a pintar la página (p. ej. al descartar «Lo que buscas»). Si la persona
   // no ha cargado más páginas, se adopta la versión nueva para no dejar un «Porque buscas…» que ya
@@ -161,7 +166,18 @@ export function FeedList({
             {variant === "cover" && item.community && !community ? (
               <CoverRule community={item.community} publishedAt={item.publishedAt} />
             ) : null}
-            <PostCard post={item} index={index} variant={variant} isSignedIn={isSignedIn} />
+            {/* Contenedor medible: solo lo servido por el ranking cuenta como impresión visible. */}
+            <div
+              ref={item.ranking ? observeImpression : undefined}
+              {...(item.ranking
+                ? {
+                    [IMPRESSION_POST_ATTRIBUTE]: item.id,
+                    [IMPRESSION_POSITION_ATTRIBUTE]: item.ranking.position,
+                  }
+                : {})}
+            >
+              <PostCard post={item} index={index} variant={variant} isSignedIn={isSignedIn} />
+            </div>
             {slots
               .filter((slot) => slotAt(slot) === index)
               .map((slot) => (

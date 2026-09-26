@@ -9,6 +9,8 @@ import {
 } from "@/modules/commerce/fees";
 import { DEFAULT_FEED_POLICY, FEED_POLICY_KEY, feedPolicySchema } from "@/modules/feed/policy";
 import { db } from "@/server/db";
+import { AUTONOMY_KEY, autonomySchema, DEFAULT_AUTONOMY } from "./autonomy";
+import { feedExperimentAssignments, resolveFeedPolicy } from "./experiments";
 
 /**
  * Lee un ajuste de plataforma y lo valida con su esquema. Si no existe o es inválido (p. ej. un
@@ -25,9 +27,42 @@ async function readSetting<T>(key: string, schema: z.ZodType<T>, fallback: T): P
   return parsed.data;
 }
 
-export const getFeedPolicy = cache(() =>
+const getBaseFeedPolicy = cache(() =>
   readSetting(FEED_POLICY_KEY, feedPolicySchema, DEFAULT_FEED_POLICY),
 );
+
+/** Experimentos en curso sobre la política del feed (uno por petición, sin importar el viewer). */
+const getRunningFeedExperiments = cache(() =>
+  db.experiment.findMany({
+    where: { status: "RUNNING", settingKey: { startsWith: `${FEED_POLICY_KEY}.` } },
+    select: { key: true, settingKey: true, variants: true, allocation: true },
+    orderBy: { startedAt: "asc" },
+  }),
+);
+
+/**
+ * Política del feed para quien ve (motor de automejora): la vigente, con el valor de tratamiento de
+ * cada experimento en curso al que la persona quedó asignada (hash estable por persona). Sin sesión,
+ * siempre la vigente (control).
+ */
+export const getFeedPolicy = cache(async (viewerId: string | null = null) => {
+  const base = await getBaseFeedPolicy();
+  if (!viewerId) return base;
+  return resolveFeedPolicy(base, await getRunningFeedExperiments(), viewerId);
+});
+
+/**
+ * Variante de cada experimento del feed en curso que aplica a la persona (la misma que decide
+ * `getFeedPolicy`). Sin sesión, ninguna.
+ */
+export const getFeedExperimentAssignments = cache(async (viewerId: string | null = null) => {
+  if (!viewerId) return [];
+  return feedExperimentAssignments(
+    await getBaseFeedPolicy(),
+    await getRunningFeedExperiments(),
+    viewerId,
+  );
+});
 
 export const getAiBudget = cache(() =>
   readSetting(AI_BUDGET_KEY, aiBudgetSchema, DEFAULT_AI_BUDGET),
@@ -36,3 +71,6 @@ export const getAiBudget = cache(() =>
 export const getCommerceFees = cache(() =>
   readSetting(COMMERCE_FEES_KEY, commerceFeesSchema, DEFAULT_COMMERCE_FEES),
 );
+
+/** Modo de autonomía del motor de automejora (`observer` por omisión). */
+export const getAutonomy = cache(() => readSetting(AUTONOMY_KEY, autonomySchema, DEFAULT_AUTONOMY));

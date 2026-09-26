@@ -7,6 +7,9 @@ visibles por su texto. Límites por sección en `SEARCH_LIMITS`.
 - **Sin acentos ni mayúsculas, sin extensiones.** `normalize.ts` pliega el texto buscado con una
   tabla (`FOLD_FROM` → `FOLD_TO`) y `sql.ts` pliega las columnas con `translate(lower(col), …)`
   usando la misma tabla, así «cafe» encuentra «Café». Cada palabra debe aparecer (AND).
+- **Moderación (P14).** Productos solo `moderationStatus = 'VISIBLE'` y publicaciones sin producto o
+  con su producto visible, filtrado en el SQL (también en la ventana sin índice): un oculto no ocupa
+  un lugar del `LIMIT` ni aparece en /buscar o /comprar. `trust/hidden-leaks.db.test.ts` lo prueba.
 - **SQL parametrizado.** Lo que escribe la persona solo viaja como parámetro (`$n`), nunca dentro
   del texto SQL; los comodines `%` y `_` se escapan. `sql.test.ts` lo verifica.
 - **DTOs públicos.** `productCardsByIds` usa una lista blanca de campos: el costo ni se consulta.

@@ -104,3 +104,17 @@ describe("RecommendationEngine: «Siguiendo»", () => {
     expect(vi.mocked(queries.loadCandidates).mock.calls[0]![1]).toEqual({ communityId: "c1" });
   });
 });
+
+describe("RecommendationEngine: experimentos del motor de automejora", () => {
+  it("pide la política de quien ve (la variante de su experimento) y sin sesión la vigente", async () => {
+    const { getFeedPolicy } = await import("@/modules/platform/settings");
+    vi.mocked(queries.loadViewerContext).mockResolvedValue(context([]));
+    vi.mocked(queries.loadCandidates).mockResolvedValue([candidate("p1", FRIEND)]);
+
+    await recommendationEngine.getFeed({ viewerId: VIEWER });
+    expect(getFeedPolicy).toHaveBeenLastCalledWith(VIEWER);
+
+    await recommendationEngine.getFeed({ viewerId: null });
+    expect(getFeedPolicy).toHaveBeenLastCalledWith(null);
+  });
+});

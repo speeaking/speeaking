@@ -8,16 +8,23 @@ const { db, tx } = vi.hoisted(() => {
     product: { updateMany: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn() },
     productCost: { upsert: vi.fn() },
     productMedia: { deleteMany: vi.fn(), createMany: vi.fn() },
+    authenticityCheck: { updateMany: vi.fn() },
   };
   const db = {
     product: { findFirst: vi.fn() },
     category: { findUnique: vi.fn() },
     media: { findMany: vi.fn() },
+    // Fotos de comprobante de autenticidad (P14): vigentes y reemplazadas.
+    authenticityCheck: { findMany: vi.fn() },
+    authenticityProofHistory: { findMany: vi.fn() },
     $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
   };
   return { db, tx };
 });
 vi.mock("@/server/db", () => ({ db }));
+// Revisión de autenticidad (P14): se prueba en src/modules/trust; aquí, que se llame al guardar.
+const trust = vi.hoisted(() => ({ evaluateProductAuthenticity: vi.fn() }));
+vi.mock("@/modules/trust/service", () => trust);
 
 const SELLER = "0199a000-0000-7000-8000-00000000000a";
 const PRODUCT = "0199a000-0000-7000-8000-00000000000b";
@@ -51,8 +58,20 @@ const input: ProductFormInput = {
   postBody: undefined,
 };
 
-function ownedProduct(locked: { status: string; stock: number }) {
-  db.product.findFirst.mockResolvedValue({ id: PRODUCT });
+/** Lo que tenía el producto antes de editar (lo mismo que `input`: no cambió qué se vende). */
+const before = {
+  id: PRODUCT,
+  title: input.title,
+  tags: ["apple"],
+  categoryId: input.categoryId,
+  condition: input.condition,
+};
+
+function ownedProduct(
+  locked: { status: string; stock: number },
+  previous: Partial<typeof before> = {},
+) {
+  db.product.findFirst.mockResolvedValue({ ...before, ...previous });
   db.category.findUnique.mockResolvedValue({ id: input.categoryId });
   db.media.findMany.mockResolvedValue(MEDIA.map((id) => ({ id })));
   tx.product.updateMany.mockResolvedValue({ count: 1 });
@@ -61,6 +80,8 @@ function ownedProduct(locked: { status: string; stock: number }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  db.authenticityCheck.findMany.mockResolvedValue([]);
+  db.authenticityProofHistory.findMany.mockResolvedValue([]);
 });
 
 describe("updateProduct", () => {
@@ -93,6 +114,41 @@ describe("updateProduct", () => {
       }),
     );
     expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("nunca adjunta una foto de comprobante, vigente o reemplazada (P14)", async () => {
+    ownedProduct({ status: "ACTIVE", stock: 5 });
+    db.authenticityCheck.findMany.mockResolvedValueOnce([{ proofMediaIds: [MEDIA[0]] }]);
+    await expect(updateProduct(SELLER, PRODUCT, input)).rejects.toMatchObject({
+      code: "INVALID_MEDIA",
+    });
+    expect(db.authenticityCheck.findMany).toHaveBeenCalledWith({
+      where: { proofMediaIds: { hasSome: [MEDIA[1], MEDIA[0]] } },
+      select: { proofMediaIds: true },
+    });
+
+    db.authenticityProofHistory.findMany.mockResolvedValueOnce([{ mediaId: MEDIA[1] }]);
+    await expect(updateProduct(SELLER, PRODUCT, input)).rejects.toMatchObject({
+      code: "INVALID_MEDIA",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(trust.evaluateProductAuthenticity).not.toHaveBeenCalled();
+  });
+
+  it("si el trigger rechaza el adjunto (carrera con el comprobante), es una foto inválida", async () => {
+    ownedProduct({ status: "ACTIVE", stock: 5 });
+    const { Prisma } = await import("@/generated/prisma/client");
+    tx.productMedia.createMany.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError(
+        "Database error. Code: `23514`. Message: `proof_media_link: la foto es un comprobante`",
+        { code: "P2039", clientVersion: "test" },
+      ),
+    );
+
+    await expect(updateProduct(SELLER, PRODUCT, input)).rejects.toMatchObject({
+      code: "INVALID_MEDIA",
+    });
+    expect(trust.evaluateProductAuthenticity).not.toHaveBeenCalled();
   });
 
   it("guarda datos, costo privado y fotos en el orden recibido; el slug no cambia", async () => {
@@ -178,6 +234,79 @@ describe("updateProduct", () => {
       where: { id: PRODUCT },
       data: { stock: 4, status: "ACTIVE" },
     });
+  });
+
+  it("revisa la autenticidad con los datos ya guardados, después de la transacción (P14)", async () => {
+    ownedProduct({ status: "ACTIVE", stock: 5 });
+    const order: string[] = [];
+    db.$transaction.mockImplementationOnce(async (run: (client: typeof tx) => unknown) => {
+      const result = await run(tx);
+      order.push("transacción");
+      return result;
+    });
+    trust.evaluateProductAuthenticity.mockImplementationOnce(() => {
+      order.push("revisión");
+      return Promise.resolve(null);
+    });
+
+    await updateProduct(SELLER, PRODUCT, input, { stockShown: 5 });
+    expect(trust.evaluateProductAuthenticity).toHaveBeenCalledWith(PRODUCT, undefined, {
+      listingChanged: false,
+    });
+    expect(order).toEqual(["transacción", "revisión"]);
+  });
+
+  it("si cambia qué se vende (título, etiquetas, categoría o condición), la revisión lo sabe", async () => {
+    for (const previous of [
+      { title: "AirPods 3" },
+      { tags: ["apple", "pro"] },
+      { categoryId: "0199a000-0000-7000-8000-0000000000ff" },
+      { condition: "USED_GOOD" as const },
+    ]) {
+      vi.clearAllMocks();
+      ownedProduct({ status: "ACTIVE", stock: 5 }, previous);
+      await updateProduct(SELLER, PRODUCT, input, { stockShown: 5 });
+      expect(trust.evaluateProductAuthenticity).toHaveBeenCalledWith(PRODUCT, undefined, {
+        listingChanged: true,
+      });
+      // Falla cerrada: el sello se quita en la transacción de la edición, antes de reevaluar.
+      expect(tx.authenticityCheck.updateMany).toHaveBeenCalledWith({
+        where: { productId: PRODUCT, status: "VERIFIED_BY_ADMIN" },
+        data: { status: "AUTO_CLEAR" },
+      });
+    }
+    // El precio o la descripción no cambian el artículo (si suben el riesgo, lo decide la regla).
+    vi.clearAllMocks();
+    ownedProduct({ status: "ACTIVE", stock: 5 });
+    await updateProduct(
+      SELLER,
+      PRODUCT,
+      { ...input, priceCents: 1_000, description: "Otra descripción del mismo artículo." },
+      { stockShown: 5 },
+    );
+    expect(trust.evaluateProductAuthenticity).toHaveBeenCalledWith(PRODUCT, undefined, {
+      listingChanged: false,
+    });
+    expect(tx.authenticityCheck.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("si la revisión de después falla, el «Comprobante revisado» ya no sigue en otro artículo", async () => {
+    ownedProduct({ status: "ACTIVE", stock: 5 }, { title: "AirPods 3" });
+    // `evaluateProductAuthenticity` nunca lanza: si algo falla, devuelve null y la edición sigue.
+    trust.evaluateProductAuthenticity.mockResolvedValueOnce(null);
+
+    await expect(updateProduct(SELLER, PRODUCT, input, { stockShown: 5 })).resolves.toMatchObject({
+      status: "ACTIVE",
+    });
+    expect(tx.authenticityCheck.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("si la edición falla, no se revisa nada", async () => {
+    db.product.findFirst.mockResolvedValue(null);
+    await expect(updateProduct(SELLER, PRODUCT, input)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(trust.evaluateProductAuthenticity).not.toHaveBeenCalled();
   });
 
   it("un pausado sigue pausado aunque le agreguen piezas", async () => {

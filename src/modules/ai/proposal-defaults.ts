@@ -5,8 +5,10 @@ import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { guardProposal } from "./output-guard";
 import { saleProposalSchema } from "./sale-proposal";
+import { simulatedRecord } from "./tasks/availability";
 
 const inputSchema = z.object({
+  text: z.string().optional(),
   productName: z.string().min(2).max(120).optional(),
   quantity: z.int(),
   priceCents: z.int(),
@@ -21,15 +23,17 @@ const pesos = (cents: number) => (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2
  * El vendedor revisa todo antes de publicar (humano en el circuito). El guardián de contenido
  * (SEC-28) se aplica otra vez al leer: una propuesta guardada antes de él tampoco prellena datos
  * de pago, urgencia ni afirmaciones sin respaldo. Pasada la retención (90 días) ya no prellena.
+ * `simulated`: la armó el simulador (piloto, ADR-038) y la página lo dice (no «propuesta de IA»);
+ * sale del proveedor que la escribió, no de la ruta de hoy.
  */
 export async function getProposalDefaults(
   responseId: string,
   userId: string,
-): Promise<(ProductFormDefaults & { proposalId: string }) | null> {
+): Promise<(ProductFormDefaults & { proposalId: string; simulated: boolean }) | null> {
   if (!z.uuid().safeParse(responseId).success) return null;
   const response = await db.aIResponse.findFirst({
     where: { id: responseId, request: { userId, feature: "SALE_PROPOSAL" } },
-    select: { id: true, output: true, request: { select: { input: true } } },
+    select: { id: true, output: true, request: { select: { input: true, provider: true } } },
   });
   if (!response) return null;
   const proposal = saleProposalSchema.safeParse(response.output);
@@ -40,6 +44,7 @@ export async function getProposalDefaults(
     priceCents: input.data.priceCents,
     costCents: input.data.costCents,
     quantity: input.data.quantity,
+    text: input.data.text,
   });
 
   const [category, media] = await Promise.all([
@@ -49,9 +54,16 @@ export async function getProposalDefaults(
           select: { id: true },
         })
       : null,
+    // La foto propia y lista, nunca una que se envió como comprobante de autenticidad (P14): no se
+    // puede adjuntar a un producto y el formulario la rechazaría al publicar.
     input.data.mediaId
       ? db.media.findFirst({
-          where: { id: input.data.mediaId, ownerId: userId },
+          where: {
+            id: input.data.mediaId,
+            ownerId: userId,
+            status: "READY",
+            proofHistory: { none: {} },
+          },
           select: { id: true, storageKey: true, width: true, height: true },
         })
       : null,
@@ -59,6 +71,7 @@ export async function getProposalDefaults(
 
   return {
     proposalId: response.id,
+    simulated: simulatedRecord(response.request.provider),
     title: guarded.productName,
     description: `${guarded.description}\n\n${guarded.valueProposition}`,
     price: pesos(input.data.priceCents),

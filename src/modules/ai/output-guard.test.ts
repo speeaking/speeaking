@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { MockAIProvider } from "@/server/providers/ai/mock";
 import { guardProposal } from "./output-guard";
 import { withCodeNumbers } from "./proposal-numbers";
 import { type SaleProposal, saleProposalSchema } from "./sale-proposal";
+import { mockSaleProposal } from "./tasks/sale-proposal-mock";
 
 const iphone = {
   text: "Vendo 3 iPhone 17 Pro, me costaron $15,000 y los vendo a $20,000.",
@@ -139,6 +139,29 @@ describe("guardProposal (SEC-28)", () => {
     expect(findings).toContain(finding);
   });
 
+  it("un porcentaje que calculó la IA (margen, ahorro) se quita; el que escribió el vendedor se queda", () => {
+    const usado = {
+      ...iphone,
+      text: "Vendo 3 iPhone 17 Pro con batería al 86 %, me costaron $15,000.",
+    };
+    const proposal: SaleProposal = {
+      ...parse(hostile),
+      adIdeas: [
+        "Ganas un margen del 25 % por pieza.",
+        "Ahorra 30% frente a la tienda.",
+        "iPhone 17 Pro con batería al 86%.",
+        "iPhone 17 Pro a $20,000.",
+      ],
+    };
+    const { proposal: guarded, findings } = guardProposal(proposal, usado);
+
+    expect(guarded.adIdeas).toEqual([
+      "iPhone 17 Pro con batería al 86%.",
+      "iPhone 17 Pro a $20,000.",
+    ]);
+    expect(findings).toContain("number");
+  });
+
   it("el nombre que confirmó el vendedor no cuenta como afirmación ni como cifra de la IA", () => {
     const tenis = { ...iphone, productName: "Tenis originales Nike Air 90", quantity: 5 };
     const proposal: SaleProposal = {
@@ -181,7 +204,7 @@ describe("guardProposal (SEC-28)", () => {
     expect(guarded.objections.map((item) => item.objection)).toEqual(["¿Tienen garantía?"]);
   });
 
-  it("no toca una propuesta honesta: la del proveedor simulado pasa íntegra", async () => {
+  it("no toca una propuesta honesta: la del proveedor simulado pasa íntegra", () => {
     const airpods = {
       text: "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.",
       productName: "AirPods Pro 2",
@@ -191,7 +214,7 @@ describe("guardProposal (SEC-28)", () => {
       city: "Ciudad de México",
       hasPhoto: false,
     };
-    const { output } = await new MockAIProvider().generateSaleProposal(airpods);
+    const output = mockSaleProposal(airpods);
     const proposal = saleProposalSchema.parse(withCodeNumbers(output, airpods));
 
     const guarded = guardProposal(proposal, airpods);

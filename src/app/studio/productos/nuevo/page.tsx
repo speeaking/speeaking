@@ -27,13 +27,18 @@ export default async function NewProductPage({
     typeof propuesta === "string" ? getProposalDefaults(propuesta, viewer.userId) : null,
   ]);
 
+  // La etiqueta sigue a la propuesta (quién la escribió), no a la IA de hoy (ADR-038).
+  const { simulated, ...prefill } = proposalDefaults ?? { simulated: false };
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Nuevo producto"
         description={
           proposalDefaults
-            ? "Prellenado con tu propuesta de IA: revisa y ajusta lo que quieras."
+            ? simulated
+              ? "Prellenado con tu propuesta de ejemplo (IA simulada): revisa y ajusta lo que quieras."
+              : "Prellenado con tu propuesta de IA: revisa y ajusta lo que quieras."
             : undefined
         }
         className="px-0 pt-0"
@@ -44,7 +49,7 @@ export default async function NewProductPage({
         defaults={{
           city: seller?.city ?? undefined,
           state: seller?.state ?? undefined,
-          ...proposalDefaults,
+          ...prefill,
         }}
       />
     </div>

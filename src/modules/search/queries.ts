@@ -3,6 +3,7 @@ import type { ProductStatus } from "@/generated/prisma/enums";
 import type { ProductCardDTO } from "@/modules/catalog/queries";
 import type { FeedItemDTO } from "@/modules/feed/dto";
 import { hydratePosts } from "@/modules/social/post-queries";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import type { SearchQuery } from "./normalize";
@@ -44,7 +45,8 @@ export async function productCardsByIds(
 ): Promise<ProductCardDTO[]> {
   if (ids.length === 0) return [];
   const rows = await db.product.findMany({
-    where: { id: { in: ids }, status: { in: [...statuses] } },
+    // Nunca los ocultos por moderación (búsqueda y Guardados usan esta misma función).
+    where: { id: { in: ids }, status: { in: [...statuses] }, ...VISIBLE_PRODUCT },
     select: {
       id: true,
       slug: true,

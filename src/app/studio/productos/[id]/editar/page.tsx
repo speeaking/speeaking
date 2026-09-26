@@ -1,4 +1,4 @@
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, Info, ShieldQuestion } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -56,6 +56,29 @@ export default async function EditProductPage({
           </Link>
         }
       />
+      {product.hidden ? (
+        <p className="flex items-start gap-2 rounded-2xl bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+          <Info className="mt-0.5 size-4 shrink-0" />
+          El equipo ocultó este producto: no aparece en nada público aunque lo edites.
+        </p>
+      ) : null}
+      {product.authenticityStatus === "NEEDS_PROOF" ||
+      product.authenticityStatus === "PROOF_SUBMITTED" ? (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl bg-secondary px-3 py-2.5 text-sm">
+          <ShieldQuestion className="size-4 shrink-0" />
+          {product.authenticityStatus === "PROOF_SUBMITTED"
+            ? "Estamos revisando tu comprobante de autenticidad."
+            : product.declaredOriginal
+              ? "Te pedimos un comprobante de autenticidad."
+              : "Tu publicación usa una marca con palabras que suelen describir imitaciones."}
+          <Link
+            href={`/studio/productos/${product.id}/autenticidad` as Route}
+            className="-my-2 inline-flex min-h-11 items-center font-semibold text-primary-text underline"
+          >
+            Ver revisión
+          </Link>
+        </p>
+      ) : null}
       {notice ? (
         <p
           role="status"

@@ -51,17 +51,22 @@ src/
 └─ styles/         CSS compartido
 ```
 
-| Módulo      | Responsabilidad                                                                |
-| ----------- | ------------------------------------------------------------------------------ |
-| `identity`  | Registro, sesión, perfiles, activar vendedor, consentimientos                  |
-| `social`    | Publicaciones, comentarios, likes, guardados, seguidores, comunidades          |
-| `media`     | Subida, validación y re-codificación de imágenes; video (Sprint 2)             |
-| `feed`      | RecommendationEngine, Commerce Engine, política de mezcla, impresiones         |
-| `catalog`   | Productos, categorías, costo privado, datos estructurados de envío y garantía  |
-| `commerce`  | Carrito, checkout, órdenes, pagos (Sprint 2)                                   |
-| `ai`        | Vende con IA, generación de contenido, registro de uso y costo de IA           |
-| `analytics` | `track()`, taxonomía de eventos, atribución, métricas del Studio               |
-| `platform`  | Parámetros ajustables y bitácora del motor de automejora (se crea en fase 1.2) |
+| Módulo      | Responsabilidad                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`  | Registro, sesión, perfiles, activar vendedor, consentimientos versionados (`LEGAL_VERSIONS`)                                                                  |
+| `social`    | Publicaciones, comentarios, likes, guardados, seguidores, comunidades, «N nuevas»                                                                             |
+| `media`     | Subida, validación y re-codificación de imágenes, limpieza de huérfanas; video (después)                                                                      |
+| `feed`      | RecommendationEngine, Commerce Engine, política de mezcla (con experimentos), impresiones                                                                     |
+| `discovery` | Columna «Para ti» y «Gente de tus comunidades»: solo datos reales, privacidad de a quién se sigue (ADR-030)                                                   |
+| `search`    | Búsqueda global `/buscar` y la de Comprar: sin acentos, SQL parametrizado, índices de trigramas                                                               |
+| `catalog`   | Productos, categorías, costo privado, datos estructurados de envío y garantía                                                                                 |
+| `commerce`  | Carrito, checkout, órdenes, pagos simulados (fuera del alcance de esta etapa, ADR-033)                                                                        |
+| `trust`     | Riesgo de falsificación por reglas, reportes, comprobante del vendedor y cola de moderación (ADR-036)                                                         |
+| `ai`        | Vende con IA, kit de anuncios, proveedor por tarea (`ai.routing`), presupuesto y cuotas, guardianes, evaluaciones (ADR-031, ADR-034, ADR-038)                 |
+| `analytics` | `track()`, taxonomía de eventos, atribución, métricas del Studio, impresiones visibles (`/api/impressions`, ADR-037), agregados de solo lectura para el motor |
+| `platform`  | `PlatformSetting` versionado, catálogo de ajustes con riesgo y límites (`tunables.ts`), `applySettingChange`, experimentos y calendario de congelamiento      |
+| `ceo`       | Motor de automejora: métricas diarias, analista, autonomía, experimentos, salvaguardas, operación diaria y Centro de decisiones (ADR-019, ADR-033, ADR-037)   |
+| `admin`     | Rol ADMIN: `requireAdmin`, `getAdminViewer`, `assertAdmin`, `make-admin` y estructura de `/admin` (ADR-035, ver Administración y operación)                   |
 
 **Reglas de dependencia**
 
@@ -86,13 +91,13 @@ src/
 
 ## Proveedores
 
-| Interfaz          | Sprint 1                                  | Después                                      |
-| ----------------- | ----------------------------------------- | -------------------------------------------- |
-| `AIProvider`      | `MockAIProvider` determinista             | Claude vía SDK oficial (salida estructurada) |
-| `PaymentProvider` | `MockPaymentProvider` (pasarela simulada) | Mercado Pago / Stripe con reparto de fondos  |
-| `StorageProvider` | Disco local (`.data/uploads`)             | S3 / Cloudflare R2                           |
-| `EmailProvider`   | Consola                                   | Resend / SES                                 |
-| `MediaProcessor`  | Imágenes con `sharp`                      | Video con proveedor gestionado (S2)          |
+| Interfaz          | Sprint 1                                  | Después                                                                                                |
+| ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `AIProvider`      | `MockAIProvider` determinista             | Modelo abierto pagado por uso con API compatible con OpenAI (`AI_PROVIDER=openai_compatible`, ADR-033) |
+| `PaymentProvider` | `MockPaymentProvider` (pasarela simulada) | Mercado Pago / Stripe con reparto de fondos                                                            |
+| `StorageProvider` | Disco local (`.data/uploads`)             | S3 / Cloudflare R2                                                                                     |
+| `EmailProvider`   | Consola                                   | Resend / SES                                                                                           |
+| `MediaProcessor`  | Imágenes con `sharp`                      | Video con proveedor gestionado (S2)                                                                    |
 
 La implementación se elige por variable de entorno en `server/providers/<tipo>/index.ts`.
 
@@ -133,29 +138,116 @@ publicación de origen (`sourcePostId`) para atribuir ventas a contenido y cread
 ## Motor de automejora ("la IA como CEO")
 
 Objetivo: que la plataforma mejore de forma continua para atraer y retener personas, vendedores y
-creadores, con la IA como operadora principal.
+creadores, con la IA como operadora principal, dentro de límites que pone el código (ADR-019,
+ADR-033, `plan-90-dias.md` §2.3–2.4).
 
-**Ciclo:** medir → detectar oportunidad → proponer (hipótesis + impacto esperado) → experimentar →
-evaluar contra métricas de salud → adoptar o revertir → aprender.
+**Ciclo (diario):** medir → detectar oportunidad → proponer (hipótesis + impacto esperado) →
+aplicar o experimentar según el riesgo → vigilar salvaguardas → adoptar o revertir → aprender.
 
-| Nivel de riesgo | Ejemplos                                                                                                                      | Autonomía                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Bajo            | Pesos del feed, proporción comercial dentro de límites, orden de comunidades, rotación de creativos, horarios de notificación | Automática, con límites y reversión automática si una métrica de salud cae |
-| Medio           | Nuevas comunidades, contenido semilla, variantes de onboarding, textos de la interfaz                                         | Propone y ejecuta como experimento con muestra pequeña                     |
-| Alto            | Precios, comisiones, políticas, gasto de dinero, cambios de código, mensajes masivos, eliminar datos                          | Solo propone; requiere aprobación humana                                   |
+**Regla (extiende P2 al propio motor):** la IA propone; el código mide, clasifica el riesgo, valida
+límites y paso máximo, aplica y revierte; una persona aprueba lo de riesgo alto. La IA nunca decide
+su propio riesgo. **Pagos, precios, comisiones y gasto quedan fuera de su alcance: ni siquiera los
+puede proponer con valores** (ADR-033).
 
-**Componentes (base en Sprint 1, lógica en sprints siguientes):**
+| Riesgo | Qué mueve (catálogo `platform/tunables.ts`)                                                                                                                                                 | Autonomía en modo `low_risk` (tras el umbral de tráfico)                       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Bajo   | `feed.policy.recencyHalfLifeHours` (6–168, ±20 %), `explorationShare` (0–0.5, ±0.05), `authorWindow` (2–10, ±1)                                                                             | Se aplica solo, con reversión automática                                       |
+| Medio  | `feed.policy.commerceSlotEvery` (3–12, ±1) y `minGapBetweenCommerce` (2–12, ±1), en cualquier dirección                                                                                     | Experimento al 10 %; adoptarlo requiere aprobación humana                      |
+| Alto   | Todo lo demás (moderación, políticas) y cualquier ajuste fuera del catálogo; prohibidos: `commerce.*`, `payments.*`, `pricing.*`, `fees.*`, `ai.budget*`, `ai.routing`, `platform.autonomy` | Nunca automático («Solo propuesta»); los prohibidos no se aplican ni aprobados |
 
-- `PlatformSetting`: parámetros versionados con esquema y límites (p. ej. `feed.policy`).
-- `PlatformDecision`: bitácora de cada propuesta o cambio: quién (IA o humano), hipótesis, parámetro,
-  valor anterior/nuevo, estado (propuesta, aprobada, aplicada, revertida), impacto medido.
-- Experimentos (Sprint 2–3): asignación estable por usuario, métricas desde `AnalyticsEvent`.
-- Analista diario (Sprint 3): un LLM lee métricas agregadas y genera propuestas en el Centro de
-  decisiones; los cambios de código se proponen como pull requests con pruebas, nunca directo a
-  producción.
+**Piezas (código en `src/modules/platform` y `src/modules/ceo`):**
 
-**Salvaguardas:** métricas de salud que ningún experimento puede degradar (reportes, "no me interesa",
-contenido comercial visto), interruptor de apagado, sin patrones oscuros y sin usar datos externos.
+- **Métricas diarias** (`ceo/metrics.ts`, consultas de solo lectura en
+  `analytics/platform-aggregates.ts`, definiciones en `ceo/metric-catalog.ts`): `DailyMetric` por día
+  de México (upsert idempotente) con impresiones del feed, contenido comercial visto, conversión
+  comercial, visitas a producto por impresión y por vendedor activo, primera venta de vendedores
+  nuevos, reportes y «No me interesa» por mil impresiones, D1/D7 aproximados, costo de IA contra el
+  tope y cortes por variante de cada experimento. Honestidad: las impresiones son VISIBLES (T5,
+  ADR-037: ≥ 50 % de la pieza en pantalla ≥ 1 s continuo, solo de piezas servidas a quien las
+  reporta, una por persona, publicación y día). **Solo deciden las personas con sesión** (y
+  personalización): las filas que usan el umbral, las salvaguardas, el analista y los experimentos
+  cuentan sus impresiones visibles y, en los numeradores (reportes, «No me interesa», interacciones,
+  visitas), solo lo de esas mismas personas (`signedInFeedTotals`). Sin detección de robots, así un
+  robot sin cuenta no mueve ninguna tasa. Las visibles anónimas (`feed.impressions.visible.anonymous`)
+  y la pieza servida (`feed.impressions.served`) son descriptivas y no deciden nada. Las filas por
+  impresión anteriores a `VISIBLE_IMPRESSIONS_SINCE` (2026-09-27, el primer día completo con
+  visibles) no se comparan (`ceo/metric-rows.ts`). Los 5xx aún no se registran y su salvaguarda
+  aparece «sin datos» (nunca un 0 inventado).
+- **Analista** (`ceo/analyst.ts`, detectores en `ceo/detectors.ts`): compara los últimos 7 días con
+  los 28 previos con prueba z de dos proporciones. La varianza de cada lado se multiplica por el
+  MAYOR entre el efecto de diseño por persona (1 + (m − 1)·ρ, ρ = 0.05, con m calculado POR VENTANA:
+  impresiones con persona ÷ personas distintas en esos 7 o 28 días, no el promedio diario, que
+  subestimaría la varianza) y la variación medida entre días (sobredispersión, `varianceFactor`):
+  reciente contra línea base no cancela los días atípicos (quincena, puentes). Cuenta solo a
+  personas con sesión. Exige muestra mínima y un cambio relativo mínimo, y propone UN paso dentro de
+  límites. Una propuesta por ajuste abierta a la vez; enfriamiento de 7 días tras aplicar o
+  revertir. La narrativa es una plantilla; un `Narrator` opcional (IA) solo redacta y su texto se
+  descarta si cita una cifra que no calculó el código, escribe cifras con letra («el doble»,
+  «veinte por ciento») o promete resultados («garantiza»).
+- **Autonomía** (`PlatformSetting` `platform.autonomy` = `observer` | `low_risk`, por omisión
+  `observer`; lo cambia el equipo en /admin/resumen con confirmación y queda como decisión
+  `autonomy.mode`). No hay modo «apagado»: `observer` ya no aplica ni prueba nada solo (lo aplicado
+  antes lo siguen vigilando las salvaguardas); callar también al analista sería un ajuste aparte que
+  hoy no existe. `ceo/autonomy-policy.ts` decide: alto → nunca; observador → solo propone;
+  congelamiento (Buen Fin, 13–17 nov 2026, y 12–25 dic) → nada cambia solo; conflicto → espera; sin
+  umbral → «Tráfico insuficiente para decidirlo con datos»; bajo → aplica; medio → experimento al 10 %.
+- **Umbral de tráfico** (`ceo/threshold.ts`): 2 × muestra mínima por variante en ≤ 14 días, en cada
+  una de las dos últimas semanas, contando solo impresiones visibles de personas con sesión y
+  personalización (las únicas que se asignan a una variante; el tráfico anónimo, robots y pruebas
+  sin cuenta no cuentan). Muestra ≈ 41,000 impresiones con los supuestos del plan (2.0 % → 2.4 %,
+  α = 0.05, potencia 80 %, m = 20, ρ = 0.05); con datos suficientes usa la tasa medida y las impresiones por persona en 14 días (ρ
+  nunca por debajo de 0.05). **Se mide en impresiones visibles (plan §2.4):**
+  `FEED_IMPRESSIONS_ARE_VISIBLE` (`analytics/platform-aggregates.ts`) es `true` desde T5; si alguna
+  vez volviera a `false` (piezas servidas), el umbral no se daría por cumplido y en modo `low_risk`
+  nada se aplicaría ni probaría solo.
+- **`applySettingChange` / `revertSettingChange`** (`platform/apply.ts`): el único camino que
+  cambia un ajuste (H9). Exige la decisión, reclasifica el riesgo con el catálogo, valida límites y
+  paso, exige que el valor actual siga siendo el de la propuesta, serializa con un candado por
+  ajuste, sube la versión de `PlatformSetting` y deja la bitácora (`evaluation.trail`: quién, qué,
+  cuándo). Riesgo medio solo se adopta con un experimento concluido y una persona.
+- **Experimentos** (`platform/experiments.ts`, `ceo/experiments.ts`): asignación estable por persona
+  (SHA-256 de llave + persona; sin sesión = control). `getFeedPolicy(viewerId)` devuelve el valor de
+  tratamiento a quien le toca mientras el experimento está RUNNING y su control sigue siendo el valor
+  vigente; a lo más uno por ajuste raíz. Si el valor vigente cambia mientras corre (p. ej. se revierte
+  una adopción anterior), el experimento se ignora al servir y se detiene («control desactualizado»). Se
+  analiza por persona (errores robustos por clúster, y nunca menos conservador que la prueba z con
+  efecto de diseño). Con la muestra mínima en ambas variantes concluye: si mejora con p < 0.05 se
+  PROPONE adoptarlo; si no, se registra el descarte; a los 42 días sin muestra, «no concluyente».
+- **Salvaguardas** (`ceo/guardrails.ts`, `ceo/monitor.ts`): tras cualquier cambio aplicado
+  (automático o humano) y entre variantes de un experimento. Revierten solas si, tras la exposición
+  mínima, los reportes suben > 25 %, «No me interesa» > 15 %, el contenido comercial visto pasa de
+  30 %, la conversión comercial baja > 10 %, los 5xx pasan de 1 % o las visitas a producto por
+  vendedor activo caen > 15 % (ADR-033 #13), siempre que el empeoramiento sea además
+  estadísticamente significativo (prueba unilateral, α = 0.05; la varianza de cada lado se
+  multiplica por el MAYOR entre el efecto de diseño por persona del analista y la variación medida:
+  entre días en el monitor, entre personas en un experimento; con línea base en 0, un tope
+  absoluto). La exposición mínima (5,000 impresiones visibles) y todas sus tasas cuentan solo a
+  personas con sesión (ADR-037): un robot sin cuenta no fuerza ni esconde una reversión. Se revisa
+  una vez al día con la operación diaria (las métricas son diarias: cada hora no agregaría datos);
+  se vigila 14 días y, si faltan datos, a lo más 28, y entonces se cierra con «sin evidencia de daño
+  con esta muestra». Los días congelados no entran en comparaciones relativas.
+- **Operación diaria** (`ceo/pipeline.ts`): métricas → experimentos → salvaguardas → analista →
+  checkouts vencidos → imágenes huérfanas → retención de entradas de IA; cada paso con su `JobRun`,
+  idempotente y sin ejecuciones encimadas. `pnpm ops:daily [--engine-only]` en la terminal y
+  `/api/cron/daily` (GET de Vercel Cron o POST, `Authorization: Bearer <CRON_SECRET>`, comparación
+  de tiempo constante, límite de frecuencia; sin el secreto correcto responde 404). La limpieza de
+  imágenes se omite sola si borraría fotos de prueba de autenticidad.
+- **Centro de decisiones** (/admin/resumen, /admin/decisiones, /admin/experimentos; `requireAdmin`,
+  acciones con `getAdminViewer` + Zod + límite por persona, servicio con `assertAdmin`): reporte
+  semanal (qué cambió, por qué, impacto, costo de IA contra el tope, cobertura, tareas), cola para
+  aprobar, rechazar o revertir con nota (actor HUMAN y `approvedById`), experimentos para iniciar o
+  detener. La bitácora de moderación (`moderation.*`, `authenticity.*`) usa la misma tabla pero no
+  aparece aquí ni se puede aprobar, rechazar o revertir desde estas acciones. La bitácora de cada
+  decisión (`evaluation`) solo crece: lo guardado por otros módulos se conserva tal cual.
+
+**Impresiones visibles (ADR-037):** el navegador las mide (`feed/components/visible-impressions.ts`,
+IntersectionObserver + cronómetro que se pausa con la pestaña oculta) y las manda cada 5 s o con
+`sendBeacon` al salir a `POST /api/impressions`; el servidor solo acepta piezas servidas a quien las
+reporta (`analytics/visible-impressions.ts`).
+
+**Pendiente:** registro de 5xx para dos métricas; conectar un `Narrator`
+con el proveedor de IA (`AIFeature.PLATFORM_ANALYSIS`, con el guardián de presupuesto); cambios de
+código como pull requests (nunca directo a producción); 2FA para aprobar riesgo alto.
 
 ## Economía de la IA (autofinanciamiento)
 
@@ -183,10 +275,124 @@ Una orden por vendedor dentro de un checkout; precio, costo y comisión se conge
 stock con decremento atómico condicionado (`stock >= cantidad`) y reservas con expiración; webhooks
 idempotentes; nunca se almacenan datos de tarjeta.
 
+## Administración y operación
+
+Área del equipo en `/admin` (Resumen, Decisiones, Experimentos, Moderación, IA). La estructura base
+vive en `src/modules/admin` y `src/app/admin`; cada sección la construye su módulo.
+
+**Rol.** `Profile.role` (`USER` | `ADMIN`, ver `data-model.md`). Está en el perfil y no en `users`
+para que ningún camino de Better Auth lo pueda escribir. **Solo se da o se quita desde la terminal:**
+
+```
+pnpm make-admin <correo>            # dar ADMIN
+pnpm make-admin <correo> --revoke   # quitarlo
+```
+
+El script se niega con una base que parezca de producción (`NODE_ENV=production` o un servidor que
+no es esta máquina) salvo con `--allow-production`, y exige que la cuenta haya terminado la
+bienvenida. El rol se lee de la base en cada petición: darlo o quitarlo aplica en la siguiente carga.
+
+**Tres barreras (todas obligatorias).**
+
+1. **Páginas y layouts:** `requireAdmin()` (`modules/admin/guard.ts`). A quien no es ADMIN, con o sin
+   sesión, le responde 404 con la misma página «No encontramos esta página» que una ruta inexistente:
+   sin redirigir a iniciar sesión, sin título ni metadatos propios (la prueba E2E revisa estado,
+   encabezado y título; no compara el HTML byte a byte). Por eso `/admin` **no** está en
+   `PROTECTED_PREFIXES` ni tiene regla propia en `proxy.ts`: la redirección optimista delataría el
+   área; el comodín del proxy ya le pone la CSP. Ocultarla reduce el ruido pero no es la barrera: el
+   route handler de fotos de comprobante (`/admin/moderacion/prueba/<id>`) responde un 404 en texto
+   plano, distinto del HTML. El layout llama `requireAdmin()` para no pintar la estructura, pero
+   tampoco es la barrera: cada página vuelve a llamarlo (los layouts no se renderizan de nuevo al
+   navegar entre páginas hermanas).
+2. **Server Actions y route handlers:** `getAdminViewer()` (devuelve `null` en lugar de lanzar; la
+   acción responde un error genérico), Zod en la entrada y `rateLimit` con llave por persona (scope
+   `admin.<acción>` → `admin.<acción>:user:<uuid>`; el scope no admite `:`), como toda acción nueva.
+3. **Servicios:** toda función de servicio del área recibe a quien actúa y llama
+   `assertAdmin(actorUserId)` (`modules/admin/service.ts`), que vuelve a leer el rol de la base.
+
+**Huella.** Quién aprobó, resolvió o revisó queda en la fila: `PlatformDecision.approvedById`,
+`Report.resolvedById`, `AuthenticityCheck.reviewedById`. Las páginas llevan `noindex`.
+
+**Configuración.**
+
+- **Tareas programadas:** ver [Operación](#operación).
+- **IA de pago por uso en un servidor externo:** `AI_PROVIDER=openai_compatible` con `AI_BASE_URL`
+  (https), `AI_API_KEY` y `AI_DEFAULT_MODEL` (ADR-033 #6 y #9): un modelo abierto en un proveedor
+  con API compatible con OpenAI o en un servidor con GPU rentado; nada corre en la PC del
+  fundador. Por omisión, `mock`. `aiProviderConfig(env)` (`server/env-schema.ts`) entrega la
+  configuración con tipos estrechos.
+- **IA simulada en producción (ADR-038):** con `AI_PROVIDER=mock` y `NODE_ENV=production` el
+  arranque falla salvo `ALLOW_SIMULATED_AI=true` (solo build local o piloto cerrado: los
+  vendedores recibirían textos de plantilla). Es el espejo de `ALLOW_SIMULATED_PAYMENTS` (ADR-032).
+- **Modo de autonomía:** **no** es variable de entorno. Vive en `PlatformSetting`
+  (`platform.autonomy` = `observer` | `low_risk`, por omisión `observer`) para que el fundador lo
+  cambie desde `/admin/resumen` y quede en la bitácora.
+
+**Pendiente.** Segundo factor (2FA) y reautenticación reciente para aprobar decisiones de riesgo
+alto (`plan-90-dias.md` §2.1 pide «rol de equipo con 2FA»); bitácora de cambios de rol (hoy solo el
+script, que exige acceso a la terminal y a la base); suspender cuentas que no son de vendedor (hoy
+solo existe `SellerProfile.status`, así que un reporte de USER solo puede suspender la venta).
+
+## Operación
+
+Lo que la plataforma necesita correr para operar sola. Cada tarea es idempotente (se puede repetir sin
+duplicar nada), deja una fila de `JobRun` por ejecución y no se encima con otra igual; una RUNNING
+vieja o una FAILED reciente aparece en `/admin/resumen`.
+
+| Tarea                        | Cuándo                                                                   | Cómo                                                              | Qué hace                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Operación diaria             | Una vez al día, después de medianoche en CDMX (06:00 UTC)                | `/api/cron/daily` en producción; `pnpm ops:daily` en terminal     | Métricas del día anterior (rellena hasta 14 días faltantes) → experimentos → salvaguardas → analista → checkouts vencidos → imágenes huérfanas → retención de entradas de IA (90 días, ADR-031). Si las métricas fallan, salvaguardas y analista se omiten. `--engine-only` corre solo el motor.                                                                                             |
+| Limpieza de huérfanas suelta | Solo si hace falta fuera de la diaria                                    | `pnpm exec tsx scripts/cleanup-orphan-media.ts [--dry-run]`       | Borra imágenes sin adjuntar de más de 24 h (SEC-14). Nunca toca fotos de comprobantes de autenticidad (`media/orphans.ts`); la diaria además se omite sola si su conteo no cuadra.                                                                                                                                                                                                           |
+| Reevaluar autenticidad       | Tras cambiar reglas, pesos, marcas o palabras (subiendo `RULES_VERSION`) | `pnpm trust:reevaluate [--dry-run] [--include-unchecked]`         | Reevalúa las revisiones hechas con otra `RULES_VERSION` (ADR-036), por tandas y un producto a la vez; idempotente. `--dry-run` calcula lo mismo sin guardar; `--include-unchecked` evalúa también los productos sin revisión. Las decisiones del equipo no se deshacen solas. Cambiar solo `trust.referencePrices` no sube la versión: esos productos se reevalúan al editarse o reportarse. |
+| Evaluar modelos de IA        | Al cambiar de modelo o de prompt, y antes de proponer una ruta           | `pnpm ai:eval --task <tarea> …` (`--confirm-spend` si es de pago) | Corre los casos de `evals/*.jsonl` y guarda `AIEvalRun`. **No se programa:** con un modelo de pago gasta dinero y es decisión humana. La evidencia para enrutar vale 30 días (ADR-034).                                                                                                                                                                                                      |
+| Dar o quitar ADMIN           | Cuando cambie el equipo                                                  | `pnpm make-admin <correo> [--revoke]`                             | Único camino que cambia `Profile.role` (ADR-035).                                                                                                                                                                                                                                                                                                                                            |
+
+**`/api/cron/daily`.** GET (Vercel Cron) o POST (a mano), con `Authorization: Bearer <CRON_SECRET>`
+(obligatorio en producción, ≥ 32 caracteres; comparación de tiempo constante). Sin el secreto
+correcto, o sin `CRON_SECRET` definido, responde 404 en texto plano y sin detalles (no es idéntico
+al 404 HTML de una ruta inexistente: no oculta que la ruta existe, solo no dice nada más; la
+protección es el secreto). Límite de 30 intentos por hora por IP (si hay IP confiable; al pasarlo
+también responde 404) y de 6 ejecuciones autorizadas por hora en total (429); plazo máximo de 300 s.
+La respuesta es el resumen de cada paso (sin datos personales).
+
+**En un hosting de pago.** Los horarios de cron van en UTC; programa la diaria después de las
+06:00 UTC (medianoche en la Ciudad de México), por ejemplo a las 07:15 UTC.
+
+- **Vercel (Pro) con Vercel Cron** (hosting elegido, ADR-033 #10): define `CRON_SECRET` en las
+  variables del proyecto (Vercel lo manda solo como `Authorization: Bearer …`) y agrega a
+  `vercel.json`:
+
+  ```json
+  { "crons": [{ "path": "/api/cron/daily", "schedule": "15 7 * * *" }] }
+  ```
+
+  Antes de desplegar en Vercel hace falta el adaptador R2 de `StorageProvider` (H10): sin disco
+  persistente, las fotos se perderían.
+
+- **VPS** (servidor propio rentado): una entrada de cron que llame la misma ruta, con el secreto en
+  un archivo que solo lea el usuario del cron (nunca en la línea del crontab ni en el repositorio):
+
+  ```
+  # /etc/cron.d/vendeia (el servidor en UTC)
+  15 7 * * * vendeia curl -fsS -X POST -H "Authorization: Bearer $(cat /etc/vendeia/cron-secret)" https://<dominio>/api/cron/daily -o /dev/null
+  ```
+
+  `pnpm ops:daily` también sirve en el mismo servidor de la app (usa `DATABASE_URL` y el
+  almacenamiento de esa máquina, y necesita las dependencias de desarrollo por `tsx`); la ruta es
+  preferible porque corre el mismo código que producción, con su secreto y sus límites.
+
+**Pendiente.** Alerta externa si la diaria no corrió (hoy solo se ve en `/admin/resumen`), liberar
+checkouts vencidos cada 5 minutos (hoy diario y oportunista; el código de pagos no se toca en esta
+etapa), respaldos de Neon con simulacro de restauración y Sentry. El monitor de salvaguardas es
+diario a propósito (métricas diarias).
+
 ## Seguridad
 
 - Cabeceras base en `next.config.ts` (nosniff, DENY de iframes, Referrer-Policy, Permissions-Policy,
-  HSTS en producción) y sin `X-Powered-By`. CSP con nonces se agrega con la autenticación.
+  HSTS en producción) y sin `X-Powered-By`. CSP estricta con nonce por petición en TODO el HTML:
+  `src/proxy.ts` genera el nonce y pone la política (`src/lib/csp.ts`) en la petición y la respuesta
+  de cada página, con o sin sesión (ADR-029); `/media` conserva su CSP de sandbox y `/api/*` no lleva
+  CSP de página.
 - Autorización en servicios; `proxy.ts` solo hace redirecciones optimistas.
 - Validación con Zod en cada frontera; límite de intentos en auth, IA y subidas.
 - **Límite de frecuencia propio** (`server/rate-limit.ts`, tabla `rate_limit_buckets`): el `rateLimit`
@@ -223,6 +429,24 @@ Consentimiento versionado (términos, aviso de privacidad, personalización); so
 de la plataforma; ubicación pública a nivel ciudad/estado; personalización desactivable; exportar y
 borrar datos antes del lanzamiento público; retención de eventos crudos limitada (propuesta: 180 días
 y luego agregados).
+
+**Volver a aceptar** (`identity/consent-refresh.ts`). Al subir `LEGAL_VERSIONS.terms` o
+`LEGAL_VERSIONS.privacyNotice`, quien aceptó una versión anterior (o nunca aceptó) ve arriba de las
+páginas de la red social (`AppShell`) un aviso que no bloquea, con ligas solo a los documentos que
+cambiaron. «Aceptar» (`acceptUpdatedLegalAction`, 10 intentos por hora por persona) manda el tipo y
+la versión que el aviso mostró; el servidor agrega filas de `UserConsent` solo de lo pendiente cuya
+versión vigente es la mostrada, con un candado por persona (dos pestañas no repiten filas; al día no
+escribe nada: el historial solo crece). Si una versión cambió con la pestaña abierta, no se registra
+una versión que la persona no vio: responde `stale` y el aviso se vuelve a pintar con la vigente.
+«Ocultar por ahora» lo esconde solo en esa pestaña mientras siga abierta (sessionStorage, con las
+versiones en la llave: una versión nueva lo vuelve a mostrar). Con versiones con forma de fecha, solo
+una ANTERIOR a la vigente pide aceptar. Si la consulta falla, el aviso no se muestra y la página sigue.
+Hoy el Studio y `/admin` no lo muestran (usan otra estructura).
+
+**Pendiente.** Los plazos máximos de conservación de la actividad (incluidas las impresiones
+visibles) y de los reportes, fotos de comprobante y bitácora de moderación: hoy no se borran solos y
+el aviso de privacidad los marca como pendientes; fijarlos es decisión legal y luego una tarea de la
+operación diaria.
 
 ## Preparado, no implementado
 

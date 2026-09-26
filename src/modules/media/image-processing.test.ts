@@ -6,6 +6,7 @@ import {
   ImageValidationError,
   MAX_UPLOAD_BYTES,
   processImage,
+  resizeForDelivery,
   sniffImageFormat,
 } from "./image-processing";
 
@@ -226,5 +227,39 @@ describe("sniffImageFormat", () => {
     expect(sniffImageFormat(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).toBeNull();
     expect(sniffImageFormat(Buffer.from("%PDF-1.7 documento"))).toBeNull();
     expect(sniffImageFormat(Buffer.from([0xff, 0xd8]))).toBeNull();
+  });
+});
+
+describe("resizeForDelivery (variantes de /media, ADR-039)", () => {
+  it("reduce al ancho pedido, conserva la proporción y entrega WebP sin metadatos", async () => {
+    const input = await jpegWithGps(1200, 900);
+
+    const output = await resizeForDelivery(input, 640);
+    const meta = await sharp(output).metadata();
+
+    expect([meta.format, meta.width, meta.height]).toEqual(["webp", 640, 480]);
+    expect(meta.exif).toBeUndefined();
+  });
+
+  it("nunca agranda una foto más angosta que el ancho pedido", async () => {
+    const meta = await sharp(await resizeForDelivery(await jpegWithGps(300, 200), 1080)).metadata();
+
+    expect([meta.width, meta.height]).toEqual([300, 200]);
+  });
+
+  it("aplica los mismos topes que una subida: firma y cabecera antes de decodificar", async () => {
+    await expect(resizeForDelivery(Buffer.from("<svg></svg>".padEnd(64)), 256)).rejects.toEqual(
+      new ImageValidationError("UNSUPPORTED_FORMAT"),
+    );
+    await expect(resizeForDelivery(pngHeaderOnly(20_000, 20_000, 8), 256)).rejects.toEqual(
+      new ImageValidationError("TOO_COMPLEX"),
+    );
+  });
+
+  it("rechaza anchos fuera de rango", async () => {
+    const input = await jpegWithGps();
+    for (const width of [0, -1, 1.5, 1601, Number.NaN]) {
+      await expect(resizeForDelivery(input, width)).rejects.toBeInstanceOf(RangeError);
+    }
   });
 });

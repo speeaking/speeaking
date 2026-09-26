@@ -22,5 +22,25 @@ Fases: 1.3 (auth) y 1.4 (perfiles). Ver docs/architecture.md → Estructura.
 - Tope absoluto de sesión: `getSession` (`session.ts`) ignora y borra una sesión con más de 90 días
   de iniciada, aunque Better Auth la haya renovado (SEC-10).
 
+## Volver a aceptar los documentos legales (`consent-refresh.ts`)
+
+- Al registrarse se guardan `TERMS` y `PRIVACY_NOTICE` en `UserConsent` con la versión vigente
+  (`LEGAL_VERSIONS` en `constants.ts`). Al subir una de esas versiones, quien aceptó una ANTERIOR (o
+  cuya última fila es un retiro) ve un aviso que no bloquea (`components/consent-banner.tsx`) con
+  solo los documentos que cambiaron. Las versiones con forma de fecha se comparan en orden: una
+  versión posterior a la vigente (p. ej. tras regresar el código) no vuelve a preguntar.
+- El aviso sale en la red social (`components/layout/app-shell.tsx`), en el Studio
+  (`studio-shell.tsx`) y en `/admin` (`app/admin/layout.tsx`); solo con sesión, y si la consulta
+  falla la página se muestra sin él.
+- «Aceptar» (`acceptUpdatedLegalAction` en `privacy-actions.ts`, con límite por cuenta) manda las
+  versiones que el aviso MOSTRÓ; `acceptPendingLegalDocuments` agrega filas nuevas (el historial solo
+  crece) solo para lo pendiente con esa misma versión, con un candado por persona para que dos
+  pestañas no repitan filas. Si una versión cambió mientras tanto, no la registra y el aviso se
+  vuelve a pintar con la vigente.
+- «Ocultar» lo esconde solo en esa pestaña (sessionStorage, con las versiones en la llave): vuelve a
+  aparecer en otra pestaña o con una versión nueva, hasta que la persona acepte.
+- Pruebas: `consent-refresh.test.ts`, `consent-refresh.db.test.ts`,
+  `components/consent-banner.test.tsx` y `tests/e2e/consent.spec.ts`.
+
 Pendiente: verificación de correo y restablecer contraseña (necesitan proveedor de correo); cambio de
 contraseña con cierre de otras sesiones (no lo necesita, falta la acción y su lugar en Ajustes).

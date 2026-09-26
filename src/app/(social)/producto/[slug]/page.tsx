@@ -1,8 +1,10 @@
 import {
   CheckCircle2,
+  EyeOff,
   MapPin,
   PackageCheck,
   ShieldCheck,
+  ShieldQuestion,
   Truck,
   Undo2,
   Wallet,
@@ -28,11 +30,14 @@ import {
   nationalShippingLine,
   stockLabel,
 } from "@/modules/catalog/quick-answers";
+import { getAdminViewer } from "@/modules/admin/guard";
 import { BuyBox } from "@/modules/commerce/components/buy-box";
 import { getViewer } from "@/modules/identity/session";
 import { FollowButton } from "@/modules/social/components/follow-button";
 import { PostCard } from "@/modules/social/components/post-card";
 import { hydratePosts } from "@/modules/social/post-queries";
+import { AuthenticityNotice } from "@/modules/trust/components/authenticity-notice";
+import { ReportButton } from "@/modules/trust/components/report-button";
 import { db } from "@/server/db";
 
 export async function generateMetadata({
@@ -54,24 +59,67 @@ export async function generateMetadata({
   };
 }
 
+/** Aviso a quien vende sobre la revisión de autenticidad de su producto (P14). */
+const OWNER_AUTHENTICITY_NOTICES: Partial<
+  Record<string, { title: string; text: string; link: string }>
+> = {
+  NEEDS_PROOF: {
+    title: "Pedimos un comprobante de autenticidad",
+    text: "Mientras no lo revisemos, quienes compran ven «Autenticidad sin verificar». Sube tu ticket o factura, o márcalo como genérico.",
+    link: "Subir comprobante",
+  },
+  // Riesgo alto sin declararse original: la marca aparece con palabras de imitación.
+  NEEDS_PROOF_NOT_DECLARED: {
+    title: "Revisa cómo usas la marca en tu publicación",
+    text: "Usa el nombre de una marca junto con palabras que suelen describir imitaciones. Si no es de la marca, quita la marca del título y la descripción; si es original, decláralo al editarlo y te pediremos un comprobante.",
+    link: "Ver revisión",
+  },
+  PROOF_SUBMITTED: {
+    title: "Estamos revisando tu comprobante",
+    text: "Te avisamos en el Studio en cuanto el equipo lo revise.",
+    link: "Ver revisión",
+  },
+  REJECTED: {
+    title: "El equipo marcó este producto como genérico",
+    text: "Revisa la nota del equipo en el Studio.",
+    link: "Ver revisión",
+  },
+};
+
 export default async function ProductPage({ params, searchParams }: PageProps<"/producto/[slug]">) {
   const { slug } = await params;
   const { from, ref, nuevo } = await searchParams;
-  const result = await getPublicProduct(slug);
+  const [viewer, admin] = await Promise.all([getViewer(), getAdminViewer()]);
+  // Un producto oculto por moderación solo existe para su dueño y el equipo (404 para los demás).
+  const result = await getPublicProduct(slug, {
+    viewerUserId: viewer?.userId ?? null,
+    isAdmin: admin !== null,
+  });
   if (!result) notFound();
-  const { product, categoryId } = result;
+  const { product, categoryId, moderation } = result;
 
-  const viewer = await getViewer();
   const isOwner = viewer?.userId === product.seller.userId;
   const sourcePostId = typeof from === "string" && z.uuid().safeParse(from).success ? from : null;
-  track({
-    type: "PRODUCT_VIEW",
-    userId: viewer?.userId ?? null,
-    entityType: "PRODUCT",
-    entityId: product.id,
-    sourcePostId,
-    surface: ref === "compartir" ? "SHARE_LINK" : sourcePostId ? "FEED" : "PRODUCT_PAGE",
-  });
+  if (!moderation.hidden) {
+    track({
+      type: "PRODUCT_VIEW",
+      userId: viewer?.userId ?? null,
+      entityType: "PRODUCT",
+      entityId: product.id,
+      sourcePostId,
+      surface: ref === "compartir" ? "SHARE_LINK" : sourcePostId ? "FEED" : "PRODUCT_PAGE",
+    });
+  }
+  const review = product.authenticityReview;
+  const ownerNotice =
+    isOwner && moderation.authenticityStatus
+      ? OWNER_AUTHENTICITY_NOTICES[
+          moderation.authenticityStatus === "NEEDS_PROOF" &&
+          product.facts.authenticity !== "DECLARED_ORIGINAL"
+            ? "NEEDS_PROOF_NOT_DECLARED"
+            : moderation.authenticityStatus
+        ]
+      : undefined;
 
   const [related, postRows, saved, followsSeller] = await Promise.all([
     listRelatedProducts(categoryId, product.id),
@@ -122,12 +170,24 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
     {
       icon: PackageCheck,
       title: "Autenticidad",
-      text: answerQuickQuestion("authenticity", product.facts),
+      // Con comprobante pedido, la declaración «original» no se repite (P14).
+      text: review.detail ?? answerQuickQuestion("authenticity", product.facts),
     },
   ];
 
   return (
     <div className="flex flex-col gap-6 pb-6">
+      {moderation.hidden ? (
+        <p
+          role="status"
+          className="mx-4 mt-4 flex items-start gap-2 rounded-3xl bg-muted p-4 text-sm md:mx-0"
+        >
+          <EyeOff className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {isOwner
+            ? "El equipo ocultó este producto: no aparece en el feed, la búsqueda ni Comprar, y nadie más puede abrirlo. Solo tú lo ves."
+            : "Oculto por moderación. Solo el equipo y quien lo vende pueden verlo."}
+        </p>
+      ) : null}
       {isOwner && nuevo ? (
         <div className="mx-4 mt-4 flex flex-col gap-3 rounded-3xl bg-success/10 p-4 md:mx-0">
           <p className="flex items-center gap-2 font-semibold">
@@ -167,6 +227,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         <p className="font-heading text-3xl font-extrabold">
           {formatMoney(product.priceCents, product.currency)}
         </p>
+        <AuthenticityNotice view={review} />
         {shippingLine ? <p className="text-sm text-muted-foreground">{shippingLine}</p> : null}
         {localLine ? <p className="text-sm text-muted-foreground">{localLine}</p> : null}
         <p
@@ -183,6 +244,22 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           {product.facts.city}, {product.facts.state}
         </p>
 
+        {ownerNotice ? (
+          <div className="flex flex-col gap-2 rounded-2xl bg-secondary p-4 text-sm">
+            <p className="flex items-center gap-2 font-semibold">
+              <ShieldQuestion className="size-4 shrink-0" aria-hidden />
+              {ownerNotice.title}
+            </p>
+            <p>{ownerNotice.text}</p>
+            <Link
+              href={`/studio/productos/${product.id}/autenticidad` as Route}
+              className="-my-2 inline-flex min-h-11 w-fit items-center font-semibold text-primary-text underline"
+            >
+              {ownerNotice.link}
+            </Link>
+          </div>
+        ) : null}
+
         {isOwner ? (
           <div className="flex flex-col gap-2 rounded-2xl border p-4 text-sm">
             <p className="font-semibold">Este producto es tuyo.</p>
@@ -198,7 +275,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
               </Link>
             </div>
           </div>
-        ) : (
+        ) : moderation.hidden ? null : (
           <BuyBox
             productId={product.id}
             maxQuantity={Math.min(product.facts.stock, 10)}
@@ -217,6 +294,15 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           />
           {!isOwner ? (
             <SaveProductButton productId={product.id} initialSaved={Boolean(saved)} />
+          ) : null}
+          {!isOwner && !moderation.hidden ? (
+            <ReportButton
+              targetType="PRODUCT"
+              targetId={product.id}
+              isSignedIn={Boolean(viewer)}
+              returnTo={`/producto/${product.slug}`}
+              className="ml-auto"
+            />
           ) : null}
         </div>
       </section>

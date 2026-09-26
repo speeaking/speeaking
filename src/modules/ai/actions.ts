@@ -4,10 +4,13 @@ import { z } from "zod";
 import { parsePesosToCents } from "@/modules/catalog/pricing";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { db } from "@/server/db";
-import { limitOrError } from "@/server/rate-limit";
+import { POLICY_MESSAGES, policyViolation } from "./content-policy";
+import { aiErrorMessage } from "./messages";
 import type { GuardFinding } from "./output-guard";
 import type { SaleProposal } from "./sale-proposal";
 import { AIError, generateSaleProposal, proposalEconomics } from "./service";
+import { aiErrorMode } from "./tasks/availability";
+import { PUBLISH_BY_HAND } from "./tasks/simulation";
 
 const requestSchema = z.object({
   text: z.string().trim().min(8, "Cuéntanos un poco más de lo que vendes.").max(1000),
@@ -28,16 +31,9 @@ export type ProposalState = {
     quantity: number;
     /** Frases que el guardián de contenido quitó (SEC-28) y por qué. */
     guard: { removed: number; findings: GuardFinding[] };
+    /** La escribió el simulador (piloto, ADR-038): se marca como ejemplo, no como de la IA. */
+    simulated: boolean;
   };
-};
-
-const AI_MESSAGES: Record<AIError["code"], string> = {
-  RATE_LIMITED: "Hiciste muchas solicitudes seguidas. Espera un momento y vuelve a intentar.",
-  // Sin detalles internos y con una salida: publicar a mano no depende de la IA.
-  BUDGET_EXCEEDED:
-    "Vende con IA no está disponible por ahora. Puedes publicar tu producto a mano desde Productos.",
-  INVALID_OUTPUT: "La IA respondió algo que no pudimos validar. Intenta de nuevo.",
-  PROVIDER_ERROR: "La IA no está disponible en este momento. Intenta de nuevo.",
 };
 
 export async function generateProposalAction(
@@ -77,6 +73,10 @@ export async function generateProposalAction(
       : null,
   ]);
 
+  // Antes de gastar una llamada: productos que la IA no ayuda a vender.
+  const violation = policyViolation(parsed.data.productName, parsed.data.text);
+  if (violation) return { error: POLICY_MESSAGES[violation] };
+
   const request = {
     text: parsed.data.text,
     productName: parsed.data.productName,
@@ -87,7 +87,7 @@ export async function generateProposalAction(
     hasPhoto: Boolean(media),
   };
   try {
-    const { responseId, proposal, guard } = await generateSaleProposal(viewer.userId, {
+    const { responseId, proposal, guard, simulated } = await generateSaleProposal(viewer.userId, {
       ...request,
       mediaId: media?.id ?? null,
     });
@@ -98,14 +98,17 @@ export async function generateProposalAction(
         numbers: proposalEconomics(request),
         quantity: request.quantity,
         guard,
+        simulated,
       },
     };
   } catch (error) {
     if (!(error instanceof AIError)) throw error;
-    const wait =
-      error.code === "RATE_LIMITED" && error.retryAfterSeconds
-        ? limitOrError({ ok: false, retryAfterSeconds: error.retryAfterSeconds })
-        : null;
-    return { error: wait ?? AI_MESSAGES[error.code] };
+    return {
+      error: aiErrorMessage(
+        error,
+        `${PUBLISH_BY_HAND}: Vende con IA no está disponible en este momento. Hazlo desde Productos → Nuevo producto.`,
+        await aiErrorMode(error, "sale_proposal"),
+      ),
+    };
   }
 }

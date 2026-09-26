@@ -1,5 +1,7 @@
 import "server-only";
+import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentMethod } from "@/generated/prisma/enums";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 
@@ -12,7 +14,11 @@ export class CartError extends Error {
 
 export const MAX_QUANTITY_PER_ITEM = 10;
 
-/** Agrega (o suma) un producto al carrito respetando el stock disponible. */
+/**
+ * Agrega (o suma) un producto al carrito respetando el stock disponible. Un producto oculto por
+ * moderación se rechaza igual que uno que ya no está a la venta («Este producto ya no está
+ * disponible»): no se revela que el equipo lo ocultó.
+ */
 export async function addToCart(
   userId: string,
   productId: string,
@@ -21,13 +27,19 @@ export async function addToCart(
 ) {
   const product = await db.product.findUnique({
     where: { id: productId },
-    select: { status: true, stock: true, seller: { select: { userId: true, status: true } } },
+    select: {
+      status: true,
+      stock: true,
+      moderationStatus: true,
+      seller: { select: { userId: true, status: true } },
+    },
   });
-  // Un vendedor suspendido no vende (SEC-24).
+  // Un vendedor suspendido no vende (SEC-24); lo oculto por moderación tampoco (P14).
   if (
     !product ||
     product.status !== "ACTIVE" ||
     product.stock <= 0 ||
+    product.moderationStatus !== "VISIBLE" ||
     product.seller.status !== "ACTIVE"
   ) {
     throw new CartError("NOT_AVAILABLE");
@@ -55,9 +67,10 @@ export async function addToCart(
   return cartCount(userId);
 }
 
+/** Piezas en el carrito (el número de la navegación). Sin las de productos ocultos por moderación. */
 export async function cartCount(userId: string) {
   const result = await db.cartItem.aggregate({
-    where: { cart: { userId } },
+    where: { cart: { userId }, product: VISIBLE_PRODUCT },
     _sum: { quantity: true },
   });
   return result._sum.quantity ?? 0;
@@ -99,10 +112,65 @@ export type CartLine = {
   seller: { id: string; displayName: string; paymentMethods: PaymentMethod[] };
 };
 
-/** Carrito con datos públicos del producto (sin costos). */
-export async function getCartLines(userId: string): Promise<CartLine[]> {
-  const items = await db.cartItem.findMany({
-    where: { cart: { userId } },
+/** Aviso del carrito cuando se quitaron productos que el equipo ocultó. */
+export function unavailableCartNotice(count: number): string | null {
+  if (count <= 0) return null;
+  return count === 1
+    ? "Un producto ya no está disponible"
+    : `${count} productos ya no están disponibles`;
+}
+
+/**
+ * Líneas del carrito cuyo producto ocultó el equipo (P14) y que siguen en la base: `getCartLines` las
+ * omite y solo `listCartRemovingHidden` (/carrito) las borra.
+ */
+export function countHiddenCartLines(userId: string) {
+  return db.cartItem.count({
+    where: { cart: { userId }, product: { moderationStatus: "HIDDEN" } },
+  });
+}
+
+/** Lo que muestra /carrito: sus líneas y cuántas se quitaron al listarlas. */
+export type CartListing = {
+  lines: CartLine[];
+  /** Líneas que ESTA llamada borró porque el equipo ocultó su producto (para avisar una sola vez). */
+  removedHidden: number;
+};
+
+/**
+ * Carrito de /carrito: borra las líneas cuyo producto ocultó el equipo (P14) y lee las demás en la
+ * misma transacción. El aviso sale una sola vez porque la siguiente carga ya no encuentra esas líneas;
+ * con dos cargas a la vez, el segundo DELETE espera al primero y ya no las ve (READ COMMITTED), así
+ * que tampoco se cuentan dos veces. Una vez borrada, la línea no regresa si el equipo restaura el
+ * producto. Mientras nadie abra /carrito, la fila sigue en la base y `getCartLines` (checkout) solo la
+ * omite.
+ */
+export async function listCartRemovingHidden(userId: string): Promise<CartListing> {
+  return db.$transaction(async (tx) => {
+    const removed = await tx.cartItem.deleteMany({
+      where: { cart: { userId }, product: { moderationStatus: "HIDDEN" } },
+    });
+    const lines = await readCartLines(tx, userId);
+    return { lines, removedHidden: removed.count };
+  });
+}
+
+/**
+ * Carrito con datos públicos del producto (sin costos). Omite los productos ocultos por moderación:
+ * ni el carrito, ni la revisión del pedido, ni `placeOrder` (que arma el pedido con estas líneas) los
+ * ven. Aquí no se borra nada: si el equipo lo restaura antes de que la persona abra /carrito
+ * (`listCartRemovingHidden`), vuelve a aparecer.
+ */
+export function getCartLines(userId: string): Promise<CartLine[]> {
+  return readCartLines(db, userId);
+}
+
+async function readCartLines(
+  client: Prisma.TransactionClient | typeof db,
+  userId: string,
+): Promise<CartLine[]> {
+  const items = await client.cartItem.findMany({
+    where: { cart: { userId }, product: VISIBLE_PRODUCT },
     orderBy: { addedAt: "asc" },
     select: {
       id: true,

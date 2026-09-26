@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { siteConfig } from "@/config/site";
 import { LEGAL_VERSIONS } from "@/modules/identity/constants";
 
@@ -6,6 +7,27 @@ export const metadata: Metadata = { title: "Aviso de privacidad" };
 
 // BORRADOR: requiere revisión de un abogado (LFPDPPP) antes del lanzamiento público. Cambiar este
 // texto es subir LEGAL_VERSIONS.privacyNotice (el consentimiento queda ligado a la versión).
+
+// PENDIENTE antes de AI_PROVIDER=openai_compatible en producción (ADR-034, ADR-038): la razón social
+// del proveedor de IA y el país donde procesa. No se inventa: se llena con el contrato firmado y se
+// sube LEGAL_VERSIONS.privacyNotice.
+const AI_PROCESSOR = "[Proveedor de IA: nombre y país — pendiente]";
+
+// PENDIENTE (revisión legal, antes del lanzamiento): plazos máximos de conservación que el código aún
+// no aplica. Hoy esos registros no se borran solos: no se publica un plazo que no se cumple.
+const ACTIVITY_RETENTION =
+  "[Plazo máximo — pendiente; propuesta: 180 días y después solo cifras agregadas]";
+const MODERATION_RETENTION = "[Plazo máximo — pendiente]";
+
+const SECTION_LINK = "font-semibold text-primary-text underline underline-offset-4";
+
+/** Dato que falta llenar antes del lanzamiento: se ve marcado para que nadie lo tome por final. */
+function PendingData({ children }: { children: ReactNode }) {
+  return (
+    <span className="rounded bg-accent px-1 font-semibold text-accent-foreground">{children}</span>
+  );
+}
+
 export default function PrivacyNoticePage() {
   return (
     <>
@@ -13,6 +35,35 @@ export default function PrivacyNoticePage() {
         Borrador para revisión legal · versión {LEGAL_VERSIONS.privacyNotice}
       </p>
       <h1 className="text-3xl font-extrabold">Aviso de privacidad</h1>
+      <section aria-labelledby="novedades" className="rounded-xl border border-border px-4 py-3">
+        <h2 id="novedades" className="mt-0! text-base!">
+          Qué cambió en esta versión
+        </h2>
+        <ul className="mt-2 flex flex-col gap-1">
+          <li>
+            Registramos qué publicaciones del feed y de las comunidades aparecen en tu pantalla (ver{" "}
+            <a className={SECTION_LINK} href="#publicaciones-en-pantalla">
+              «Publicaciones que ves en pantalla»
+            </a>
+            ).
+          </li>
+          <li>
+            Explicamos la revisión de autenticidad de los productos, las fotos de comprobante y la
+            señal opcional de inteligencia artificial (ver{" "}
+            <a className={SECTION_LINK} href="#autenticidad">
+              «Autenticidad de los productos»
+            </a>
+            ).
+          </li>
+          <li>
+            Qué guardan los reportes y qué acciones de moderación toma el equipo (ver{" "}
+            <a className={SECTION_LINK} href="#reportes-y-moderacion">
+              «Reportes y moderación»
+            </a>
+            ).
+          </li>
+        </ul>
+      </section>
       <p>
         {siteConfig.name} (nombre provisional) es responsable del tratamiento de tus datos
         personales conforme a la Ley Federal de Protección de Datos Personales en Posesión de los
@@ -31,7 +82,8 @@ export default function PrivacyNoticePage() {
         </li>
         <li>
           Actividad dentro de la plataforma: publicaciones, comentarios, a quién sigues, me gusta,
-          guardados, búsquedas, productos vistos, carrito y compras.
+          guardados, búsquedas, productos vistos, qué publicaciones aparecieron en tu pantalla,
+          carrito y compras.
         </li>
         <li>Gustos que tú declaras: comunidades, marcas y lo que estás buscando.</li>
         <li>
@@ -40,7 +92,12 @@ export default function PrivacyNoticePage() {
         </li>
         <li>
           Si vendes: datos de tus productos (incluido su costo, que solo ves tú), ciudad y estado
-          (nunca tu domicilio exacto publicado) y lo que escribes en «Vende con IA».
+          (nunca tu domicilio exacto publicado), lo que escribes en «Vende con IA» y, si te lo
+          pedimos, las fotos de tu comprobante de compra.
+        </li>
+        <li>
+          Si reportas algo: qué reportaste, el motivo y el texto que agregues (ver «Reportes y
+          moderación»).
         </li>
         <li>
           Tus decisiones de privacidad y la versión de cada documento que aceptas, con su fecha.
@@ -68,7 +125,10 @@ export default function PrivacyNoticePage() {
           Entregar tus compras: la tienda a la que le compras recibe el nombre de quien recibe, el
           domicilio de entrega y el teléfono del pedido, solo cuando el pago se aprueba.
         </li>
-        <li>Prevenir fraudes y abusos.</li>
+        <li>
+          Prevenir fraudes, falsificaciones y abusos: revisar el riesgo de imitación de los
+          productos y atender reportes.
+        </li>
       </ul>
 
       <h2>Finalidades secundarias (puedes negarte)</h2>
@@ -78,7 +138,10 @@ export default function PrivacyNoticePage() {
           Sugerirte personas para seguir y mostrarte como sugerencia a otras personas en «Gente de
           tus comunidades».
         </li>
-        <li>Medir y mejorar la plataforma con métricas agregadas.</li>
+        <li>
+          Medir y mejorar la plataforma con métricas agregadas (por ejemplo, cuántas veces se vio de
+          verdad cada publicación y si un cambio al feed ayuda o estorba).
+        </li>
       </ul>
       <p>
         Mientras no terminas tu registro, tu actividad se guarda sin ligarla a tu cuenta. Puedes
@@ -86,6 +149,37 @@ export default function PrivacyNoticePage() {
         también hacia atrás, tu actividad deja de estar ligada a tu cuenta y solo se cuenta de forma
         anónima y agregada (sin tus búsquedas, sin datos que te identifiquen y con la hora
         redondeada). En Ajustes también puedes ver y borrar tu historial de búsqueda.
+      </p>
+
+      <h2 id="publicaciones-en-pantalla">Publicaciones que ves en pantalla</h2>
+      <p>
+        Cuando una publicación del feed o de una comunidad está al menos a la mitad dentro de tu
+        pantalla (o, si es más alta que la pantalla, ocupa al menos la mitad de ella) durante 1
+        segundo seguido, con la pestaña a la vista, tu navegador nos avisa que apareció. Solo manda
+        qué publicación era, si estaba en el feed o en una comunidad y en qué lugar de la lista iba.
+        No manda cuánto tiempo la miraste, cómo te desplazaste ni nada de lo que escribes.
+      </p>
+      <p>
+        Sirve para medir lo que de verdad se ve (no solo lo que se cargó) y decidir con datos reales
+        si un cambio al feed ayuda o estorba. Cada publicación cuenta a lo más una vez al día por
+        persona (o por conexión), y solo si antes te la mostramos. Para decidir cambios al feed solo
+        cuentan las personas con sesión y la personalización activada; lo demás solo se describe en
+        las métricas.
+      </p>
+      <p>
+        Con la personalización activada, cada vista queda ligada a tu cuenta como el resto de tu
+        actividad, junto con el lugar en que se te mostró y, si participas en una prueba de un
+        cambio al feed, el grupo que te tocó. Si desactivaste la personalización (o aún no terminas
+        tu registro), se guarda sin ligarla a tu cuenta: sin tu cuenta, sin el grupo de prueba y con
+        la hora redondeada, como el resto de tu actividad anónima. Si navegas sin cuenta, se guarda
+        sin cuenta a la cual ligarla, sin tu IP y sin grupo de prueba; en ese caso la hora no se
+        redondea, igual que el resto de la actividad de visitantes sin cuenta.
+      </p>
+      <p>
+        Para no contar dos veces la misma publicación y comprobar que sí se te mostró, usamos por
+        unas horas un código hecho con tu cuenta o tu conexión (IP) y la publicación. El código no
+        guarda ninguna de las dos en claro (solo se puede comprobar con una llave secreta de nuestro
+        servidor), vence a más tardar a las 25 horas y después se borra.
       </p>
 
       <h2 id="gente-de-tus-comunidades">«Gente de tus comunidades»</h2>
@@ -122,18 +216,80 @@ export default function PrivacyNoticePage() {
         una sugerencia no te interesa, toca «Quitar» y no te volveremos a sugerir a esa persona.
       </p>
 
-      <h2 id="vende-con-ia">«Vende con IA»</h2>
+      <h2 id="vende-con-ia">Inteligencia artificial: «Vende con IA» y «Kit de anuncios»</h2>
       <p>
         Lo que escribes para pedir una propuesta de venta, y los datos que confirmas (producto,
-        piezas, costo y precio), se usan solo para generarla. Guardamos el texto sin correos,
+        piezas, costo y precio), se usan solo para generarla. Para el kit de anuncios usamos los
+        datos de tu producto que ya son públicos (nombre, descripción, etiquetas, precio, categoría,
+        condición, ciudad y estado, envío, garantía y devoluciones). Guardamos el texto sin correos,
         teléfonos, ligas ni cuentas bancarias, y a los 90 días lo borramos por completo. No escribas
         datos personales de nadie en ese texto.
       </p>
       <p>
-        Hoy la propuesta la genera un sistema propio que no envía tu texto fuera de nuestros
-        servidores. Cuando usemos un proveedor externo de inteligencia artificial, lo nombraremos
-        aquí antes de activarlo, junto con el país donde procesa los datos, y le exigiremos por
-        contrato no usar tu texto para entrenar sus modelos ni conservarlo.
+        Para escribir estos textos usamos un proveedor externo de inteligencia artificial: una
+        empresa que nos da acceso por internet (API) a modelos de lenguaje y nos cobra por uso. Solo
+        le enviamos tu texto, ya sin correos, teléfonos, ligas, cuentas ni el costo que hayas
+        escrito, y los datos del producto. Nunca le enviamos el costo de tu producto, tu nombre, tu
+        correo ni datos de tus clientes. Cuando el proveedor lo permite, le pedimos en cada
+        solicitud no guardar esa información ni usarla para entrenar sus modelos, y se lo exigiremos
+        por contrato. El proveedor puede procesar los datos fuera de México: antes de activarlo
+        publicaremos aquí su nombre y el país.
+      </p>
+      <p>
+        Proveedor de inteligencia artificial (encargado): <PendingData>{AI_PROCESSOR}</PendingData>.
+      </p>
+      <p>
+        Todo lo que escribe la IA se marca como «Creado con ayuda de IA» y tú lo revisas antes de
+        publicarlo o compartirlo. Para elegir qué modelo usar lo probamos con casos ficticios; si
+        algún día usamos textos reales de vendedores para esas pruebas, será con su permiso y sin
+        datos personales.
+      </p>
+
+      <h2 id="autenticidad">Autenticidad de los productos</h2>
+      <p>
+        Para proteger a quien compra de falsificaciones revisamos el riesgo de imitación de cada
+        producto con reglas automáticas: su precio comparado con productos parecidos de otras
+        tiendas o con un precio de referencia, palabras como «réplica» junto a una marca, si se
+        declara original, si la tienda es nueva (su antigüedad y cuántas ventas ha completado) y los
+        reportes de la comunidad. Esta revisión mide riesgo: no acusa a nadie ni certifica nada.
+        Guardamos el resultado vigente de cada producto (nivel de riesgo, señales que se activaron y
+        versión de las reglas).
+      </p>
+      <p>
+        Si declaras que un producto es original, te podemos pedir un comprobante de compra (ticket,
+        factura, empaque o número de serie). Sus fotos son privadas: solo las ven tú y el equipo, y
+        nunca se publican.
+      </p>
+      <p>
+        <strong>Señal opcional de inteligencia artificial.</strong> Si la activamos (por omisión
+        está apagada), cuando las reglas ya encontraron alguna señal le enviamos al proveedor de
+        inteligencia artificial el título, la descripción y las etiquetas del producto, que ya son
+        públicos, sin correos, teléfonos, ligas ni cuentas, para detectar lenguaje de imitación que
+        una lista de palabras no alcanza. No le enviamos fotos, el costo, tu nombre ni tus datos de
+        contacto. Guardamos su respuesta (si el texto sugiere una imitación, qué tan segura está y
+        una razón breve), el modelo y la fecha. Solo puede sumar un poco al riesgo que ya
+        encontraron las reglas: nunca decide sola, y un producto de riesgo bajo no pasa a riesgo
+        alto por ella.
+      </p>
+
+      <h2 id="reportes-y-moderacion">Reportes y moderación</h2>
+      <p>
+        Si reportas una publicación o un producto, guardamos quién reportó, qué reportaste, el
+        motivo, el texto que agregues (opcional, hasta 1,000 caracteres), la fecha, su estado
+        (abierto, atendido o descartado) y quién del equipo lo atendió y cuándo. Quien publica o
+        vende nunca sabe quién lo reportó ni cuántas personas lo hicieron. Los reportes de posible
+        falsificación cuentan como una señal más en la revisión de autenticidad (contamos personas
+        distintas; los descartados no cuentan). No escribas datos personales de nadie en el texto
+        del reporte.
+      </p>
+      <p>
+        Solo personas del equipo de {siteConfig.name} con ese rol pueden moderar; la inteligencia
+        artificial nunca lo hace. El equipo puede ocultar una publicación o un producto (deja de
+        verse en la plataforma), restaurarlo si fue un error, descartar reportes, revisar un
+        comprobante de compra (y mostrar «Comprobante revisado por {siteConfig.name}») o rechazar
+        una declaración de original (el producto pasa a «genérico o compatible»). Cada acción queda
+        registrada con quién la tomó, cuándo, qué cambió y la nota del equipo; la nota de una
+        revisión de autenticidad se le muestra a quien vende.
       </p>
 
       <h2>Cuánto tiempo guardamos tus datos</h2>
@@ -145,6 +301,26 @@ export default function PrivacyNoticePage() {
           días).
         </li>
         <li>El texto de «Vende con IA»: 90 días.</li>
+        <li>
+          Tu actividad, incluidas las publicaciones que viste en pantalla: ligada a tu cuenta
+          mientras la tengas y tengas activada la personalización. Al desactivarla se desliga,
+          también la anterior, y queda solo como dato anónimo para métricas agregadas. Plazo máximo
+          de los registros detallados: <PendingData>{ACTIVITY_RETENTION}</PendingData>.
+        </li>
+        <li>
+          El código para no contar dos veces una publicación vista: vence a las 25 horas como
+          máximo.
+        </li>
+        <li>
+          La revisión de autenticidad de un producto, con la respuesta de la IA si se usó: mientras
+          exista el producto.
+        </li>
+        <li>
+          Reportes, fotos de comprobante y registro de las acciones del equipo: hoy no se borran
+          solos; se conservan como historial de moderación. Plazo máximo:{" "}
+          <PendingData>{MODERATION_RETENTION}</PendingData>. Si eliminas tu cuenta, tus reportes se
+          conservan sin ligarse a ti.
+        </li>
         <li>
           Tu historial de búsqueda: hasta que lo borres, desactives la personalización o elimines tu
           cuenta.
@@ -181,7 +357,13 @@ export default function PrivacyNoticePage() {
           Correo: cuando te enviemos correos (por ejemplo, para verificar tu cuenta), el proveedor
           de envío recibirá tu correo y el mensaje.
         </li>
-        <li>Inteligencia artificial: ver «Vende con IA».</li>
+        <li>
+          Inteligencia artificial: un proveedor externo de modelos de lenguaje por API, pagado por
+          uso (<PendingData>{AI_PROCESSOR}</PendingData>). Recibe tu texto sin datos de contacto y
+          los datos del producto, nunca su costo (ver «Inteligencia artificial»). Si activamos la
+          señal de autenticidad, también el texto público de los productos con alguna señal de
+          riesgo (ver «Autenticidad de los productos»).
+        </li>
       </ul>
       <p>
         Si alguno de estos proveedores procesa datos fuera de México, lo indicaremos aquí con su
@@ -189,7 +371,10 @@ export default function PrivacyNoticePage() {
       </p>
 
       <h2>Cambios</h2>
-      <p>Si este aviso cambia, te lo informaremos y registraremos la versión que aceptes.</p>
+      <p>
+        Si este aviso cambia, te lo avisaremos dentro de la plataforma (un mensaje en la parte de
+        arriba con la liga a los cambios) y registraremos la versión que aceptes, con su fecha.
+      </p>
     </>
   );
 }

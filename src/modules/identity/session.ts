@@ -3,7 +3,9 @@ import type { Route } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import type { UserRole } from "@/generated/prisma/enums";
 import { getUnreadCounts } from "@/modules/social/unread";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import type { NavCommunities, ViewerSummary } from "./viewer-summary";
@@ -36,6 +38,8 @@ export type Viewer = {
     avatarUrl: string | null;
     onboarded: boolean;
     personalizationEnabled: boolean;
+    /** Rol de equipo (solo servidor). Para exigirlo usa `requireAdmin` (src/modules/admin/guard.ts). */
+    role: UserRole;
   } | null;
   sellerProfileId: string | null;
 };
@@ -53,6 +57,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
         avatarUrl: true,
         onboardedAt: true,
         personalizationEnabled: true,
+        role: true,
       },
     }),
     db.sellerProfile.findUnique({ where: { userId: session.user.id }, select: { id: true } }),
@@ -68,6 +73,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
           avatarUrl: profile.avatarUrl,
           onboarded: profile.onboardedAt !== null,
           personalizationEnabled: profile.personalizationEnabled,
+          role: profile.role,
         }
       : null,
     sellerProfileId: seller?.id ?? null,
@@ -101,8 +107,10 @@ export const getViewerSummary = cache(async (): Promise<ViewerSummary> => {
   const viewer = await getViewer();
   if (!viewer) return null;
   const [cart, memberships, unread] = await Promise.all([
+    // El mismo número que `cartCount` (commerce/cart.ts) y que las líneas de /carrito: sin las
+    // piezas de productos ocultos por moderación (P14), que el carrito omite.
     db.cartItem.aggregate({
-      where: { cart: { userId: viewer.userId } },
+      where: { cart: { userId: viewer.userId }, product: VISIBLE_PRODUCT },
       _sum: { quantity: true },
     }),
     getMemberships(viewer.userId),
@@ -115,6 +123,8 @@ export const getViewerSummary = cache(async (): Promise<ViewerSummary> => {
     avatarUrl: viewer.profile?.avatarUrl ?? null,
     isSeller: viewer.sellerProfileId !== null,
     onboarded: viewer.profile?.onboarded ?? false,
+    // Solo si es ADMIN: a nadie más le llega ni la llave (el área de administración no se anuncia).
+    ...(viewer.profile?.role === "ADMIN" ? { isAdmin: true as const } : {}),
     communities: memberships.slice(0, NAV_COMMUNITIES).map(({ community }) => ({
       slug: community.slug,
       name: community.name,

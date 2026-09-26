@@ -1,13 +1,15 @@
 import "server-only";
 import { cache } from "react";
 import { siteConfig } from "@/config/site";
+import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MIN_FOLLOW_INTERMEDIARIES } from "./suggestions";
 
 /**
  * Acceso a datos de la columna «Para ti» y de «Gente de tus comunidades». Todas las consultas están
- * acotadas (LIMIT) y seleccionan solo campos públicos: el costo del producto nunca se consulta.
+ * acotadas (LIMIT) y seleccionan solo campos públicos: el costo del producto nunca se consulta. Lo
+ * oculto por moderación no cuenta ni se sugiere (`VISIBLE_PRODUCT`, `POST_WITH_VISIBLE_PRODUCT`).
  */
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -23,7 +25,10 @@ export const listMembershipCommunityIds = cache(async (userId: string): Promise<
   return rows.map((row) => row.communityId);
 });
 
-/** Publicaciones visibles por comunidad desde `since`, en una sola consulta agrupada. */
+/**
+ * Publicaciones visibles por comunidad desde `since`, en una sola consulta agrupada. Las de un
+ * producto oculto por moderación no cuentan como actividad (P5: nada inflado).
+ */
 export async function countRecentPostsByCommunity(since: Date, until: Date) {
   const rows = await db.post.groupBy({
     by: ["communityId"],
@@ -31,6 +36,7 @@ export async function countRecentPostsByCommunity(since: Date, until: Date) {
       status: "PUBLISHED",
       communityId: { not: null },
       publishedAt: { gte: since, lte: until },
+      AND: [POST_WITH_VISIBLE_PRODUCT],
     },
     _count: { _all: true },
   });
@@ -125,7 +131,8 @@ export async function markIntentDismissed(intentId: string) {
 
 /**
  * Productos que se evalúan contra la intención (los más recientes, con stock y en presupuesto).
- * Nunca los de la propia persona: no tiene sentido sugerirle lo que ella misma vende.
+ * Nunca los de la propia persona (no tiene sentido sugerirle lo que ella misma vende) ni los
+ * ocultos por moderación.
  */
 const INTENT_PRODUCT_POOL = 200;
 
@@ -134,6 +141,7 @@ export function listIntentProductPool(viewerId: string, budgetMaxCents: number |
     where: {
       status: "ACTIVE",
       stock: { gt: 0 },
+      ...VISIBLE_PRODUCT,
       seller: { userId: { not: viewerId } },
       // El presupuesto se declara en la moneda local: solo se compara con precios en esa moneda.
       currency: siteConfig.currency,
@@ -152,10 +160,13 @@ export function listIntentProductPool(viewerId: string, budgetMaxCents: number |
   });
 }
 
-/** Tarjeta pública del producto elegido (primera foto incluida; sin costo). */
+/**
+ * Tarjeta pública del producto elegido (primera foto incluida; sin costo). `null` si ya no existe o
+ * el equipo lo ocultó entre la elección y la tarjeta.
+ */
 export async function getIntentProductCard(productId: string) {
-  const row = await db.product.findUnique({
-    where: { id: productId },
+  const row = await db.product.findFirst({
+    where: { id: productId, ...VISIBLE_PRODUCT },
     select: {
       slug: true,
       title: true,
@@ -272,6 +283,8 @@ export async function listActiveCommunityPeers(viewerId: string, communityIds: s
         communityId: { in: communityIds },
         authorId: { not: viewerId },
         author: peer,
+        // Publicar un producto que el equipo ocultó no cuenta como actividad visible.
+        AND: [POST_WITH_VISIBLE_PRODUCT],
       },
       orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
       take: PEER_ACTIVITY_SCAN,

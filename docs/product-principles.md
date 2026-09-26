@@ -63,6 +63,7 @@ prácticamente automático." Para el vendedor: "Tú tienes el producto. La IA en
 | P11 | IA autofinanciada (presupuesto ligado a ingresos) | Pedida por producto — base en Sprint 1      |
 | P12 | Impulso pagado por resultados + vendedor IA       | Pedida por producto — se activa con tráfico |
 | P13 | Reels: video vertical corto que vende             | Pedida por producto — después del rediseño  |
+| P14 | Riesgo de falsificación, reportes y moderación    | Pedida por el fundador — construida (base)  |
 
 ### P12 · Impulso pagado por resultados + vendedor IA experto (2026-09-25)
 
@@ -144,6 +145,73 @@ prácticamente automático." Para el vendedor: "Tú tienes el producto. La IA en
    `MediaStatus` para el procesamiento y la interfaz `MediaProcessor` planeada.
 6. **Cuándo.** Justo después del rediseño del inicio. El contenido semilla usará videos de stock con
    licencia libre (Pexels Videos o Mixkit), con la misma aprobación previa que las fotos.
+
+### P14 · Riesgo de falsificación, reportes y moderación (2026-09-26)
+
+Pregunta del fundador: «¿la IA podría detectar si un producto es falso?». Respuesta honesta: **no
+con certeza**. Ni una persona experta lo sabe por fotos y texto; hace falta tener el artículo, su
+número de serie o la factura. Lo que sí podemos hacer es **detectar riesgo** y pedir pruebas. Nunca
+decimos «falso» ni «certificado».
+
+1. **Problema.** Las imitaciones de marca (AirPods, tenis, controles, bolsas) son comunes en la venta
+   informal en línea. Si alguien compra una «original» que no lo es, pierde la confianza en toda la
+   plataforma. Además, vender falsificaciones está prohibido (Ley Federal de Protección a la
+   Propiedad Industrial) y los dueños de las marcas pueden pedir que se retiren.
+2. **Solución: riesgo, no certificación.**
+   - **Reglas (código determinista, P2)** con explicación en español para el vendedor y el equipo:
+     - precio muy por debajo de la mediana de productos parecidos activos (misma categoría y
+       marca) de **≥ 5 tiendas distintas** (un precio por tienda, la mediana de los suyos: una sola
+       cuenta con muchas publicaciones no mueve la mediana) o de una **referencia aproximada**
+       curada a mano
+       (`trust/reference-prices.ts`, editable después con el ajuste `trust.referencePrices`);
+     - palabras de imitación («réplica», «AAA», «1:1», «clon», «calidad espejo», «calidad
+       original», «tipo original», «inspirado en» + marca). Las ambiguas («AAA» de pilas, «1:1» de
+       una maqueta) solo cuentan junto a una marca, y «funda para iPhone» no cuenta como la marca.
+       Las negadas no cuentan: «100 % originales, no réplica» o «cero clones» es lo que escribe un
+       vendedor honesto;
+     - se declara «original» y además saltó el precio o las palabras;
+     - tienda de menos de 14 días sin ventas entregadas con un artículo de marca de $2,000 o más;
+     - reportes de compradores por posible falsificación. Solos se quedan en riesgo bajo: no
+       cambian lo que ve quien compra (podrían venir de cuentas creadas contra un competidor); van
+       a la cola del equipo y solo refuerzan otras señales.
+   - **Niveles.** Bajo: nada. Medio: una nota neutral para quien compra («Revisa: el precio es muy
+     inferior al de productos similares»). Alto: se oculta la declaración «original», quien compra
+     ve «Autenticidad sin verificar» y el vendedor recibe en el Studio la petición de subir un
+     comprobante privado (ticket, factura, empaque) o de marcarlo como «genérico o compatible». Si
+     NO se declara original (usa la marca con «réplica», «AAA»…), no se pide comprobante: se le pide
+     corregir la publicación y el equipo decide si la oculta.
+   - **«Comprobante revisado» vale para el artículo revisado:** se conserva mientras siga declarado
+     original, el riesgo no suba y no cambien el título, las etiquetas, la categoría ni la
+     condición. Si cambian, se quita y se reevalúa (nadie hereda el sello para otro artículo). El
+     equipo solo puede darlo con las mismas fotos que tiene en pantalla y si la publicación no usa
+     palabras de imitación («Comprobante revisado» junto a «réplica» se contradice).
+   - **IA opcional** (`trust.aiSignal.enabled`, apagada): lee solo el texto y suma a lo más 0.15;
+     nunca decide sola ni lleva por sí misma a riesgo alto. Pasa por el guardián de presupuesto.
+     En producción sin servidor de IA no hay señal (el simulado nunca suma riesgo real).
+   - **Reportar** en productos y publicaciones (posible falsificación, estafa, prohibido, spam,
+     ofensivo, otro): con límite de frecuencia, uno por persona y objetivo, anónimo para el vendedor.
+   - **Cola del equipo** en `/admin/moderacion`: revisar el comprobante («Comprobante revisado por
+     VendeIA», que dice explícitamente que no es certificación ni garantía), rechazar la
+     declaración (queda genérico), ocultar, restaurar y descartar reportes. Todo queda en la
+     bitácora con quién lo hizo. Oculto = fuera del feed, la búsqueda, Comprar, «similares»,
+     Guardados, los perfiles y su página (salvo su dueño y el equipo).
+3. **Beneficio.** Quien compra ve señales honestas antes de pagar; el vendedor honesto tiene un
+   camino claro (y un sello de comprobante revisado); la plataforma cumple la ley y los términos sin
+   acusar a nadie. La operación le pide al fundador revisar solo lo de riesgo alto (24 h hábiles).
+4. **Complejidad.** Media: reglas puras con pruebas, una fila de revisión por producto
+   (`AuthenticityCheck`), reportes (`Report`), estado de moderación del producto y cola del equipo.
+   Riesgos: falsos positivos (se mitigan con pesos bajos para señales ambiguas y un umbral de
+   comparables por tienda), reportes usados contra un competidor (solos no cambian nada público) y
+   fotos de comprobante privadas (no se adjuntan al producto; solo su dueño y ADMIN las ven; el
+   recolector de huérfanas debe excluirlas y, con almacenamiento externo, no pueden ir a un bucket
+   público).
+5. **Impacto en el MVP.** Ninguno en el flujo de venta: el producto se publica igual y el checkout no
+   cambia (el código de pagos no se toca, ADR-033). Los productos creados antes de P14 no tienen
+   revisión hasta que se editan: se muestran como antes.
+6. **Cuándo.** Ya: base construida el 2026-09-26. Después: lista de artículos prohibidos revisada
+   por el abogado, apelación del vendedor, aviso al vendedor por correo, ocultamiento automático
+   solo para lo grave (plan-90-dias §7.3) y señal por foto cuando el costo de imágenes quepa en el
+   guardián de presupuesto.
 
 ## Fuera de alcance en V0.1
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseSellerText, saleProposalSchema } from "./sale-proposal";
+import { saleProposalTask } from "./tasks/sale-proposal";
+import { parseSellerText, saleProposalSchema, withoutCostMentions } from "./sale-proposal";
 
 describe("parseSellerText (extracción determinista, P2)", () => {
   it("entiende el ejemplo de los AirPods", () => {
@@ -35,5 +36,47 @@ describe("parseSellerText (extracción determinista, P2)", () => {
 describe("saleProposalSchema", () => {
   it("rechaza propuestas incompletas de un proveedor de IA", () => {
     expect(saleProposalSchema.safeParse({ productName: "X" }).success).toBe(false);
+  });
+});
+
+describe("withoutCostMentions (H3: el costo nunca sale hacia el proveedor)", () => {
+  const secret = { costCents: 240_000, quantity: 10, priceCents: 349_900 };
+
+  it("quita el monto que sigue a una palabra de costo", () => {
+    expect(withoutCostMentions("Me costaron $2,400 y los vendo a $3,499.")).toBe(
+      "Me costaron [costo] y los vendo a $3,499.",
+    );
+    expect(withoutCostMentions("Pagué $2,400 por cada uno")).toBe("Pagué [costo] por cada uno");
+    expect(withoutCostMentions("los conseguí en 2400 pesos")).toBe("los conseguí en [costo]");
+  });
+
+  it("con el costo confirmado, quita cualquier monto igual al costo o al costo total", () => {
+    expect(
+      withoutCostMentions("A mí me sale en $2,400, en total $24,000; precio $3,499.", secret),
+    ).toBe("A mí me sale en [costo], en total [costo]; precio $3,499.");
+    expect(withoutCostMentions("Di 24,000 pesos por el lote", secret)).toBe(
+      "Di [costo] por el lote",
+    );
+    // Un número sin marca de dinero (piezas, modelos) no se toca, ni el precio de venta.
+    expect(withoutCostMentions("Tengo 2400 piezas a $3,499", secret)).toBe(
+      "Tengo 2400 piezas a $3,499",
+    );
+  });
+
+  it("el mensaje al proveedor no lleva el costo aunque ninguna palabra lo anuncie", () => {
+    const { system, user } = saleProposalTask.messages({
+      text: "Tengo 10 bocinas. Di $24,000 por todas y las vendo a $3,499 cada una.",
+      productName: "Bocina portátil",
+      quantity: 10,
+      priceCents: 349_900,
+      costCents: 240_000,
+      city: "Puebla",
+      hasPhoto: false,
+      categories: [{ slug: "audio", name: "Audio" }],
+    });
+    for (const text of [system, user]) {
+      expect(text).not.toMatch(/24,000|2,400|240000|24000/);
+    }
+    expect(user).toContain("[costo]");
   });
 });

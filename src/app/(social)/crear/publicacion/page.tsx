@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { listCommunities } from "@/modules/identity/service";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { CreatePostForm } from "@/modules/social/components/create-post-form";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Nueva publicación" };
@@ -15,9 +16,10 @@ export default async function NewPostPage() {
       where: { userId: viewer.userId },
       select: { communityId: true },
     }),
+    // Un producto oculto por el equipo no se ofrece: su publicación no se vería (P14).
     viewer.sellerProfileId
       ? db.product.findMany({
-          where: { sellerId: viewer.sellerProfileId, status: "ACTIVE" },
+          where: { sellerId: viewer.sellerProfileId, status: "ACTIVE", ...VISIBLE_PRODUCT },
           orderBy: { createdAt: "desc" },
           select: { id: true, title: true },
         })

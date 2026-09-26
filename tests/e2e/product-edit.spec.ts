@@ -140,6 +140,8 @@ test.describe("editar productos", () => {
     await activateStore(buyer);
     await expect(buyer.getByText("Aún no tienes productos")).toBeVisible();
     const denied = await buyer.goto(editUrl);
+    // Bajo carga, confirmar que la navegación llegó al editor antes de buscar el 404.
+    await buyer.waitForURL((url) => url.pathname.endsWith("/editar"));
     await expect(buyer.getByText("No encontramos esta página")).toBeVisible();
     await expect(buyer.getByRole("button", { name: "Guardar cambios" })).toHaveCount(0);
     expectNoCost((await denied?.text()) ?? "");

@@ -1,4 +1,5 @@
 import "server-only";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 
 export type PublicProfile = {
@@ -36,7 +37,7 @@ export async function getPublicProfile(
             select: {
               followers: true,
               following: true,
-              posts: { where: { status: "PUBLISHED" } },
+              posts: { where: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } },
             },
           },
         },

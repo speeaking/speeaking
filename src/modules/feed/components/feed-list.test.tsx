@@ -25,6 +25,7 @@ beforeEach(() => {
         reachEnd = () => callback([{ isIntersecting: true }]);
       }
       observe() {}
+      unobserve() {}
       disconnect() {}
     },
   );

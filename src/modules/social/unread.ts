@@ -30,7 +30,8 @@ const DAY = 24 * 60 * 60 * 1000;
  *   «2 nuevas» que al abrir la comunidad no aparecen sería un número inventado (P5);
  * - después de su última visita o, si nunca la abrió, de cuando se unió;
  * - de otras personas (lo suyo no es «nuevo» para ella);
- * - sin productos agotados o pausados (el feed los omite; contarlos prometería algo que no está).
+ * - sin productos agotados, pausados u ocultos por moderación (el feed los omite; contarlos
+ *   prometería algo que no está).
  *
  * El conteo de cada comunidad para en `UNREAD_CAP + 1` (`LIMIT` en el `LATERAL`): así la
  * consulta tiene costo acotado aunque haya miles de publicaciones, y 100 se lee como «99+».
@@ -59,6 +60,7 @@ export function unreadCountsSql(viewerId: string, now: Date) {
             OR EXISTS (
               SELECT 1 FROM "products" pr
               WHERE pr."id" = p."productId" AND pr."status" = 'ACTIVE' AND pr."stock" > 0
+                AND pr."moderationStatus" = 'VISIBLE'
             )
           )
         LIMIT ${UNREAD_CAP + 1}

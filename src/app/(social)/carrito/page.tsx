@@ -1,4 +1,4 @@
-import { ShoppingBag } from "lucide-react";
+import { CircleAlert, ShoppingBag } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,18 +6,32 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
-import { getCartLines, groupBySeller, MAX_QUANTITY_PER_ITEM } from "@/modules/commerce/cart";
+import {
+  groupBySeller,
+  listCartRemovingHidden,
+  MAX_QUANTITY_PER_ITEM,
+} from "@/modules/commerce/cart";
 import { availableDeliveryMethods, orderShippingCents } from "@/modules/commerce/checkout-math";
 import { CartLineControls } from "@/modules/commerce/components/cart-line-controls";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireViewer } from "@/modules/identity/session";
+import { removedHiddenNotice } from "./notice";
 
 export const metadata: Metadata = { title: "Carrito" };
 
+/**
+ * Abrir /carrito borra las líneas de productos que el equipo ocultó (P14) y avisa una sola vez
+ * (`listCartRemovingHidden`). Un prefetch que renderizara esta página gastaría el aviso en una
+ * página que la persona no vio, y aquí no se puede distinguir: Next oculta `next-router-prefetch` a
+ * `headers()`. Hoy no pasa porque `loading.tsx` corta el prefetch automático de `<Link>` antes de la
+ * página; no uses `prefetch={true}` ni `router.prefetch` hacia /carrito.
+ */
 export default async function CartPage() {
   const viewer = await requireViewer("/carrito");
   await expireStaleCheckouts(new Date(), viewer.userId);
-  const lines = await getCartLines(viewer.userId);
+  const { lines, removedHidden } = await listCartRemovingHidden(viewer.userId);
+  // Se avisa sin decir por qué (no se revela la moderación).
+  const removedNotice = removedHiddenNotice(removedHidden);
   // Envío a domicilio por vendedor con la misma regla del checkout (P2); si el vendedor no envía,
   // su entrega (local o en persona) no tiene costo.
   const groups = groupBySeller(lines).map((group) => {
@@ -37,6 +51,15 @@ export default async function CartPage() {
   return (
     <>
       <PageHeader title="Carrito" description="Un pedido por vendedor; pagas todo junto." />
+      {removedNotice ? (
+        <p
+          role="status"
+          className="mx-4 mb-4 flex items-start gap-2 rounded-2xl border bg-secondary p-3 text-sm md:mx-0"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span>{removedNotice}</span>
+        </p>
+      ) : null}
       {lines.length === 0 ? (
         <div className="px-4 md:px-0">
           <EmptyState

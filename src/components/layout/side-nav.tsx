@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, ShieldCheck, Sparkles } from "lucide-react";
 import { unreadLabel, unreadSpokenLabel } from "@/modules/social/unread-labels";
 import type { Route } from "next";
 import Link from "next/link";
@@ -283,6 +283,25 @@ function ToSell({ signedIn }: { signedIn: boolean }) {
   );
 }
 
+/** Entrada al área del equipo, al final de la columna. Solo se pinta para ADMIN. */
+function ToAdmin({ active }: { active: boolean }) {
+  return (
+    <div className={sectionClass}>
+      <Link
+        href="/admin/resumen"
+        title="Administración"
+        aria-current={active ? "page" : undefined}
+        className={cn(rowClass, active && "bg-secondary")}
+      >
+        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary text-ink-2">
+          <ShieldCheck className="size-[17px]" aria-hidden="true" />
+        </span>
+        <span className={cn(railLabel, "lg:flex-1")}>Administración</span>
+      </Link>
+    </div>
+  );
+}
+
 function AllCommunities({ communities }: { communities: NavCommunities }) {
   if (communities.items.length === 0) return null;
   return (
@@ -355,6 +374,7 @@ export function SideNav({
       )}
       {/* También para visitantes (maqueta visitor): entre 1024 y 1279 px es su única entrada. */}
       <ToSell signedIn={viewer !== null} />
+      {viewer?.isAdmin ? <ToAdmin active={pathname.startsWith("/admin")} /> : null}
 
       <div className="mt-3 flex items-center justify-center border-t pt-3 lg:justify-between lg:border-t-0 lg:pt-0 lg:pl-3">
         <p className="hidden text-xs text-muted-foreground lg:block">Hecho en México</p>

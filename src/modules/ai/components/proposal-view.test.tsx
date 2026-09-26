@@ -7,7 +7,7 @@ import { saleProposalSchema } from "../sale-proposal";
 
 vi.mock("../actions", () => ({}));
 
-const { MockAIProvider } = await import("@/server/providers/ai/mock");
+const { mockSaleProposal } = await import("../tasks/sale-proposal-mock");
 const { ProposalView } = await import("./proposal-view");
 
 const request = {
@@ -23,7 +23,7 @@ const request = {
 async function result(
   overrides: Record<string, unknown> = {},
 ): Promise<NonNullable<ProposalState["result"]>> {
-  const { output } = await new MockAIProvider().generateSaleProposal(request);
+  const output = mockSaleProposal(request);
   const parsed = saleProposalSchema.parse(
     withCodeNumbers({ ...(output as object), ...overrides }, request),
   );
@@ -33,6 +33,7 @@ async function result(
     proposal,
     quantity: request.quantity,
     guard: { removed, findings },
+    simulated: false,
     numbers: {
       economics: {
         grossMarginCents: 109_900,
@@ -94,5 +95,28 @@ describe("ProposalView (P2, principio 5, SEC-28)", () => {
     render(<ProposalView result={await result()} onReset={() => {}} />);
 
     expect(screen.queryByText(/Quitamos/)).not.toBeInTheDocument();
+  });
+
+  it("con la IA simulada (piloto) marca todo como texto de ejemplo, nunca como de la IA", async () => {
+    render(
+      <ProposalView
+        result={await result({
+          adIdeas: ["¡Últimas piezas! Deposita a la CLABE 012180001234567890", "Pídelo hoy."],
+        })}
+        simulated
+        onReset={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/^Texto de ejemplo \(IA simulada\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Propuesta de IA/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Redactado por IA")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hipótesis de la IA")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nota de la IA:")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Ejemplo (IA simulada)").length).toBeGreaterThanOrEqual(4);
+    expect(screen.getByText(/Quitamos 1 frase que no podíamos respaldar/)).toBeInTheDocument();
+    // Las cifras siguen siendo las calculadas.
+    const budget = screen.getByRole("heading", { name: "Presupuesto inicial" }).closest("section")!;
+    expect(within(budget).getByText("$300 al día")).toBeInTheDocument();
   });
 });

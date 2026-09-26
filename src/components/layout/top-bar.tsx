@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingCart,
 } from "lucide-react";
 import type { Route } from "next";
@@ -80,7 +81,7 @@ function MenuLink({
   );
 }
 
-/** Menú del avatar: perfil, pedidos, ajustes y cerrar sesión. */
+/** Menú del avatar: perfil, pedidos, ajustes, Administración (solo el equipo) y cerrar sesión. */
 function AccountMenu({ viewer }: { viewer: Viewer }) {
   const [signingOut, startSignOut] = useTransition();
   const seed = viewer.username ?? viewer.displayName;
@@ -123,6 +124,12 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
         <MenuLink href="/ajustes" icon={Settings}>
           Ajustes
         </MenuLink>
+        {/* Solo el equipo (ADMIN): a los demás ni la llave les llega (`getViewerSummary`). */}
+        {viewer.isAdmin ? (
+          <MenuLink href="/admin/resumen" icon={ShieldCheck}>
+            Administración
+          </MenuLink>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className={menuItemClass}

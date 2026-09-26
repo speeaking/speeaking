@@ -73,8 +73,9 @@ class ExplainableRecommendationEngine implements RecommendationEngine {
             : [],
         )
       : loadCandidates(asOf, { communityId });
+    // Con experimentos en curso (motor de automejora), quien quedó en el tratamiento ve su variante.
     const [policy, candidates, context] = await Promise.all([
-      getFeedPolicy(),
+      getFeedPolicy(viewerId),
       candidatesPromise,
       contextPromise,
     ]);

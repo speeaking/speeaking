@@ -14,6 +14,7 @@ import { CommentForm } from "@/modules/social/components/comment-form";
 import { JoinButton } from "@/modules/social/components/join-button";
 import { PostCard } from "@/modules/social/components/post-card";
 import { hydratePosts } from "@/modules/social/post-queries";
+import { ReportButton } from "@/modules/trust/components/report-button";
 
 async function loadPost(id: string, viewerId: string | null) {
   if (!z.uuid().safeParse(id).success) return null;
@@ -82,6 +83,17 @@ export default async function PostPage({ params, searchParams }: PageProps<"/p/[
         initialMediaIndex={photo.success ? photo.data - 1 : 0}
         isSignedIn={viewer !== null}
       />
+      {/* Reportar (P14): anónimo para quien publicó; lo propio no se reporta. */}
+      {post.author.userId !== viewerId ? (
+        <div className="-mt-2 flex justify-end px-4 md:px-0">
+          <ReportButton
+            targetType="POST"
+            targetId={post.id}
+            isSignedIn={viewer !== null}
+            returnTo={postPath}
+          />
+        </div>
+      ) : null}
       {viewer ? null : <JoinPrompt postPath={postPath} community={community} />}
       <section aria-labelledby="comentarios" className="flex flex-col gap-4 px-4 md:px-0">
         <h2 id="comentarios" className="text-lg font-bold">

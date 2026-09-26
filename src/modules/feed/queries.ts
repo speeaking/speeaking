@@ -1,4 +1,5 @@
 import "server-only";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import type { Candidate, IntentQuery, IntentSignal, ViewerContext } from "./ranking";
 import { categoryIntentScores } from "./ranking";
@@ -40,7 +41,10 @@ export async function loadCandidates(
       publishedAt: { lte: asOf, gte: new Date(asOf.getTime() - CANDIDATE_WINDOW_DAYS * DAY) },
       ...(filter.communityId ? { communityId: filter.communityId } : {}),
       ...(filter.authorIds ? { authorId: { in: [...filter.authorIds] } } : {}),
-      OR: [{ productId: null }, { product: { status: "ACTIVE", stock: { gt: 0 } } }],
+      OR: [
+        { productId: null },
+        { product: { status: "ACTIVE", stock: { gt: 0 }, ...VISIBLE_PRODUCT } },
+      ],
     },
     orderBy: { publishedAt: "desc" },
     take: MAX_CANDIDATES,
@@ -222,7 +226,10 @@ export async function listRecentCommunityPostIds(
       communityId,
       id: { not: excludePostId },
       publishedAt: { lte: now },
-      OR: [{ productId: null }, { product: { status: "ACTIVE", stock: { gt: 0 } } }],
+      OR: [
+        { productId: null },
+        { product: { status: "ACTIVE", stock: { gt: 0 }, ...VISIBLE_PRODUCT } },
+      ],
     },
     orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
     take: limit,

@@ -124,8 +124,8 @@ fundador lo apruebe. Cada cambio se hará por fases y pasará `pnpm check`, `pnp
         (solo tras el umbral de tráfico)  adoptar requiere tu OK      aprobar · rechazar · revertir
                       └──────────────────► applySettingChange() ◄───────────────────────────────────┘
                                              │ PlatformSetting v+1 · PlatformDecision APPLIED
-                           Monitor de salvaguardas (cada hora) → si algo empeora: revertir + REVERTED
-                           Interruptor general: platform.autonomy = off | observe | low-risk
+                           Monitor de salvaguardas (diario) → si algo empeora (y es significativo): revertir + REVERTED
+                           Interruptor general: platform.autonomy = observer | low_risk («apagado» = observer)
 ```
 
 | Componente              | Qué hace                                                                                                   | Datos nuevos                                                                                                     | Cuándo                                  |
@@ -149,7 +149,7 @@ fundador lo apruebe. Cada cambio se hará por fases y pasará `pnpm check`, `pnp
 
 ### 2.4 Qué decide la IA sola y qué apruebas tú
 
-**Durante el piloto, el IA CEO solo propone.** Pasa a «riesgo bajo» (`platform.autonomy = low-risk`)
+**Durante el piloto, el IA CEO solo propone.** Pasa a «riesgo bajo» (`platform.autonomy = low_risk`)
 únicamente cuando se cumpla el umbral de tráfico de abajo y tú lo apruebes.
 
 | Parámetro                                                                                                                        | Límite en el código                 | Paso máximo | Riesgo    | Autonomía (tras el umbral)                                                                                                                          |

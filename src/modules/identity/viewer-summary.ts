@@ -8,6 +8,8 @@ export type ViewerSummary = {
   avatarUrl: string | null;
   isSeller: boolean;
   onboarded: boolean;
+  /** Presente (y `true`) solo para el equipo (rol ADMIN); para los demás la llave no existe. */
+  isAdmin?: true;
   cartCount: number;
   /**
    * Sus comunidades, las más recientes primero (máximo 8). `unread`: publicaciones nuevas desde

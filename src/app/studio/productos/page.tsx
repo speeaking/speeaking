@@ -1,4 +1,12 @@
-import { CheckCircle2, Package, Pencil, Plus, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  EyeOff,
+  Package,
+  Pencil,
+  Plus,
+  ShieldQuestion,
+  Sparkles,
+} from "lucide-react";
 import type { Metadata, Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +24,7 @@ import { listSellerProducts } from "@/modules/catalog/queries";
 import { toggleTargetFor } from "@/modules/catalog/status";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { SELLER_AUTHENTICITY_LABELS, SELLER_NOT_DECLARED_LABEL } from "@/modules/trust/labels";
 
 export const metadata: Metadata = { title: "Productos" };
 
@@ -72,6 +81,14 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
         <ul className="flex flex-col gap-3">
           {products.map((product) => {
             const toggle = toggleTargetFor(product.status);
+            // Riesgo alto sin declararse original: se pide corregir la marca, no un comprobante.
+            const fixBrand =
+              product.authenticityStatus === "NEEDS_PROOF" && !product.declaredOriginal;
+            const authenticityLabel = fixBrand
+              ? SELLER_NOT_DECLARED_LABEL
+              : product.authenticityStatus
+                ? SELLER_AUTHENTICITY_LABELS[product.authenticityStatus]
+                : null;
             return (
               <li
                 key={product.id}
@@ -110,6 +127,18 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
                       <Badge variant={STATUS_BADGES[product.status]}>
                         {STATUS_LABELS[product.status]}
                       </Badge>
+                      {product.hidden ? (
+                        <Badge variant="outline">
+                          <EyeOff data-icon="inline-start" />
+                          Oculto por moderación
+                        </Badge>
+                      ) : null}
+                      {authenticityLabel ? (
+                        <Badge variant="outline">
+                          <ShieldQuestion data-icon="inline-start" />
+                          {authenticityLabel}
+                        </Badge>
+                      ) : null}
                       {product.stock} en inventario · {product.saveCount} guardados
                     </span>
                   </span>
@@ -123,6 +152,16 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
                     <Pencil data-icon="inline-start" />
                     Editar<span className="sr-only"> {product.title}</span>
                   </Link>
+                  {product.authenticityStatus === "NEEDS_PROOF" ? (
+                    <Link
+                      href={`/studio/productos/${product.id}/autenticidad` as Route}
+                      className={cn(buttonVariants({ variant: "secondary" }), "h-11 px-4")}
+                    >
+                      <ShieldQuestion data-icon="inline-start" />
+                      {fixBrand ? "Ver revisión" : "Subir comprobante"}
+                      <span className="sr-only"> de {product.title}</span>
+                    </Link>
+                  ) : null}
                   {toggle ? (
                     <ProductStatusToggle
                       productId={product.id}

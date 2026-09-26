@@ -29,9 +29,19 @@ const nextConfig: NextConfig = {
   // La barra inferior móvil ocupa ambas esquinas; los errores de compilación se siguen mostrando.
   devIndicators: false,
   images: {
-    // El optimizador solo procesa las fotos subidas (`/media/<clave>`), sin query string (SEC-35).
-    // Ningún origen remoto y nunca SVG.
-    localPatterns: [{ pathname: "/media/**", search: "" }],
+    // Las fotos subidas NO pasan por el optimizador de Next (`/_next/image`): guardaba copias propias
+    // y las seguía sirviendo después de ocultar o borrar la foto. `next/image` las pide a nuestra
+    // ruta `/media/<clave>?w=<ancho>` (`src/lib/image-loader.ts`), que autoriza cada petición
+    // (ADR-039). Con un loader propio, `/_next/image` responde 404 a todo.
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
+    // Juntos son `MEDIA_WIDTHS` de `src/lib/image-loader.ts` (los únicos anchos que acepta `/media`),
+    // así el `srcset` no repite URLs. `image-loader.test.ts` comprueba que coincidan.
+    imageSizes: [256, 384],
+    deviceSizes: [640, 828, 1080, 1600],
+    // Defensa en profundidad si alguien vuelve al loader por omisión: el optimizador no aceptaría
+    // ninguna ruta propia (Next solo agrega sus imports estáticos), ningún origen remoto ni SVG.
+    localPatterns: [],
     remotePatterns: [],
     dangerouslyAllowSVG: false,
   },

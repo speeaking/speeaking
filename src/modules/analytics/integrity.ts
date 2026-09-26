@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac } from "node:crypto";
 import type { AnalyticsEventType } from "@/generated/prisma/enums";
+import { countsAsAiGeneration } from "@/modules/ai/tasks/simulation";
 import { ipNetwork } from "@/server/client-ip";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
@@ -14,13 +15,18 @@ import type { TrackedEvent } from "./event";
  * 1. **Referencias verificadas.** Un SHARE solo cuenta si la publicación está publicada o el producto
  *    tiene página pública; `sourcePostId` en un evento de producto solo se conserva si esa publicación
  *    existe, está publicada y es de ESE producto (si no, el evento queda sin atribución); un
- *    AI_PROPOSAL_ACCEPTED solo si la propuesta (`metadata.responseId`) es de quien la acepta.
+ *    AI_PROPOSAL_ACCEPTED solo si la propuesta (`metadata.responseId`) es de quien la acepta. Una
+ *    propuesta de la IA SIMULADA (plantilla sin modelo, ADR-038) no es una generación de IA: sus
+ *    AI_PROPOSAL_GENERATED y AI_PROPOSAL_ACCEPTED no se guardan.
  * 2. **Uno por persona, entidad y ventana.** Impresiones, vistas y compartidos repetidos no suman: la
  *    persona es la cuenta o, sin sesión, la IP (IPv6 por /64). La llave es un HMAC (con el secreto
  *    del servidor) de persona + entidad, así `rate_limit_buckets` no guarda quién vio qué.
  * 3. **Sin persona ni IP** (`TRUSTED_PROXY_HOPS=0`) no se puede deduplicar: vistas e impresiones
  *    anónimas tienen un tope por entidad y hora, y los compartidos anónimos se descartan (no inflan
  *    «Compartidos»).
+ * 4. **Impresiones visibles** (`VISIBLE_IMPRESSION`, T5) nunca entran por aquí: solo las registra
+ *    `recordVisibleImpressions` (`visible-impressions.ts`), que exige que la pieza se haya servido.
+ *    La cubeta de deduplicación de la pieza SERVIDA (`servedImpressionKey`) le sirve de comprobante.
  */
 
 const HOUR = 60 * 60;
@@ -60,7 +66,10 @@ export async function filterTrustedEvents(
   events: readonly TrackedEvent[],
   { ip }: TrackContext,
 ): Promise<TrackedEvent[]> {
-  const verified = await verifyReferences(events);
+  // Una impresión visible sin comprobar que se sirvió inflaría el umbral del motor (ADR-037).
+  const verified = await verifyReferences(
+    events.filter((event) => event.type !== "VISIBLE_IMPRESSION"),
+  );
   const actorFromIp = ip ? ipNetwork(ip) : null;
   const kept: TrackedEvent[] = [];
   // En serie: pocos eventos por llamada (≤ 10 impresiones por página) y corre en `after`.
@@ -83,7 +92,7 @@ async function verifyReferences(events: readonly TrackedEvent[]): Promise<Tracke
       add(event.entityType === "PRODUCT" ? productIds : postIds, event.entityId);
     }
     if (event.entityType === "PRODUCT") add(postIds, event.sourcePostId);
-    const responseId = acceptedResponseId(event);
+    const responseId = proposalResponseId(event);
     if (responseId) responseIds.add(responseId);
   }
 
@@ -103,7 +112,7 @@ async function verifyReferences(events: readonly TrackedEvent[]): Promise<Tracke
     responseIds.size > 0
       ? db.aIResponse.findMany({
           where: { id: { in: [...responseIds] } },
-          select: { id: true, request: { select: { userId: true } } },
+          select: { id: true, request: { select: { userId: true, provider: true } } },
         })
       : [],
   ]);
@@ -111,6 +120,11 @@ async function verifyReferences(events: readonly TrackedEvent[]): Promise<Tracke
   const publicProducts = new Set(products.map((product) => product.id));
   const responseOwners = new Map(
     responses.map((response) => [response.id, response.request.userId]),
+  );
+  const simulatedResponses = new Set(
+    responses
+      .filter((response) => !countsAsAiGeneration(response.request.provider))
+      .map((response) => response.id),
   );
 
   return events.flatMap((event) => {
@@ -122,6 +136,8 @@ async function verifyReferences(events: readonly TrackedEvent[]): Promise<Tracke
           : publishedPosts.has(entityId);
       if (!visible) return [];
     }
+    const proposalId = proposalResponseId(event);
+    if (proposalId && simulatedResponses.has(proposalId)) return [];
     if (event.type === "AI_PROPOSAL_ACCEPTED") {
       const responseId = acceptedResponseId(event);
       if (!responseId || !event.userId || responseOwners.get(responseId) !== event.userId) {
@@ -144,7 +160,7 @@ async function isFirstInWindow(event: TrackedEvent, actorFromIp: string | null) 
   if (windowSeconds === undefined || !target) return true;
   const scope = `evt.${event.type.toLowerCase()}`;
 
-  const actor = event.userId ? `user:${event.userId}` : actorFromIp ? `ip:${actorFromIp}` : null;
+  const actor = eventActor(event.userId, actorFromIp);
   if (!actor) {
     const cap = ANONYMOUS_CAP_PER_HOUR[event.type];
     if (cap === undefined) return false;
@@ -155,8 +171,25 @@ async function isFirstInWindow(event: TrackedEvent, actorFromIp: string | null) 
   return (await rateLimit({ key, limit: 1, windowSeconds })).ok;
 }
 
+/**
+ * Quién hace el evento para deduplicar: la cuenta o, sin sesión, la red de su IP (`ipNetwork`).
+ * `null` si no hay ninguna (sin proxies de confianza).
+ */
+export function eventActor(userId: string | null | undefined, network: string | null) {
+  return userId ? `user:${userId}` : network ? `ip:${network}` : null;
+}
+
+/**
+ * Llave de la cubeta que deduplica la impresión SERVIDA de una publicación para `actor` (una por
+ * hora). Mientras no vence, prueba que a ese actor se le sirvió la pieza en la última hora: la usa
+ * `recordVisibleImpressions` como comprobante, sin guardar quién vio qué.
+ */
+export function servedImpressionKey(actor: string, postId: string) {
+  return `evt.impression:${digest([actor, "POST", postId, ""])}`;
+}
+
 /** HMAC corto (128 bits) con el secreto del servidor: sin él no se sabe qué persona ni qué entidad. */
-function digest(parts: string[]) {
+export function digest(parts: string[]) {
   return createHmac("sha256", env.BETTER_AUTH_SECRET)
     .update(`vendeia:event-dedupe:v1|${parts.join("|").toLowerCase()}`)
     .digest("hex")
@@ -171,7 +204,12 @@ function channelOf(event: TrackedEvent) {
 }
 
 function acceptedResponseId(event: TrackedEvent): string | null {
-  if (event.type !== "AI_PROPOSAL_ACCEPTED") return null;
+  return event.type === "AI_PROPOSAL_ACCEPTED" ? proposalResponseId(event) : null;
+}
+
+/** `metadata.responseId` de un evento de propuesta de IA (generada o aceptada). */
+function proposalResponseId(event: TrackedEvent): string | null {
+  if (event.type !== "AI_PROPOSAL_ACCEPTED" && event.type !== "AI_PROPOSAL_GENERATED") return null;
   const metadata = event.metadata;
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
   const responseId = (metadata as Record<string, unknown>).responseId;

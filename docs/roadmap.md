@@ -3,9 +3,18 @@
 Estados: ✅ hecho · 🟡 parcial · ⏳ pendiente. Cada fase cierra con typecheck, lint, formato, pruebas,
 build y revisión de rutas/UX; si algo falla se corrige antes de avanzar.
 
-Verificación vigente (2026-09-26, tras la auditoría y sus correcciones): 1,214 pruebas unitarias y de
-componentes, 119 pruebas E2E (móvil y escritorio; 7 omitidas por ser de un solo tamaño), typecheck,
-lint, formato y build de producción en verde. Seguridad: ver `security/auditoria-2026-09-26.md`.
+**Verificación vigente (ronda de autonomía, cerrada el 2026-09-26):**
+
+- Pruebas unitarias y de componentes (`pnpm test`): 1,945 pasan · 0 fallan (178 archivos; las de base de datos corren en serie).
+- Pruebas E2E (`pnpm test:e2e`, móvil y escritorio): 147 pasan · 8 omitidas (de un solo tamaño) · 1 inestable bajo carga en la corrida completa (`product-edit`), que pasa 4/4 sola; se blindó la espera y volvió a pasar.
+- `pnpm typecheck`, `pnpm lint` y `pnpm format:check`: verde.
+- `pnpm build`: verde.
+- Corrida: 2026-09-26 (hora de México) · commit «feat: motor de automejora…» (ver `git log`).
+
+Verificación anterior (2026-09-26, tras la auditoría y sus correcciones): 1,214 pruebas unitarias y
+de componentes, 119 pruebas E2E (móvil y escritorio; 7 omitidas por ser de un solo tamaño),
+typecheck, lint, formato y build de producción en verde. Seguridad: ver
+`security/auditoria-2026-09-26.md`.
 
 ## Sprint 1 — Fundación ✅
 
@@ -36,11 +45,11 @@ al feed, crear publicación, crear producto, ver producto, entrar al dashboard y
 | Fotos a proporción completa: collage estilo Facebook en el feed (1–4, «+N») y carrusel en la publicación y el producto                           | ✅     |
 | Búsqueda global `/buscar` (comunidades, productos y publicaciones) y Comprar con la misma búsqueda: por palabras, sin acentos, SQL parametrizado | ✅     |
 | Estados de carga con la forma de cada página (Comprar, producto, carrito y checkout)                                                             | ✅     |
-| Índices de búsqueda (trigramas) o búsqueda semántica y filtros de precio/ubicación                                                               | ⏳     |
+| Índices de búsqueda (trigramas, SEC-32) ✅; búsqueda semántica y filtros de precio/ubicación ⏳                                                  | 🟡     |
 | Webhook real de pagos (`/api/payments/webhook/[provider]`) al conectar Mercado Pago/Stripe                                                       | ⏳     |
 | Video (`MediaProcessor` + proveedor gestionado)                                                                                                  | ⏳     |
-| Moderación mínima: reportar, ocultar, rol de administración                                                                                      | ⏳     |
-| Centro de decisiones del motor de automejora y experimentos                                                                                      | ⏳     |
+| Moderación mínima: reportar, ocultar, rol de administración (ver Autonomía)                                                                      | ✅     |
+| Centro de decisiones del motor de automejora y experimentos (ver Autonomía)                                                                      | ✅     |
 
 ### Rediseño del inicio («Revista» + lo mejor de «Plaza») ✅
 
@@ -58,11 +67,44 @@ Detalle en [`design/rediseno-revista.md`](design/rediseno-revista.md).
 | F6b · «Gente de tus comunidades»: datos, ajuste de privacidad, columna y carrusel en el feed          | ✅     |
 | F7 · Novedades por comunidad («N nuevas»)                                                             | ✅     |
 
-## Sprint 3 — IA real (fases 11–12) ⏳
+## Sprint 3 — IA real (fases 11–12) 🟡
 
-Adaptador real de `AIProvider` (propuesta: Claude vía SDK oficial con salida estructurada), generación
-de contenido y variantes, cuotas por plan, evaluación de calidad de propuestas, analista diario del motor
-de automejora.
+Hecho (ADR-034): adaptador `openai_compatible` (modelo abierto pagado por uso en un servidor externo,
+sin SDK), modelo por tarea con `ai.routing`, cuotas por persona (10 al día, 30 al mes), evaluaciones
+(`pnpm ai:eval`), kit de anuncios y analista diario del motor de automejora (plantilla; la IA solo
+redactaría). Pendiente: llaves reales, primera evaluación aprobada por tarea con el modelo elegido y
+variantes de contenido. Hoy todo corre con la IA simulada (en producción solo con
+`ALLOW_SIMULATED_AI=true`, ADR-038).
+
+## Autonomía (CEO-IA) 🟡
+
+Motor de automejora (ADR-019, ADR-033, ADR-037), confianza y moderación (ADR-036), IA por tarea
+(ADR-034, ADR-038) y área del equipo (ADR-035). La IA propone; el código mide, aplica dentro de
+límites y revierte; adoptar lo de riesgo medio y aprobar lo de riesgo alto requiere a una persona.
+Pagos, precios, comisiones y gasto quedan fuera de su alcance.
+
+| Entregable                                                                                                               | Estado |
+| ------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Rol ADMIN en el perfil, páginas de `/admin` con la página 404 de una ruta inexistente y script `make-admin`              | ✅     |
+| Métricas diarias (`DailyMetric`), analista con estadística determinista y propuestas con nivel de riesgo                 | ✅     |
+| Modos `observer` / `low_risk`, congelamiento en fechas pico, umbral de tráfico y `applySettingChange` con reversión      | ✅     |
+| Experimentos con asignación por persona y salvaguardas con reversión automática                                          | ✅     |
+| Centro de decisiones: `/admin/resumen`, `/admin/decisiones`, `/admin/experimentos`                                       | ✅     |
+| Operación diaria: `pnpm ops:daily` y `/api/cron/daily` con `CRON_SECRET`, cada paso en `JobRun`                          | ✅     |
+| Riesgo de falsificación por reglas, reportes, comprobante del vendedor y cola `/admin/moderacion`                        | ✅     |
+| IA por API compatible con OpenAI, `ai.routing`, evaluaciones, `/admin/ia` y kit de anuncios                              | ✅     |
+| El arranque en producción falla con IA simulada salvo `ALLOW_SIMULATED_AI=true`                                          | ✅     |
+| Impresiones visibles (T5) aceptadas solo si la pieza se sirvió y salvaguardas con prueba estadística (ADR-037)           | ✅     |
+| El motor decide solo con personas con sesión (umbral, salvaguardas, analista y experimentos; ADR-037)                    | ✅     |
+| Detectar robots y tráfico anómalo de cuentas (plan §2.3; el tráfico sin cuenta ya no mueve decisiones)                   | ⏳     |
+| Aviso de privacidad y términos 2026-09-27 y aviso para volver a aceptarlos al cambiar de versión                         | ✅     |
+| Plazos máximos de conservación de actividad, reportes y comprobantes (marcados como pendientes en el aviso)              | ⏳     |
+| Interruptor de la IA sin plantillas: con la ruta al simulador en producción, avisar o publicar a mano (ADR-038)          | ⏳     |
+| Programar la operación diaria en el hosting (Vercel Cron o cron del VPS, ver `architecture.md` → Operación)              | ⏳     |
+| 2FA y reautenticación reciente para ADMIN (antes de abrir a la zona)                                                     | ⏳     |
+| Llaves reales de IA, primera evaluación aprobada por tarea y nombre legal y país del proveedor en el aviso de privacidad | ⏳     |
+| Proveedor de correo: verificación de cuenta (SEC-10), recuperar contraseña y avisos de pedido                            | ⏳     |
+| Registro de 5xx, monitor de salvaguardas cada hora, `Narrator` con IA y alerta si la operación diaria no corre           | ⏳     |
 
 ## Sprint 4 — Crecer (fases 13–14) ⏳
 

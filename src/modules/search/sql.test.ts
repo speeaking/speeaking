@@ -68,6 +68,23 @@ describe("filtros de visibilidad", () => {
     expect(postSearchSql(["receta"]).text).toContain(`p."status" = 'PUBLISHED'`);
   });
 
+  it("nunca productos ocultos por moderación, tampoco en la ventana sin índice", () => {
+    for (const statement of [productSearchSql(["tenis"]), productSearchSql(["tv"])]) {
+      expect(statement.text).toContain(`p."moderationStatus" = 'VISIBLE'`);
+    }
+    expect(productSearchSql(["tv"]).text).toContain(`r."moderationStatus" = 'VISIBLE'`);
+  });
+
+  it("nunca publicaciones de un producto oculto, tampoco en la ventana sin índice", () => {
+    for (const statement of [postSearchSql(["receta"]), postSearchSql(["tv"])]) {
+      const text = statement.text.replace(/\s+/g, " ");
+      expect(text).toContain(
+        `p."productId" IS NULL OR EXISTS ( SELECT 1 FROM "products" pr WHERE pr."id" = p."productId" AND pr."moderationStatus" = 'VISIBLE' )`,
+      );
+    }
+    expect(postSearchSql(["tv"]).text).toContain(`r."productId"`);
+  });
+
   it("los productos de una categoría: el slug también viaja como parámetro", () => {
     const hostile = "audio' OR '1'='1";
     const statement = productSearchSql(["audifonos"], 24, { categorySlug: hostile });

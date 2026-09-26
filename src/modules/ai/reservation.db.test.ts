@@ -43,7 +43,7 @@ async function createUser() {
 }
 
 /** Presupuesto del mes = lo ya comprometido en la base + exactamente `slots` llamadas más. */
-async function budgetWithRoomFor(slots: number, perHour = 500, perDay = 2_000) {
+async function budgetWithRoomFor(slots: number, perHour = 500, perDay = 2_000, perMonth = 5_000) {
   const committed = await committedSpendMicros(db, new Date(), estimate);
   // Medio micro-dólar de holgura: el límite se redondea hacia abajo tras pasar por dólares.
   const usd = (committed + slots * estimate + 0.5) / 1_000_000;
@@ -54,10 +54,11 @@ async function budgetWithRoomFor(slots: number, perHour = 500, perDay = 2_000) {
     revenueSharePercent: 0,
     maxRequestsPerUserPerHour: perHour,
     maxRequestsPerUserPerDay: perDay,
+    maxRequestsPerUserPerMonth: perMonth,
   };
 }
 
-function reserve(userId: string, budget: Awaited<ReturnType<typeof budgetWithRoomFor>>) {
+function reserve(userId: string | null, budget: Awaited<ReturnType<typeof budgetWithRoomFor>>) {
   return reserveAiRequest({
     userId,
     feature: "SALE_PROPOSAL",
@@ -130,7 +131,45 @@ describe.skipIf(!databaseUrl)("reserva del presupuesto de IA contra PostgreSQL (
     const results = [];
     for (let attempt = 0; attempt < 3; attempt += 1) results.push(await reserve(userId, budget));
 
-    expect(results).toEqual(["reservada", "reservada", "RATE_LIMITED"]);
+    expect(results).toEqual(["reservada", "reservada", "QUOTA_EXCEEDED"]);
+  });
+
+  it("la cuota mensual (ADR-033: 30) cuenta lo que llegó al proveedor, no lo bloqueado", async () => {
+    const budget = await budgetWithRoomFor(50, 100, 100, 2);
+    const userId = await createUser();
+    await db.aIRequest.create({
+      data: {
+        userId,
+        feature: "SALE_PROPOSAL",
+        provider: "test",
+        model: priced.model,
+        promptVersion: priced.promptVersion,
+        input: {},
+        status: "BLOCKED_BUDGET",
+      },
+    });
+    const results = [];
+    for (let attempt = 0; attempt < 3; attempt += 1) results.push(await reserve(userId, budget));
+
+    expect(results).toEqual(["reservada", "reservada", "QUOTA_EXCEEDED"]);
+    const error = await reserveAiRequest({
+      userId,
+      feature: "CONTENT_GENERATION",
+      provider: priced,
+      input: {},
+      budget,
+    }).catch((caught: unknown) => caught);
+    // Suma todas las funciones de IA y dice cuánto falta para el mes siguiente.
+    expect(error).toMatchObject({ code: "QUOTA_EXCEEDED", scope: "month" });
+    expect((error as InstanceType<typeof AIError>).retryAfterSeconds).toBeGreaterThan(0);
+  });
+
+  it("las tareas del sistema (sin persona) no tienen cuota por persona, pero sí presupuesto", async () => {
+    const budget = await budgetWithRoomFor(2, 1, 1, 1);
+    const results = [];
+    for (let attempt = 0; attempt < 3; attempt += 1) results.push(await reserve(null, budget));
+
+    expect(results).toEqual(["reservada", "reservada", "BUDGET_EXCEEDED"]);
   });
 
   it("un modelo sin precio no se llama ni se registra (fallaría después de gastar)", async () => {

@@ -224,7 +224,10 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
 
     const anonymous = await fetch(`${baseURL}${attachedUrl}`);
     expect(anonymous.status).toBe(200);
-    expect(anonymous.headers.get("cache-control")).toBe("public, max-age=86400");
+    // Sin `immutable`: ocultar una foto surte efecto en navegadores en máximo una hora (ADR-039).
+    expect(anonymous.headers.get("cache-control")).toBe(
+      "public, max-age=3600, stale-while-revalidate=86400",
+    );
     expect(anonymous.headers.get("content-type")).toBe("image/webp");
     // La otra sigue privada.
     expect((await fetch(`${baseURL}${orphanUrl}`)).status).toBe(404);

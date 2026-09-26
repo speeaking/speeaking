@@ -1,5 +1,6 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { MIN_VISIBLE_MEMBERS } from "./community-signal";
 import { LEGAL_VERSIONS } from "./constants";
@@ -126,20 +127,27 @@ export async function completeOnboarding(userId: string, input: OnboardingInput)
 
 /**
  * Publicaciones visibles de las comunidades que todavía no muestran su número de miembros, en una
- * sola consulta agrupada (sin N+1). `communityId` → publicaciones.
+ * sola consulta agrupada (sin N+1). `communityId` → publicaciones. Visibles = publicadas y sin
+ * producto o con su producto visible: las de un producto oculto por el equipo no cuentan (P14).
  */
 export async function countPostsOfNewCommunities() {
   const rows = await db.post.groupBy({
     by: ["communityId"],
-    where: { status: "PUBLISHED", community: { memberCount: { lt: MIN_VISIBLE_MEMBERS } } },
+    where: {
+      status: "PUBLISHED",
+      community: { memberCount: { lt: MIN_VISIBLE_MEMBERS } },
+      AND: [POST_WITH_VISIBLE_PRODUCT],
+    },
     _count: { _all: true },
   });
   return new Map(rows.map((row) => [row.communityId, row._count._all]));
 }
 
-/** Publicaciones visibles de una comunidad. */
+/** Publicaciones visibles de una comunidad (sin las de productos ocultos por el equipo, P14). */
 export function countCommunityPosts(communityId: string) {
-  return db.post.count({ where: { communityId, status: "PUBLISHED" } });
+  return db.post.count({
+    where: { communityId, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] },
+  });
 }
 
 /** Comunidades oficiales para el onboarding y Descubrir. */

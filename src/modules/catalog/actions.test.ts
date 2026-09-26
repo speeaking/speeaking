@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateProductAction } from "./actions";
+import { createProductAction, updateProductAction } from "./actions";
 
 // La acción solo traduce: quién edita sale de la sesión (nunca del formulario) y los errores del
 // servicio se vuelven mensajes. Las reglas de propiedad e inventario se prueban en service.test.
@@ -26,7 +26,29 @@ vi.mock("./service", () => service);
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
-vi.mock("@/server/db", () => ({ db: {} }));
+const { db, trust, background } = vi.hoisted(() => {
+  const tx = {
+    product: {
+      create: vi.fn(() => Promise.resolve({ id: "0199a000-0000-7000-8000-0000000000aa" })),
+    },
+    post: { create: vi.fn() },
+  };
+  return {
+    db: {
+      tx,
+      media: { findMany: vi.fn() },
+      category: { findUnique: vi.fn() },
+      community: { findUnique: vi.fn() },
+      $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
+    },
+    trust: { evaluateProductAuthenticity: vi.fn() },
+    background: { scheduleAuthenticityAiSignal: vi.fn() },
+  };
+});
+vi.mock("@/server/db", () => ({ db }));
+// Revisión de autenticidad (P14): la lógica vive en src/modules/trust; aquí, que se llame.
+vi.mock("@/modules/trust/service", () => trust);
+vi.mock("@/modules/trust/background", () => background);
 
 const SELLER = "0199a000-0000-7000-8000-00000000000a";
 const OTHER = "0199a000-0000-7000-8000-00000000000f";
@@ -67,6 +89,25 @@ beforeEach(() => {
   session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
 });
 
+describe("createProductAction", () => {
+  it("revisa la autenticidad del producto nuevo antes de mostrarlo (P14)", async () => {
+    session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
+    db.media.findMany.mockResolvedValue([{ id: uuid }]);
+    db.category.findUnique.mockResolvedValue({ id: uuid });
+    const created = "0199a000-0000-7000-8000-0000000000aa";
+
+    await expect(
+      createProductAction({}, editForm({ title: "AirPods Pro réplica AAA", price: "300" })),
+    ).rejects.toThrow(/^redirect:\/producto\/airpods-pro-replica-aaa-[a-z0-9]+\?nuevo=1$/);
+    expect(trust.evaluateProductAuthenticity).toHaveBeenCalledWith(created);
+    expect(background.scheduleAuthenticityAiSignal).toHaveBeenCalledWith(created);
+    // Primero se guarda el producto, después se revisa.
+    expect(db.$transaction.mock.invocationCallOrder[0]!).toBeLessThan(
+      trust.evaluateProductAuthenticity.mock.invocationCallOrder[0]!,
+    );
+  });
+});
+
 describe("updateProductAction", () => {
   it("edita como la persona de la sesión y guarda con el inventario que se mostró", async () => {
     service.updateProduct.mockResolvedValue({ slug: "airpods-pro-2-abc123", status: "ACTIVE" });
@@ -81,6 +122,8 @@ describe("updateProductAction", () => {
       { stockShown: 5 },
     );
     expect(revalidatePath).toHaveBeenCalledWith("/producto/airpods-pro-2-abc123");
+    // La señal opcional de IA se pide después de responder (apagada por omisión).
+    expect(background.scheduleAuthenticityAiSignal).toHaveBeenCalledWith(PRODUCT);
   });
 
   it("un producto ajeno o un ID inválido no revela nada", async () => {

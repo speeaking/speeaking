@@ -1,10 +1,14 @@
 import type {
   Authenticity,
+  AuthenticityStatus,
   PaymentMethod,
   ProductCondition,
   ProductStatus,
+  RiskLevel,
   WarrantyType,
 } from "@/generated/prisma/enums";
+import { parseSignals } from "@/modules/trust/rules";
+import { type BuyerAuthenticityView, buyerAuthenticityView } from "@/modules/trust/status";
 import type { ProductFacts } from "./quick-answers";
 
 export type MediaDTO = {
@@ -35,6 +39,12 @@ export type PublicProductDTO = {
   };
   facts: ProductFacts;
   saveCount: number;
+  /**
+   * Lo que ve quien compra sobre la autenticidad (P14): la declaración del vendedor, «Autenticidad
+   * sin verificar» o «Comprobante revisado», y una nota neutral de riesgo. Nunca las señales, el
+   * puntaje ni los reportes (son internos).
+   */
+  authenticityReview: BuyerAuthenticityView;
 };
 
 /** Forma mínima de la fila que necesita el mapeo (sin costo). */
@@ -70,13 +80,41 @@ export type PublicProductRow = {
     acceptedPaymentMethods: PaymentMethod[];
     user: { profile: { username: string } | null };
   };
+  /**
+   * Revisión de autenticidad vigente (una por producto); `null` si aún no se evalúa. Obligatoria en
+   * el tipo: quien arme el DTO sin seleccionarla respondería «el vendedor declara que es original»
+   * aunque la ficha diga «Autenticidad sin verificar» (falla abierta).
+   */
+  authenticityCheck: {
+    status: AuthenticityStatus;
+    riskLevel: RiskLevel;
+    signals: unknown;
+  } | null;
 };
+
+/**
+ * Lo que ve quien compra sobre la autenticidad, a partir de la revisión vigente (P14). Una sola
+ * fuente para la etiqueta de la ficha, la respuesta de «¿Es original?» (`facts.authenticityClaim`) y
+ * cualquier otro texto hacia fuera (p. ej. el kit de anuncios): sin revisión, lo declarado.
+ */
+export function buyerAuthenticityOf(
+  authenticity: Authenticity,
+  check: PublicProductRow["authenticityCheck"],
+): BuyerAuthenticityView {
+  return buyerAuthenticityView(
+    authenticity,
+    check
+      ? { status: check.status, riskLevel: check.riskLevel, signals: parseSignals(check.signals) }
+      : null,
+  );
+}
 
 /**
  * Construye el DTO público campo por campo (lista blanca). Aunque la fila traiga más datos
  * —por ejemplo el costo— no pasan al navegador.
  */
 export function toPublicProduct(row: PublicProductRow, media: MediaDTO[]): PublicProductDTO {
+  const authenticityReview = buyerAuthenticityOf(row.authenticity, row.authenticityCheck);
   return {
     id: row.id,
     slug: row.slug,
@@ -111,9 +149,12 @@ export function toPublicProduct(row: PublicProductRow, media: MediaDTO[]): Publi
       warrantyDays: row.warrantyDays,
       returnWindowDays: row.returnWindowDays,
       authenticity: row.authenticity,
+      // «¿Es original?» dice lo mismo que la etiqueta de la ficha en cada estado de la revisión.
+      authenticityClaim: authenticityReview.claim,
       acceptedPaymentMethods: row.seller.acceptedPaymentMethods,
     },
     saveCount: row.saveCount,
+    authenticityReview,
   };
 }
 

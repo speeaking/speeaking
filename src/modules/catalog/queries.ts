@@ -1,6 +1,7 @@
 import "server-only";
 import type { SearchQuery } from "@/modules/search/normalize";
 import { productSearchSql } from "@/modules/search/sql";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { type MediaDTO, type PublicProductDTO, toPublicProduct } from "./dto";
@@ -32,6 +33,8 @@ const publicProductSelect = {
   warrantyDays: true,
   returnWindowDays: true,
   authenticity: true,
+  moderationStatus: true,
+  authenticityCheck: { select: { status: true, riskLevel: true, signals: true } },
   saveCount: true,
   categoryId: true,
   category: { select: { slug: true, name: true } },
@@ -74,10 +77,28 @@ function toMedia(
   }));
 }
 
-export async function getPublicProduct(slug: string) {
+/** Quién pide la página: su dueño y el equipo ven un producto oculto por moderación. */
+export type ProductPageAccess = { viewerUserId: string | null; isAdmin: boolean };
+
+/**
+ * Producto para su página pública. `null` si no existe, es borrador o archivado, o si el equipo
+ * lo ocultó (salvo para su dueño y para ADMIN, que ven un aviso). Sin `access`, un oculto es `null`
+ * (metadatos, vistas previas al compartir).
+ */
+export async function getPublicProduct(slug: string, access?: ProductPageAccess) {
   const row = await db.product.findUnique({ where: { slug }, select: publicProductSelect });
   if (!row || row.status === "DRAFT" || row.status === "ARCHIVED") return null;
-  return { product: toPublicProduct(row, toMedia(row.media)), categoryId: row.categoryId };
+  const hidden = row.moderationStatus === "HIDDEN";
+  if (hidden && !(access?.isAdmin || access?.viewerUserId === row.seller.userId)) return null;
+  return {
+    product: toPublicProduct(row, toMedia(row.media)),
+    categoryId: row.categoryId,
+    /** Solo servidor: para avisos a su dueño y al equipo (nunca se pasa a un componente cliente). */
+    moderation: {
+      hidden,
+      authenticityStatus: row.authenticityCheck?.status ?? null,
+    },
+  };
 }
 
 export type ProductCardDTO = Pick<
@@ -147,7 +168,7 @@ export async function listShopProducts({
   query?: SearchQuery | null;
   limit?: number;
 }): Promise<ProductCardDTO[]> {
-  const where = { status: "ACTIVE" as const, stock: { gt: 0 } };
+  const where = { status: "ACTIVE" as const, stock: { gt: 0 }, ...VISIBLE_PRODUCT };
   if (!query) {
     const rows = await db.product.findMany({
       where: {
@@ -187,7 +208,13 @@ export async function listShopProducts({
 
 export async function listRelatedProducts(categoryId: string, excludeId: string, limit = 6) {
   const rows = await db.product.findMany({
-    where: { status: "ACTIVE", stock: { gt: 0 }, categoryId, id: { not: excludeId } },
+    where: {
+      status: "ACTIVE",
+      stock: { gt: 0 },
+      ...VISIBLE_PRODUCT,
+      categoryId,
+      id: { not: excludeId },
+    },
     orderBy: { publishedAt: "desc" },
     take: limit,
     select: cardSelect,
@@ -211,6 +238,9 @@ export async function listSellerProducts(sellerId: string) {
       ...cardSelect,
       saveCount: true,
       cost: { select: { unitCostCents: true } },
+      authenticity: true,
+      moderationStatus: true,
+      authenticityCheck: { select: { status: true } },
     },
   });
   return rows.map((row) => ({
@@ -218,6 +248,11 @@ export async function listSellerProducts(sellerId: string) {
     status: row.status,
     stock: row.stock,
     saveCount: row.saveCount,
+    /** Oculto por el equipo: no aparece en nada público (el vendedor lo sigue viendo aquí). */
+    hidden: row.moderationStatus === "HIDDEN",
+    authenticityStatus: row.authenticityCheck?.status ?? null,
+    /** Solo a lo declarado original se le pide comprobante (P14). */
+    declaredOriginal: row.authenticity === "DECLARED_ORIGINAL",
     economics: unitEconomics({
       priceCents: row.priceCents,
       unitCostCents: row.cost?.unitCostCents ?? 0,
@@ -255,6 +290,8 @@ export async function getSellerProductForEdit(sellerUserId: string, productId: s
       warrantyDays: true,
       returnWindowDays: true,
       authenticity: true,
+      moderationStatus: true,
+      authenticityCheck: { select: { status: true } },
       cost: { select: { unitCostCents: true } },
       media: {
         orderBy: { position: "asc" },
@@ -275,6 +312,9 @@ export async function getSellerProductForEdit(sellerUserId: string, productId: s
     slug: row.slug,
     title: row.title,
     status: row.status,
+    hidden: row.moderationStatus === "HIDDEN",
+    authenticityStatus: row.authenticityCheck?.status ?? null,
+    declaredOriginal: row.authenticity === "DECLARED_ORIGINAL",
     defaults: editFormDefaults(row, media),
   };
 }

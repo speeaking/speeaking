@@ -8,6 +8,9 @@ import { z } from "zod";
 import { formatCount } from "@/lib/format";
 import { track } from "@/modules/analytics/track";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { scheduleAuthenticityAiSignal } from "@/modules/trust/background";
+import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
+import { evaluateProductAuthenticity } from "@/modules/trust/service";
 import { db } from "@/server/db";
 import { parseProductForm, productEditMetaSchema, productSlug } from "./schemas";
 import { ProductEditError, setProductStatus, updateProduct } from "./service";
@@ -19,6 +22,10 @@ export type ProductFormState = {
   /** Edición: inventario vigente cuando cambió mientras se editaba (reemplaza el que se mostró). */
   stockShown?: string;
 };
+
+/** Una foto de comprobante de autenticidad (P14) nunca se adjunta a un producto. */
+const PROOF_PHOTO =
+  "Esa foto no se puede usar en un producto: es un comprobante de autenticidad. Elige otra.";
 
 /** Crea un producto (con su costo privado y datos P4) y, si se pide, su publicación en el feed. */
 export async function createProductAction(
@@ -37,10 +44,16 @@ export async function createProductAction(
   }
   const input = parsed.data;
 
-  // Autorización: fotos propias; categoría y comunidad existentes.
+  // Autorización: fotos propias que no sean de un comprobante (P14); categoría y comunidad
+  // existentes. Toda foto enviada como comprobante tiene su fila en la bitácora (`proofHistory`).
   const [media, category, community] = await Promise.all([
     db.media.findMany({
-      where: { id: { in: input.mediaIds }, ownerId: viewer.userId, status: "READY" },
+      where: {
+        id: { in: input.mediaIds },
+        ownerId: viewer.userId,
+        status: "READY",
+        proofHistory: { none: {} },
+      },
       select: { id: true },
     }),
     db.category.findUnique({ where: { id: input.categoryId }, select: { id: true } }),
@@ -48,65 +61,83 @@ export async function createProductAction(
       ? db.community.findUnique({ where: { slug: input.communitySlug }, select: { id: true } })
       : null,
   ]);
-  if (media.length !== input.mediaIds.length) return { error: "Alguna foto no es válida." };
+  if (media.length !== input.mediaIds.length) {
+    // Una foto de comprobante (vigente o reemplazada) se explica aparte, sin un error de servidor.
+    const proofs = await proofMediaIdsAmong(db, input.mediaIds);
+    return { error: proofs.size > 0 ? PROOF_PHOTO : "Alguna foto no es válida." };
+  }
   if (!category) return { fieldErrors: { categoryId: ["Elige una categoría válida."] } };
 
   const slug = productSlug(input.title, randomBytes(4).toString("hex").slice(0, 6));
   const sellerProfileId = viewer.sellerProfileId;
   const now = new Date();
 
-  const createdId = await db.$transaction(async (tx) => {
-    const product = await tx.product.create({
-      data: {
-        sellerId: sellerProfileId,
-        slug,
-        title: input.title,
-        description: input.description,
-        priceCents: input.priceCents,
-        stock: input.stock,
-        status: input.stock > 0 ? "ACTIVE" : "SOLD_OUT",
-        categoryId: input.categoryId,
-        condition: input.condition,
-        tags: input.tags.map((tag) => tag.toLowerCase()),
-        city: input.city,
-        state: input.state,
-        pickupAvailable: input.pickupAvailable,
-        localDeliveryAvailable: input.localDeliveryAvailable,
-        localDeliveryZones: input.localDeliveryZones,
-        nationalShippingAvailable: input.nationalShippingAvailable,
-        shippingPriceCents: input.shippingPriceCents,
-        deliveryMinDays: input.deliveryMinDays,
-        deliveryMaxDays: input.deliveryMaxDays,
-        warrantyType: input.warrantyType,
-        warrantyDays: input.warrantyDays,
-        returnWindowDays: input.returnWindowDays,
-        authenticity: input.authenticity,
-        publishedAt: now,
-        cost: { create: { unitCostCents: input.unitCostCents } },
-        media: {
-          create: input.mediaIds.map((mediaId, position) => ({ mediaId, position })),
-        },
-      },
-      select: { id: true },
-    });
-
-    if (input.publishToFeed) {
-      await tx.post.create({
+  let createdId: string;
+  try {
+    createdId = await db.$transaction(async (tx) => {
+      const product = await tx.product.create({
         data: {
-          authorId: viewer.userId,
-          type: "PRODUCT",
-          body: input.postBody ?? `¡Nuevo! ${input.title}`,
-          productId: product.id,
-          communityId: community?.id ?? null,
+          sellerId: sellerProfileId,
+          slug,
+          title: input.title,
+          description: input.description,
+          priceCents: input.priceCents,
+          stock: input.stock,
+          status: input.stock > 0 ? "ACTIVE" : "SOLD_OUT",
+          categoryId: input.categoryId,
+          condition: input.condition,
+          tags: input.tags.map((tag) => tag.toLowerCase()),
+          city: input.city,
+          state: input.state,
+          pickupAvailable: input.pickupAvailable,
+          localDeliveryAvailable: input.localDeliveryAvailable,
+          localDeliveryZones: input.localDeliveryZones,
+          nationalShippingAvailable: input.nationalShippingAvailable,
+          shippingPriceCents: input.shippingPriceCents,
+          deliveryMinDays: input.deliveryMinDays,
+          deliveryMaxDays: input.deliveryMaxDays,
+          warrantyType: input.warrantyType,
+          warrantyDays: input.warrantyDays,
+          returnWindowDays: input.returnWindowDays,
+          authenticity: input.authenticity,
           publishedAt: now,
+          cost: { create: { unitCostCents: input.unitCostCents } },
           media: {
             create: input.mediaIds.map((mediaId, position) => ({ mediaId, position })),
           },
         },
+        select: { id: true },
       });
-    }
-    return product.id;
-  });
+
+      if (input.publishToFeed) {
+        await tx.post.create({
+          data: {
+            authorId: viewer.userId,
+            type: "PRODUCT",
+            body: input.postBody ?? `¡Nuevo! ${input.title}`,
+            productId: product.id,
+            communityId: community?.id ?? null,
+            publishedAt: now,
+            media: {
+              create: input.mediaIds.map((mediaId, position) => ({ mediaId, position })),
+            },
+          },
+        });
+      }
+      return product.id;
+    });
+  } catch (error) {
+    // Se guardó como comprobante entre la validación y el INSERT: el trigger
+    // `reject_proof_media_link` lo rechaza y la transacción se deshace (nada quedó creado).
+    if (isProofMediaLinkError(error)) return { error: PROOF_PHOTO };
+    throw error;
+  }
+
+  // Revisión de riesgo de falsificación (P14) antes de mostrar el producto: si el riesgo es alto,
+  // quien compra ya ve «Autenticidad sin verificar» y el vendedor la petición de comprobante. La
+  // señal opcional de la IA va después de responder.
+  await evaluateProductAuthenticity(createdId);
+  scheduleAuthenticityAiSignal(createdId);
 
   // P3: la propuesta de IA se convirtió en producto (se mide la utilidad real de la IA).
   const proposalId = formData.get("proposalId");
@@ -180,6 +211,7 @@ export async function updateProductAction(
       : { error: EDIT_MESSAGES[error.code], ...keep };
   }
 
+  scheduleAuthenticityAiSignal(productId);
   revalidatePath("/studio/productos");
   revalidatePath(`/producto/${slug}`);
   redirect("/studio/productos?guardado=1" as Route);

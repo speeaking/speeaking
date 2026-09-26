@@ -8,6 +8,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { Surface } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
+import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
 import { createPostSchema } from "./schemas";
@@ -203,6 +204,10 @@ export async function createCommentAction(
 
 export type CreatePostState = { error?: string; fieldErrors?: Partial<Record<string, string[]>> };
 
+const INVALID_IMAGE = "Alguna imagen no es válida.";
+const HIDDEN_PRODUCT =
+  "Ese producto está oculto por moderación y no se puede publicar. Revisa su estado en Studio → Productos.";
+
 export async function createPostAction(
   _previous: CreatePostState,
   formData: FormData,
@@ -233,22 +238,34 @@ export async function createPostAction(
     productId
       ? db.product.findFirst({
           where: { id: productId, seller: { userId: viewer.userId } },
-          select: { id: true },
+          select: { id: true, moderationStatus: true },
         })
       : null,
   ]);
-  if (media.length !== mediaIds.length) return { error: "Alguna imagen no es válida." };
+  if (media.length !== mediaIds.length) return { error: INVALID_IMAGE };
+  // Una foto de comprobante de autenticidad (vigente o reemplazada) nunca se publica (P14).
+  if ((await proofMediaIdsAmong(db, mediaIds)).size > 0) return { error: INVALID_IMAGE };
   if (productId && !product) return { error: "Ese producto no es tuyo." };
+  // Un producto oculto por moderación no se promociona (el selector ya no lo ofrece; esto cubre un
+  // formulario viejo o manipulado). El equipo lo revisa: el vendedor lo ve en Studio → Productos.
+  if (product?.moderationStatus === "HIDDEN") return { error: HIDDEN_PRODUCT };
 
-  const post = await db.post.create({
-    data: {
-      authorId: viewer.userId,
-      body,
-      communityId: community?.id ?? null,
-      productId: product?.id ?? null,
-      media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) },
-    },
-    select: { id: true },
-  });
+  let post: { id: string };
+  try {
+    post = await db.post.create({
+      data: {
+        authorId: viewer.userId,
+        body,
+        communityId: community?.id ?? null,
+        productId: product?.id ?? null,
+        media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) },
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    // Se guardó como comprobante mientras tanto: el trigger `reject_proof_media_link` lo rechaza.
+    if (isProofMediaLinkError(error)) return { error: INVALID_IMAGE };
+    throw error;
+  }
   redirect(`/p/${post.id}` as Route);
 }

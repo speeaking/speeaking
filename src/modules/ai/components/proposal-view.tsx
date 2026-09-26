@@ -18,6 +18,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import type { ProposalState } from "../actions";
 import { DAILY_BUDGET_RULE, PRICE_RANGE_RULE } from "../proposal-numbers";
+import { SIMULATED_OUTPUT_LABEL } from "../tasks/simulation";
 
 type Result = NonNullable<ProposalState["result"]>;
 
@@ -71,11 +72,12 @@ function CopyLine({ text }: { text: string }) {
 }
 
 /** Explicación que redactó la IA para una cifra calculada: se muestra como suya (principio 5). */
-function AiNote({ text }: { text: string }) {
+function AiNote({ text, simulated }: { text: string; simulated: boolean }) {
   if (!text) return null;
   return (
     <p className="text-sm text-muted-foreground">
-      <span className="font-semibold">Nota de la IA:</span> {text}
+      <span className="font-semibold">{simulated ? "Nota de ejemplo:" : "Nota de la IA:"}</span>{" "}
+      {text}
     </p>
   );
 }
@@ -84,20 +86,36 @@ const percent = (value: number) => `${Math.round(Math.abs(value) * 100)} %`;
 
 /**
  * Propuesta de "Vende con IA": separa lo CALCULADO (código, P2) de lo que REDACTÓ la IA. Todas las
- * cifras salen del código con tus datos (SEC-28); la IA solo escribe textos e hipótesis.
+ * cifras salen del código con tus datos (SEC-28); la IA solo escribe textos e hipótesis. Con la IA
+ * simulada de un piloto (`simulated`, ADR-038) los textos se marcan como ejemplo, nunca como de la IA.
  */
-export function ProposalView({ result, onReset }: { result: Result; onReset: () => void }) {
+export function ProposalView({
+  result,
+  onReset,
+  simulated = false,
+}: {
+  result: Result;
+  onReset: () => void;
+  simulated?: boolean;
+}) {
   const { proposal, numbers, quantity, guard } = result;
   const { economics } = numbers;
   const daily = numbers.dailyBudgetCents;
+  const written = simulated ? "Ejemplo (IA simulada)" : "Redactado por IA";
 
   return (
     <div className="flex flex-col gap-4">
       <section className="dark flex flex-col gap-2 rounded-3xl border bg-card p-5 text-foreground">
-        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-ai px-2.5 py-1 text-xs font-bold text-ai-foreground">
-          <Sparkles className="size-3.5" />
-          Propuesta de IA · revísala antes de publicar
-        </span>
+        {simulated ? (
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">
+            {SIMULATED_OUTPUT_LABEL} · revísalo antes de publicar
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-ai px-2.5 py-1 text-xs font-bold text-ai-foreground">
+            <Sparkles className="size-3.5" />
+            Propuesta de IA · revísala antes de publicar
+          </span>
+        )}
         <h2 className="font-heading text-2xl leading-tight font-extrabold">{proposal.headline}</h2>
         <p className="text-sm text-ink-2">{proposal.valueProposition}</p>
       </section>
@@ -106,9 +124,10 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         <p className="flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2 text-sm">
           <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>
-            {guard.removed === 1 ? "Quitamos 1 frase" : `Quitamos ${guard.removed} frases`} que la
-            IA no podía respaldar con tus datos: garantías, envíos o tiempos que no confirmaste,
-            datos de contacto o de pago, urgencia o cifras distintas a las tuyas.
+            {guard.removed === 1 ? "Quitamos 1 frase" : `Quitamos ${guard.removed} frases`} que{" "}
+            {simulated ? "no podíamos" : "la IA no podía"} respaldar con tus datos: garantías,
+            envíos o tiempos que no confirmaste, datos de contacto o de pago, urgencia o cifras
+            distintas a las tuyas.
           </span>
         </p>
       ) : null}
@@ -162,7 +181,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
             {percent(1 - PRICE_RANGE_RULE.below)} abajo y {percent(PRICE_RANGE_RULE.above - 1)}{" "}
             arriba de tu precio, terminado en 9. No consultamos precios del mercado.
           </p>
-          <AiNote text={proposal.suggestedPriceRange.rationale} />
+          <AiNote text={proposal.suggestedPriceRange.rationale} simulated={simulated} />
         </Card>
         <Card icon={Target} title="Presupuesto inicial" badge="Calculado">
           <p className="font-heading text-xl font-extrabold">{formatMoney(daily)} al día</p>
@@ -171,11 +190,15 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
             {formatMoney(DAILY_BUDGET_RULE.minCents)} y {formatMoney(DAILY_BUDGET_RULE.maxCents)} al
             día. Es una prueba, no una garantía de ventas.
           </p>
-          <AiNote text={proposal.budgetRationale} />
+          <AiNote text={proposal.budgetRationale} simulated={simulated} />
         </Card>
       </div>
 
-      <Card icon={Users} title="Público potencial" badge="Hipótesis de la IA">
+      <Card
+        icon={Users}
+        title="Público potencial"
+        badge={simulated ? "Ejemplo (IA simulada)" : "Hipótesis de la IA"}
+      >
         <ul className="flex flex-col gap-2 text-sm">
           {proposal.targetAudiences.map((audience) => (
             <li key={audience.name}>
@@ -185,7 +208,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </ul>
       </Card>
 
-      <Card icon={Lightbulb} title="Ideas de contenido" badge="Redactado por IA">
+      <Card icon={Lightbulb} title="Ideas de contenido" badge={written}>
         <ul className="flex flex-col gap-2">
           {proposal.contentIdeas.map((idea) => (
             <CopyLine key={idea} text={idea} />
@@ -197,11 +220,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </div>
       </Card>
 
-      <Card
-        icon={MessageSquareQuote}
-        title="Textos para anuncios y WhatsApp"
-        badge="Redactado por IA"
-      >
+      <Card icon={MessageSquareQuote} title="Textos para anuncios y WhatsApp" badge={written}>
         <ul className="flex flex-col gap-2">
           {proposal.adIdeas.map((ad) => (
             <CopyLine key={ad} text={ad} />
@@ -216,7 +235,7 @@ export function ProposalView({ result, onReset }: { result: Result; onReset: () 
         </div>
       </Card>
 
-      <Card icon={MessageSquareQuote} title="Lo que te van a preguntar" badge="Redactado por IA">
+      <Card icon={MessageSquareQuote} title="Lo que te van a preguntar" badge={written}>
         <ul className="flex flex-col gap-3 text-sm">
           {proposal.objections.map((item) => (
             <li key={item.objection}>

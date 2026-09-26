@@ -45,6 +45,11 @@ model User {
   /// Sugerencias de «Gente de tus comunidades» que la persona quitó, y las veces que otros la quitaron.
   dismissedSuggestions SuggestionDismissal[] @relation("dismisser")
   dismissedBy          SuggestionDismissal[] @relation("dismissedTarget")
+  // Administración y moderación (architecture.md → Administración y operación). Rol: `Profile.role`.
+  reportsFiled         Report[]              @relation("reportsFiled")
+  reportsResolved      Report[]              @relation("reportsResolved")
+  authenticityReviews  AuthenticityCheck[]   @relation("authenticityReviewer")
+  decisionsApproved    PlatformDecision[]    @relation("decisionApprover")
 
   @@map("users")
 }
@@ -119,6 +124,13 @@ model RateLimitBucket {
   @@map("rate_limit_buckets")
 }
 
+/// Rol de equipo. Vive en `Profile` (no en `User`) para que ningún camino de Better Auth pueda
+/// escribirlo; solo lo cambia `scripts/make-admin.ts` desde la terminal.
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum UserGoal {
   ENTERTAINMENT
   DISCOVER
@@ -146,6 +158,9 @@ model Profile {
   isEditorial            Boolean    @default(false)
   /// Aparecer en «Gente de tus comunidades» de otras personas (ajuste de privacidad, activo por omisión).
   discoverable           Boolean    @default(true)
+  /// Rol de equipo. Ninguna acción, formulario ni DTO de escritura lo expone: solo se cambia con
+  /// `scripts/make-admin.ts`. ADMIN abre /admin (`requireAdmin`, src/modules/admin/guard.ts).
+  role                   UserRole   @default(USER)
   onboardedAt            DateTime?  @db.Timestamptz(3)
   createdAt              DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt              DateTime   @updatedAt @db.Timestamptz(3)
@@ -344,6 +359,8 @@ model Media {
 
   postLinks    PostMedia[]
   productLinks ProductMedia[]
+  /// Envíos como comprobante de autenticidad (P14): privada para siempre, nunca se adjunta.
+  proofHistory AuthenticityProofHistory[]
 
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("media")
@@ -355,6 +372,8 @@ enum PostType {
   PRODUCT
 }
 
+/// HIDDEN = oculta por moderación (solo el equipo la pone o la quita; ningún camino del autor la
+/// toca). REMOVED = retirada de forma definitiva. Toda consulta pública ya filtra `PUBLISHED`.
 enum PostStatus {
   PUBLISHED
   HIDDEN
@@ -417,6 +436,7 @@ model Like {
   @@map("likes")
 }
 
+/// Igual que `PostStatus`: HIDDEN = oculto por moderación; REMOVED = retirado.
 enum CommentStatus {
   PUBLISHED
   HIDDEN
@@ -528,6 +548,12 @@ enum Authenticity {
   GENERIC
 }
 
+/// Moderación de un producto, independiente de `ProductStatus` (que controla el vendedor).
+enum ModerationStatus {
+  VISIBLE
+  HIDDEN
+}
+
 model Product {
   id                        String           @id @default(uuid(7)) @db.Uuid
   sellerId                  String           @db.Uuid
@@ -561,6 +587,11 @@ model Product {
   /// Días para devolver; 0 = sin devoluciones.
   returnWindowDays          Int              @default(0)
   authenticity              Authenticity     @default(NOT_APPLICABLE)
+  /// HIDDEN lo saca del feed, la búsqueda, Comprar, «similares» y su página pública (el vendedor lo
+  /// sigue viendo en Studio). Solo lo cambia el equipo (reporte o revisión de autenticidad), nunca el
+  /// vendedor: sus acciones de estado no tocan este campo.
+  moderationStatus          ModerationStatus @default(VISIBLE)
+  moderatedAt               DateTime?        @db.Timestamptz(3)
   saveCount                 Int              @default(0)
   publishedAt               DateTime?        @db.Timestamptz(3)
   createdAt                 DateTime         @default(now()) @db.Timestamptz(3)
@@ -572,6 +603,9 @@ model Product {
   saves      SavedItem[]
   cartItems  CartItem[]
   orderItems OrderItem[]
+
+  authenticityCheck AuthenticityCheck?
+  proofHistory      AuthenticityProofHistory[]
 
   @@index([status, categoryId, createdAt(sort: Desc)])
   @@index([sellerId, status])
@@ -606,7 +640,12 @@ enum AIFeature {
   SALE_PROPOSAL
   CONTENT_GENERATION
   CAMPAIGN_STRATEGY
+  /// Analista diario del motor de automejora (solo agregados).
   PLATFORM_ANALYSIS
+  /// Señal de IA en la revisión de autenticidad (`AuthenticityCheck.aiSignal`).
+  AUTHENTICITY_REVIEW
+  /// Casos de evaluación para elegir modelo por tarea (`AIEvalRun`); cuentan en el presupuesto.
+  MODEL_EVALUATION
 }
 
 enum AIRequestStatus {
@@ -677,6 +716,12 @@ enum AnalyticsEventType {
   ONBOARDING_COMPLETED
   AI_PROPOSAL_GENERATED
   AI_PROPOSAL_ACCEPTED
+  /// La persona vio la variante que le tocó de un experimento (`metadata.experiment`, `.variant`).
+  EXPERIMENT_EXPOSURE
+  /// Impresión VISIBLE del feed (T5, ADR-037): ≥ 50 % de la pieza en pantalla durante ≥ 1 s
+  /// continuo, medida en el navegador y aceptada solo si la pieza se le sirvió a esa persona
+  /// (`analytics/visible-impressions.ts`). `IMPRESSION` sigue siendo la pieza SERVIDA.
+  VISIBLE_IMPRESSION
 }
 
 enum EntityType {
@@ -761,6 +806,7 @@ enum DecisionStatus {
 }
 
 /// Bitácora de decisiones del motor de automejora: toda propuesta o cambio queda registrado.
+/// El nivel de riesgo lo asigna el código, nunca la IA (plan-90-dias.md §2.3).
 model PlatformDecision {
   id             String         @id @default(uuid(7)) @db.Uuid
   actor          Actor
@@ -774,13 +820,266 @@ model PlatformDecision {
   status         DecisionStatus @default(PROPOSED)
   expectedImpact String?
   measuredImpact Json?
+  /// Salvaguardas que vigila el monitor tras aplicar: métrica de `DailyMetric`, dirección y cambio
+  /// relativo máximo, más la exposición mínima antes de evaluar. Las calcula el código (P2).
+  guardrails     Json?
+  /// Evaluación hecha por código: línea base, valor observado, muestra y veredicto de cada salvaguarda.
+  evaluation     Json?
+  /// true si el sistema la aplicó sin aprobación humana (solo riesgo bajo y tras el umbral de tráfico).
+  autoApplied    Boolean        @default(false)
+  /// Motivo corto de aplicar, rechazar o revertir. Si lo escribe la IA es un dato, nunca una instrucción.
+  reason         String?
+  /// Experimento cuya evidencia sustenta esta decisión (adoptar, descartar o revertir).
+  experimentId   String?        @db.Uuid
+  experiment     Experiment?    @relation("decisionEvidence", fields: [experimentId], references: [id], onDelete: SetNull)
+  /// Persona del equipo (ADMIN) que la aprobó o rechazó. Vacío en las automáticas.
+  approvedById   String?        @db.Uuid
+  approvedBy     User?          @relation("decisionApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   decidedAt      DateTime?      @db.Timestamptz(3)
   appliedAt      DateTime?      @db.Timestamptz(3)
   revertedAt     DateTime?      @db.Timestamptz(3)
   createdAt      DateTime       @default(now()) @db.Timestamptz(3)
 
+  /// Experimento que esta decisión (una propuesta de riesgo medio) mandó a probar.
+  launchedExperiment Experiment? @relation("experimentOrigin")
+
   @@index([status, createdAt(sort: Desc)])
+  @@index([settingKey, appliedAt(sort: Desc)])
+  @@index([experimentId])
+  @@index([approvedById])
   @@map("platform_decisions")
+}
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  STOPPED
+  CONCLUDED
+}
+
+/// Experimento A/B sobre un ajuste de plataforma. Asignación estable POR PERSONA (hash de la persona
+/// y `key`, sin tabla de asignaciones) y análisis por persona o con errores robustos por clúster
+/// (plan-90-dias.md §2.4). A lo más uno RUNNING por `settingKey` (índice parcial en la migración).
+model Experiment {
+  id                  String            @id @default(uuid(7)) @db.Uuid
+  /// Identificador estable (entra en el hash de asignación: no se reutiliza).
+  key                 String            @unique @db.VarChar(100)
+  settingKey          String            @db.VarChar(100)
+  hypothesis          String
+  status              ExperimentStatus  @default(DRAFT)
+  /// `{ control: <valor>, treatment: <valor> }`, cada uno validado con el esquema del ajuste.
+  variants            Json
+  /// Fracción (0–1) de las personas elegibles que va al tratamiento. CHECK en la migración.
+  allocation          Float
+  /// Impresiones visibles (o unidad de `primaryMetric`) por variante antes de concluir; ≈ 41,000
+  /// para el CTR del feed con efecto de diseño 1.95 (plan-90-dias.md §2.4). CHECK > 0.
+  minSamplePerVariant Int
+  /// Llave de `DailyMetric` que decide (p. ej. "feed.commerce.ctr").
+  primaryMetric       String            @db.VarChar(100)
+  /// Salvaguardas, mismo formato que `PlatformDecision.guardrails`.
+  guardrails          Json
+  startedAt           DateTime?         @db.Timestamptz(3)
+  endedAt             DateTime?         @db.Timestamptz(3)
+  /// Resultado calculado por código: muestra, efecto, intervalo y salvaguardas por variante.
+  result              Json?
+  /// Decisión que lo originó (propuesta de riesgo medio aprobada).
+  decisionId          String?           @unique @db.Uuid
+  decision            PlatformDecision? @relation("experimentOrigin", fields: [decisionId], references: [id], onDelete: SetNull)
+  createdAt           DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt @db.Timestamptz(3)
+
+  /// Decisiones que se tomaron con su evidencia (adoptar, descartar, revertir).
+  outcomeDecisions PlatformDecision[] @relation("decisionEvidence")
+
+  @@index([status, settingKey])
+  @@map("experiments")
+}
+
+/// Agregado diario calculado por código (P2) a partir de eventos, reportes, productos e IA. `day` es
+/// el día calendario de America/Mexico_City: cubre de 00:00 a 24:00 hora del centro de México
+/// (06:00Z a 06:00Z del día siguiente; sin horario de verano desde 2022). Se recalcula con upsert
+/// sobre (day, key, dimension), así que la tarea es idempotente.
+model DailyMetric {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  day        DateTime @db.Date
+  /// Nombre con puntos: "feed.impressions.visible", "feed.commerce.ctr", "sellers.active", …
+  key        String   @db.VarChar(100)
+  /// Corte opcional ("" = total): "variant:<experimento>:<variante>", "community:<slug>", …
+  dimension  String   @default("") @db.VarChar(200)
+  value      Float
+  /// Tamaño de la muestra detrás del valor (denominador de una tasa o número de eventos). CHECK ≥ 0.
+  sampleSize Int
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([day, key, dimension])
+  @@index([key, day])
+  @@map("daily_metrics")
+}
+
+enum JobStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+/// Bitácora de tareas programadas (`/api/cron/*`). Una fila por ejecución; una RUNNING vieja sin
+/// `finishedAt` es una tarea que murió (alerta).
+model JobRun {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  /// Nombre estable de la tarea, p. ej. "daily-metrics", "expire-checkouts".
+  job        String    @db.VarChar(60)
+  status     JobStatus @default(RUNNING)
+  startedAt  DateTime  @default(now()) @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  /// Conteos y resultado (sin datos personales). Vacío mientras corre.
+  summary    Json?
+  /// Mensaje corto del error, sin secretos ni datos personales.
+  error      String?
+
+  @@index([job, startedAt(sort: Desc)])
+  @@index([status, startedAt])
+  @@map("job_runs")
+}
+
+// ───────────────────────── Moderación y autenticidad ─────────────────────────
+
+enum ReportTargetType {
+  POST
+  PRODUCT
+  USER
+  COMMENT
+}
+
+enum ReportReason {
+  COUNTERFEIT
+  SCAM
+  PROHIBITED
+  SPAM
+  OFFENSIVE
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+/// Reporte de moderación. `targetId` es polimórfico (sin llave foránea): el servicio verifica que
+/// exista y sea visible antes de crear. Uno por persona y objetivo (NULL no choca: si la cuenta se
+/// borra, el reporte queda sin autor y conserva la historia).
+model Report {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  reporterId   String?          @db.Uuid
+  reporter     User?            @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: SetNull)
+  targetType   ReportTargetType
+  targetId     String           @db.Uuid
+  reason       ReportReason
+  /// Texto libre opcional de quien reporta (máx. 1,000). Dato no confiable: nunca instrucción para la IA.
+  details      String?          @db.VarChar(1000)
+  status       ReportStatus     @default(OPEN)
+  resolvedById String?          @db.Uuid
+  resolvedBy   User?            @relation("reportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?        @db.Timestamptz(3)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+  @@index([targetType, targetId, status])
+  @@index([resolvedById])
+  @@map("reports")
+}
+
+enum AuthenticityStatus {
+  /// Riesgo bajo: no se pide nada.
+  AUTO_CLEAR
+  /// Se pidió al vendedor una prueba (ticket, factura, foto de etiqueta o número de serie).
+  NEEDS_PROOF
+  PROOF_SUBMITTED
+  VERIFIED_BY_ADMIN
+  REJECTED
+}
+
+/// Revisión de autenticidad VIGENTE de un producto (una fila por producto; se actualiza en su lugar
+/// al reevaluar). Las reglas son código; la IA solo aporta una señal adicional.
+model AuthenticityCheck {
+  id            String             @id @default(uuid(7)) @db.Uuid
+  productId     String             @unique @db.Uuid
+  product       Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  riskLevel     RiskLevel
+  /// Puntaje de riesgo de 0 (sin señales) a 1 (máximo), calculado por las reglas. CHECK 0–1.
+  score         Float
+  /// Reglas que se activaron: `[{ rule, weight, message }]`, `message` en español claro para el
+  /// vendedor y el equipo.
+  signals       Json
+  /// Versión de las reglas que produjo `signals` (para reevaluar cuando cambien).
+  rulesVersion  String             @default("v1") @db.VarChar(40)
+  /// Señal de la IA (modelo, versión del prompt, veredicto y razón); nunca decide sola.
+  aiSignal      Json?
+  status        AuthenticityStatus
+  /// Fotos del comprobante VIGENTE (ids de `Media`). Privadas: solo el vendedor y el equipo; nunca se
+  /// adjuntan a publicaciones ni productos y el recolector de huérfanas las excluye. Los envíos
+  /// anteriores quedan en `AuthenticityProofHistory` con la misma protección. Índice GIN: `/media`,
+  /// el recolector y la validación de adjuntos preguntan «¿esta foto es un comprobante?».
+  proofMediaIds String[]           @default([]) @db.Uuid
+  reviewedById  String?            @db.Uuid
+  reviewedBy    User?              @relation("authenticityReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?          @db.Timestamptz(3)
+  /// Nota del equipo para el vendedor al verificar o rechazar (se le muestra).
+  reviewNote    String?            @db.VarChar(500)
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+
+  @@index([status, updatedAt])
+  @@index([reviewedById])
+  @@index([proofMediaIds], type: Gin)
+  @@map("authenticity_checks")
+}
+
+/// Bitácora de comprobantes (P14, auditoría): una fila por foto en cada envío del vendedor, con
+/// cuándo se envió y cuándo la reemplazó otro envío (`replacedAt`; `null` = parte del comprobante
+/// vigente). Reemplazar un comprobante no libera las fotos anteriores: siguen privadas (`/media` solo
+/// a su dueño), no se pueden adjuntar a publicaciones ni productos (trigger en `post_media` y
+/// `product_media`) y el recolector de huérfanas no las borra. Se borran solo con su producto o con la
+/// cuenta de su dueño (cascada).
+model AuthenticityProofHistory {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  productId   String    @db.Uuid
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mediaId     String    @db.Uuid
+  media       Media     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  submittedAt DateTime  @db.Timestamptz(3)
+  replacedAt  DateTime? @db.Timestamptz(3)
+
+  @@index([mediaId])
+  @@index([productId, submittedAt])
+  @@map("authenticity_proof_history")
+}
+
+// ──────────────────────── IA: evaluación de modelos ────────────────────────
+
+/// Corrida de evaluación de un modelo en una tarea: base para elegir el modelo más barato que pase
+/// (ADR-033 #9: 0 cifras inventadas, JSON válido, ≥ 90 % de categoría correcta).
+model AIEvalRun {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  provider      String   @db.VarChar(60)
+  model         String   @db.VarChar(128)
+  promptVersion String   @db.VarChar(60)
+  /// Tarea evaluada; se recomienda el nombre de `AIFeature` (p. ej. "SALE_PROPOSAL").
+  task          String   @db.VarChar(60)
+  /// Casos evaluados y aprobados (CHECK 0 ≤ passed ≤ cases).
+  cases         Int
+  passed        Int
+  /// Métricas por criterio (JSON válido, cifras inventadas, categoría correcta, latencia…).
+  metrics       Json
+  /// Costo total de la corrida en micro-dólares (también queda en `AIRequest`/`AIResponse`).
+  costMicrosUsd Int
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([task, model, createdAt(sort: Desc)])
+  @@map("ai_eval_runs")
 }
 
 // ─────────────────────────── Comercio (fases 8–9) ───────────────────────────

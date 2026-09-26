@@ -170,6 +170,7 @@ caché y cuotas; los cambios de precios y comisiones requieren aprobación human
 | ADR-025 | Better Auth 1.7.5 (1.7.6 bloqueada por la cuarentena de 24 h de pnpm)                         | Aceptada |
 | ADR-026 | En desarrollo, el cliente de Prisma en caché se recrea si cambian los modelos del esquema     | Aceptada |
 | ADR-027 | Paleta «rosa mexicano»: blanco y gris frío, tinta casi negra, rosa #E4007C, lima solo para IA | Aceptada |
+| ADR-028 | Base de datos y cada conexión de Prisma en UTC; la zona de México solo al presentar           | Aceptada |
 
 ## ADR-021 · Subidas por ruta dedicada
 
@@ -410,7 +411,9 @@ mientras el proveedor sea simulado, pero es bloqueador antes de uno de pago.
 - **Retención:** el texto se guarda sin correos, teléfonos, ligas ni cuentas; a los 90 días la entrada
   se reemplaza por `{ redacted: true }`. Hoy la limpieza es oportunista (al usar «Vende con IA», a lo
   más cada hora por proceso): sin uso, nada la dispara. Falta una tarea programada que llame
-  `redactExpiredAiInputs` para cumplir los 90 días que promete el aviso.
+  `redactExpiredAiInputs` para cumplir los 90 días que promete el aviso. **Resuelto (2026-09-26):**
+  es un paso de la operación diaria (`pnpm ops:daily`, `/api/cron/daily`); hay que programarla en
+  el hosting (ver `architecture.md` → Operación).
 
 **Pendiente antes de un proveedor de pago.** El adaptador real debe mandar `max_tokens` y el timeout;
 exigir correo verificado (SEC-10); nombrar al proveedor en el aviso de privacidad (encargado, país,
@@ -426,3 +429,486 @@ simulado no genera ingreso en el libro de la plataforma (no sube el presupuesto 
 ve marcado como «Pago simulado» (sin poder enviarlo ni entregarlo) y el comprador ve que no se cobra
 nada. Con un proveedor real, un
 pedido pasa a pagado solo por webhook con firma verificada, nunca por una acción del navegador.
+
+## Decisiones de autonomía, confianza y operación (2026-09-26)
+
+| #       | Decisión                                                                                                           | Estado   |
+| ------- | ------------------------------------------------------------------------------------------------------------------ | -------- |
+| ADR-033 | Decisiones del piloto delegadas por el fundador (zona, nichos, cobro por terceros, IA por API, moderación)         | Aceptada |
+| ADR-034 | Proveedor de IA por API compatible con OpenAI, modelo por tarea con evaluación y kit de anuncios                   | Aceptada |
+| ADR-035 | Rol de equipo en `Profile.role`; `/admin` responde 404 a quien no es ADMIN; el rol solo se da desde la terminal    | Aceptada |
+| ADR-036 | Autenticidad: riesgo por reglas, una fila por producto, comprobante ligado al artículo; nunca acusar ni certificar | Aceptada |
+| ADR-037 | Impresiones visibles (T5) aceptadas solo si la pieza se sirvió; el motor decide solo con personas con sesión       | Aceptada |
+| ADR-038 | IA en producción: proveedor real o IA simulada solo con `ALLOW_SIMULATED_AI=true` (piloto cerrado)                 | Aceptada |
+
+## ADR-033 · Decisiones del piloto (delegadas por el fundador)
+
+**Contexto.** El plan de 90 días (`plan-90-dias.md`, §8) pedía 17 decisiones. El 2026-09-26 el fundador
+las dejó a consideración del equipo, con dos instrucciones propias: **los pagos no se tocan por ahora**
+y **serán solo por terceros y en persona** (la plataforma no procesa dinero), y **la IA debe
+automejorarse**.
+
+**Decisión.**
+
+| #   | Tema                       | Decisión                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Tiempo del fundador        | Mientras no se confirme tiempo completo, meta honesta: 50 vendedores en 12 semanas y 100 en la semana 16. Se ajusta con las horas reales.                                                                                                                                                                                                                                                                                                               |
+| 2   | Zona                       | Ciudad de México (confirmado por el fundador). Propuesta por defecto: Benito Juárez, Coyoacán y Cuauhtémoc (contiguas, con mucha venta informal en línea, emprendedoras de comida, moda y belleza, y hogares con mascotas). Se ajusta a las alcaldías donde el fundador pueda estar en persona.                                                                                                                                                         |
+| 3   | Nichos                     | Comida casera y repostería; moda y belleza de emprendedoras; mascotas.                                                                                                                                                                                                                                                                                                                                                                                  |
+| 4   | Cobro                      | Pago directo al vendedor, por terceros o en persona (lo decidió el fundador). Comisión 0 %. El código de pagos no se modifica en esta etapa.                                                                                                                                                                                                                                                                                                            |
+| 5   | Entidad legal              | El fundador pide 3 cotizaciones; se decide con el asesor antes del vendedor 11.                                                                                                                                                                                                                                                                                                                                                                         |
+| 6   | IA: gasto                  | Modelo abierto (Qwen 3.5) **pagado por uso** en un proveedor con API compatible con OpenAI (p. ej. OpenRouter: Qwen3.5-9B a US$0.08 / US$0.13 por millón de tokens, ≈ US$0.0003 por generación [estimación]). Rentar un servidor con GPU (Hetzner GEX45 ≈ €214 al mes + €209 de alta; RunPod L4 ≈ US$0.39 la hora) solo conviene con cientos de miles de generaciones al mes. Tope inicial de US$50 al mes; cuotas por vendedor: 30 al mes y 10 al día. |
+| 7   | Crecimiento                | $10,000 MXN al mes desde la semana 5. **Requiere la tarjeta del fundador: nada se gasta en automático.**                                                                                                                                                                                                                                                                                                                                                |
+| 8   | Tope de 90 días            | ≈ $52,000 MXN más asesoría, en una tarjeta separada (lo ejecuta el fundador).                                                                                                                                                                                                                                                                                                                                                                           |
+| 9   | Proveedor de IA            | Enrutador por tarea con evaluación: el modelo abierto más barato que pase la evaluación (0 cifras inventadas, JSON válido, ≥ 90 % de categoría correcta); Claude Haiku 4.5 como referencia de calidad. Como el modelo es abierto, se puede pasar a un servidor propio sin cambiar código cuando el volumen lo justifique.                                                                                                                               |
+| 10  | Hosting                    | Vercel + Neon + R2. La IA va por API (sin servidor con GPU propio en el piloto).                                                                                                                                                                                                                                                                                                                                                                        |
+| 11  | Contenido de arranque      | Piezas curadas con fecha real + ≈ 20 por nicho, solo fotos con licencia.                                                                                                                                                                                                                                                                                                                                                                                |
+| 12  | Onboarding con 1 comunidad | Experimento de riesgo medio, solo en llegadas con `?unirse=`.                                                                                                                                                                                                                                                                                                                                                                                           |
+| 13  | Reversión del comercio     | Revertir si las visitas a producto por vendedor activo caen más de 15 %.                                                                                                                                                                                                                                                                                                                                                                                |
+| 14  | Moderación                 | Cola automática (reportes y revisión de autenticidad) + revisión del fundador en 24 h hábiles.                                                                                                                                                                                                                                                                                                                                                          |
+| 15  | Tope por pedido            | $3,000 MXN como recomendación para vendedores nuevos (sin tocar el código de pagos).                                                                                                                                                                                                                                                                                                                                                                    |
+| 16  | Nombre e IMPI              | Búsqueda en el IMPI antes de salir de los 15 vendedores fundadores.                                                                                                                                                                                                                                                                                                                                                                                     |
+| 17  | Indexación y comisión      | Ninguna en estos 90 días.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+
+**Automejora (instrucción del fundador).** Se construye el motor completo: métricas diarias,
+analista, propuestas con nivel de riesgo, experimentos, aplicación automática de lo de riesgo bajo
+dentro de límites y reversión automática. El umbral estadístico de tráfico lo aplica el código (no se
+decide con ruido). **Pagos, precios, comisiones y gasto quedan fuera de su alcance.**
+
+**Consecuencias.** Las decisiones 1, 2, 5, 7 y 8 necesitan acciones o datos del fundador; el resto se
+ejecuta en el código y la operación.
+
+## ADR-034 · Proveedor de IA por API, modelo por tarea y evaluaciones
+
+**Contexto.** ADR-033 (#6 y #9) eligió un modelo abierto pagado por uso en un servidor EXTERNO con API
+compatible con OpenAI (nada se instala en la PC del fundador), con un enrutador por tarea que use el
+modelo más barato que pase la evaluación. Faltaban el adaptador real, la tabla de precios de modelos
+abiertos, el ajuste de rutas, las evaluaciones y el primer uso nuevo (kit de anuncios).
+
+**Decisión.**
+
+- **Adaptador sin SDK** (`server/providers/ai/openai-compatible.ts`): `POST {AI_BASE_URL}/chat/completions`
+  con `response_format: json_schema` estricto (generado del esquema de Zod de la tarea, sin
+  `minLength`/`pattern`: Zod los exige al recibir), `max_tokens` y una revisión del tamaño de la
+  entrada ANTES de llamar (el costo nunca pasa de lo reservado, ADR-031). Plazo total con
+  `AbortController` y hasta 2 reintentos con espera creciente solo ante 429 o 5xx (respeta
+  `Retry-After`); un corte de red o un plazo vencido no se reintenta porque pudo cobrarse. La llave
+  vive en un campo privado y ningún error lleva la llave ni los cuerpos. Con OpenRouter se pide
+  `data_collection: "deny"` y `require_parameters: true`; otros servidores (DeepInfra, Together,
+  vLLM u Ollama en un servidor rentado) no reciben campos que no conocen.
+- **Tareas, no chat** (`AITask`): cada módulo define prompt, esquema, temperatura, tope de salida y
+  su respuesta simulada; el proveedor solo transporta y valida. Tareas: `sale_proposal`, `ad_copy`,
+  `analyst_narrative`, `authenticity_text`. `MockAIProvider` sigue siendo el predeterminado y el
+  interruptor de apagado.
+- **Costo:** precios con fecha y fuente en `ai/cost.ts` (Qwen3.5-9B: US$0.08 / US$0.13 por millón en
+  OpenRouter; Claude como referencia). Un modelo sin precio no se llama; si aun así llegara una
+  respuesta, se registra una cota superior marcada como desconocida, nunca 0. Si el proveedor no
+  informa el uso, se estima y se marca.
+- **Privacidad (H3):** el costo del vendedor nunca sale hacia el proveedor: no va en los datos y se
+  quita del texto libre («me costaron $2,400» → «me costaron [costo]»), igual que correos,
+  teléfonos, ligas y cuentas. Además, cualquier monto en pesos igual al costo confirmado por pieza o
+  al costo total se quita aunque ninguna palabra lo anuncie («di $24,000 por las 10»).
+- **Enrutador `ai.routing`** (`PlatformSetting`, esquema con lista blanca `ROUTABLE_MODELS`, todos con
+  precio): tarea → { proveedor, modelo }; sin ruta, las variables de entorno. El servidor y la llave
+  son los de `AI_BASE_URL`/`AI_API_KEY`. Cambiarlo es riesgo MEDIO: una persona ADMIN lo aplica en
+  `/admin/ia` (decisión HUMAN APPLIED con valor anterior y nuevo) y la IA CEO solo lo propone
+  (`proposeAiRoutingChange`, decisión PROPOSED) con una evaluación aprobada como evidencia. Solo se
+  enruta a un modelo de pago si tiene una evaluación aprobada de los últimos 30 días con el prompt
+  vigente; las tareas sin evaluación (`analyst_narrative`, `authenticity_text`) solo usan el modelo
+  predeterminado o el simulado.
+- **Evaluaciones** (`pnpm ai:eval`, `evals/*.jsonl`, `ai/evals/*`): casos ficticios de vendedores
+  mexicanos (35 de propuesta, 32 de anuncios) con los difíciles: sin costo, marcas, «réplica»,
+  prohibidos, montos y cantidades enormes, instrucciones inyectadas en el texto. Se mide la salida
+  CRUDA del modelo (antes del guardián). Para aprobar: el archivo de casos COMPLETO (una corrida con
+  `--limit` nunca aprueba), ≥ 25 casos que respondió el modelo (los bloqueados por la política no
+  cuentan), JSON válido en todos, 0 cifras que no estén en los datos (P2), 0 afirmaciones sin
+  respaldo (P4), 0 urgencia, 0 contacto o pago por fuera, todo en español, ≥ 90 % de categoría
+  correcta (o de anuncios que hablan del producto) y la política de productos sin fallas (misma
+  regla que la esperada). Cada llamada pasa por el presupuesto global (`MODEL_EVALUATION`) y el
+  resultado queda en `AIEvalRun` (con la huella SHA-256 del archivo de casos) y en `.data/evals/`.
+  Con un modelo de pago el script exige `--confirm-spend` y dice antes el costo máximo.
+- **Evidencia sin escoger resultados:** para enrutar cuentan TODAS las corridas concluyentes del
+  modelo con el prompt vigente en los últimos 30 días; basta una reprobada para no aprobarlo
+  (repetir hasta que salga aprobada sería escoger el resultado, y los criterios son de cero fallas).
+  Las corridas con errores del proveedor o parciales no son concluyentes. El reporte dice el
+  intervalo de confianza (Wilson, 95 %) de la categoría y que «0 fallas en ~30 casos» solo acota la
+  tasa real a ≈ 3/n (regla de tres): con estas muestras, la evaluación descarta modelos malos, no
+  prueba que uno sea perfecto.
+- **Política de productos** (`ai/content-policy.ts`): la IA no ayuda a vender réplicas, armas,
+  drogas, medicamentos con receta ni vapeadores; se revisa antes de gastar una llamada. Son patrones
+  conservadores (mitigan, no moderan).
+- **Cuotas por persona (ADR-033 #6):** 10 generaciones al día y 30 al mes, sumando todas las funciones
+  de IA (`maxRequestsPerUserPerDay`, nuevo `maxRequestsPerUserPerMonth` en `ai.budget`). La mensual
+  se cuenta dentro del candado del presupuesto (sin carreras). Las tareas del sistema reservan sin
+  persona: sin cuotas, dentro del presupuesto global.
+- **Kit de anuncios** (Studio → Contenido): 4 textos (WhatsApp, Facebook, Instagram con hasta 8
+  etiquetas y un titular) para un producto propio y activo. La IA escribe `[PRECIO]` y el código pone
+  el precio vigente, las frases de datos (envío, entrega, garantía, devoluciones, originalidad
+  declarada) y la liga con atribución (`?ref=compartir&canal=…`). Un guardián propio solo deja las
+  afirmaciones que respaldan los datos estructurados del producto. Se guarda en
+  `AIRequest`/`AIResponse` (`CONTENT_GENERATION`) y, cada vez que se muestra, se vuelve a revisar
+  con el guardián contra los datos VIGENTES y se compone con ellos (una promesa que dejó de aplicar,
+  como un envío gratis que el vendedor quitó, ya no se muestra ni se copia); si el producto cambió,
+  se avisa. Un producto que hoy no se puede comprar no muestra su kit. Hoy la visita se atribuye
+  por `ref=compartir` («Links compartidos» en el Studio); el parámetro `canal` viaja en la liga pero
+  la página del producto aún no lo registra, y la interfaz no promete atribución por canal.
+- **Transporte:** sin redirecciones (`redirect: "error"`) y la ruta del servidor se arma sobre la
+  URL base (un `AI_BASE_URL` raro no puede mandar la llave a otro host).
+
+**Consecuencias.** Antes de poner `AI_PROVIDER=openai_compatible` en producción: correr la evaluación
+de cada tarea con el modelo elegido, poner el mismo límite de gasto en la consola del proveedor,
+nombrar al proveedor y el país en el aviso de privacidad (sube `LEGAL_VERSIONS.privacyNotice`) y
+exigir correo verificado (SEC-10). La evaluación es de patrones: aprueba lo medible, no garantiza la
+calidad; el vendedor revisa todo antes de publicar.
+
+## ADR-035 · Rol de equipo, `/admin` con 404 y `make-admin`
+
+**Contexto.** La moderación, el Centro de decisiones y la configuración de la IA necesitan un rol de
+equipo (`plan-90-dias.md` §2.1: «rol de equipo con 2FA»). Better Auth escribe la tabla `users`
+(registro, `update-user`, hooks) y su plugin `admin` usa un `role` de texto propio: un rol ahí
+quedaría al alcance de caminos que no controlamos. Además, un área de administración que redirige a
+«Iniciar sesión» confirma que existe.
+
+**Decisión.**
+
+- **El rol vive en el perfil:** `Profile.role` (`UserRole`: USER | ADMIN, por omisión USER). Ningún
+  camino de Better Auth lo toca y ninguna acción, formulario ni DTO de escritura lo expone. Exige
+  perfil: una cuenta que no terminó la bienvenida no puede ser ADMIN.
+- **Solo desde la terminal:** `scripts/make-admin.ts <correo> [--revoke]`. Se niega con una base que
+  parezca de producción (`NODE_ENV=production` o un servidor que no es esta máquina) salvo con
+  `--allow-production`. El rol se lee de la base en cada petición: darlo o quitarlo aplica en la
+  siguiente carga, sin cerrar sesiones.
+- **404 como el de una ruta inexistente:** a quien no es ADMIN, con o sin sesión, las páginas de
+  `/admin/*` le responden 404 con la misma página «No encontramos esta página», sin redirigir a
+  iniciar sesión ni título o metadatos propios (`tests/e2e/admin-area.spec.ts` revisa el estado, ese
+  encabezado y el título; no compara el HTML byte a byte). Por eso `/admin` no está en
+  `PROTECTED_PREFIXES` ni tiene regla propia en `proxy.ts`. Ocultar el área reduce el ruido, no es la
+  barrera: el route handler de fotos de comprobante (`/admin/moderacion/prueba/<id>`) responde un 404
+  en texto plano, distinto del HTML, así que un visitante atento puede deducir que el área existe.
+- **Tres barreras, todas obligatorias:** páginas y layouts con `requireAdmin()` (cada página lo
+  vuelve a llamar: los layouts no se renderizan al navegar entre páginas hermanas); Server Actions y
+  route handlers con `getAdminViewer()` (error genérico), Zod y `rateLimit` por persona (scope
+  `admin.<acción>` → llave `admin.<acción>:user:<uuid>`; `rateLimitKey` rechaza `:` en el scope);
+  servicios con `assertAdmin(actorUserId)`, que vuelve a leer el rol.
+- **Huella:** `PlatformDecision.approvedById`, `Report.resolvedById` y
+  `AuthenticityCheck.reviewedById`; las páginas llevan `noindex`.
+
+**Riesgo aceptado (piloto).** Sin segundo factor ni reautenticación reciente: una sesión ADMIN robada
+tiene acceso completo al área hasta que se revoque. Se mitiga con pocas personas ADMIN, sesiones
+revocables y acciones con límite de frecuencia. No hay bitácora de cambios de rol (solo el script,
+que exige acceso a la terminal y a la base).
+
+**Pendiente.** 2FA para ADMIN y reautenticación para aprobar riesgo alto (antes de abrir a la zona);
+bitácora de cambios de rol; suspender cuentas que no venden (hoy solo existe `SellerProfile.status`).
+
+## ADR-036 · Autenticidad: riesgo, nunca acusación ni certificación
+
+**Contexto.** En la venta informal en línea en México abundan las réplicas (P14). La plataforma debe
+proteger a quien compra sin difamar a quien vende (no puede saber si algo es falso) y sin prometer
+autenticidad (no la puede garantizar). La Ley Federal de Protección a la Propiedad Industrial protege
+las marcas registradas.
+
+**Decisión.**
+
+- **Mide riesgo, no culpa.** Reglas deterministas (P2, `trust/rules.ts`, `RULES_VERSION` v2) con
+  mensajes en español claro. Puntaje = suma de pesos con tope 1 → LOW, MEDIUM (≥ 0.3) o HIGH
+  (≥ 0.6). Nunca dice «falso» ni «original»: quien compra ve «Autenticidad sin verificar»,
+  «Comprobante revisado por VendeIA» o una nota neutral («Revisa: …»).
+- **Una fila por producto** (`AuthenticityCheck.productId` único) con la revisión vigente, que se
+  actualiza en su lugar. La cola y la página del producto necesitan el estado actual sin
+  `DISTINCT ON` ni filas viejas que compitan; la huella queda en `rulesVersion`,
+  `reviewedById`/`reviewedAt`, los reportes y la bitácora (`moderation.*` y `authenticity.*` en
+  `PlatformDecision`, fuera del Centro de decisiones).
+- **Precio contra la mediana por tienda.** Se compara contra la mediana de al menos 5 TIENDAS
+  distintas (productos parecidos, activos y visibles de otras tiendas); cada tienda aporta un solo
+  precio, la mediana de los suyos, para que una cuenta con muchas publicaciones no decida la
+  mediana. Sin 5 tiendas, contra un precio de referencia aproximado (`reference-prices.ts`, ajustable
+  con `trust.referencePrices`).
+- **Palabras de imitación con negación.** «réplica», «calidad original», «AAA», «1:1» o «tipo X»
+  pesan mucho junto a una marca y poco sin ella; las negadas («no es réplica», «cero clones», «ni
+  AAA»: un negador antes de la frase, con a lo más 4 palabras de relleno en medio) no cuentan.
+- **Reportes con tope.** Cuentan personas distintas por posible falsificación (abiertos o con acción;
+  los descartados no), con pesos 0.1, 0.2 y 0.25 (3 o más): solos nunca llegan a riesgo medio. Van a
+  la cola del equipo y refuerzan otras señales, también antes de revisarse: sumados a otra regla sí
+  pueden subir el nivel (p. ej. precio algo bajo 0.2 + 3 reportes = 0.45, riesgo medio) y con él lo
+  que ve quien compra (la nota «Revisa: …» o, si llega a alto, el pedido de comprobante). Por eso
+  cuentan personas y no reportes, y descartar un reporte lo quita del puntaje.
+- **La IA solo refuerza** (`trust.aiSignal.enabled`, apagada por omisión): peso máximo 0.15; sin
+  señales de reglas no suma y nunca lleva sola a riesgo alto. En producción, la IA simulada nunca
+  suma riesgo.
+- **El comprobante va ligado al artículo.** Solo a lo declarado original se le pide comprobante (con
+  riesgo alto sin declararse original se pide corregir la publicación a «genérico»). Verificar exige
+  el comprobante, las mismas fotos que vio el equipo (`proofIds`), que sigan existiendo y que la
+  publicación no use palabras de imitación. El sello se pierde si el vendedor cambia QUÉ vende
+  (título, etiquetas, categoría o condición) o si al reevaluar sube el puntaje de riesgo (p. ej. un
+  precio mucho menor); cambiar existencias, o un precio que no sube el riesgo, no lo quita. Las fotos
+  de prueba son privadas (vendedor y ADMIN) y el recolector de huérfanas no las toca.
+- **Las decisiones del equipo no se deshacen solas:** reevaluar no borra un «verificado» mientras el
+  riesgo no suba ni cambie el artículo, ni un «rechazado» mientras no se vuelva a declarar original.
+
+**Consecuencias.** Los términos incluyen la cláusula de falsificaciones y explican que la revisión
+«mide riesgo: no acusa a nadie ni certifica nada» (`LEGAL_VERSIONS.terms` = 2026-09-26). La versión
+2026-09-27 de los términos agrega la señal opcional de IA y ocultar o restaurar publicaciones, y la
+del aviso de privacidad explica la revisión, las fotos de comprobante, la señal de IA, qué guardan
+los reportes y las acciones del equipo; quien aceptó una versión anterior ve un aviso para volver a
+aceptar (`identity/consent-refresh.ts`, ver `architecture.md` → Privacidad). Cambiar
+pesos, umbrales o reglas exige subir `RULES_VERSION` y reevaluar el catálogo
+(`pnpm trust:reevaluate`). Las listas de marcas y palabras mitigan, no garantizan; con poco volumen
+casi nunca habrá 5 tiendas comparables y pesará más la referencia aproximada.
+
+**Nota: comprobantes reemplazados (conservación pendiente de decisión legal).** Cada envío deja una
+fila por foto en `authenticity_proof_history` (`submittedAt`, y `replacedAt` cuando otro envío lo
+reemplaza; ver `data-model.md`). Reemplazar un comprobante no libera las fotos anteriores, para
+poder auditar qué vio el equipo al verificar o rechazar: siguen privadas (vendedor y ADMIN), no se
+pueden adjuntar a publicaciones ni productos (trigger `reject_proof_media_link`) y el recolector de
+huérfanas no las borra. Hoy **no tienen plazo**: solo desaparecen con la cuenta del vendedor
+(cascada) o si se borra el producto (ningún camino de la app lo hace; sin su fila, la foto queda
+huérfana y la recoge el recolector). Un ticket o una factura pueden traer nombre, domicilio, RFC o
+parte de una tarjeta, así que guardarlos sin fin no es neutral. **Pendiente (revisión legal, antes
+del lanzamiento):** el plazo máximo de los comprobantes reemplazados (y de los vigentes de un
+producto archivado), si el vendedor puede pedir que se borren antes y qué queda de la decisión del
+equipo sin la foto. El aviso de privacidad dice que hoy no se borran solos y marca el plazo como
+pendiente (`MODERATION_RETENTION` en `app/(legal)/privacidad/page.tsx`). Al decidirlo: borrado
+programado, subir `LEGAL_VERSIONS.privacyNotice` y actualizar esta nota.
+
+## ADR-037 · Impresiones visibles (T5) y salvaguardas con prueba estadística
+
+**Contexto.** El umbral de tráfico del motor de automejora se define en impresiones VISIBLES
+(`plan-90-dias.md` §2.4), pero se contaban piezas SERVIDAS: cada carga registra todas las piezas
+aunque solo se vea una, así que `FEED_IMPRESSIONS_ARE_VISIBLE` era `false` y en modo `low_risk` nada
+se aplicaba solo. Además, las salvaguardas comparaban estimaciones puntuales: con conteos bajos
+revertían de más (ruido), y un bot podría provocar reversiones enviando eventos.
+
+**Decisión** (la construyó el grupo de autonomía; lo de abajo describe el código al 2026-09-27).
+
+- **Impresión visible:** al menos el 50 % de la pieza dentro de la pantalla durante al menos 1
+  segundo continuo, con la pestaña a la vista (el estándar de la industria para display). Se mide en
+  el navegador (`feed/components/visible-impressions.ts` con el hook
+  `feed/components/use-visible-impressions.ts`: IntersectionObserver y un cronómetro que se pausa con
+  la pestaña oculta; manda lo visto cada 5 s o con `sendBeacon` al salir). Es un tipo de evento propio
+  (`VISIBLE_IMPRESSION`) e `IMPRESSION` sigue siendo la pieza servida (`feed.impressions.served`,
+  métrica descriptiva que no decide nada).
+- **Validación contra lo servido** (plan §2.3, «Eventos firmados»; `analytics/visible-impressions.ts`):
+  el navegador solo manda id de la publicación, superficie (`FEED` o `COMMUNITY`) y posición
+  (`POST /api/impressions`, contrato en `analytics/visible-impression-contract.ts`). El servidor
+  descarta, sin error, lo que no es una publicación publicada, lo del propio autor y lo repetido (una
+  por persona o IP, publicación y día de México), y exige un comprobante de que se sirvió:
+  - **con sesión y personalización:** su `IMPRESSION` de esa publicación en las últimas 24 h. La
+    posición, la puntuación, la versión del algoritmo y el espacio comercial se copian de lo servido y
+    la variante la calcula el servidor; nada de eso viene del navegador. Son las únicas con las que
+    decide el motor (ver «Población que decide»);
+  - **sin personalización, o sin sesión con IP de confianza:** lo servido se guardó anónimo (SEC-16),
+    así que el comprobante es la cubeta que deduplicó esa pieza servida para esa cuenta o IP (vale
+    una hora desde que se sirvió; lo que llega después se descarta: se cuenta de menos, nunca de más);
+  - **sin sesión ni IP de confianza** (`TRUSTED_PROXY_HOPS=0`): no hay a quién atar el comprobante;
+    las visibles anónimas de una publicación no pasan de sus servidas anónimas de las últimas **25 h**
+    (24 h más una de margen, porque lo servido sin personalización guarda la hora truncada), con un
+    tope de 600 por publicación y hora. Comparar contra un conteo leído no basta con peticiones
+    simultáneas (todas leerían el mismo conteo y registrarían tantas visibles como peticiones), así
+    que cada visible reserva además un lugar en un **contador atómico por publicación**
+    (`claimAnonymousSlot`: `rateLimit`, un solo `INSERT … ON CONFLICT … RETURNING`, con límite igual
+    a las servidas y ventana fija de 25 h). La ventana del contador es fija y la de las servidas se
+    desliza, así que el **peor caso** (ráfagas simultáneas justo al renovarse el contador) es **el
+    doble** de las servidas anónimas en 25 h: acotado, nunca sin límite. Cada intento suma aunque se
+    rechace, así que bajo ataque se cuenta de menos.
+
+  Además: solo peticiones del mismo origen (`Sec-Fetch-Site`), a lo más 50 piezas y 16 KB por
+  petición y límites de frecuencia por minuto (sin sesión, 240 por IP y un tope común de 3,000 sin
+  IP; con sesión, 60 por persona y 2,000 por IP: ver la nota al final). Se guardan con el mismo estándar de privacidad que cualquier evento (`prepareEvent`):
+  sin personalización, sin persona, con la hora truncada y sin la variante; sin sesión, como en
+  `track`, sin persona ni variante pero con la hora exacta (el aviso de privacidad lo dice así). Las
+  cubetas de deduplicación guardan un HMAC con el secreto del servidor (nunca la cuenta ni la IP en
+  claro); la de la pieza servida vale 1 h y las de las visibles vencen a las 25 h (aviso de
+  privacidad, versión 2026-09-27).
+
+- **Población que decide: solo personas con sesión (antirrobots).** No hay detección de robots
+  (difiere del plan, que pide excluir robots y tráfico anómalo). Nadie puede registrar como vista
+  una pieza que no se sirvió a nadie, pero un script sin cuenta sí puede marcar como vistas piezas
+  servidas de forma anónima que no vio. Por eso **el umbral de tráfico, las salvaguardas (y la
+  exposición mínima del monitor), las tasas del analista y los experimentos cuentan SOLO las
+  impresiones visibles de personas con sesión y personalización**, y sus numeradores (reportes, «No
+  me interesa», interacciones, visitas a producto) solo de esas mismas personas
+  (`signedInFeedTotals` en `analytics/platform-aggregates.ts`). Un robot sin cuenta que inunde
+  impresiones o visitas anónimas no puede forzar ni esconder una reversión. Las visibles anónimas
+  (`feed.impressions.visible.anonymous`) y las servidas quedan como métricas descriptivas.
+- **El umbral se enciende con datos reales:** `FEED_IMPRESSIONS_ARE_VISIBLE` es `true` porque los
+  agregados cuentan `VISIBLE_IMPRESSION`. Las filas de `DailyMetric` por impresión anteriores a
+  `VISIBLE_IMPRESSIONS_SINCE` no se comparan (`ceo/metric-rows.ts`): contaban piezas servidas y
+  tráfico anónimo. Ese valor es **2026-09-27**, el primer día COMPLETO de México con visibles, y no
+  2026-09-26: ese día las visibles empezaron a media tarde (13:09 de México, en la base de
+  desarrollo), así que sus tasas dividirían reportes o interacciones de TODO el día entre las
+  impresiones de unas horas. Al instalar T5 en otro entorno con filas anteriores, el valor debe ser
+  el primer día completo después de instalarlo. Mientras el feed no mande visibles de personas con
+  sesión, el umbral no se cumple y el motor solo propone.
+- **Salvaguardas con significancia y ventana máxima** (`ceo/guardrails.ts`, `ceo/monitor.ts`): tras
+  una exposición mínima (por omisión, 5,000 impresiones visibles de personas con sesión), una
+  salvaguarda relativa revierte solo si el cambio observado pasa su umbral (reportes +25 %, «No me
+  interesa» +15 %, conversión comercial −10 %, visitas a producto por vendedor activo −15 %) **y** la
+  prueba unilateral en la dirección del daño rechaza «sin empeoramiento» (α = 0.05). La varianza de
+  cada lado se multiplica por **el mayor entre el efecto de diseño por persona** que usa el analista
+  **y la variación medida** (sobredispersión, `pearsonDispersion`: entre días en el monitor, porque
+  antes contra después no cancela los días atípicos como quincenas o puentes; entre personas en un
+  experimento, para que una sola cuenta no baste); si un lado tiene muy pocos días, se usa la del
+  otro, y nunca menos de 1 (`varianceFactor`): la variación medida solo puede hacer la prueba más
+  conservadora. Es decir, prueba que empeoró, no que el empeoramiento real pase el umbral. Las
+  absolutas (contenido comercial > 30 %, 5xx > 1 %) exigen que el valor esté significativamente
+  arriba del tope. Con la línea base en 0 se usa un tope absoluto (1 reporte y 5 «No me interesa»
+  por mil). Sin muestra suficiente el veredicto es «sin datos suficientes», nunca un 0 inventado ni
+  un «seguro». Se vigila 14 días y a lo más 28: al cumplirse sin empeoramiento significativo se
+  cierra con «sin evidencia de daño con esta muestra (no quiere decir que el cambio sea seguro)».
+
+**Riesgo aceptado.** El monitor revisa cada día (hasta 28 veces) seis salvaguardas con α = 0.05 sin
+corregir por revisiones repetidas ni por comparaciones múltiples: la probabilidad de una reversión
+falsa en algún momento es mayor que 5 %. El requisito de pasar también el umbral la reduce, y el
+error va del lado seguro (deshace un cambio). Contar solo a personas con sesión deja fuera la
+experiencia de los visitantes sin cuenta: un cambio que solo los dañara a ellos no se revertiría
+solo (se ve en las métricas descriptivas).
+
+**Consecuencias.** Menos reversiones por ruido, y ni el umbral ni las salvaguardas se mueven con
+tráfico sin cuenta. El costo: con poco tráfico con sesión las salvaguardas tardan más en decidir y el
+umbral de ≈ 41,000 impresiones visibles por variante tardará en cumplirse; mientras tanto el motor
+solo propone. **Pendiente:** detectar tráfico anómalo de cuentas (robots con cuenta; plan §2.3). Los
+parámetros exactos viven en el código (`ceo/guardrails.ts`, `analytics/visible-impressions.ts`,
+`analytics/platform-aggregates.ts`, `app/api/impressions/route.ts`) y cambiarlos es una decisión
+humana.
+
+**Nota: límites por minuto con sesión y redes móviles** (decisión delegada, ADR-033). En México
+mucha gente navega desde redes móviles donde el operador comparte una misma IP entre muchos clientes
+(NAT del operador). Con 240 peticiones por minuto por IP para todos, unas cuantas personas con sesión
+detrás de la misma IP agotaban el cupo y sus visibles, las únicas con las que decide el motor, se
+perdían (429; el navegador no reintenta): el umbral tardaría más en cumplirse y las salvaguardas
+verían menos exposición de la real. Ahora, **con sesión** se revisa **primero el tope por cuenta**
+(60/min) y después un **techo por IP de 2,000/min** en una llave propia
+(`impressions.signed-in:ip:…`); **sin sesión** no cambia nada (240/min por IP y, sin IP de
+confianza, el tope común de 3,000/min). La cuenta va primero porque cada intento suma aunque se
+rechace (`rateLimitMany` se detiene en la primera regla que falla): quien pasa su propio tope se
+detiene ahí y no gasta el cupo de la IP que comparte con otras personas. A cada persona la acota su
+cuenta; el techo por IP solo limita cuántas cuentas manda un mismo origen (≈ 33 a su tope de 60, o
+≈ 160 pestañas al ritmo normal de una petición cada 5 s). Con y sin sesión ya no comparten cupo:
+lo de las personas con sesión no gasta el de los visitantes sin cuenta de la misma IP, ni al revés.
+**Riesgo aceptado:** quien tenga muchas cuentas en una IP puede mandar hasta 2,000 peticiones por
+minuto; cada visible sigue exigiendo una pieza servida a esa cuenta y cuenta una vez por
+publicación y día, y detectar cuentas anómalas sigue pendiente (arriba). Los visitantes sin cuenta
+detrás de una IP compartida siguen compartiendo 240/min: sus visibles son descriptivas y no deciden.
+Código: `IMPRESSIONS_LIMITS` en `app/api/impressions/route.ts`.
+
+## ADR-038 · IA en producción: proveedor real o simulación explícita
+
+**Contexto.** `AI_PROVIDER=mock` es el valor por omisión. En producción, un olvido de configuración
+haría que los vendedores recibieran en «Vende con IA» y en el kit de anuncios textos de PLANTILLA
+(deterministas, sin modelo) creyendo que son de una IA. Es el mismo riesgo que el pago simulado
+(ADR-032).
+
+**Decisión.** Espejo de `ALLOW_SIMULATED_PAYMENTS`:
+
+- Con `NODE_ENV=production` y `AI_PROVIDER=mock`, el arranque **falla** (`serverEnvSchema`) salvo
+  con `ALLOW_SIMULATED_AI=true`, una decisión explícita para un build local o un piloto cerrado. El
+  mensaje dice que los vendedores recibirían textos de plantilla y cómo resolverlo.
+- En desarrollo y pruebas no hace falta nada. Con `AI_PROVIDER=openai_compatible` la bandera no
+  tiene efecto (y no enciende el simulador). `simulatedAIAllowed(env)` (`server/env-schema.ts`) es
+  la regla reutilizable.
+- Aplica también al build de producción en `localhost`, igual que los pagos: para probarlo en una
+  máquina de desarrollo se agrega `ALLOW_SIMULATED_AI=true` al `.env` local (no se versiona y
+  `pnpm db:setup` no la escribe); en un servidor real no se define. Playwright con `CI=1` arranca
+  `pnpm start`, así que un CI futuro también la necesita.
+- Una ruta de `ai.routing` que lleve una tarea al simulador es una decisión ADMIN registrada (el
+  interruptor de apagado de la IA de pago), no un olvido: esta regla no la bloquea. **Hueco
+  conocido:** con esa ruta, en producción y sin la bandera, los vendedores reciben textos de
+  plantilla presentados como escritos por la IA («Creado con ayuda de IA» en el kit de anuncios),
+  justo lo que esta regla evita para `AI_PROVIDER`.
+
+**Consecuencias.** Para salir del piloto cerrado: proveedor real con llave, evaluación aprobada de
+cada tarea (`pnpm ai:eval`), el mismo límite de gasto en la consola del proveedor, nombre legal y país
+del proveedor en el aviso de privacidad (hoy marcado como pendiente) y correo verificado (SEC-10).
+**Pendiente:** cuando el texto venga del simulador con vendedores reales (bandera o ruta al
+simulador), la interfaz debe decir que es un ejemplo generado sin IA, o el interruptor debe apagar
+la función («publica a mano») en lugar de entregar plantillas.
+
+## ADR-039 · Fotos por `/media?w=`, no por el optimizador de Next
+
+**Contexto.** Con el loader por omisión, `next/image` pedía las fotos subidas a
+`/_next/image?url=/media/…`. El optimizador de Next guarda en disco (`.next/cache/images`, en
+desarrollo `.next/dev/cache/images`) una copia por foto, ancho y calidad, con TTL = el mayor de
+`minimumCacheTTL` (4 h) y el `max-age` de `/media`; pide el original sin cookies y le entrega su copia
+a cualquiera. Cuando la copia vence y la revalidación falla (el original ya responde 404 porque el
+equipo ocultó el producto o la foto se borró), su `response-cache` vuelve a guardar la entrada
+anterior y la sigue sirviendo: la foto de un producto oculto o de una cuenta borrada seguía saliendo
+por `/_next/image` sin límite de tiempo (hallazgo ALTO). Las copias anteriores a SEC-14 además tenían
+TTL de un año, y como el optimizador pide sin cookies, las fotos privadas (un producto oculto, visto
+por su dueño o por el equipo) se veían rotas.
+
+**Decisión.**
+
+- `next.config.ts`: `images.loader = "custom"` con `src/lib/image-loader.ts`. `/media/<clave>` y un
+  ancho → `/media/<clave>?w=<ancho>`, redondeado hacia arriba a `MEDIA_WIDTHS` (256, 384, 640, 828,
+  1080, 1600; `imageSizes` + `deviceSizes` son exactamente esos, lo comprueba
+  `image-loader.test.ts`). La calidad se ignora: la codificación la decide el servidor. Cualquier otra
+  fuente se devuelve tal cual. Con un loader propio, Next responde 404 a todo `/_next/image` (su
+  optimizador solo corre con el loader por omisión); `localPatterns: []` y `remotePatterns: []` por si
+  alguien vuelve a ese loader.
+- `/media/<clave>?w=N` (`src/app/media/[...key]/route.ts`, `modules/media/delivery.ts`): N tiene que
+  ser uno de `MEDIA_WIDTHS`; otro ancho, otro parámetro o `w` repetido → 400 antes de consultar la
+  base (como SEC-35: una CDN no guarda una copia por cada parámetro inventado). Solo para imágenes.
+  Límite: se revisa la query ya interpretada, porque Next re-arma `request.url` antes de la ruta; en
+  `next dev` (comprobado con E2E) `?w=640&`, `?&w=640` o `?%77=640` llegan como `?w=640` y se
+  entregan igual. Una CDN que use la URL cruda como clave de caché guardaría esas formas aparte (cada
+  una pasa por la autorización); si se pone una CDN delante, su clave debe normalizar la query.
+- La autorización de SEC-14/P14 corre en CADA petición, antes de leer el original o la variante; el
+  304 también va después de autorizar (un ETag viejo no se salta el 404).
+- Variantes WebP con sharp (`resizeForDelivery`): los mismos topes que una subida (firma, cabecera,
+  píxeles, 10 s) y la MISMA cola del proceso (2 imágenes a la vez); las variantes ocupan a lo más la
+  mitad de la cola de espera, para que un feed abierto en frío no deje sin lugar a las subidas. Sin
+  lugar, o si el original no se decodifica, se entrega el original con `no-store`. Si el ancho pedido
+  es igual o mayor que el de la foto guardada, se entrega el original. La caché de variantes vive en
+  el mismo almacenamiento, `variants/w<ancho>/<clave>-<ext>.webp`: una clave que nunca tiene fila en
+  `media`, así que pedirla por `/media` da 404. Peticiones simultáneas comparten la generación; una
+  variante incompleta (otro proceso escribiéndola) se genera de nuevo. La caché es solo una
+  optimización: nunca decide quién ve qué.
+- Caché HTTP: pública → `public, max-age=3600, stale-while-revalidate=86400` (antes
+  `max-age=86400`); privada → `private, no-store`; 400 y 404 → `no-store`. ETag fuerte (SHA-256 de
+  los bytes entregados) e `If-None-Match` → 304.
+- El recolector de huérfanas borra las variantes junto con el original (`deleteStoredMedia`).
+
+**Ventana de retiro.** Nuestro servidor deja de servir la foto en cuanto se oculta o se borra. Una
+copia que ya esté en un navegador o en una CDN que respete estas cabeceras se puede seguir viendo
+hasta 1 h. Después, por `stale-while-revalidate`, un navegador puede mostrarla **una vez más** (dentro
+de las 24 h siguientes) mientras revalida en segundo plano; la revalidación recibe 404 `no-store` y el
+navegador descarta su copia. Una CDN compartida puede entregarla a varias personas mientras revalida y,
+como el 404 no se puede guardar, no hay garantía de que descarte la copia vieja: según la CDN, podría
+seguir sirviéndola dentro de esas 24 h. Por eso, con una CDN delante, un retiro inmediato (p. ej.
+contenido ilegal) exige purgar la URL en la CDN; quitar `stale-while-revalidate` acota la ventana a 1 h
+a cambio de más peticiones. Qué caché usa la plataforma de despliegue para estas respuestas (y, con
+ello, cuántas peticiones llegan a la ruta) se verifica en el primer despliegue.
+
+**Por qué nuestra ruta y no el optimizador de Next.** (1) Autorización: el optimizador no puede
+revisar quién pide cada foto (pide el original sin cookies y comparte su copia). (2) Error de
+revalidación: re-guarda y sigue sirviendo la copia vieja, y no tiene forma de invalidarla (la guía de
+Next recomienda borrar `<distDir>/cache/images` a mano). (3) Costo: en plataformas como Vercel cada
+transformación y su caché son del proveedor y se cobran aparte, y esa caché tampoco sabe de
+moderación. El costo propio: CPU de sharp en el proceso web la primera vez de cada ancho (acotada por
+la cola), disco (a lo más 5 variantes por foto: solo anchos menores que el guardado, que es de hasta
+1600 px) y, en cada petición que no sale de una caché, la ruta con sus consultas de autorización
+(5 con índice para una foto pública; más con sesión) y la lectura del archivo.
+
+**Consecuencias.**
+
+- Se borraron `.next/dev/cache/images` y `.next/cache/images` en desarrollo (2026-09-26). Un
+  despliegue nuevo arranca sin esa caché y ya no la usa para `/media`. En Vercel, con loader propio,
+  la plataforma no optimiza ni guarda `/media` en su caché de imágenes: verificar en el primer
+  despliegue que `/_next/image?url=%2Fmedia%2F…` responde 404 o 400.
+- Las fotos se piden desde el mismo origen con la sesión: su dueño y el equipo ven las de un producto
+  oculto en el Studio y en su página (ya no hace falta `unoptimized`, que además en Vercel agrega
+  `?dpl=` y la ruta lo rechazaría con 400).
+- Si cambia la codificación (calidad o formato), hay que borrar `<STORAGE_LOCAL_ROOT>/variants/`: las
+  variantes no llevan versión. Con S3/R2 (ADR-005) las variantes usan el mismo `StorageProvider`; si
+  algún día las fotos se sirven directo desde el bucket o una CDN, esta autorización tiene que ir con
+  ellas (p. ej. URLs firmadas).
+- `scripts/clean-e2e.ts` borra los originales de las cuentas de prueba, no sus variantes (sin fila no
+  se sirven; solo ocupan disco). Lo mismo con una variante que su dueño pide justo mientras el
+  recolector borra esa foto: se puede escribir después del borrado y quedar en disco sin servirse.
+- Pruebas: `src/lib/image-loader.test.ts`, `modules/media/{delivery,variant-keys}.test.ts`,
+  `app/media/[...key]/route.test.ts` y `route.db.test.ts` (autorización con variante en caché, 304),
+  `modules/media/orphans.db.test.ts` (borra variantes) y `tests/e2e/media-delivery.spec.ts`.
+  **Pendiente:** actualizar `tests/e2e/security-headers.spec.ts` (el caso SEC-35 busca URLs de
+  `/_next/image` en `/comprar` y espera 200) y `tests/e2e/uploads.spec.ts` (espera
+  `public, max-age=86400`).

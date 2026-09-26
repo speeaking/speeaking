@@ -59,7 +59,9 @@ beforeEach(() => {
   db.product.findMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
     where.id.in.includes(PRODUCT) ? [{ id: PRODUCT }] : [],
   );
-  db.aIResponse.findMany.mockResolvedValue([{ id: RESPONSE, request: { userId: USER } }]);
+  db.aIResponse.findMany.mockResolvedValue([
+    { id: RESPONSE, request: { userId: USER, provider: "openai_compatible" } },
+  ]);
 });
 
 describe("deduplicación por persona, entidad y ventana (SEC-20)", () => {
@@ -195,6 +197,46 @@ describe("referencias verificadas (SEC-20)", () => {
     expect(
       await filterTrustedEvents([accepted(USER, RESPONSE, OTHER_PRODUCT)], { ip: null }),
     ).toEqual([]);
+  });
+
+  it("una propuesta de la IA simulada no cuenta como generación de IA (ADR-038)", async () => {
+    const SIMULATED = "0199a000-0000-7000-8000-0000000000c2";
+    db.aIResponse.findMany.mockResolvedValue([
+      { id: RESPONSE, request: { userId: USER, provider: "openai_compatible" } },
+      { id: SIMULATED, request: { userId: USER, provider: "mock" } },
+    ]);
+    const proposal = (
+      type: "AI_PROPOSAL_GENERATED" | "AI_PROPOSAL_ACCEPTED",
+      responseId: string,
+    ): TrackedEvent => ({
+      type,
+      userId: USER,
+      ...(type === "AI_PROPOSAL_ACCEPTED" ? { entityType: "PRODUCT", entityId: PRODUCT } : {}),
+      surface: "STUDIO",
+      metadata: { responseId },
+    });
+
+    const kept = await filterTrustedEvents(
+      [
+        proposal("AI_PROPOSAL_GENERATED", SIMULATED),
+        proposal("AI_PROPOSAL_GENERATED", RESPONSE),
+        proposal("AI_PROPOSAL_ACCEPTED", SIMULATED),
+        proposal("AI_PROPOSAL_ACCEPTED", RESPONSE),
+      ],
+      { ip: null },
+    );
+    expect(
+      kept.map((event) => [event.type, (event.metadata as { responseId: string }).responseId]),
+    ).toEqual([
+      ["AI_PROPOSAL_GENERATED", RESPONSE],
+      ["AI_PROPOSAL_ACCEPTED", RESPONSE],
+    ]);
+    // Se consulta el proveedor de la solicitud de cada propuesta.
+    expect(db.aIResponse.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: { id: true, request: { select: { userId: true, provider: true } } },
+      }),
+    );
   });
 });
 

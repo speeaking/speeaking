@@ -30,6 +30,10 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:clean-e2e": "tsx scripts/clean-e2e.ts",
+    "ai:eval": "tsx scripts/ai-eval.ts",
+    "ops:daily": "tsx --conditions=react-server scripts/ops-daily.ts",
+    "trust:reevaluate": "tsx --conditions=react-server scripts/trust-reevaluate.ts",
+    "make-admin": "tsx scripts/make-admin.ts",
     "seed:photos": "tsx scripts/fetch-seed-photos.ts"
   },
   "dependencies": {

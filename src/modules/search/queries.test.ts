@@ -84,7 +84,12 @@ describe("productCardsByIds", () => {
 
     expect(cards.map((card) => card.id)).toEqual([B, A]);
     const query = db.product.findMany.mock.calls[0]![0] as { where: unknown };
-    expect(query.where).toEqual({ id: { in: [B, A] }, status: { in: ["ACTIVE"] } });
+    // Nunca los ocultos por moderación (P14).
+    expect(query.where).toEqual({
+      id: { in: [B, A] },
+      status: { in: ["ACTIVE"] },
+      moderationStatus: "VISIBLE",
+    });
   });
 
   it("un producto agotado se marca como tal", async () => {

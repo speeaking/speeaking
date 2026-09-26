@@ -1,5 +1,6 @@
 import "server-only";
 import { type FeedItemDTO, toFeedItem } from "@/modules/feed/dto";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MAX_POST_IMAGES } from "./schemas";
@@ -36,7 +37,9 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
   if (ids.length === 0) return [];
   const viewer = viewerId ?? NO_VIEWER;
   const rows = await db.post.findMany({
-    where: { id: { in: ids }, status: "PUBLISHED" },
+    // Una publicación de un producto oculto por moderación desaparece con él (feed, perfil,
+    // búsqueda, Guardados y su propia página).
+    where: { id: { in: ids }, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] },
     select: {
       id: true,
       type: true,

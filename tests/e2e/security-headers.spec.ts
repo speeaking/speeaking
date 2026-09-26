@@ -106,18 +106,21 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
     expect(html).not.toContain('nonce="atacante"');
   });
 
-  test("el optimizador de imágenes solo procesa fotos de /media, sin query (SEC-35)", async ({
+  test("las fotos no pasan por el optimizador de Next: /media las sirve con permisos (SEC-35, ADR-039)", async ({
     request,
   }) => {
     const html = await (await request.get("/comprar")).text();
-    const media = /\/_next\/image\?url=(%2Fmedia%2F[^&"]+)/.exec(html)?.[1];
-    expect(media, "hay al menos una foto semilla en /comprar").toBeTruthy();
-    const optimize = (url: string) => request.get(`/_next/image?url=${url}&w=256&q=75`);
+    expect(html).not.toContain("/_next/image?url=%2Fmedia");
+    const [, path = "", width = ""] = /(\/media\/[^"?]+\.webp)\?w=(\d+)/.exec(html) ?? [];
+    expect(path, "hay al menos una foto semilla en /comprar").not.toBe("");
 
-    expect((await optimize(media!)).status()).toBe(200);
-    expect((await optimize(`${media}%3Fv%3D1`)).status()).toBe(400);
-    expect((await optimize("%2Ficons%2Ficon-192.png")).status()).toBe(400);
-    expect((await optimize("%2Fbrand%2Fmark.svg")).status()).toBe(400);
+    // Solo anchos permitidos y ningún otro parámetro.
+    expect((await request.get(`${path}?w=${width}`)).status()).toBe(200);
+    expect((await request.get(`${path}?w=123`)).status()).toBe(400);
+    expect((await request.get(`${path}?v=1`)).status()).toBe(400);
+    // El optimizador de Next ya no procesa nada.
+    const optimizer = await request.get(`/_next/image?url=${encodeURIComponent(path)}&w=256&q=75`);
+    expect(optimizer.status()).toBeGreaterThanOrEqual(400);
   });
 
   test("la CSP se aplica en modo estricto: un manejador en línea inyectado no corre", async ({

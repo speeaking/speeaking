@@ -2,7 +2,8 @@
 
 ## Requisitos
 
-- Node.js 22.12 o superior (`.nvmrc`), pnpm 10.33.2 (`packageManager` en `package.json`).
+- Node.js 22.23.2 o superior dentro de la 22, o 24+ (`engines` en `package.json`, `.nvmrc`), pnpm
+  10.33.2 (`packageManager`).
 - PostgreSQL 17 instalado (se usan sus binarios para el clúster del proyecto, fase 1.2).
 - Google Chrome instalado para las pruebas E2E (o `PLAYWRIGHT_CHANNEL`, ver abajo).
 
@@ -39,12 +40,44 @@ con valores aleatorios. Nunca imprime secretos. Después de reiniciar la computa
 | `pnpm db:studio`    | Explorador visual de la base (Prisma Studio)           |
 | `pnpm db:clean-e2e` | Borra las cuentas y datos que crean las pruebas E2E    |
 | `pnpm icons`        | Regenera los íconos de la PWA desde la marca           |
+| `pnpm tint`         | Regenera el CSS del tinte por comunidad (ADR-027)      |
+| `pnpm seed:photos`  | Descarga las fotos con licencia de la semilla          |
+
+### Operación y equipo
+
+| Script                                                                     | Qué hace                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm ops:daily [--engine-only]`                                           | Operación diaria: métricas → experimentos → salvaguardas → analista → checkouts vencidos → imágenes huérfanas → retención de IA. Idempotente; cada paso en `JobRun`. `--engine-only` corre solo el motor.                                                                                                                                                                                                                                                                        |
+| `pnpm ai:eval --task <tarea> [--provider mock]`                            | Evalúa un modelo con los casos de `evals/*.jsonl` (`sale_proposal`, `ad_copy`). `--provider mock` no usa red ni cuesta; un modelo de pago exige `--confirm-spend` y dice antes el costo máximo. `--limit N` nunca aprueba.                                                                                                                                                                                                                                                       |
+| `pnpm trust:reevaluate [--dry-run] [--batch-size=N] [--include-unchecked]` | Reevalúa las revisiones de autenticidad hechas con otra `RULES_VERSION` (súbela al cambiar reglas, pesos, marcas o palabras). Idempotente. `--dry-run` calcula lo mismo sin guardar y dice qué cambiaría (estados y riesgo; p. ej. cuántos «Comprobante revisado» volverían a la cola); córrelo primero. `--include-unchecked` evalúa por primera vez los productos que nunca tuvieron revisión (sin la opción solo se cuentan). Las decisiones del equipo no se deshacen solas. |
+| `pnpm make-admin <correo> [--revoke] [--allow-production]`                 | Da o quita el rol ADMIN (único camino, ADR-035). Se niega con una base que parezca de producción (`NODE_ENV=production` o un servidor que no es esta máquina) salvo `--allow-production`; la cuenta debe haber terminado la bienvenida. Aplica en la siguiente carga de página, sin cerrar sesiones.                                                                                                                                                                             |
+| `pnpm exec tsx scripts/cleanup-orphan-media.ts [--dry-run]`                | Borra imágenes sin adjuntar de más de 24 h (también lo hace la operación diaria).                                                                                                                                                                                                                                                                                                                                                                                                |
+
+En producción, la operación diaria la dispara el hosting con `/api/cron/daily` y `CRON_SECRET`: ver
+`docs/architecture.md` → Operación.
+
+**Deshacer decisiones del equipo en `/admin`.**
+
+- **Motor de automejora** (`/admin/decisiones`): una decisión APLICADA (a mano o sola) se puede
+  revertir con una nota. Restaura el valor anterior solo si nadie cambió el ajuste después, detiene
+  el experimento que comparaba contra el valor revertido y queda en la bitácora de la decisión
+  (actor HUMAN y quién). Una propuesta pendiente se aprueba o se rechaza; una revertida o rechazada
+  no se vuelve a aplicar sola (el analista puede volver a proponerla más adelante).
+- **Moderación** (`/admin/moderacion`): «Restaurar» deshace un «Ocultar» de una publicación o un
+  producto. Un rechazo de autenticidad (el producto pasa a «genérico») no se deshace solo: el
+  vendedor puede volver a declararlo original y mandar su comprobante. Cada acción queda en la
+  bitácora (`moderation.*`, `authenticity.*`).
+- **Rutas de IA** (`/admin/ia`): se cambian con una decisión nueva en esa misma pantalla.
 
 ## Build de producción en local
 
-Con el pago simulado, `next build` y `next start` fallan a propósito en producción (SEC-01, ADR-032).
-Para probar el build en esta máquina, el `.env` local define `ALLOW_SIMULATED_PAYMENTS=true`. En un
-servidor real **no** se define: se configura un proveedor de pago real. Antes de desplegar, fija
+Con el pago simulado o la IA simulada, `next build` y `next start` fallan a propósito en producción
+(SEC-01, ADR-032, ADR-038). Para probar el build en tu máquina, agrega a tu `.env` local (no se
+versiona y `pnpm db:setup` no las escribe) `ALLOW_SIMULATED_PAYMENTS=true` y
+`ALLOW_SIMULATED_AI=true`. En un servidor real **no** se definen: se
+configura un proveedor de pago real y `AI_PROVIDER=openai_compatible` (o, solo en un piloto cerrado
+y como decisión explícita, la bandera correspondiente; con la IA simulada los vendedores reciben
+textos de plantilla). Antes de desplegar, fija
 `TRUSTED_PROXY_HOPS` según los proxies que haya delante (ver `docs/architecture.md` → Seguridad).
 Detén `pnpm dev` antes de `pnpm build`: correrlos a la vez puede tumbar la caché de Turbopack.
 
@@ -52,7 +85,9 @@ Detén `pnpm dev` antes de `pnpm build`: correrlos a la vez puede tumbar la cach
 
 El seed crea cuentas editoriales (`equipo.<comunidad>`) y dos vendedores de demostración
 (`demo.electro`, `demo.casa`) sin contraseña: no sirven para iniciar sesión. Para probar, crea tu
-cuenta en `/registro` (en desarrollo el límite de registros por minuto es holgado).
+cuenta en `/registro` (en desarrollo el límite de registros por minuto es holgado). Para entrar a
+`/admin`, termina la bienvenida y date el rol con `pnpm make-admin <tu-correo>` (arriba); sin él,
+`/admin` responde 404.
 
 ## Convenciones
 
@@ -71,6 +106,10 @@ En CI o en una máquina sin Chrome:
 pnpm exec playwright install --with-deps chromium
 PLAYWRIGHT_CHANNEL=chromium pnpm test:e2e
 ```
+
+Con `CI=1` Playwright arranca `pnpm start` (build de producción) en lugar de `pnpm dev`: hace falta
+`pnpm build` antes y, mientras el pago y la IA sean simulados, `ALLOW_SIMULATED_PAYMENTS=true` y
+`ALLOW_SIMULATED_AI=true` en el entorno del CI.
 
 ## shadcn/ui
 

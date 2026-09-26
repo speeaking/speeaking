@@ -6,6 +6,12 @@ import type {
 } from "@/generated/prisma/enums";
 import { formatCount, formatMoney } from "@/lib/format";
 import { availableDeliveryMethods, orderShippingCents } from "@/modules/commerce/checkout-math";
+import {
+  type BuyerAuthenticityClaim,
+  REVIEWED_DETAIL,
+  UNVERIFIED_DETAIL,
+  UNVERIFIED_LABEL,
+} from "@/modules/trust/buyer-copy";
 
 /**
  * Respuestas instantáneas a las preguntas frecuentes del comprador (P4 / ADR-007).
@@ -34,6 +40,13 @@ export type ProductFacts = {
   warrantyDays: number | null;
   returnWindowDays: number;
   authenticity: Authenticity;
+  /**
+   * Lo que ve quien compra sobre esa declaración, según la revisión de autenticidad (P14): el mismo
+   * `claim` de `buyerAuthenticityView` que decide la etiqueta junto al precio, así «¿Es original?»
+   * nunca contradice a la ficha. Sin revisión (o sin este dato) se responde con lo declarado.
+   * Nunca el estado interno de la revisión (NEEDS_PROOF, PROOF_SUBMITTED…): solo esto.
+   */
+  authenticityClaim?: BuyerAuthenticityClaim;
   acceptedPaymentMethods: PaymentMethod[];
 };
 
@@ -173,13 +186,27 @@ export function answerQuickQuestion(question: QuickQuestionId, facts: ProductFac
         ? `Sí, el vendedor acepta devoluciones dentro de ${facts.returnWindowDays} días.`
         : "El vendedor no acepta devoluciones.";
     case "authenticity":
-      switch (facts.authenticity) {
-        case "DECLARED_ORIGINAL":
-          return "El vendedor declara que es original. No es una verificación de la plataforma.";
-        case "GENERIC":
-          return "Es un producto genérico o compatible, no de la marca original.";
-        default:
-          return "No aplica para este producto.";
-      }
+      return authenticityAnswer(facts);
+  }
+}
+
+/**
+ * «¿Es original?» con las mismas palabras que la ficha: con un comprobante pedido y sin revisar,
+ * «Autenticidad sin verificar» (la declaración «original» no se repite); con el comprobante revisado
+ * por el equipo, el texto aprobado (que no es garantía); si no, lo que declaró el vendedor.
+ */
+function authenticityAnswer(facts: ProductFacts): string {
+  if (facts.authenticity === "DECLARED_ORIGINAL") {
+    if (facts.authenticityClaim === "unverified")
+      return `${UNVERIFIED_LABEL}. ${UNVERIFIED_DETAIL}`;
+    if (facts.authenticityClaim === "reviewed") return REVIEWED_DETAIL;
+  }
+  switch (facts.authenticity) {
+    case "DECLARED_ORIGINAL":
+      return "El vendedor declara que es original. No es una verificación de la plataforma.";
+    case "GENERIC":
+      return "Es un producto genérico o compatible, no de la marca original.";
+    default:
+      return "No aplica para este producto.";
   }
 }

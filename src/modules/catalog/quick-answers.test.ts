@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { AuthenticityStatus } from "@/generated/prisma/enums";
+import { buyerAuthenticityView } from "@/modules/trust/status";
 import {
   answerQuickQuestion,
   localDeliveryLine,
@@ -100,6 +102,66 @@ describe("answerQuickQuestion (P4: solo datos verificables)", () => {
     expect(answerQuickQuestion("authenticity", airpods)).toBe(
       "El vendedor declara que es original. No es una verificación de la plataforma.",
     );
+  });
+
+  it("«¿Es original?» dice lo mismo que la etiqueta de la ficha (P14)", () => {
+    const answer = (
+      status: AuthenticityStatus | null,
+      authenticity: ProductFacts["authenticity"] = "DECLARED_ORIGINAL",
+    ) => {
+      const view = buyerAuthenticityView(
+        authenticity,
+        status
+          ? { status, riskLevel: status === "AUTO_CLEAR" ? "LOW" : "HIGH", signals: [] }
+          : null,
+      );
+      return {
+        view,
+        text: answerQuickQuestion("authenticity", {
+          ...airpods,
+          authenticity,
+          authenticityClaim: view.claim,
+        }),
+      };
+    };
+
+    // Comprobante pedido, enviado sin revisar o rechazado mientras siga declarado original: «sin
+    // verificar», con las mismas palabras que la ficha, y sin repetir «declara que es original».
+    for (const status of ["NEEDS_PROOF", "PROOF_SUBMITTED", "REJECTED"] as const) {
+      const { view, text } = answer(status);
+      expect(view.label).toBe("Autenticidad sin verificar");
+      expect(text).toBe(
+        "Autenticidad sin verificar. Aún no hemos revisado un comprobante de compra de este producto. Antes de pagar, pide al vendedor el ticket o la factura.",
+      );
+      expect(text).toContain(view.detail!);
+      expect(text).not.toMatch(/declara que es original/);
+    }
+
+    // Revisado por el equipo: el texto aprobado, que no es garantía.
+    const reviewed = answer("VERIFIED_BY_ADMIN");
+    expect(reviewed.text).toBe(reviewed.view.detail);
+    expect(reviewed.text).toBe(
+      "El vendedor declara que es original y el equipo de VendeIA revisó su comprobante de compra. No es una certificación ni una garantía de autenticidad.",
+    );
+
+    // Sin revisión o sin riesgo: lo declarado, como siempre.
+    const declared =
+      "El vendedor declara que es original. No es una verificación de la plataforma.";
+    expect(answer("AUTO_CLEAR").text).toBe(declared);
+    expect(answer(null).text).toBe(declared);
+    expect(answerQuickQuestion("authenticity", airpods)).toBe(declared);
+    // Rechazado: el equipo lo pasa a genérico, y así se responde.
+    expect(answer("REJECTED", "GENERIC").text).toBe(
+      "Es un producto genérico o compatible, no de la marca original.",
+    );
+    // Un «sin verificar» que llegara con un genérico no cambia su respuesta.
+    expect(
+      answerQuickQuestion("authenticity", {
+        ...airpods,
+        authenticity: "GENERIC",
+        authenticityClaim: "unverified",
+      }),
+    ).toBe("Es un producto genérico o compatible, no de la marca original.");
   });
 
   it("métodos de pago según lo que el vendedor configuró", () => {

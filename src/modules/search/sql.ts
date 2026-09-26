@@ -90,9 +90,10 @@ function inCategory(alias: "p" | "r", categorySlug: string) {
 }
 
 /**
- * Productos ACTIVOS con existencias, por título o etiquetas; primero los que coinciden en el título.
- * La usan la búsqueda global (/buscar) y Comprar (/comprar, con categoría opcional), así que ambas
- * encuentran lo mismo con la misma palabra.
+ * Productos ACTIVOS con existencias y VISIBLES (nunca los ocultos por moderación), por título o
+ * etiquetas; primero los que coinciden en el título. La usan la búsqueda global (/buscar) y Comprar
+ * (/comprar, con categoría opcional), así que ambas encuentran lo mismo con la misma palabra. El
+ * filtro va en el SQL (no solo al hidratar): un oculto no ocupa un lugar del `LIMIT`.
  */
 export function productSearchSql(
   terms: string[],
@@ -110,35 +111,54 @@ export function productSearchSql(
   const products = terms.some(isIndexableTerm)
     ? Prisma.sql`"products" p`
     : Prisma.sql`(
-        SELECT r."id", r."title", r."tags", r."status", r."stock", r."categoryId", r."publishedAt"
+        SELECT r."id", r."title", r."tags", r."status", r."stock", r."moderationStatus",
+          r."categoryId", r."publishedAt"
         FROM "products" r
-        WHERE r."status" = 'ACTIVE' AND r."stock" > 0 ${category("r")}
+        WHERE r."status" = 'ACTIVE' AND r."stock" > 0 AND r."moderationStatus" = 'VISIBLE'
+          ${category("r")}
         ORDER BY r."id" DESC
         LIMIT ${UNINDEXED_SEARCH_WINDOW}
       ) p`;
   return Prisma.sql`
     SELECT p."id" FROM ${products}
-    WHERE p."status" = 'ACTIVE' AND p."stock" > 0 AND ${matchesAll(document, terms)}
+    WHERE p."status" = 'ACTIVE' AND p."stock" > 0 AND p."moderationStatus" = 'VISIBLE'
+      AND ${matchesAll(document, terms)}
     ${terms.some(isIndexableTerm) ? category("p") : Prisma.empty}
     ORDER BY (${matchesAll(title, terms)}) DESC, p."publishedAt" DESC NULLS LAST, p."id" DESC
     LIMIT ${limit}`;
 }
 
-/** Publicaciones visibles por su texto, las más recientes primero. */
+/**
+ * Publicaciones sin producto o cuyo producto no está oculto por moderación (el mismo criterio que
+ * `POST_WITH_VISIBLE_PRODUCT` de `trust/visibility.ts`).
+ */
+const POST_WITH_VISIBLE_PRODUCT_SQL = Prisma.sql`(
+      p."productId" IS NULL
+      OR EXISTS (
+        SELECT 1 FROM "products" pr
+        WHERE pr."id" = p."productId" AND pr."moderationStatus" = 'VISIBLE'
+      )
+    )`;
+
+/**
+ * Publicaciones visibles por su texto, las más recientes primero: publicadas y sin un producto oculto
+ * por moderación (filtrado en el SQL para que no ocupen lugares del `LIMIT`).
+ */
 export function postSearchSql(terms: string[], limit: number = SEARCH_LIMITS.posts) {
   const body = folded(Prisma.sql`p."body"`);
   // Sin palabras indexables: solo las publicaciones más recientes (índice por fecha de publicación).
   const posts = terms.some(isIndexableTerm)
     ? Prisma.sql`"posts" p`
     : Prisma.sql`(
-        SELECT r."id", r."body", r."status", r."publishedAt" FROM "posts" r
+        SELECT r."id", r."body", r."status", r."productId", r."publishedAt" FROM "posts" r
         WHERE r."status" = 'PUBLISHED'
         ORDER BY r."publishedAt" DESC, r."id" DESC
         LIMIT ${UNINDEXED_SEARCH_WINDOW}
       ) p`;
   return Prisma.sql`
     SELECT p."id" FROM ${posts}
-    WHERE p."status" = 'PUBLISHED' AND ${matchesAll(body, terms)}
+    WHERE p."status" = 'PUBLISHED' AND ${POST_WITH_VISIBLE_PRODUCT_SQL}
+      AND ${matchesAll(body, terms)}
     ORDER BY p."publishedAt" DESC, p."id" DESC
     LIMIT ${limit}`;
 }

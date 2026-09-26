@@ -87,8 +87,14 @@ describe("listShopProducts (búsqueda de Comprar)", () => {
       select: Record<string, unknown>;
     };
     expect(Object.keys(query.select)).not.toContain("cost");
-    // Aunque la búsqueda y la carga no ocurren en el mismo instante, solo salen productos visibles.
-    expect(query.where).toEqual({ status: "ACTIVE", stock: { gt: 0 }, id: { in: [B, A] } });
+    // Aunque la búsqueda y la carga no ocurren en el mismo instante, solo salen productos visibles
+    // (activos, con piezas y no ocultos por moderación).
+    expect(query.where).toEqual({
+      status: "ACTIVE",
+      stock: { gt: 0 },
+      moderationStatus: "VISIBLE",
+      id: { in: [B, A] },
+    });
   });
 
   it("sin resultados no vuelve a consultar", async () => {

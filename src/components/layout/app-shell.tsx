@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { shellGrid } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { ConsentBanner } from "@/modules/identity/components/consent-banner";
+import { getPendingLegalDocuments } from "@/modules/identity/consent-refresh";
+import { acceptUpdatedLegalAction } from "@/modules/identity/privacy-actions";
+import { getViewer } from "@/modules/identity/session";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
 import { BottomNav } from "./bottom-nav";
 import { SideNav } from "./side-nav";
@@ -26,6 +30,7 @@ export function AppShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar viewer={viewer} />
+      {viewer ? <LegalUpdateNotice /> : null}
       <div className={cn(shellGrid, "flex-1 md:items-start")}>
         <SideNav viewer={viewer} communities={communities} />
         <main id="contenido" className="min-w-0 pb-24 md:pt-2 md:pb-12">
@@ -42,4 +47,24 @@ export function AppShell({
       <BottomNav viewer={viewer} />
     </div>
   );
+}
+
+/**
+ * Aviso de documentos legales actualizados (`identity/consent-refresh.ts`): solo con sesión y si la
+ * persona aceptó una versión anterior. No es indispensable: si la consulta falla, no se muestra.
+ */
+async function LegalUpdateNotice() {
+  const documents = await pendingForViewer();
+  if (documents.length === 0) return null;
+  return <ConsentBanner documents={documents} action={acceptUpdatedLegalAction} />;
+}
+
+async function pendingForViewer() {
+  try {
+    const viewer = await getViewer();
+    return viewer ? await getPendingLegalDocuments(viewer.userId) : [];
+  } catch (error) {
+    console.error("[identity] no se pudo revisar la versión de los documentos aceptados", error);
+    return [];
+  }
 }

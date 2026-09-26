@@ -37,6 +37,10 @@ const PROCESS_TIMEOUT_SECONDS = 10;
  */
 const MAX_CONCURRENT = 2;
 const MAX_QUEUED = 16;
+/** Lugares de la cola de espera que pueden ocupar las variantes de entrega (la otra mitad, subidas). */
+const MAX_DELIVERY_QUEUED = MAX_QUEUED / 2;
+/** Calidad WebP de lo que se publica y de sus variantes. */
+const WEBP_QUALITY = 82;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 /** Marcas ISO-BMFF (`ftyp`) de AVIF y HEIF. */
 const HEIF_BRANDS = new Set([
@@ -106,7 +110,11 @@ export async function processImage(input: Buffer): Promise<ProcessedImage> {
   }
 }
 
-async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
+/**
+ * Lee solo la cabecera y rechaza, sin decodificar, lo que no es un formato permitido o costaría
+ * demasiado decodificar (SEC-13).
+ */
+async function checkHeader(input: Buffer) {
   let metadata: Metadata;
   try {
     // `metadata()` solo lee la cabecera: no decodifica píxeles. Sin tope aquí para que una imagen
@@ -121,14 +129,29 @@ async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
   if (exceedsDecodeBudget(metadata)) {
     throw new ImageValidationError("TOO_COMPLEX");
   }
+}
+
+/** Decodificador con los topes de SEC-13 (píxeles, lectura secuencial, tiempo límite). */
+function boundedDecoder(input: Buffer) {
+  return sharp(input, {
+    limitInputPixels: MAX_INPUT_PIXELS,
+    sequentialRead: true,
+    failOn: "error",
+  }).timeout({ seconds: PROCESS_TIMEOUT_SECONDS });
+}
+
+function toValidationError(error: unknown) {
+  if (error instanceof Error && /timeout/i.test(error.message)) {
+    return new ImageValidationError("TOO_COMPLEX");
+  }
+  return new ImageValidationError("CORRUPT");
+}
+
+async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
+  await checkHeader(input);
 
   try {
-    const { data, info } = await sharp(input, {
-      limitInputPixels: MAX_INPUT_PIXELS,
-      sequentialRead: true,
-      failOn: "error",
-    })
-      .timeout({ seconds: PROCESS_TIMEOUT_SECONDS })
+    const { data, info } = await boundedDecoder(input)
       .rotate()
       .resize({
         width: MAX_DIMENSION,
@@ -136,7 +159,7 @@ async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
         fit: "inside",
         withoutEnlargement: true,
       })
-      .webp({ quality: 82 })
+      .webp({ quality: WEBP_QUALITY })
       .toBuffer({ resolveWithObject: true });
 
     const blur = await sharp(data)
@@ -153,10 +176,47 @@ async function decodeAndEncode(input: Buffer): Promise<ProcessedImage> {
       blurDataUrl: `data:image/webp;base64,${blur.toString("base64")}`,
     };
   } catch (error) {
-    if (error instanceof Error && /timeout/i.test(error.message)) {
-      throw new ImageValidationError("TOO_COMPLEX");
-    }
-    throw new ImageValidationError("CORRUPT");
+    throw toValidationError(error);
+  }
+}
+
+/**
+ * Variante de entrega (`/media/<clave>?w=N`, ADR-039): la foto guardada reducida a `width` px de
+ * ancho (sin agrandarla) y re-codificada a WebP, sin metadatos. Pasa por los mismos topes que una
+ * subida (firma, cabecera, píxeles, tiempo) y por la MISMA cola: a lo más `MAX_CONCURRENT` imágenes
+ * se decodifican a la vez en el proceso, sean subidas o variantes.
+ *
+ * Las variantes no ocupan más de la mitad de la cola de espera (`MAX_DELIVERY_QUEUED`): un feed que
+ * se abre en frío con muchas fotos nuevas no deja sin lugar a las subidas. Si no hay lugar,
+ * `ImageBusyError` de inmediato (la ruta entrega el original sin caché).
+ */
+export async function resizeForDelivery(input: Buffer, width: number): Promise<Buffer> {
+  if (!Number.isInteger(width) || width < 1 || width > MAX_DIMENSION) {
+    throw new RangeError("Ancho de variante fuera de rango.");
+  }
+  if (!sniffImageFormat(input)) {
+    throw new ImageValidationError("UNSUPPORTED_FORMAT");
+  }
+  if (queue.queued >= MAX_DELIVERY_QUEUED) throw new ImageBusyError();
+
+  try {
+    return await queue.run(() => decodeAndResize(input, width));
+  } catch (error) {
+    if (error instanceof BusyError) throw new ImageBusyError();
+    throw error;
+  }
+}
+
+async function decodeAndResize(input: Buffer, width: number) {
+  await checkHeader(input);
+  try {
+    return await boundedDecoder(input)
+      .rotate()
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
+  } catch (error) {
+    throw toValidationError(error);
   }
 }
 

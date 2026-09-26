@@ -40,7 +40,8 @@ test.describe("inicio: visitante", () => {
     const articlesBefore = await card.evaluate((node) => {
       let count = 0;
       for (let el = node.previousElementSibling; el; el = el.previousElementSibling) {
-        if (el.matches("article")) count += 1;
+        // Cada publicación va dentro del contenedor que mide si se vio (impresiones visibles).
+        if (el.matches("article") || el.querySelector(":scope > article")) count += 1;
       }
       return count;
     });
