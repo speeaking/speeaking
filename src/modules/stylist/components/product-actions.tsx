@@ -1,52 +1,43 @@
 import type { Route } from "next";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { isFeatureOn } from "@/modules/ai/features-store";
-import { imageAvailability } from "@/server/providers/image";
+import { ProductTryOn } from "@/modules/tryon/components/product-try-on";
 import { slotForPublicProduct } from "../slots";
 
 /**
- * En la ficha de una prenda (ADR-043): «Pruébatelo» (contorno) y «Completa mi look» (enlace).
- * Fuera de moda no pinta nada. Visitantes: crear cuenta y volver.
+ * En la ficha de una prenda (ADR-043, ADR-046): «Ver cómo me veo» (diálogo) y «Completa mi look»
+ * (enlace). Fuera de moda no pinta nada.
  */
 export async function ProductStylistActions({
-  slug,
-  categorySlug,
-  title,
-  tags,
-  isSignedIn,
+  product,
+  viewerUserId,
+  isOwner,
 }: {
-  slug: string;
-  categorySlug: string;
-  title: string;
-  tags: readonly string[];
-  isSignedIn: boolean;
+  product: {
+    id: string;
+    slug: string;
+    title: string;
+    priceCents: number;
+    sellerId: string;
+    categorySlug: string;
+    tags: readonly string[];
+  };
+  viewerUserId: string | null;
+  isOwner: boolean;
 }) {
-  const slot = slotForPublicProduct({ categorySlug, title, tags });
+  const slot = slotForPublicProduct({
+    categorySlug: product.categorySlug,
+    title: product.title,
+    tags: product.tags,
+  });
   if (!slot) return null;
-  const [tryOnOn, completeOn] = await Promise.all([
-    isFeatureOn("virtualTryOn"),
-    isFeatureOn("completeLook"),
-  ]);
-  const tryOnAvailable = tryOnOn && imageAvailability() !== "unavailable";
-  if (!tryOnAvailable && !completeOn) return null;
-  const tryOnHref = isSignedIn
-    ? (`/probar?producto=${encodeURIComponent(slug)}` as Route)
-    : (`/registro?next=${encodeURIComponent(`/probar?producto=${slug}`)}` as Route);
+  const completeOn = await isFeatureOn("completeLook");
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {tryOnAvailable ? (
-        <Link
-          href={tryOnHref}
-          className={cn(buttonVariants({ variant: "outline" }), "h-10 font-bold")}
-        >
-          Pruébatelo con tu foto
-        </Link>
-      ) : null}
+      <ProductTryOn product={product} viewerUserId={viewerUserId} isOwner={isOwner} />
       {completeOn ? (
         <Link
-          href={`/estilista/completa/${slug}` as Route}
+          href={`/estilista/completa/${product.slug}` as Route}
           className="inline-flex h-10 items-center text-sm font-semibold text-primary-text underline-offset-2 hover:underline"
         >
           Completa mi look

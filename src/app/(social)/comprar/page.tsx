@@ -7,8 +7,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
+import { SponsoredRow } from "@/modules/billing/components/sponsored-products";
 import { ProductCard } from "@/modules/catalog/components/product-card";
-import { listCategories, listShopProducts } from "@/modules/catalog/queries";
+import { listCategories, listFeaturedProducts, listShopProducts } from "@/modules/catalog/queries";
 import { getViewer } from "@/modules/identity/session";
 import { parseSearchQuery, SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
 import { StylistCard } from "@/modules/stylist/components/stylist-card";
@@ -27,6 +28,12 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
     listCategories(),
     listShopProducts({ categorySlug, query: search }),
   ]);
+  // Destacados (ADR-046) solo en la portada de Comprar: con búsqueda o categoría, los resultados
+  // van primero y sin patrocinados en medio.
+  const sponsored =
+    !query && !categorySlug
+      ? await listFeaturedProducts({ limit: 3, excludeUserId: viewer?.userId ?? null })
+      : [];
   if (query) {
     // P5: las búsquedas son señales de intención para el Commerce Engine.
     track({ type: "SEARCH", userId: viewer?.userId ?? null, query, surface: "SHOP" });
@@ -52,6 +59,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
         {/* Lo que cambia es cómo se compra: el estilista abre Comprar (no el feed). Con una búsqueda o
             una categoría activa, los resultados van primero. */}
         {!query && !categorySlug ? <StylistCard /> : null}
+        <SponsoredRow products={sponsored} />
         <form action="/comprar" className="relative px-4 md:px-0" role="search">
           {categorySlug ? <input type="hidden" name="categoria" value={categorySlug} /> : null}
           <Search className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground md:left-3" />

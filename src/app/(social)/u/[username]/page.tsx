@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatCompactNumber } from "@/lib/format";
 import { SignOutButton } from "@/modules/identity/components/sign-out-button";
 import { getViewer } from "@/modules/identity/session";
+import { MessageButton } from "@/modules/messages/components/message-button";
 import { FollowButton } from "@/modules/social/components/follow-button";
 import { PostCard } from "@/modules/social/components/post-card";
 import { hydratePosts } from "@/modules/social/post-queries";
@@ -108,12 +109,18 @@ export default async function ProfilePage({ params }: PageProps<"/u/[username]">
               <SignOutButton />
             </>
           ) : (
-            <FollowButton
-              targetUserId={profile.userId}
-              targetName={profile.displayName}
-              initialFollowing={profile.viewerFollows}
-              isSignedIn={Boolean(viewer)}
-            />
+            <>
+              <FollowButton
+                targetUserId={profile.userId}
+                targetName={profile.displayName}
+                initialFollowing={profile.viewerFollows}
+                isSignedIn={Boolean(viewer)}
+              />
+              {/* Las cuentas editoriales no reciben mensajes (ADR-047). */}
+              {!profile.isEditorial ? (
+                <MessageButton username={profile.username} isSignedIn={Boolean(viewer)} />
+              ) : null}
+            </>
           )}
         </div>
       </header>

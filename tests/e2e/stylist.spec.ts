@@ -41,7 +41,11 @@ test.describe("estilista", () => {
     page,
   }) => {
     await page.goto("/producto/camisa-blanca-vestir-demo");
-    await expect(page.getByRole("link", { name: "Pruébatelo con tu foto" })).toBeVisible();
+    // Visitante: el botón lleva a crear cuenta y regresa a la ficha.
+    await expect(page.getByRole("link", { name: "Ver cómo me veo" })).toHaveAttribute(
+      "href",
+      /\/registro\?next=/,
+    );
     await page.getByRole("link", { name: "Completa mi look" }).click();
     await expect(page).toHaveURL(/\/estilista\/completa\/camisa-blanca-vestir-demo/);
     await expect(page.getByRole("heading", { level: 1, name: "Completa mi look" })).toBeVisible();
@@ -49,7 +53,7 @@ test.describe("estilista", () => {
     await expect(page.getByRole("article").first()).toBeVisible();
 
     await page.goto("/producto/prensa-francesa-1l-demo");
-    await expect(page.getByRole("link", { name: "Pruébatelo con tu foto" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Ver cómo me veo" })).toHaveCount(0);
   });
 
   test("con cuenta: cambia una pieza, compra el look, sube su foto y genera una simulación gratis", async ({
@@ -68,25 +72,42 @@ test.describe("estilista", () => {
       .poll(async () => shoes.locator('a[href^="/producto/"]').first().getAttribute("href"))
       .not.toBe(before);
 
-    // «Pruébatelo» con el look guardado: sube la foto con consentimiento y genera (simulador).
-    await look.getByRole("link", { name: "Pruébatelo" }).click();
-    await expect(page).toHaveURL(/\/probar\?look=/);
-    await expect(page.getByRole("heading", { level: 1, name: "Pruébatelo" })).toBeVisible();
-    await page
+    // «Ver cómo me veo» desde la ficha, en un solo paso (ADR-046): la foto, el consentimiento y
+    // la simulación aparecen en el mismo diálogo. La prueba la paga la tienda (semilla) o Estreno;
+    // quien compra, nunca.
+    await page.goto("/producto/camisa-blanca-vestir-demo");
+    await page.getByRole("button", { name: "Ver cómo me veo" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Es gratis para ti/)).toBeVisible();
+    await dialog
       .getByLabel("Elegir imágenes")
       .setInputFiles({ name: "yo.png", mimeType: "image/png", buffer: TINY_PNG });
-    await expect(page.locator('input[name="mediaId"]')).toHaveCount(1);
-    await page.getByRole("checkbox", { name: /Acepto que Estreno use esta foto/ }).check();
-    await page.getByRole("button", { name: "Guardar foto" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Foto guardada" })).toBeVisible();
+    await expect(dialog.locator('input[name="mediaId"]')).toHaveCount(1);
+    await dialog.getByRole("checkbox", { name: /Acepto que Estreno use esta foto/ }).check();
+    await dialog.getByRole("button", { name: "Ver cómo me veo" }).click();
+    await expect(dialog.getByRole("heading", { name: "Así podrías verte" })).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(
+      dialog.getByRole("img", { name: /Simulación de cómo podría verse/ }),
+    ).toBeVisible();
+    await expect(dialog.getByText(/Cortesía de (la tienda|Estreno)/)).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Comprar ahora" })).toBeVisible();
+    // «Agrégale…»: complementos reales de otros huecos.
+    await expect(dialog.getByRole("heading", { name: /Agrégale/ })).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: /Calzado|Parte de abajo/ }).first(),
+    ).toBeVisible();
+    // Comprar desde el diálogo lleva al checkout con la prenda.
+    await dialog.getByRole("button", { name: "Comprar ahora" }).click();
+    await expect(page).toHaveURL(/\/checkout/);
 
-    await expect(page.getByText(/quedan 3 pruebas gratis/)).toBeVisible();
-    await page.getByRole("button", { name: "Pruébatelo", exact: true }).click();
-    await expect(page).toHaveURL(/\/probar\/[0-9a-f-]{36}/, { timeout: 60_000 });
-    await expect(page.getByRole("heading", { level: 1, name: "Tu simulación" })).toBeVisible();
-    await expect(page.getByText(/Simulación generada con IA/)).toBeVisible();
-    await expect(page.getByText("Prueba gratis del mes")).toBeVisible();
-    await expect(page.getByRole("img", { name: /Simulación de cómo podría verse/ })).toBeVisible();
+    // El estudio (/probar) sigue para looks completos: la foto guardada ya aparece ahí.
+    await page.goto(`/estilista?necesidad=${encodeURIComponent(NEED)}`);
+    await page.getByRole("article").first().getByRole("link", { name: "Pruébatelo" }).click();
+    await expect(page).toHaveURL(/\/probar\?look=/);
+    await expect(page.getByRole("list", { name: "Tus fotos" }).getByRole("button")).toHaveCount(1);
+    await expect(page.getByText(/cortesía de (la tienda|Estreno)/)).toBeVisible();
 
     // La foto es privada: aparece en Ajustes con su fecha de borrado.
     await page.goto("/ajustes");
@@ -100,22 +121,37 @@ test.describe("estilista", () => {
     await expect(page.locator('a[href^="/producto/"]').first()).toBeVisible();
   });
 
-  test("el saldo se recarga (simulado) y los precios son públicos", async ({ page }) => {
+  test("el saldo es de las tiendas: se recarga (simulado) en el Studio y los precios son públicos", async ({
+    page,
+  }) => {
     await page.goto("/precios");
     await expect(page.getByRole("heading", { level: 1, name: "Precios" })).toBeVisible();
+    await expect(page.getByText("Si compras: gratis, siempre")).toBeVisible();
     await expect(page.getByText("nivel 1")).toBeVisible();
     await expect(page.getByText("$3.50").first()).toBeVisible();
+    await expect(page.getByText("Arranque")).toBeVisible();
 
-    await registerAndOnboard(page);
+    const user = await registerAndOnboard(page);
+    // Sin tienda: para quien compra todo es gratis.
     await page.goto("/saldo");
-    await expect(page.getByRole("heading", { level: 1, name: "Tu saldo" })).toBeVisible();
-    // El saldo se muestra sin centavos cuando son cero («$0», «$39»).
+    await expect(page.getByRole("heading", { name: "Para ti todo es gratis" })).toBeVisible();
+
+    // Con tienda: el saldo vive en el Studio y se recarga (simulado).
+    await page.goto("/studio/saldo");
+    await page.getByLabel("Nombre de tu tienda").fill(`Tienda de ${user.name}`);
+    await page.getByLabel("Ciudad").fill("Ciudad de México");
+    await page.getByLabel("Estado").fill("CDMX");
+    await page.getByRole("button", { name: "Activar mi tienda" }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Saldo y «Ver cómo me veo»" }),
+    ).toBeVisible();
     await expect(page.getByText("$0", { exact: true })).toBeVisible();
+    await expect(page.getByText(/te quedan 10/)).toBeVisible();
     await page.getByRole("button", { name: "Recargar" }).first().click();
     await expect(
       page.getByRole("status").filter({ hasText: "Recarga simulada aplicada" }),
     ).toBeVisible();
-    await expect(page.getByText("$39", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("$99", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Recarga (simulada)")).toBeVisible();
   });
 });

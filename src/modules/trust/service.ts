@@ -333,7 +333,8 @@ export type QueueTarget =
       sellerName: string;
       hidden: boolean;
     }
-  | { kind: "POST"; excerpt: string; href: string; author: string | null; hidden: boolean };
+  | { kind: "POST"; excerpt: string; href: string; author: string | null; hidden: boolean }
+  | { kind: "USER"; displayName: string; username: string; href: string; hidden: false };
 
 export type QueueReportGroup = {
   targetType: ReportableTarget;
@@ -409,16 +410,22 @@ export async function getModerationQueue(
     const key = `${report.targetType}:${report.targetId}`;
     let group = groups.get(key);
     if (!group) {
+      // Los comentarios aún no se reportan desde la interfaz.
+      if (
+        report.targetType !== "POST" &&
+        report.targetType !== "PRODUCT" &&
+        report.targetType !== "USER"
+      ) {
+        continue;
+      }
       group = {
-        targetType: report.targetType === "POST" ? "POST" : "PRODUCT",
+        targetType: report.targetType,
         targetId: report.targetId,
         target: null,
         reasons: [],
         reports: [],
         oldestAt: report.createdAt,
       };
-      // Personas y comentarios aún no se reportan desde la interfaz.
-      if (report.targetType !== "POST" && report.targetType !== "PRODUCT") continue;
       groups.set(key, group);
     }
     group.reports.push({
@@ -440,13 +447,29 @@ export async function getModerationQueue(
   const reportGroups = [...groups.values()];
   const productIds = reportGroups.filter((g) => g.targetType === "PRODUCT").map((g) => g.targetId);
   const postIds = reportGroups.filter((g) => g.targetType === "POST").map((g) => g.targetId);
-  const [products, posts] = await Promise.all([
+  const userIds = reportGroups.filter((g) => g.targetType === "USER").map((g) => g.targetId);
+  const [products, posts, profiles] = await Promise.all([
     q.findProductsForQueue(productIds),
     q.findPostsForQueue(postIds),
+    q.findProfilesForQueue(userIds),
   ]);
   const productById = new Map(products.map((product) => [product.id, product]));
   const postById = new Map(posts.map((post) => [post.id, post]));
+  const profileByUserId = new Map(profiles.map((profile) => [profile.userId, profile]));
   for (const group of reportGroups) {
+    if (group.targetType === "USER") {
+      const profile = profileByUserId.get(group.targetId);
+      group.target = profile
+        ? {
+            kind: "USER",
+            displayName: profile.displayName,
+            username: profile.username,
+            href: `/u/${profile.username}`,
+            hidden: false,
+          }
+        : null;
+      continue;
+    }
     if (group.targetType === "PRODUCT") {
       const product = productById.get(group.targetId);
       group.target = product
@@ -646,6 +669,26 @@ export async function applyModerationAction(
     case "restore":
     case "dismiss": {
       const target = { targetType: action.targetType, targetId: action.targetId };
+      if (action.targetType === "USER") {
+        // Una cuenta solo se descarta desde aquí (ADR-047); ocultarla no existe en esta versión.
+        if (action.action !== "dismiss") throw new TrustError("NOT_ALLOWED");
+        await q.inTransaction(async (tx) => {
+          const changed = (await q.resolveOpenReports(tx, target, "DISMISSED", actorUserId, now))
+            .count;
+          if (changed === 0) throw new TrustError("NOT_ALLOWED");
+          await q.logModeration(tx, {
+            kind: "moderation.dismiss_user",
+            title: `${ACTION_TITLES.dismiss}: cuenta ${action.targetId.slice(0, 8)}`,
+            riskLevel: "LOW",
+            actorUserId,
+            previousValue: target,
+            newValue: { ...target, reports: "DISMISSED" },
+            reason,
+            now,
+          });
+        });
+        return { paths: ["/admin/moderacion"] };
+      }
       if (action.targetType === "PRODUCT") {
         const slug = await q.withProductTrustLock(action.targetId, async (tx) => {
           const state = await q.findProductState(tx, action.targetId);

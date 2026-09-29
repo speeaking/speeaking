@@ -28,6 +28,7 @@ function viewerWith(communities: Viewer["communities"]): Viewer {
     isSeller: false,
     onboarded: true,
     cartCount: 0,
+    unreadMessages: 0,
     communities,
   };
 }

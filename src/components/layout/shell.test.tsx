@@ -48,6 +48,7 @@ const viewer: NonNullable<ViewerSummary> = {
   isSeller: false,
   onboarded: true,
   cartCount: 2,
+  unreadMessages: 0,
   communities: [
     { slug: "gaming", name: "Gaming", emoji: "🎮", hue: 285 },
     { slug: "deportes", name: "Deportes", emoji: "⚽", hue: 145 },

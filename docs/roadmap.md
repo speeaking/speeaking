@@ -129,6 +129,22 @@ precio comunitario (ADR-044) y Pruébatelo con privacidad de fotos (ADR-045). De
 | Evaluación (`pnpm ai:eval`) para `shopping_intent` y modelo de texto aprobado                                      | ⏳     |
 | Studio: «N personas buscan algo como esto» por producto (matching, `buyerMatching`)                                | ⏳     |
 
+## Sprint 6 — Quien vende paga, «Ver cómo me veo» en un paso y publicidad 🟡 (2026-09-29)
+
+Corrección de rumbo del fundador (ADR-046): red social primero, quien compra no paga por verse con
+una prenda, la columna derecha es publicidad y cada beneficio para tiendas se cobra desde un saldo.
+
+| Entregable                                                                                                 | Estado |
+| ---------------------------------------------------------------------------------------------------------- | ------ |
+| «Ver cómo me veo» en un paso desde la ficha: foto, simulación, comprar y «Agrégale…» en un diálogo         | ✅     |
+| Quien vende paga: tienda → cortesía de Estreno (10 por tienda) → demanda registrada; saldo solo de tiendas | ✅     |
+| Recargas Arranque / Impulso / Tienda pro; `/studio/saldo` con pruebas, demanda y movimientos               | ✅     |
+| Producto destacado: días desde el saldo, bloque «Patrocinado» en la columna derecha, ficha y Comprar       | ✅     |
+| Columna izquierda plegable (escritorio)                                                                    | ✅     |
+| Mensajes privados entre personas (bandeja, hilo, no leídos, reportar)                                      | ✅     |
+| Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)     | ⏳     |
+| Centro de avisos (me gusta, comentarios, seguidores, mensajes), como la campana de Facebook                | ⏳     |
+
 ### Ecosistema de IA por fases (plan del fundador, 2026-09-29)
 
 | Fase | Funciones                                                                                        | Estado                     |

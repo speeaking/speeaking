@@ -205,4 +205,34 @@ test.describe("navegación", () => {
       page.getByRole("heading", { level: 1, name: "Términos y condiciones" }),
     ).toBeVisible();
   });
+  test("en escritorio, la columna izquierda se pliega a íconos y lo recuerda al recargar", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "La columna izquierda no existe en móvil.");
+    await page.goto("/");
+    const frame = page.locator("[data-nav]");
+    await expect(frame).toHaveAttribute("data-nav", "open");
+    // El botón solo responde cuando React ya tomó la página (`data-ready`).
+    await expect(frame).toHaveAttribute("data-ready", "true");
+    const nav = mainNav(page);
+    const label = nav.getByText("Descubrir");
+    // Un texto solo para lectores de pantalla (sr-only) mide 1 px: así se distingue de uno visible.
+    const labelWidth = () => label.evaluate((element) => getComputedStyle(element).width);
+    await expect.poll(labelWidth).not.toBe("1px");
+
+    await page.getByRole("button", { name: "Contraer el menú" }).click();
+    await expect(frame).toHaveAttribute("data-nav", "closed");
+    // Plegada: los íconos siguen y el nombre queda solo para lectores de pantalla.
+    await expect(nav.getByRole("link", { name: "Descubrir", exact: true })).toBeVisible();
+    await expect.poll(labelWidth).toBe("1px");
+
+    await page.reload();
+    await expect(page.locator("[data-nav]")).toHaveAttribute("data-nav", "closed");
+    await expect(page.locator("[data-nav]")).toHaveAttribute("data-ready", "true");
+    await expect.poll(labelWidth).toBe("1px");
+    await page.getByRole("button", { name: "Expandir el menú" }).click();
+    await expect(page.locator("[data-nav]")).toHaveAttribute("data-nav", "open");
+    await expect.poll(labelWidth).not.toBe("1px");
+  });
 });

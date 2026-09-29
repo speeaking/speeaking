@@ -4,9 +4,12 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { topUpAction, type BillingFormState } from "../actions";
-import type { TopUpPack } from "../pricing";
+import { FEATURED_DAY_PRICE_CENTS, type TopUpPack, tryOnsAffordable } from "../pricing";
 
-/** Recargas (simuladas en esta etapa): un botón por recarga; la acción principal es la más chica. */
+/**
+ * Recargas de saldo de la tienda (simuladas en esta etapa): un botón por recarga; la acción
+ * principal es la de en medio («Impulso»). Cada una dice qué compra al precio de hoy.
+ */
 export function TopUpForm({
   packs,
   tryOnPriceCents,
@@ -20,21 +23,24 @@ export function TopUpForm({
       <ul className="grid gap-2 sm:grid-cols-3">
         {packs.map((pack, index) => {
           const total = pack.amountCents + pack.bonusCents;
-          const tries = tryOnPriceCents > 0 ? Math.floor(total / tryOnPriceCents) : 0;
           return (
             <li key={pack.id} className="flex flex-col gap-1 rounded-2xl border p-3">
+              <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                {pack.name}
+              </p>
               <p className="font-heading text-xl font-extrabold tabular-nums">
                 {formatMoney(pack.amountCents)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {pack.bonusCents > 0 ? `+ ${formatMoney(pack.bonusCents)} de regalo · ` : ""}≈{" "}
-                {tries} pruebas al precio de hoy
+                {tryOnsAffordable(total, tryOnPriceCents)} pruebas o{" "}
+                {Math.floor(total / FEATURED_DAY_PRICE_CENTS)} días destacado
               </p>
               <Button
                 type="submit"
                 name="packId"
                 value={pack.id}
-                variant={index === 0 ? "default" : "outline"}
+                variant={index === 1 ? "default" : "outline"}
                 disabled={pending}
                 className="mt-1"
               >

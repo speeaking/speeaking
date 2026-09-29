@@ -22,9 +22,14 @@ presentarlo y a encontrar compradores».
 - Estilista: escribir qué necesitas («tengo una boda el viernes y $3,000») y recibir looks completos
   con productos reales de distintos vendedores; «Completa mi look» desde una prenda; cambiar piezas
   y comprar el look.
-- «Pruébatelo»: subir tu foto (privada, con consentimiento, se borra a los 30 días) y ver una
-  simulación de una prenda o de un look completo; 3 gratis al mes y después con saldo a precio
-  comunitario (`/precios`); los vendedores pueden patrocinar pruebas.
+- «Ver cómo me veo»: desde la ficha de una prenda, subir tu foto (privada, con consentimiento, se
+  borra a los 30 días) y ver la simulación en un diálogo, con «Comprar ahora» y «Agrégale…» para
+  completar el look; gratis para quien compra: la paga la tienda (saldo con tope diario) o Estreno en
+  las primeras pruebas de cada tienda (`/precios`).
+- Tiendas: saldo con recargas Arranque, Impulso y Tienda pro, «Ver cómo me veo» activo y producto
+  destacado por día, que sale como «Patrocinado» en la columna derecha, en las fichas y en Comprar.
+- Mensajes privados: escribirle a alguien desde su perfil o preguntarle a una tienda desde un
+  producto; no leídos en la barra superior y reporte desde el hilo.
 - Confianza: reportar productos; los productos de marca se revisan por riesgo de imitación (nunca se
   acusa ni se certifica) y quien vende puede enviar un comprobante.
 - Equipo (`/admin`, solo rol ADMIN): Centro de decisiones del motor de automejora, experimentos,

@@ -12,7 +12,7 @@ import { getLook } from "@/modules/stylist/service";
 import { classifySlot, SLOT_LABELS } from "@/modules/stylist/slots";
 import { type StudioProduct, TryOnStudio } from "@/modules/tryon/components/try-on-studio";
 import { MAX_TRY_ON_GARMENTS } from "@/modules/tryon/limits";
-import { listTryOnPhotos, listTryOnResults, tryOnAllowance } from "@/modules/tryon/service";
+import { listTryOnPhotos, listTryOnResults, tryOnAvailabilityFor } from "@/modules/tryon/service";
 import { db } from "@/server/db";
 import { imageAvailability } from "@/server/providers/image";
 
@@ -45,7 +45,6 @@ export default async function TryOnPage({ searchParams }: PageProps<"/probar">) 
     MAX_TRY_ON_GARMENTS,
   );
   let products: StudioProduct[] = [];
-  let sponsored = false;
   if (typeof look === "string") {
     const saved = await getLook(look, viewer.userId);
     products =
@@ -80,25 +79,21 @@ export default async function TryOnPage({ searchParams }: PageProps<"/probar">) 
       });
     }
   }
-  if (products[0]) {
-    const seller = await db.product.findUnique({
-      where: { id: products[0].id },
-      select: { seller: { select: { sponsorsTryOn: true, userId: true } } },
-    });
-    sponsored = Boolean(seller?.seller.sponsorsTryOn) && seller?.seller.userId !== viewer.userId;
-  }
-
-  const [photos, allowance, recent] = await Promise.all([
+  // Quién pagaría la prueba: la tienda de la prenda principal o su cortesía (ADR-046).
+  const main = products[0]
+    ? await db.product.findUnique({ where: { id: products[0].id }, select: { sellerId: true } })
+    : null;
+  const [photos, recent, funding] = await Promise.all([
     listTryOnPhotos(viewer.userId),
-    tryOnAllowance(viewer.userId),
     listTryOnResults(viewer.userId),
+    main ? tryOnAvailabilityFor(main.sellerId) : null,
   ]);
 
   return (
     <>
       <PageHeader
         title="Pruébatelo"
-        description="Sube tu foto y mira cómo podría verse una prenda o un look completo en ti. Es una simulación con IA, no una garantía."
+        description="Sube tu foto y mira cómo podría verse una prenda o un look completo en ti. Es una simulación con IA, no una garantía, y para ti siempre es gratis."
       />
       <div className="flex flex-col gap-6 px-4 md:px-0">
         <TryOnStudio
@@ -108,18 +103,8 @@ export default async function TryOnPage({ searchParams }: PageProps<"/probar">) 
             createdAt: photo.createdAt,
           }))}
           products={products}
-          allowance={{
-            freeLeft: allowance.freeLeft,
-            freeLimit: allowance.freeLimit,
-            priceCents: allowance.priceCents,
-            balanceCents: allowance.balanceCents,
-            level: allowance.pricing.level,
-            levels: allowance.pricing.levels,
-            nextLevelAt: allowance.pricing.nextLevelAt,
-            nextPriceCents: allowance.pricing.nextPriceCents,
-          }}
+          status={funding?.status ?? "trial"}
           simulated={availability !== "real"}
-          sponsored={sponsored}
         />
 
         {recent.length > 0 ? (

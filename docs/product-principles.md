@@ -49,24 +49,25 @@ prácticamente automático." Para el vendedor: "Tú tienes el producto. La IA en
 
 ## Propuestas aprobadas
 
-| #   | Propuesta                                                              | Estado                                       |
-| --- | ---------------------------------------------------------------------- | -------------------------------------------- |
-| P1  | Compartir afuera, descubrir adentro                                    | Aprobada — Sprint 1                          |
-| P2  | La IA redacta, el código calcula                                       | Aprobada — regla obligatoria                 |
-| P3  | De la propuesta de IA al producto en un toque                          | Aprobada — Sprint 1                          |
-| P4  | Datos estructurados para que el agente no invente                      | Aprobada — campos en Sprint 1                |
-| P5  | Eventos y atribución desde el día 1                                    | Aprobada — Sprint 1                          |
-| P6  | Una cuenta con capacidades progresivas                                 | Aprobada — Sprint 1                          |
-| P7  | Promoción dentro del feed como canal de campañas                       | Aprobada — modelo en fase 13                 |
-| P8  | Nombre de marca definitivo                                             | Pendiente — no bloquea                       |
-| P9  | Comunidades por nicho con contenido precargado                         | Pedida por producto — Sprint 1               |
-| P10 | Motor de automejora ("IA CEO") con límites                             | Pedida por producto — base en Sprint 1       |
-| P11 | IA autofinanciada (presupuesto ligado a ingresos)                      | Pedida por producto — base en Sprint 1       |
-| P12 | Impulso pagado por resultados + vendedor IA                            | Pedida por producto — se activa con tráfico  |
-| P13 | Reels: video vertical corto que vende                                  | Pedida por producto — después del rediseño   |
-| P14 | Riesgo de falsificación, reportes y moderación                         | Pedida por el fundador — construida (base)   |
-| P15 | Estilista: ¿Qué necesitas?, Crea mi look, Completa mi look, Pruébatelo | Pedida por el fundador — construida (fase 2) |
-| P16 | Autofinanciamiento: saldo, precio comunitario y patrocinio             | Pedida por el fundador — construida (base)   |
+| #   | Propuesta                                                                   | Estado                                        |
+| --- | --------------------------------------------------------------------------- | --------------------------------------------- |
+| P1  | Compartir afuera, descubrir adentro                                         | Aprobada — Sprint 1                           |
+| P2  | La IA redacta, el código calcula                                            | Aprobada — regla obligatoria                  |
+| P3  | De la propuesta de IA al producto en un toque                               | Aprobada — Sprint 1                           |
+| P4  | Datos estructurados para que el agente no invente                           | Aprobada — campos en Sprint 1                 |
+| P5  | Eventos y atribución desde el día 1                                         | Aprobada — Sprint 1                           |
+| P6  | Una cuenta con capacidades progresivas                                      | Aprobada — Sprint 1                           |
+| P7  | Promoción dentro del feed como canal de campañas                            | Aprobada — modelo en fase 13                  |
+| P8  | Nombre de marca definitivo                                                  | Pendiente — no bloquea                        |
+| P9  | Comunidades por nicho con contenido precargado                              | Pedida por producto — Sprint 1                |
+| P10 | Motor de automejora ("IA CEO") con límites                                  | Pedida por producto — base en Sprint 1        |
+| P11 | IA autofinanciada (presupuesto ligado a ingresos)                           | Pedida por producto — base en Sprint 1        |
+| P12 | Impulso pagado por resultados + vendedor IA                                 | Pedida por producto — se activa con tráfico   |
+| P13 | Reels: video vertical corto que vende                                       | Pedida por producto — después del rediseño    |
+| P14 | Riesgo de falsificación, reportes y moderación                              | Pedida por el fundador — construida (base)    |
+| P15 | Estilista: ¿Qué necesitas?, Crea mi look, Completa mi look, Pruébatelo      | Pedida por el fundador — construida (fase 2)  |
+| P16 | Autofinanciamiento: saldo, precio comunitario y patrocinio                  | Pedida por el fundador — construida (base)    |
+| P17 | Quien vende paga: «Ver cómo me veo» en un paso, saldo de tienda, destacados | Pedida por el fundador — construida (ADR-046) |
 
 ### P12 · Impulso pagado por resultados + vendedor IA experto (2026-09-25)
 
@@ -251,7 +252,8 @@ Pruébatelo → comprar», con 20 funciones de IA en 5 fases y una regla: no con
 1. **Problema.** Las imágenes y el video cuestan dinero real por uso; sin un cobro claro, unas
    cuantas cuentas pueden vaciar el presupuesto. El fundador pide cobrar donde sea necesario, que
    nada sea caro y que el precio baje al crecer la comunidad.
-2. **Solución.** `docs/modelo-de-ingresos.md`: saldo en pesos por cuenta; 3 pruebas gratis al mes
+2. **Solución.** `docs/modelo-de-ingresos.md` (corregido el mismo día por P17/ADR-046: el saldo es
+   solo de las tiendas y quien compra no paga las pruebas): saldo en pesos por cuenta; 3 pruebas gratis al mes
    con tope diario del subsidio; después, precio comunitario por prueba ($3.50 → $2.00 según el
    volumen mensual de toda la plataforma, con piso de 1.5 × el costo); el vendedor puede
    patrocinar pruebas sobre sus productos con tope diario; lo barato sigue gratis con cuotas.

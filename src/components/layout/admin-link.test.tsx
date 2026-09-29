@@ -40,6 +40,7 @@ const person: NonNullable<ViewerSummary> = {
   isSeller: false,
   onboarded: true,
   cartCount: 0,
+  unreadMessages: 0,
   communities: [],
 };
 const admin: NonNullable<ViewerSummary> = { ...person, isAdmin: true };

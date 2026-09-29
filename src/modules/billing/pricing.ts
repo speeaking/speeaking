@@ -1,21 +1,26 @@
 /**
- * Precio comunitario de «Pruébatelo» (ADR-044, docs/modelo-de-ingresos.md §3). Todo lo calcula el
- * código (P2): el nivel sale del volumen de pruebas de toda la plataforma en el mes anterior, el
- * precio de la tabla aprobada, y un piso de seguridad impide vender por debajo del costo aunque un
- * proveedor suba su precio. Cambiar la tabla es una decisión de riesgo ALTO (código + ADR).
+ * Precios de lo que paga quien vende (ADR-044, ADR-046, docs/modelo-de-ingresos.md). Todo lo
+ * calcula el código (P2): el nivel del precio por prueba sale del volumen de pruebas de toda la
+ * plataforma en el mes anterior, el precio de la tabla aprobada, y un piso de seguridad impide
+ * vender por debajo del costo aunque un proveedor suba su precio. Cambiar cualquier tabla de aquí es
+ * una decisión de riesgo ALTO (código + ADR); quien compra nunca paga nada de esto.
  */
 
-export const PRICING_VERSION = "2026-09-29";
+export const PRICING_VERSION = "2026-09-29b";
 
-/** Pruebas gratis al mes por cuenta con perfil terminado. */
-export const FREE_TRY_ONS_PER_MONTH = 3;
+/**
+ * Pruebas de cortesía por tienda (las paga Estreno): con ellas «Ver cómo me veo» funciona desde el
+ * primer día en cualquier tienda y quien vende ve el resultado antes de poner saldo. Se cuentan por
+ * tienda, no por producto ni por persona.
+ */
+export const STORE_TRIAL_TRY_ONS = 10;
 
 /** El precio nunca baja de este múltiplo del costo unitario de la tabla de costos. */
 export const PRICE_FLOOR_MULTIPLIER = 1.5;
 
 export type TryOnTier = {
   level: 1 | 2 | 3 | 4;
-  /** Pruebas al mes en toda la plataforma (gratis y pagadas) desde las que aplica. */
+  /** Pruebas al mes en toda la plataforma (cortesía y pagadas) desde las que aplica. */
   minMonthlyTryOns: number;
   priceCents: number;
 };
@@ -99,23 +104,28 @@ export function tryOnPrice({
 
 export type TopUpPack = {
   id: string;
+  name: string;
   amountCents: number;
   /** Bono de saldo (no es ingreso; se registra como PROMO). */
   bonusCents: number;
 };
 
-/** Recargas disponibles (docs/modelo-de-ingresos.md §3.3). El id es estable: va en la base. */
+/**
+ * Recargas de saldo de la tienda (docs/modelo-de-ingresos.md §3.3). Un solo saldo para todo lo que
+ * paga quien vende: pruebas de «Ver cómo me veo», días destacado y, después, Impulsar. Sin planes
+ * que venzan: el saldo se gasta cuando trae ventas. El id es estable: va en la base.
+ */
 export const TOPUP_PACKS: readonly TopUpPack[] = [
-  { id: "recarga-39", amountCents: 3_900, bonusCents: 0 },
-  { id: "recarga-99", amountCents: 9_900, bonusCents: 495 },
-  { id: "recarga-199", amountCents: 19_900, bonusCents: 1_990 },
+  { id: "tienda-99", name: "Arranque", amountCents: 9_900, bonusCents: 0 },
+  { id: "tienda-299", name: "Impulso", amountCents: 29_900, bonusCents: 2_990 },
+  { id: "tienda-799", name: "Tienda pro", amountCents: 79_900, bonusCents: 11_985 },
 ];
 
 export function topUpPack(id: string): TopUpPack | null {
   return TOPUP_PACKS.find((pack) => pack.id === id) ?? null;
 }
 
-/** Tope diario mínimo para patrocinar pruebas (centavos MXN). */
+/** Tope diario mínimo para pagar pruebas sobre los productos propios (centavos MXN). */
 export const MIN_SPONSOR_DAILY_CAP_CENTS = 2_000;
 export const MAX_SPONSOR_DAILY_CAP_CENTS = 500_000;
 
@@ -123,4 +133,18 @@ export const MAX_SPONSOR_DAILY_CAP_CENTS = 500_000;
 export function tryOnsAffordable(balanceCents: number, priceCents: number): number {
   if (priceCents <= 0) return 0;
   return Math.max(0, Math.floor(balanceCents / priceCents));
+}
+
+/**
+ * Producto destacado (ADR-046): aparece como «Patrocinado» en la columna de publicidad, junto a
+ * otros productos y arriba de Comprar. Se paga por día, por adelantado, desde el saldo de la tienda.
+ */
+export const FEATURED_DAY_PRICE_CENTS = 1_500;
+export const FEATURED_MIN_DAYS = 3;
+export const FEATURED_MAX_DAYS = 30;
+
+/** Costo de destacar un producto `days` días, o `null` fuera del rango permitido. */
+export function featuredCostCents(days: number): number | null {
+  if (!Number.isInteger(days) || days < FEATURED_MIN_DAYS || days > FEATURED_MAX_DAYS) return null;
+  return days * FEATURED_DAY_PRICE_CENTS;
 }

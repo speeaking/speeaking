@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { UserRole } from "@/generated/prisma/enums";
+import { countUnreadConversations } from "@/modules/messages/service";
 import { getUnreadCounts } from "@/modules/social/unread";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { auth } from "@/server/auth";
@@ -106,7 +107,7 @@ const getMemberships = cache(async (userId: string) =>
 export const getViewerSummary = cache(async (): Promise<ViewerSummary> => {
   const viewer = await getViewer();
   if (!viewer) return null;
-  const [cart, memberships, unread] = await Promise.all([
+  const [cart, memberships, unread, unreadMessages] = await Promise.all([
     // El mismo número que `cartCount` (commerce/cart.ts) y que las líneas de /carrito: sin las
     // piezas de productos ocultos por moderación (P14), que el carrito omite.
     db.cartItem.aggregate({
@@ -115,9 +116,11 @@ export const getViewerSummary = cache(async (): Promise<ViewerSummary> => {
     }),
     getMemberships(viewer.userId),
     getUnreadCounts(viewer.userId),
+    countUnreadConversations(viewer.userId).catch(() => 0),
   ]);
   return {
     cartCount: cart._sum.quantity ?? 0,
+    unreadMessages,
     username: viewer.profile?.username ?? null,
     displayName: viewer.profile?.displayName ?? viewer.name,
     avatarUrl: viewer.profile?.avatarUrl ?? null,

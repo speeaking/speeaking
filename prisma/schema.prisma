@@ -55,6 +55,9 @@ model User {
   tryOnPhotos          TryOnPhoto[]
   tryOnResults         TryOnResult[]
   styleLooks           StyleLook[]
+  conversationsAsA     Conversation[]        @relation("conversationsAsA")
+  conversationsAsB     Conversation[]        @relation("conversationsAsB")
+  messagesSent         Message[]             @relation("messagesSent")
 
   @@map("users")
 }
@@ -607,6 +610,9 @@ model Product {
   moderationStatus          ModerationStatus @default(VISIBLE)
   moderatedAt               DateTime?        @db.Timestamptz(3)
   saveCount                 Int              @default(0)
+  /// Destacado (ADR-046): hasta esta fecha aparece como «Patrocinado» junto a otros productos. Lo
+  /// paga el vendedor por día desde su saldo; oculto por moderación no se muestra aunque siga vigente.
+  featuredUntil             DateTime?        @db.Timestamptz(3)
   publishedAt               DateTime?        @db.Timestamptz(3)
   createdAt                 DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt                 DateTime         @updatedAt @db.Timestamptz(3)
@@ -623,6 +629,7 @@ model Product {
 
   @@index([status, categoryId, createdAt(sort: Desc)])
   @@index([sellerId, status])
+  @@index([featuredUntil])
   @@map("products")
 }
 
@@ -766,6 +773,9 @@ enum AnalyticsEventType {
   LOOK_ITEM_SWAPPED
   /// Se generó una simulación de Pruébatelo (`metadata.funding`, `metadata.cached`).
   TRY_ON_GENERATED
+  /// Alguien quiso probarse un producto cuya tienda no tiene pruebas activas (ADR-046): la demanda
+  /// que ve el vendedor en su Studio.
+  TRY_ON_REQUESTED
   /// Recarga de saldo (`metadata.packId`, `metadata.simulated`).
   WALLET_TOPUP
   /// Cargo al saldo por un uso pagado (`metadata.kind`).
@@ -1345,6 +1355,44 @@ model PlatformLedgerEntry {
   @@map("platform_ledger_entries")
 }
 
+// ─────────────────────────── Mensajes privados (ADR-047) ───────────────────────────
+
+/// Conversación entre dos personas. Los ids van ordenados (`userAId` < `userBId`) para que cada par
+/// tenga una sola conversación. `aReadAt`/`bReadAt`: hasta cuándo leyó cada quien (no leídos =
+/// mensajes del otro después de esa fecha). Sin borrado lógico: al borrar la cuenta se van en cascada.
+model Conversation {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  userAId       String    @db.Uuid
+  userA         User      @relation("conversationsAsA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId       String    @db.Uuid
+  userB         User      @relation("conversationsAsB", fields: [userBId], references: [id], onDelete: Cascade)
+  aReadAt       DateTime? @db.Timestamptz(3)
+  bReadAt       DateTime? @db.Timestamptz(3)
+  lastMessageAt DateTime  @default(now()) @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, lastMessageAt(sort: Desc)])
+  @@index([userBId, lastMessageAt(sort: Desc)])
+  @@map("conversations")
+}
+
+/// Un mensaje de texto (máx. 2,000). Dato privado: solo lo ven las dos personas de la conversación.
+model Message {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String       @db.Uuid
+  sender         User         @relation("messagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String       @db.VarChar(2000)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
 // ─────────────────────────── Saldo (ADR-044) ───────────────────────────
 
 /// Una cartera por cuenta (P6), en centavos MXN. El saldo nunca baja de cero (CHECK en la
@@ -1373,6 +1421,8 @@ enum WalletEntryKind {
   TRY_ON
   /// Cargo al vendedor por una prueba patrocinada sobre sus productos.
   SPONSORED_TRY_ON
+  /// Cargo al vendedor por días de producto destacado (ADR-046).
+  FEATURED
   /// Devolución de un cargo cuya generación falló.
   REFUND
   /// Ajuste del equipo, con referencia.
@@ -1471,6 +1521,9 @@ model TryOnResult {
   aiRequestId     String?     @unique @db.Uuid
   aiRequest       AIRequest?  @relation(fields: [aiRequestId], references: [id], onDelete: SetNull)
   funding         AIFunding   @default(PLATFORM)
+  /// Tienda del producto principal (ADR-046): cuenta las pruebas de cortesía por tienda y le muestra
+  /// cuántas personas se probaron sus productos. Nunca quiénes.
+  sellerId        String?     @db.Uuid
   /// Vendedor que patrocinó la prueba (`SELLER_PAID`).
   sponsorSellerId String?     @db.Uuid
   /// Centavos cobrados a quien la financió (0 en las gratis).
@@ -1482,6 +1535,7 @@ model TryOnResult {
   @@index([userId, createdAt(sort: Desc)])
   @@index([expiresAt])
   @@index([sponsorSellerId, createdAt])
+  @@index([sellerId, createdAt])
   @@map("try_on_results")
 }
 

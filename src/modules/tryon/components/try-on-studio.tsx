@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import type { MediaDTO } from "@/modules/catalog/dto";
 import { generateTryOnAction, type TryOnFormState } from "../actions";
 import { TRY_ON_DISCLAIMER } from "../consent";
+import type { FundingStatus } from "../funding";
 import { MAX_TRY_ON_GARMENTS } from "../limits";
 import { PhotoRegisterForm } from "./photo-register-form";
 
@@ -24,36 +25,24 @@ export type StudioProduct = {
   slotLabel: string;
   image: MediaDTO | null;
 };
-export type StudioAllowance = {
-  freeLeft: number;
-  freeLimit: number;
-  priceCents: number;
-  balanceCents: number;
-  level: number;
-  levels: number;
-  nextLevelAt: number | null;
-  nextPriceCents: number | null;
-};
 
 /**
  * Estudio de Pruébatelo: 1) tu foto, 2) qué te pruebas (hasta 4 prendas), 3) generar. Una sola
- * acción principal («Pruébatelo»). Dice antes qué se cobra: gratis del mes, cortesía de la tienda
- * o saldo (ADR-044).
+ * acción principal. Dice antes quién paga la prueba: la tienda de la prenda principal o Estreno;
+ * quien compra, nunca (ADR-046).
  */
 export function TryOnStudio({
   photos,
   products,
-  allowance,
+  status,
   simulated,
-  sponsored,
 }: {
   photos: StudioPhoto[];
   products: StudioProduct[];
-  allowance: StudioAllowance;
+  /** Quién pagaría la prueba sobre la prenda principal (`none`: la tienda no la tiene activa). */
+  status: FundingStatus;
   /** El proveedor de imágenes es el simulador: el resultado será un ejemplo. */
   simulated: boolean;
-  /** La tienda del producto principal patrocina pruebas hoy. */
-  sponsored: boolean;
 }) {
   const [photoId, setPhotoId] = useState(photos[0]?.id ?? "");
   // La foto elegida se deriva de las props: al subir una (la página se revalida y llegan fotos
@@ -76,13 +65,13 @@ export function TryOnStudio({
           ? current
           : [...current, id],
     );
-  const canGenerate = activePhotoId !== "" && selected.length > 0;
-  const paying = !sponsored && allowance.freeLeft === 0;
-  const funding = sponsored
-    ? "Esta prueba es cortesía de la tienda: no gasta tus gratis ni tu saldo."
-    : allowance.freeLeft > 0
-      ? `Te ${allowance.freeLeft === 1 ? "queda 1 prueba gratis" : `quedan ${allowance.freeLeft} pruebas gratis`} este mes (de ${allowance.freeLimit}).`
-      : `Se acabaron tus pruebas gratis del mes. Cada prueba cuesta ${formatMoney(allowance.priceCents)} de tu saldo (tienes ${formatMoney(allowance.balanceCents)}).`;
+  const canGenerate = activePhotoId !== "" && selected.length > 0 && status !== "none";
+  const funding =
+    status === "sponsored"
+      ? "Esta prueba es cortesía de la tienda: para ti es gratis."
+      : status === "trial"
+        ? "Esta prueba es cortesía de Estreno: para ti es gratis."
+        : "La tienda de la prenda principal todavía no activa «Ver cómo me veo». Le avisamos que quisiste probártela.";
 
   return (
     <div className="flex flex-col gap-6">
@@ -141,7 +130,8 @@ export function TryOnStudio({
         </h2>
         {products.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Elige un producto de ropa, calzado o accesorios y toca «Pruébatelo», o arma un look con{" "}
+            Abre un producto de ropa, calzado o accesorios y toca «Ver cómo me veo», o arma un look
+            con{" "}
             <Link
               href="/estilista"
               className="font-semibold text-primary-text underline-offset-2 hover:underline"
@@ -200,17 +190,6 @@ export function TryOnStudio({
           <input key={id} type="hidden" name="productId" value={id} />
         ))}
         <p className="text-sm text-ink-2">{funding}</p>
-        <p className="text-xs text-muted-foreground">
-          Precio comunitario: nivel {allowance.level} de {allowance.levels},{" "}
-          {formatMoney(allowance.priceCents)} por prueba
-          {allowance.nextLevelAt !== null && allowance.nextPriceCents !== null
-            ? `; baja a ${formatMoney(allowance.nextPriceCents)} cuando la comunidad pase de ${allowance.nextLevelAt.toLocaleString("es-MX")} pruebas al mes`
-            : ""}
-          .{" "}
-          <Link href={"/precios" as Route} className="underline-offset-2 hover:underline">
-            Cómo funciona
-          </Link>
-        </p>
         {simulated ? (
           <p className="rounded-2xl bg-secondary px-3 py-2 text-xs text-ink-2">
             En esta etapa la simulación es de ejemplo (sin modelo de imagen): verás tu foto con las
@@ -219,12 +198,7 @@ export function TryOnStudio({
         ) : null}
         {state.error ? (
           <p role="alert" className="text-sm text-destructive">
-            {state.error}{" "}
-            {state.code === "NEEDS_BALANCE" || state.code === "DAILY_CAP" ? (
-              <Link href={"/saldo" as Route} className="font-semibold underline underline-offset-2">
-                Recargar saldo
-              </Link>
-            ) : null}
+            {state.error}
           </p>
         ) : null}
         <div className="flex flex-wrap items-center gap-3">
@@ -234,22 +208,15 @@ export function TryOnStudio({
             className="h-11 px-5 font-bold"
             disabled={!canGenerate || pending}
           >
-            {pending
-              ? "Generando…"
-              : paying
-                ? `Pruébatelo por ${formatMoney(allowance.priceCents)}`
-                : "Pruébatelo"}
+            {pending ? "Generando…" : "Ver cómo me veo"}
           </Button>
-          {paying && allowance.balanceCents < allowance.priceCents ? (
-            <Link
-              href={"/saldo" as Route}
-              className="text-sm font-semibold text-primary-text underline-offset-2 hover:underline"
-            >
-              Recargar saldo
-            </Link>
-          ) : null}
         </div>
-        <p className="text-xs text-muted-foreground">{TRY_ON_DISCLAIMER}</p>
+        <p className="text-xs text-muted-foreground">
+          {TRY_ON_DISCLAIMER}{" "}
+          <Link href={"/precios" as Route} className="underline-offset-2 hover:underline">
+            Quién paga las pruebas
+          </Link>
+        </p>
       </form>
     </div>
   );

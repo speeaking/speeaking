@@ -19,6 +19,7 @@ import { LEGAL_VERSIONS } from "../src/modules/identity/constants";
 import { DEFAULT_FEED_POLICY, FEED_POLICY_KEY } from "../src/modules/feed/policy";
 import { parseEnv } from "../src/lib/env/parse-env";
 import { processImage } from "../src/modules/media/image-processing";
+import { creditWallet } from "../src/modules/billing/wallet";
 import { createPrismaClient, type Database } from "../src/server/db-client";
 import { serverEnvSchema } from "../src/server/env-schema";
 import { createStorage } from "../src/server/providers/storage/factory";
@@ -299,9 +300,23 @@ async function seedDemoSellers(
         city: seller.city,
         state: seller.state,
         acceptedPaymentMethods: seller.paymentMethods,
+        // La tienda de moda paga «Ver cómo me veo» sobre sus productos (ADR-046) con saldo simulado.
+        ...(seller.sponsorsTryOn ? { sponsorsTryOn: true, tryOnDailyCapCents: 10_000 } : {}),
       },
-      update: {},
+      // También para una base que ya tenía la tienda de antes del cambio.
+      update: seller.sponsorsTryOn ? { sponsorsTryOn: true, tryOnDailyCapCents: 10_000 } : {},
     });
+    if (seller.sponsorsTryOn && !(await db.wallet.findUnique({ where: { userId: user.id } }))) {
+      await db.$transaction((tx) =>
+        creditWallet(tx, {
+          userId: user.id,
+          amountCents: 50_000,
+          kind: "TOPUP",
+          reference: "seed",
+          simulated: true,
+        }),
+      );
+    }
 
     for (const [index, product] of seller.products.entries()) {
       if (await db.product.findUnique({ where: { slug: product.slug }, select: { id: true } })) {

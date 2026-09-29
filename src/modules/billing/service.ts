@@ -5,22 +5,34 @@ import { track } from "@/modules/analytics/track";
 import { imagePriceMicrosUsd, IMAGE_PRICES_USD_PER_IMAGE } from "@/modules/ai/cost";
 import { monthStart } from "@/modules/ai/budget-ledger";
 import { getAiBudget } from "@/modules/platform/settings";
+import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getImageProvider } from "@/server/providers/image";
 import { simulatedPaymentsEnabled } from "@/server/providers/payments";
+import { featuredDaysLeft, featuredUntilAfter } from "./featured";
 import {
+  featuredCostCents,
   MAX_SPONSOR_DAILY_CAP_CENTS,
   MIN_SPONSOR_DAILY_CAP_CENTS,
   topUpPack,
   type TryOnPrice,
   tryOnPrice,
 } from "./pricing";
-import { chargedTodayCents, creditWallet, walletSummary } from "./wallet";
+import { chargedTodayCents, creditWallet, debitWallet, walletSummary } from "./wallet";
 
 export class BillingError extends Error {
   override name = "BillingError";
   constructor(
-    readonly code: "UNKNOWN_PACK" | "PAYMENTS_UNAVAILABLE" | "INVALID_CAP" | "NOT_SELLER",
+    readonly code:
+      | "UNKNOWN_PACK"
+      | "PAYMENTS_UNAVAILABLE"
+      | "INVALID_CAP"
+      | "NOT_SELLER"
+      | "INVALID_DAYS"
+      | "PRODUCT_NOT_FOUND"
+      | "PRODUCT_NOT_SELLABLE"
+      | "INSUFFICIENT_BALANCE",
+    readonly detail: { balanceCents?: number; costCents?: number } = {},
   ) {
     super(code);
   }
@@ -215,6 +227,126 @@ export async function setSponsorTryOn(
     },
   });
   if (updated.count === 0) throw new BillingError("NOT_SELLER");
+}
+
+/**
+ * Destacar un producto propio `days` días (ADR-046): se cobra por adelantado del saldo de la tienda
+ * y la vigencia se suma a la que aún corra. Solo productos activos, con existencias y visibles: un
+ * producto que no se puede comprar no se anuncia. Sin devolución si después se pausa u oculta.
+ */
+export async function featureProduct(
+  sellerUserId: string,
+  productId: string,
+  days: number,
+  now = new Date(),
+) {
+  const costCents = featuredCostCents(days);
+  if (costCents === null) throw new BillingError("INVALID_DAYS");
+  const seller = await db.sellerProfile.findUnique({
+    where: { userId: sellerUserId },
+    select: { id: true },
+  });
+  if (!seller) throw new BillingError("NOT_SELLER");
+  const product = await db.product.findFirst({
+    where: { id: productId, sellerId: seller.id },
+    select: { id: true, status: true, stock: true, moderationStatus: true, featuredUntil: true },
+  });
+  if (!product) throw new BillingError("PRODUCT_NOT_FOUND");
+  if (product.status !== "ACTIVE" || product.stock <= 0 || product.moderationStatus !== "VISIBLE") {
+    throw new BillingError("PRODUCT_NOT_SELLABLE");
+  }
+  const until = featuredUntilAfter(product.featuredUntil, now, days);
+  const result = await db.$transaction(async (tx) => {
+    const debit = await debitWallet(tx, {
+      userId: sellerUserId,
+      amountCents: costCents,
+      kind: "FEATURED",
+      reference: `featured:${productId}:${days}d`,
+    });
+    if (!debit.ok) {
+      throw new BillingError("INSUFFICIENT_BALANCE", {
+        balanceCents: debit.balanceCents,
+        costCents,
+      });
+    }
+    await tx.product.update({ where: { id: productId }, data: { featuredUntil: until } });
+    return { balanceCents: debit.balanceCents, until };
+  });
+  track({
+    type: "WALLET_CHARGE",
+    userId: sellerUserId,
+    surface: "STUDIO",
+    entityType: "PRODUCT",
+    entityId: productId,
+    metadata: { kind: "FEATURED", days, costCents },
+  });
+  return result;
+}
+
+export type SellerFeaturedProduct = {
+  id: string;
+  title: string;
+  slug: string;
+  sellable: boolean;
+  featuredUntil: string | null;
+  daysLeft: number;
+  /** Visitas a la ficha que llegaron desde un lugar patrocinado (30 días). */
+  visitsFromFeatured: number;
+};
+
+/** Los productos de la tienda con su estado de destacado, para `/studio/campanas`. */
+export async function listSellerFeatured(
+  sellerUserId: string,
+  now = new Date(),
+): Promise<SellerFeaturedProduct[]> {
+  const seller = await db.sellerProfile.findUnique({
+    where: { userId: sellerUserId },
+    select: { id: true },
+  });
+  if (!seller) return [];
+  const products = await db.product.findMany({
+    where: { sellerId: seller.id, status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } },
+    orderBy: [{ featuredUntil: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      status: true,
+      stock: true,
+      moderationStatus: true,
+      featuredUntil: true,
+    },
+  });
+  if (products.length === 0) return [];
+  const visits = await db.analyticsEvent.groupBy({
+    by: ["entityId"],
+    where: {
+      type: "PRODUCT_VIEW",
+      entityType: "PRODUCT",
+      entityId: { in: products.map((product) => product.id) },
+      createdAt: { gte: new Date(now.getTime() - 30 * 86_400_000) },
+      metadata: { path: ["placement"], equals: "destacado" },
+    },
+    _count: { _all: true },
+  });
+  const visitsById = new Map(visits.map((row) => [row.entityId, row._count._all]));
+  return products.map((product) => ({
+    id: product.id,
+    title: product.title,
+    slug: product.slug,
+    sellable:
+      product.status === "ACTIVE" && product.stock > 0 && product.moderationStatus === "VISIBLE",
+    featuredUntil: product.featuredUntil?.toISOString() ?? null,
+    daysLeft: featuredDaysLeft(product.featuredUntil, now),
+    visitsFromFeatured: visitsById.get(product.id) ?? 0,
+  }));
+}
+
+/** Cuántos destacados vigentes hay en toda la plataforma (para el resumen del equipo y pruebas). */
+export function countActiveFeatured(now = new Date()) {
+  return db.product.count({
+    where: { featuredUntil: { gt: now }, status: "ACTIVE", stock: { gt: 0 }, ...VISIBLE_PRODUCT },
+  });
 }
 
 export type SponsorStatus = {

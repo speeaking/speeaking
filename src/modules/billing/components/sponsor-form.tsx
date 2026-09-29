@@ -7,7 +7,7 @@ import { formatMoney } from "@/lib/format";
 import { setSponsorAction, type BillingFormState } from "../actions";
 import { MIN_SPONSOR_DAILY_CAP_CENTS } from "../pricing";
 
-/** «Pruebas gratis en mis productos»: interruptor y tope diario en pesos (ADR-044). */
+/** «Ver cómo me veo» en mis productos: interruptor y tope diario en pesos (ADR-046). */
 export function SponsorForm({
   enabled,
   dailyCapCents,
@@ -33,9 +33,9 @@ export function SponsorForm({
           className="mt-0.5 size-4 shrink-0"
         />
         <span>
-          <span className="font-semibold">Pruebas gratis en mis productos.</span> Quien vea uno de
-          tus productos se lo prueba sin gastar sus pruebas ni su saldo; tú pagas cada prueba a
-          precio comunitario ({formatMoney(priceCents)} hoy) desde tu saldo.
+          <span className="font-semibold">Activar «Ver cómo me veo» en mis productos.</span> Quien
+          vea una prenda tuya se la prueba con su foto sin pagar nada; tú pagas cada prueba a precio
+          comunitario ({formatMoney(priceCents)} hoy) desde tu saldo, hasta tu tope diario.
         </span>
       </label>
       <label className="flex max-w-xs flex-col gap-1 text-sm">
@@ -52,8 +52,8 @@ export function SponsorForm({
           className="h-10"
         />
         <span className="text-xs text-muted-foreground">
-          Mínimo {formatMoney(MIN_SPONSOR_DAILY_CAP_CENTS)}. Al llegar al tope, las pruebas de ese
-          día vuelven a las gratis o al saldo de cada persona.
+          Mínimo {formatMoney(MIN_SPONSOR_DAILY_CAP_CENTS)}. Al llegar al tope, ese día ya no se
+          generan pruebas sobre tus productos (y se registra cuánta gente quiso).
         </span>
       </label>
       {state.error ? (

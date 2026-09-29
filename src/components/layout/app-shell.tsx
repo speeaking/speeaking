@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import { shellGrid } from "@/config/navigation";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,8 @@ import { acceptUpdatedLegalAction } from "@/modules/identity/privacy-actions";
 import { getViewer } from "@/modules/identity/session";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
 import { BottomNav } from "./bottom-nav";
+import { NAV_COOKIE } from "./nav-cookie";
+import { ShellFrame } from "./shell-frame";
 import { SideNav } from "./side-nav";
 import { TopBar } from "./top-bar";
 
@@ -14,9 +17,10 @@ import { TopBar } from "./top-bar";
  * Estructura de la red social (docs/design/rediseno-revista.md → F1).
  * - Móvil: barra superior compacta, contenido y barra inferior.
  * - Escritorio: barra superior y rejilla 232 / 680 / 320 alineadas. Menos de 1280 px oculta la
- *   columna derecha; menos de 1024 px reduce la izquierda a íconos.
+ *   columna derecha; menos de 1024 px reduce la izquierda a íconos, y en escritorio la persona la
+ *   pliega con el botón de arriba (ADR-046; cookie `estreno-nav`).
  */
-export function AppShell({
+export async function AppShell({
   children,
   aside,
   viewer,
@@ -27,8 +31,9 @@ export function AppShell({
   viewer: ViewerSummary;
   communities: NavCommunities;
 }) {
+  const navOpen = (await cookies()).get(NAV_COOKIE)?.value !== "closed";
   return (
-    <div className="flex min-h-dvh flex-col">
+    <ShellFrame initialOpen={navOpen}>
       <TopBar viewer={viewer} />
       {viewer ? <LegalUpdateNotice /> : null}
       <div className={cn(shellGrid, "flex-1 md:items-start")}>
@@ -45,7 +50,7 @@ export function AppShell({
         ) : null}
       </div>
       <BottomNav viewer={viewer} />
-    </div>
+    </ShellFrame>
   );
 }
 

@@ -58,7 +58,7 @@ export const socialNav: readonly NavItem[] = [
     href: "/perfil",
     label: "Perfil",
     icon: CircleUser,
-    also: ["/ajustes", "/guardados"],
+    also: ["/ajustes", "/guardados", "/mensajes"],
     ownProfile: true,
   },
 ];
@@ -96,10 +96,11 @@ export const studioNav: readonly NavItem[] = [
 /**
  * Rejilla de escritorio que comparten la barra superior y el contenido, para que el logo quede
  * sobre la columna izquierda, la búsqueda sobre el feed y las acciones sobre la columna derecha.
- * md: íconos (72) + feed · lg: columna izquierda (232) + feed (680) · xl: + columna derecha (320).
+ * md: íconos (72) + feed · lg con la columna abierta (`nav-open:`): columna izquierda (232) +
+ * feed (680) · xl: + columna derecha (320). Plegada (ADR-046), en escritorio también son 72 px.
  */
 export const shellGrid =
-  "mx-auto w-full max-w-[1352px] md:grid md:grid-cols-[72px_minmax(0,680px)] md:justify-center md:gap-7 md:px-6 lg:grid-cols-[232px_minmax(0,680px)] xl:grid-cols-[232px_minmax(0,680px)_320px]";
+  "mx-auto w-full max-w-[1352px] md:grid md:grid-cols-[72px_minmax(0,680px)] md:justify-center md:gap-7 md:px-6 xl:grid-cols-[72px_minmax(0,680px)_320px] nav-open:grid-cols-[232px_minmax(0,680px)] nav-open:xl:grid-cols-[232px_minmax(0,680px)_320px]";
 
 function matchesPrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);

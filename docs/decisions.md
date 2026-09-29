@@ -1192,3 +1192,82 @@ explícita, consentimiento, plazo de conservación y derechos ARCO.
   compartir públicamente desde la plataforma en esta versión.
 - **Menores y terceros:** los términos exigen que la foto sea de la persona misma, mayor de edad. Sin
   verificación técnica en esta versión (queda documentado como riesgo aceptado).
+
+## ADR-046 · Quien vende paga: «Ver cómo me veo» en un paso, saldo de la tienda y destacados
+
+**Contexto.** Al ver la primera versión, el fundador pidió tres cosas (2026-09-29): que probarse una
+prenda sea un solo paso desde la ficha («sube su foto, le da en ver cómo me veo y en una ventana
+emergente ve cómo se ve; solo le da en comprar o añadir accesorios»), que **quien compra no pague**
+por ver cómo le queda algo («eso debe pagarlo el vendedor»), y que la columna derecha sea el espacio
+de **publicidad** que también pagan las tiendas («por X cantidad sus productos salen a un costado de
+otros como sugerencias»). Pidió 2 o 3 paquetes para vendedores o una idea mejor, y que cada
+beneficio se cobre porque cada peso financia la plataforma.
+
+**Decisión.**
+
+- **Quien vende paga, en este orden (`tryon/funding.ts`):** la tienda del producto principal si
+  tiene «Ver cómo me veo» activo, saldo y tope del día → las **pruebas de cortesía de esa tienda**
+  (Estreno pone las primeras 10 de cada tienda, `STORE_TRIAL_TRY_ONS`, dentro del tope diario del
+  subsidio) → nada. El camino «la persona paga con su saldo» (`USER_PAID`) desaparece de las
+  pruebas; el valor del enum se conserva por las filas anteriores. Sin financiamiento, el botón
+  sigue en la ficha: explica que la tienda no tiene pruebas activas y registra la **demanda**
+  (`TRY_ON_REQUESTED`), que el vendedor ve en su Studio como «N personas quisieron probarse tu ropa
+  esta semana». `TryOnResult.sellerId` guarda la tienda del producto principal.
+- **Un solo paso desde la ficha:** «Ver cómo me veo» abre un diálogo (`try-on-dialog.tsx`) con la
+  foto guardada o la subida de una nueva con el consentimiento (ADR-045), genera con
+  `quickTryOnAction` sin cambiar de página y muestra el resultado con «Comprar ahora», «Al carrito»
+  y «Agrégale…»: hasta 3 complementos reales de otros huecos (`complements.ts`, primero de la misma
+  tienda, luego lo más barato) para verse con todo puesto. El estudio `/probar` queda para looks
+  completos y más fotos.
+- **El saldo es de la tienda.** Un solo saldo para todo lo que paga quien vende: pruebas, días de
+  producto destacado y, después, Impulsar y creativos. Recargas **Arranque $99, Impulso $299 (+10 %),
+  Tienda pro $799 (+15 %)** (`TOPUP_PACKS`), sin planes que venzan: se pidieron «paquetes» y la idea
+  mejor es presupuesto con bono, porque un plan que caduca cobra por lo que no se usó y un saldo
+  se gasta cuando trae ventas. `/saldo` explica a quien compra que todo es gratis; el saldo vive en
+  `/studio/saldo`.
+- **Producto destacado (la columna de publicidad):** `Product.featuredUntil`; **$15 MXN por día**,
+  de 3 a 30 días, por adelantado desde el saldo (`WalletEntryKind.FEATURED`). Aparece con la
+  etiqueta «Patrocinado» en la columna derecha, el primer lugar de «También te puede gustar» y una
+  fila arriba de Comprar; rotación determinista por hora; nunca a su dueño; nada oculto por
+  moderación (sin devolución).
+- **Lo que sigue gratis para todos:** mensajes, publicar, buscar, looks, comentar. El dinero viene
+  de las tiendas, que venden gracias a esa gente (principio 1).
+
+**Consecuencias.** Términos y aviso de privacidad se actualizan (versiones 2026-09-30): el saldo es
+de las tiendas, la simulación la paga la tienda o Estreno, la demanda se cuenta de forma agregada
+y los destacados llevan etiqueta. Cambiar precios (tabla de niveles, recargas, precio por día) sigue
+siendo decisión humana de riesgo ALTO. `docs/modelo-de-ingresos.md` es la referencia con cifras.
+
+## ADR-047 · Mensajes privados y columna izquierda plegable
+
+**Contexto.** «Los usuarios no tienen cómo comunicarse en privado» (fundador, 2026-09-29): una red
+social sin mensajes no es red social, y quien compra necesita preguntarle a la tienda. También pidió
+que la columna izquierda se pliegue, como el menú de Facebook, para que la derecha sea el espacio de
+publicidad. Y recordó que cada beneficio debe cobrarse.
+
+**Decisión.**
+
+- **Mensajes gratis para todos.** Son el pegamento de la red social y cuestan centavos; cobrarlos
+  mataría la conversación que trae ventas. El dinero sigue viniendo de las tiendas (ADR-046). Lo
+  que sí queda para después y sí se cobra: respuestas con IA para tiendas (agente comercial, fase 3).
+- **Modelo mínimo (`Conversation`, `Message`):** una conversación por par de personas (ids
+  ordenados, único), mensajes de texto de hasta 2,000 caracteres, marca de lectura por lado. Sin
+  borrado lógico: al borrar la cuenta se va todo en cascada. Sin sockets: el hilo abierto se refresca
+  cada 10 s mientras la pestaña está visible.
+- **Reglas:** solo cuentas con perfil terminado; nunca con uno mismo ni con las cuentas editoriales;
+  antispam por persona (30 mensajes cada 10 minutos, 20 conversaciones nuevas al día); reportar a la
+  otra persona desde el hilo (reporte de cuenta, cola del equipo); recordatorio automático cuando un
+  mensaje parece llevar datos de pago («los pagos van dentro del pedido»). Sin filtro de contenido
+  automático en esta versión: la moderación es por reporte.
+- **Entradas:** «Mensaje» en el perfil, «Preguntar» junto a la tienda en la ficha (el primer mensaje
+  llega con el nombre y la liga del producto), el ícono de Mensajes con globo de no leídos en la
+  barra superior (escritorio y móvil) y en el menú de la cuenta. Ruta protegida `/mensajes`.
+- **Columna izquierda plegable:** botón «Contraer/Expandir el menú» arriba de la columna en
+  escritorio; el estado va en la cookie `estreno-nav` un año y el servidor lo lee para pintar sin
+  salto; plegada, la columna es de íconos con los nombres solo para lectores de pantalla (variante
+  `nav-open:` en `globals.css`, marco `shell-frame.tsx`).
+
+**Consecuencias.** El aviso de privacidad describe los mensajes (§7 ter) y los términos sus reglas
+(A11 ter); versiones 2026-09-30. Los mensajes son datos privados: ni el equipo los lee salvo por un
+reporte y con la persona reportada notificada [pendiente del abogado]. Pendiente: avisos (campana)
+para me gusta, comentarios y seguidores, propuesto como fase siguiente.

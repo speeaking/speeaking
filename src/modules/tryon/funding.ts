@@ -1,17 +1,18 @@
 import type { AIFunding } from "@/generated/prisma/enums";
 
 /**
- * Quién paga una prueba (ADR-044, docs/modelo-de-ingresos.md §3.2), en este orden:
- * 1. el vendedor que patrocina el producto principal, si tiene saldo y tope del día;
- * 2. las pruebas gratis del mes de la persona (el subsidio diario lo revisa el guardián);
- * 3. el saldo de la persona.
+ * Quién paga una prueba de «Ver cómo me veo» (ADR-046, docs/modelo-de-ingresos.md §3.2). Quien
+ * compra nunca paga: quien gana con la venta es quien paga. En este orden:
+ * 1. la tienda del producto principal, si tiene «Ver cómo me veo» activo, saldo y tope del día;
+ * 2. las pruebas de cortesía de esa tienda (las paga Estreno; `STORE_TRIAL_TRY_ONS` por tienda,
+ *    con el tope diario global del subsidio que revisa el guardián).
  * Es una lista de opciones a intentar: si una falla al reservar (sin saldo, tope agotado), se pasa
- * a la siguiente. Sin ninguna, la interfaz ofrece recargar.
+ * a la siguiente. Sin ninguna, el botón sigue ahí pero explica que la tienda no tiene pruebas y la
+ * demanda se registra para que quien vende la vea.
  */
 export type FundingOption =
   | { funding: "SELLER_PAID"; sponsorSellerId: string; sponsorUserId: string; chargedCents: number }
-  | { funding: "PLATFORM"; chargedCents: 0 }
-  | { funding: "USER_PAID"; chargedCents: number };
+  | { funding: "PLATFORM"; chargedCents: 0 };
 
 export type FundingContext = {
   priceCents: number;
@@ -23,12 +24,9 @@ export type FundingContext = {
     spentTodayCents: number;
     balanceCents: number;
   } | null;
-  /** Pruebas gratis usadas este mes y cuántas hay. */
-  freeUsed: number;
-  freeLimit: number;
-  userBalanceCents: number;
-  /** La persona es quien vende el producto principal: no se patrocina a sí misma. */
-  userIsSponsor: boolean;
+  /** Pruebas de cortesía ya usadas por la tienda y cuántas tiene. */
+  trialUsed: number;
+  trialLimit: number;
 };
 
 export function fundingOptions(context: FundingContext): FundingOption[] {
@@ -37,7 +35,6 @@ export function fundingOptions(context: FundingContext): FundingOption[] {
   if (
     sponsor &&
     sponsor.enabled &&
-    !context.userIsSponsor &&
     sponsor.balanceCents >= context.priceCents &&
     sponsor.spentTodayCents + context.priceCents <= sponsor.dailyCapCents
   ) {
@@ -48,11 +45,18 @@ export function fundingOptions(context: FundingContext): FundingOption[] {
       chargedCents: context.priceCents,
     });
   }
-  if (context.freeUsed < context.freeLimit) options.push({ funding: "PLATFORM", chargedCents: 0 });
-  if (context.userBalanceCents >= context.priceCents) {
-    options.push({ funding: "USER_PAID", chargedCents: context.priceCents });
-  }
+  if (context.trialUsed < context.trialLimit)
+    options.push({ funding: "PLATFORM", chargedCents: 0 });
   return options;
+}
+
+/** Lo que se le dice a la persona antes de generar: quién paga esta prueba, o que no hay. */
+export type FundingStatus = "sponsored" | "trial" | "none";
+
+export function fundingStatus(context: FundingContext): FundingStatus {
+  const first = fundingOptions(context)[0];
+  if (!first) return "none";
+  return first.funding === "SELLER_PAID" ? "sponsored" : "trial";
 }
 
 export function describeFunding(funding: AIFunding): string {
@@ -60,9 +64,10 @@ export function describeFunding(funding: AIFunding): string {
     case "SELLER_PAID":
       return "Cortesía de la tienda";
     case "PLATFORM":
-      return "Prueba gratis del mes";
+      return "Cortesía de Estreno";
+    // Ya no se cobra a quien compra; queda por las pruebas anteriores al cambio (ADR-046).
     case "USER_PAID":
-      return "Pagada con tu saldo";
+      return "Pagada con saldo";
     case "SYSTEM":
       return "Sistema";
   }

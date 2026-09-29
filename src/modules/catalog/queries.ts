@@ -2,6 +2,7 @@ import "server-only";
 import type { SearchQuery } from "@/modules/search/normalize";
 import { productSearchSql } from "@/modules/search/sql";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
+import { rotateFeatured } from "@/modules/billing/featured";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { type MediaDTO, type PublicProductDTO, toPublicProduct } from "./dto";
@@ -40,6 +41,7 @@ const publicProductSelect = {
   category: { select: { slug: true, name: true } },
   seller: {
     select: {
+      id: true,
       userId: true,
       displayName: true,
       acceptedPaymentMethods: true,
@@ -75,6 +77,38 @@ function toMedia(
     blurDataUrl: media.blurDataUrl,
     alt: media.altText,
   }));
+}
+
+/**
+ * Productos destacados vigentes (ADR-046): activos, con existencias y visibles, nunca los de quien
+ * mira ni el producto que ya está en pantalla. Rotación determinista por hora entre todos los
+ * vigentes (`billing/featured.ts`), acotada a los 40 más recientes.
+ */
+export async function listFeaturedProducts({
+  limit,
+  excludeUserId = null,
+  excludeProductId = null,
+  now = new Date(),
+}: {
+  limit: number;
+  excludeUserId?: string | null;
+  excludeProductId?: string | null;
+  now?: Date;
+}): Promise<ProductCardDTO[]> {
+  const rows = await db.product.findMany({
+    where: {
+      featuredUntil: { gt: now },
+      status: "ACTIVE",
+      stock: { gt: 0 },
+      ...VISIBLE_PRODUCT,
+      seller: { status: "ACTIVE", ...(excludeUserId ? { userId: { not: excludeUserId } } : {}) },
+      ...(excludeProductId ? { id: { not: excludeProductId } } : {}),
+    },
+    orderBy: { featuredUntil: "desc" },
+    take: 40,
+    select: cardSelect,
+  });
+  return rotateFeatured(rows, now).slice(0, limit).map(toCard);
 }
 
 /** Quién pide la página: su dueño y el equipo ven un producto oculto por moderación. */

@@ -437,12 +437,13 @@ El plan «Ecosistema de IA» (20 funciones, 5 fases) se apoya en lo que ya exist
 interfaz, tareas estructuradas, enrutador, guardián, evaluaciones) más tres piezas nuevas:
 
 ```
-Persona ──▶ /estilista · /probar · /saldo · ficha de producto
+Persona ──▶ ficha de producto («Ver cómo me veo», diálogo) · /estilista · /probar
+Tienda  ──▶ /studio/saldo (saldo, «Ver cómo me veo» activo, recargas) · /studio/campanas (destacar)
                 │
                 ▼
    modules/stylist   necesidad (reglas + modelo) → candidatos reales → compositor (código) → looks
-   modules/tryon     foto privada + consentimiento → quién paga → reserva atómica → ImageProvider → resultado privado
-   modules/billing   saldo, precio comunitario, recargas, patrocinio
+   modules/tryon     foto privada + consentimiento → quién paga (tienda → cortesía → demanda) → reserva atómica → ImageProvider → resultado privado
+   modules/billing   saldo de la tienda, precio comunitario, recargas, «Ver cómo me veo» activo, destacados
                 │
                 ▼
    modules/ai        ai.features (banderas) · ai.routing · guardián (funding, tope diario, cuotas por función)
@@ -454,10 +455,12 @@ Persona ──▶ /estilista · /probar · /saldo · ficha de producto
 - **Banderas** (`ai.features`, `modules/ai/features.ts`): lista cerrada de las 20 funciones más las
   existentes; solo ADMIN las cambia en `/admin/ia` (decisión HUMAN de riesgo alto); las planeadas
   no tienen código y siempre están apagadas. Los servicios llaman `requireFeature` antes de gastar.
-- **Quién paga** (`AIRequest.funding`): `PLATFORM`/`SYSTEM` consumen el presupuesto de subsidio
-  (`ai.budget`, con tope diario para Pruébatelo); `USER_PAID`/`SELLER_PAID` se cobran del saldo en
-  la misma transacción que la reserva y no consumen presupuesto. Cada función tiene además cuotas
-  propias por hora y por día.
+- **Quién paga** (`AIRequest.funding`, ADR-046): quien compra nunca. `SELLER_PAID` se cobra del
+  saldo de la tienda en la misma transacción que la reserva y no consume presupuesto; `PLATFORM`
+  (las pruebas de cortesía de cada tienda y las tareas subsidiadas) y `SYSTEM` consumen el
+  presupuesto de subsidio (`ai.budget`, con tope diario para las pruebas). Sin ninguna opción, la
+  prueba no se genera y la demanda queda registrada (`TRY_ON_REQUESTED`). Cada función tiene
+  además cuotas propias por hora y por día.
 - **La IA nunca inventa productos:** el estilista arma looks con código determinista sobre
   productos activos, con existencias y visibles; el modelo solo interpreta la necesidad (el
   presupuesto lo pone el código) y, cuando se encienda, nombra el look con guardián.
@@ -466,8 +469,11 @@ Persona ──▶ /estilista · /probar · /saldo · ficha de producto
   consentimiento versionado y borrado a los 30 días en la operación diaria (`tryon-retention`).
 - **Caché:** un resultado de Pruébatelo se identifica por foto + productos + prompt + modelo.
 - **Eventos (P5):** `NEED_SUBMITTED`, `LOOK_GENERATED`, `LOOK_ITEM_SWAPPED`, `TRY_ON_GENERATED`,
-  `WALLET_TOPUP`, `WALLET_CHARGE`; superficies `STYLIST` y `WALLET`.
+  `TRY_ON_REQUESTED`, `WALLET_TOPUP`, `WALLET_CHARGE`; superficies `STYLIST` y `WALLET`.
 - **Cobro:** `docs/modelo-de-ingresos.md`. Página pública `/precios`.
+- **Mensajes privados (`modules/messages`, ADR-047):** una conversación por par de personas,
+  texto plano, gratis, con no leídos en la barra superior, reporte de la cuenta desde el hilo y
+  antispam por persona. Sin sockets: el hilo se refresca cada 10 s mientras está visible.
 
 ## Seguridad
 

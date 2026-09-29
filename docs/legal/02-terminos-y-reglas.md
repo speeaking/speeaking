@@ -356,14 +356,29 @@ Reglas:
   aspecto real; no da derecho a devolución por diferencias con la simulación (aplican las condiciones
   de devolución de cada vendedor). Quien sube la foto declara que es suya y que es mayor de edad;
   prohibido subir fotos de terceros.
-- **Saldo:** simulaciones gratis al mes y, después, cobro con saldo al precio publicado en `/precios`
-  (baja con el uso de la plataforma; nunca por debajo del costo). El saldo no es dinero, no genera
-  intereses, no se transfiere ni se retira; devolución del no usado dentro de 5 días hábiles tras la
-  recarga; si una simulación falla no se cobra. Los vendedores pueden patrocinar simulaciones con
-  tope diario. En el piloto las recargas son simuladas. **[VERIFICAR CON ABOGADO]:** LFPC art. 76 BIS
+- **Quién paga la simulación (actualizado 2026-09-30, ADR-046):** para quien compra es gratis
+  siempre. La paga la tienda del producto principal (si activa «Ver cómo me veo», con tope diario)
+  o Estreno en las primeras pruebas de cada tienda; sin ninguna de las dos, la simulación no se
+  genera y solo se registra, de forma agregada, que alguien quiso probarse el producto.
+- **Saldo de la tienda:** solo las tiendas tienen saldo. Con él pagan cada simulación al precio
+  publicado en `/precios` (baja con el uso de la plataforma; nunca por debajo del costo) y los días
+  de producto destacado, que aparece siempre con la etiqueta «Patrocinado». El saldo no es dinero, no
+  genera intereses, no se transfiere ni se retira; devolución del no usado dentro de 5 días hábiles
+  tras la recarga; si una simulación falla no se cobra; un producto oculto por moderación no se
+  muestra como destacado y esos días no se devuelven. En el piloto las recargas son simuladas. **[VERIFICAR CON ABOGADO]:** LFPC art. 76 BIS
   (información previa, precio total, cancelación), tratamiento del saldo prepagado y si aplica
   regulación de fondos de pago electrónico (Ley Fintech) —no debería, al no ser transferible ni
   redimible en efectivo—; **[CONTADOR]:** IVA y CFDI de las recargas.
+
+### A11 ter. Mensajes privados (agregado 2026-09-30, ADR-047)
+
+- Solo entre cuentas con perfil terminado; las cuentas editoriales no reciben mensajes.
+- Aplican las reglas de la comunidad (acoso, datos personales de otros, estafas): un mensaje
+  insistente no deseado es acoso y se puede reportar a la persona desde el hilo; el equipo puede
+  revisar los mensajes reportados y suspender la cuenta.
+- Los pagos se hacen dentro del pedido. Estreno nunca pide depósitos por mensaje y no responde por
+  pagos hechos a cuentas escritas en una conversación.
+- Límites contra el spam: cantidad de mensajes por periodo y de conversaciones nuevas por día.
 
 ### A12. Personalización, sugerencias y mejoras del producto
 

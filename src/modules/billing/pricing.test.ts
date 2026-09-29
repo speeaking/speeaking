@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   communityTier,
-  FREE_TRY_ONS_PER_MONTH,
+  FEATURED_DAY_PRICE_CENTS,
+  FEATURED_MAX_DAYS,
+  FEATURED_MIN_DAYS,
+  featuredCostCents,
   microsUsdToMxnCents,
   nextTier,
+  STORE_TRIAL_TRY_ONS,
   TOPUP_PACKS,
   topUpPack,
   TRY_ON_TIERS,
@@ -70,13 +74,30 @@ describe("precio comunitario de Pruébatelo (ADR-044)", () => {
     expect(microsUsdToMxnCents(0, 18)).toBe(0);
   });
 
-  it("recargas: ids estables, montos positivos y bonos crecientes; 3 pruebas gratis al mes", () => {
-    expect(TOPUP_PACKS.map((pack) => pack.id)).toEqual(["recarga-39", "recarga-99", "recarga-199"]);
-    expect(topUpPack("recarga-99")).toMatchObject({ amountCents: 9_900, bonusCents: 495 });
-    expect(topUpPack("recarga-1")).toBeNull();
-    expect(FREE_TRY_ONS_PER_MONTH).toBe(3);
-    expect(tryOnsAffordable(3_900, 350)).toBe(11);
+  it("recargas de la tienda: ids estables, montos positivos y bonos crecientes (ADR-046)", () => {
+    expect(TOPUP_PACKS.map((pack) => pack.id)).toEqual(["tienda-99", "tienda-299", "tienda-799"]);
+    expect(TOPUP_PACKS.map((pack) => pack.name)).toEqual(["Arranque", "Impulso", "Tienda pro"]);
+    expect(topUpPack("tienda-299")).toMatchObject({ amountCents: 29_900, bonusCents: 2_990 });
+    // El bono sube con la recarga (10 % y 15 %), nunca al revés.
+    expect(topUpPack("tienda-799")!.bonusCents / 79_900).toBeCloseTo(0.15, 2);
+    for (let index = 1; index < TOPUP_PACKS.length; index += 1) {
+      expect(TOPUP_PACKS[index]!.amountCents).toBeGreaterThan(TOPUP_PACKS[index - 1]!.amountCents);
+      expect(TOPUP_PACKS[index]!.bonusCents).toBeGreaterThan(TOPUP_PACKS[index - 1]!.bonusCents);
+    }
+    expect(topUpPack("recarga-39")).toBeNull();
+    expect(STORE_TRIAL_TRY_ONS).toBe(10);
+    expect(tryOnsAffordable(9_900, 350)).toBe(28);
     expect(tryOnsAffordable(100, 350)).toBe(0);
     expect(tryOnsAffordable(500, 0)).toBe(0);
+  });
+
+  it("destacar: por día, entre 3 y 30 días, siempre desde el saldo de la tienda", () => {
+    expect(FEATURED_DAY_PRICE_CENTS).toBe(1_500);
+    expect(featuredCostCents(FEATURED_MIN_DAYS)).toBe(4_500);
+    expect(featuredCostCents(7)).toBe(10_500);
+    expect(featuredCostCents(FEATURED_MAX_DAYS)).toBe(45_000);
+    expect(featuredCostCents(2)).toBeNull();
+    expect(featuredCostCents(31)).toBeNull();
+    expect(featuredCostCents(2.5)).toBeNull();
   });
 });

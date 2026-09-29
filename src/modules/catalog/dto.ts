@@ -32,6 +32,8 @@ export type PublicProductDTO = {
   category: { slug: string; name: string };
   media: MediaDTO[];
   seller: {
+    /** Id del perfil de la tienda (Pruébatelo, destacados). */
+    id: string;
     userId: string;
     username: string | null;
     displayName: string;
@@ -75,6 +77,7 @@ export type PublicProductRow = {
   saveCount: number;
   category: { slug: string; name: string };
   seller: {
+    id: string;
     userId: string;
     displayName: string;
     acceptedPaymentMethods: PaymentMethod[];
@@ -127,6 +130,7 @@ export function toPublicProduct(row: PublicProductRow, media: MediaDTO[]): Publi
     category: { slug: row.category.slug, name: row.category.name },
     media,
     seller: {
+      id: row.seller.id,
       userId: row.seller.userId,
       username: row.seller.user.profile?.username ?? null,
       displayName: row.seller.displayName,

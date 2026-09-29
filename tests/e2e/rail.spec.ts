@@ -39,8 +39,9 @@ test.describe("columna «Para ti»", () => {
     const rail = page.getByRole("complementary").filter({ has: welcome });
     await expect(rail.getByRole("region", { name: "Lo que buscas" })).toHaveCount(0);
     await expect(rail.getByRole("region", { name: "Gente de tus comunidades" })).toHaveCount(0);
-    // Ni productos ni la fila de Sube y vende: el visitante solo ve la invitación de la bienvenida.
-    await expect(rail.locator('a[href^="/producto/"]')).toHaveCount(0);
+    // Ni productos de «Lo que buscas» ni la fila de Sube y vende: el visitante solo ve la invitación
+    // de la bienvenida. Los destacados («Patrocinado», ADR-046) sí pueden estar: los paga una tienda.
+    await expect(rail.locator('a[href^="/producto/"]:not([href*="ref=destacado"])')).toHaveCount(0);
     await expect(
       rail.getByText("Tú tienes el producto. La IA encuentra cómo venderlo."),
     ).toHaveCount(0);

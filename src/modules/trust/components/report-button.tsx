@@ -23,6 +23,7 @@ import { REPORT_DETAILS_MAX, type ReportableTarget } from "../schemas";
 const TARGET_NOUNS: Record<ReportableTarget, string> = {
   PRODUCT: "este producto",
   POST: "esta publicación",
+  USER: "a esta persona",
 };
 
 /**

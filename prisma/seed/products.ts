@@ -37,6 +37,8 @@ export type SellerSeed = {
   city: string;
   state: string;
   paymentMethods: PaymentMethod[];
+  /** Paga «Ver cómo me veo» sobre sus productos con saldo simulado (solo la tienda de moda). */
+  sponsorsTryOn?: boolean;
   products: ProductSeed[];
 };
 
@@ -233,6 +235,7 @@ export const demoSellers: SellerSeed[] = [
   {
     key: "moda",
     username: "demo.moda",
+    sponsorsTryOn: true,
     displayName: "Ropero Demo Roma",
     city: "Ciudad de México",
     state: "CDMX",

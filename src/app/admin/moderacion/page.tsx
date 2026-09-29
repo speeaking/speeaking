@@ -301,7 +301,12 @@ function CheckCard({ check, now }: { check: QueueCheck; now: Date }) {
 
 function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
   const { target } = group;
-  const noun = group.targetType === "PRODUCT" ? "producto" : "publicación";
+  const noun =
+    group.targetType === "PRODUCT"
+      ? "producto"
+      : group.targetType === "USER"
+        ? "cuenta"
+        : "publicación";
   return (
     <article className={cardClass} aria-label={`Reportes de ${noun}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -309,12 +314,18 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
           {target ? (
             <>
               <Link href={target.href as Route} className="font-semibold underline">
-                {target.kind === "PRODUCT" ? target.title : target.excerpt || "Publicación"}
+                {target.kind === "PRODUCT"
+                  ? target.title
+                  : target.kind === "USER"
+                    ? target.displayName
+                    : target.excerpt || "Publicación"}
               </Link>
               <span className="text-sm text-muted-foreground">
                 {target.kind === "PRODUCT"
                   ? `Producto · ${target.price} · ${target.sellerName}`
-                  : `Publicación${target.author ? ` de @${target.author}` : ""}`}
+                  : target.kind === "USER"
+                    ? `Cuenta · @${target.username} · reportada desde mensajes o su perfil`
+                    : `Publicación${target.author ? ` de @${target.author}` : ""}`}
               </span>
             </>
           ) : (
@@ -348,7 +359,7 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
       </ul>
 
       <div className="grid gap-4 border-t pt-3 md:grid-cols-2">
-        {target && !target.hidden ? (
+        {target && !target.hidden && group.targetType !== "USER" ? (
           <ModerationActionForm
             action="hide"
             fields={{ targetType: group.targetType, targetId: group.targetId }}

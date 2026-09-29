@@ -48,6 +48,39 @@ export async function completeOnboarding(
   await page.getByRole("button", { name: "Empezar" }).click();
 }
 
+/** Activa la tienda desde una página del Studio que la pide (P6). */
+export async function activateStore(page: Page) {
+  await page.getByLabel("Ciudad").fill("Ciudad de México");
+  await page.getByLabel("Estado").fill("CDMX");
+  await page.getByRole("button", { name: "Activar mi tienda" }).click();
+}
+
+/**
+ * Vendedor nuevo: activa su tienda y publica un producto a mano con foto. Devuelve la URL pública.
+ * `title` distinto por prueba evita chocar con lo que otras pruebas publican en paralelo.
+ */
+export async function createProduct(
+  page: Page,
+  { title, price = "12,500", cost = "8134.79" }: { title: string; price?: string; cost?: string },
+) {
+  await page.goto("/studio/productos/nuevo");
+  await activateStore(page);
+  await page
+    .getByLabel("Elegir imágenes")
+    .setInputFiles({ name: "producto.png", mimeType: "image/png", buffer: TINY_PNG });
+  await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
+  await page.getByLabel("Nombre del producto").fill(title);
+  await page.getByLabel("Descripción").fill("Producto de prueba publicado a mano.");
+  await page.getByLabel("Categoría").selectOption({ index: 1 });
+  await page.getByLabel("Precio (MXN)").fill(price);
+  await page.getByLabel("Tu costo (MXN)").fill(cost);
+  await page.getByLabel("Piezas disponibles").fill("5");
+  await page.getByLabel("Costo de envío").fill("99");
+  await page.getByRole("button", { name: "Publicar producto" }).click();
+  await expect(page).toHaveURL(/\/producto\/[a-z0-9-]+\?nuevo=1/);
+  return page.url().split("?")[0]!;
+}
+
 export async function registerAndOnboard(page: Page) {
   const user = uniqueUser();
   await register(page, user);

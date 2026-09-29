@@ -3,7 +3,6 @@ import { createHash, randomUUID } from "node:crypto";
 import type { AIFunding } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import { track } from "@/modules/analytics/track";
-import { monthStart } from "@/modules/ai/budget-ledger";
 import { recordedImageCost } from "@/modules/ai/cost";
 import { AIError } from "@/modules/ai/errors";
 import { isFeatureOn, requireFeature } from "@/modules/ai/features-store";
@@ -11,12 +10,16 @@ import { reserveAiRequest } from "@/modules/ai/reservation";
 import { providerFailure, withTimeout } from "@/modules/ai/service";
 import { simulatedRecord } from "@/modules/ai/tasks/availability";
 import { getTryOnPricing } from "@/modules/billing/service";
-import { FREE_TRY_ONS_PER_MONTH } from "@/modules/billing/pricing";
+import { STORE_TRIAL_TRY_ONS } from "@/modules/billing/pricing";
 import { chargedTodayCents, creditWallet, debitWallet } from "@/modules/billing/wallet";
 import { processImage } from "@/modules/media/image-processing";
 import { deleteStoredMedia } from "@/modules/media/variant-keys";
-import { type CandidateRow, listSellableProductsByIds } from "@/modules/stylist/queries";
-import { classifySlot } from "@/modules/stylist/slots";
+import {
+  type CandidateRow,
+  listLookCandidates,
+  listSellableProductsByIds,
+} from "@/modules/stylist/queries";
+import { classifySlot, type OutfitSlot } from "@/modules/stylist/slots";
 import { isProofMedia } from "@/modules/trust/proof-media";
 import type { Database } from "@/server/db-client";
 import { db } from "@/server/db";
@@ -24,8 +27,15 @@ import { getImageProvider, imageAvailability } from "@/server/providers/image";
 import { IMAGE_CALL_TIMEOUT_MS } from "@/server/providers/image/openai-compatible-image";
 import { getStorage } from "@/server/providers/storage";
 import type { StorageProvider } from "@/server/providers/storage/types";
+import { type ComplementDTO, suggestComplements } from "./complements";
 import { TRY_ON_CONSENT_VERSION, TRY_ON_RETENTION_DAYS } from "./consent";
-import { type FundingOption, fundingOptions } from "./funding";
+import {
+  type FundingContext,
+  type FundingOption,
+  type FundingStatus,
+  fundingOptions,
+  fundingStatus,
+} from "./funding";
 import { MAX_TRY_ON_GARMENTS, MAX_TRY_ON_PHOTOS } from "./limits";
 import { type TryOnGarment, tryOnTask } from "./task";
 
@@ -44,13 +54,14 @@ export type TryOnErrorCode =
   | "NOT_A_GARMENT"
   | "TOO_MANY_GARMENTS"
   | "NEEDS_BALANCE"
+  | "STORE_NOT_FUNDED"
   | "IN_PROGRESS";
 
 export class TryOnError extends Error {
   override name = "TryOnError";
   constructor(
     readonly code: TryOnErrorCode,
-    readonly detail: { priceCents?: number; balanceCents?: number; freeLeft?: number } = {},
+    readonly detail: { priceCents?: number; balanceCents?: number } = {},
   ) {
     super(code);
   }
@@ -199,6 +210,7 @@ async function toDTO(
     funding: AIFunding;
     chargedCents: number;
     productIds: string[];
+    sellerId: string | null;
     resultMedia: {
       storageKey: string;
       width: number;
@@ -245,33 +257,161 @@ const resultSelect = {
   funding: true,
   chargedCents: true,
   productIds: true,
+  sellerId: true,
   resultMedia: { select: { storageKey: true, width: true, height: true, blurDataUrl: true } },
   aiRequest: { select: { provider: true } },
 } as const;
 
-/** Lo que la persona puede saber antes de generar: gratis restantes, precio y saldo. */
-export async function tryOnAllowance(userId: string, now = new Date()) {
-  const [used, wallet, pricing] = await Promise.all([
-    db.tryOnResult.count({
-      where: {
-        userId,
-        funding: "PLATFORM",
-        status: { in: ["PENDING", "READY"] },
-        createdAt: { gte: monthStart(now) },
+/** Pruebas de cortesía ya usadas por una tienda (las paga Estreno; no vencen por mes). */
+async function storeTrialUsed(sellerId: string) {
+  return db.tryOnResult.count({
+    where: { sellerId, funding: "PLATFORM", status: { in: ["PENDING", "READY"] } },
+  });
+}
+
+/** Contexto de financiamiento de la tienda de un producto (ADR-046). */
+async function fundingContextFor(sellerId: string, now: Date): Promise<FundingContext> {
+  const [seller, pricing, trialUsed] = await Promise.all([
+    db.sellerProfile.findUnique({
+      where: { id: sellerId },
+      select: {
+        id: true,
+        userId: true,
+        sponsorsTryOn: true,
+        tryOnDailyCapCents: true,
+        user: { select: { wallet: { select: { balanceCents: true } } } },
       },
     }),
-    db.wallet.findUnique({ where: { userId }, select: { balanceCents: true } }),
     getTryOnPricing(),
+    storeTrialUsed(sellerId),
   ]);
   return {
-    freeLeft: Math.max(0, FREE_TRY_ONS_PER_MONTH - used),
-    freeLimit: FREE_TRY_ONS_PER_MONTH,
-    freeUsed: used,
-    balanceCents: wallet?.balanceCents ?? 0,
     priceCents: pricing.priceCents,
-    pricing,
-    available: (await isFeatureOn("virtualTryOn")) && imageAvailability() !== "unavailable",
+    sponsor: seller
+      ? {
+          sellerId: seller.id,
+          userId: seller.userId,
+          enabled: seller.sponsorsTryOn,
+          dailyCapCents: seller.tryOnDailyCapCents,
+          spentTodayCents: await chargedTodayCents(db, seller.userId, "SPONSORED_TRY_ON", now),
+          balanceCents: seller.user.wallet?.balanceCents ?? 0,
+        }
+      : null,
+    trialUsed,
+    trialLimit: STORE_TRIAL_TRY_ONS,
   };
+}
+
+export type TryOnAvailability = {
+  /** Función encendida y proveedor disponible. */
+  available: boolean;
+  /** Quién pagaría la siguiente prueba sobre productos de esta tienda. */
+  status: FundingStatus;
+  /** El proveedor es el simulador: el resultado será un ejemplo. */
+  simulated: boolean;
+  priceCents: number;
+  trialLeft: number;
+};
+
+/** Lo que la persona puede saber antes de generar sobre un producto: si hay prueba y quién la paga. */
+export async function tryOnAvailabilityFor(
+  sellerId: string,
+  now = new Date(),
+): Promise<TryOnAvailability> {
+  const availability = imageAvailability();
+  const available = (await isFeatureOn("virtualTryOn")) && availability !== "unavailable";
+  const context = await fundingContextFor(sellerId, now);
+  return {
+    available,
+    status: fundingStatus(context),
+    simulated: availability !== "real",
+    priceCents: context.priceCents,
+    trialLeft: Math.max(0, context.trialLimit - context.trialUsed),
+  };
+}
+
+/**
+ * Alguien quiso probarse un producto cuya tienda no tiene pruebas activas: se registra como demanda
+ * (solo un número agregado para quien vende; nunca quién).
+ */
+export function recordTryOnDemand(userId: string, productId: string) {
+  track({
+    type: "TRY_ON_REQUESTED",
+    userId,
+    surface: "PRODUCT_PAGE",
+    entityType: "PRODUCT",
+    entityId: productId,
+  });
+}
+
+/** «Agrégale…»: complementos reales para la prenda de un diálogo (ADR-046). */
+export async function listComplementsFor(product: {
+  id: string;
+  slot: OutfitSlot;
+  sellerId: string;
+}): Promise<ComplementDTO[]> {
+  const candidates = await listLookCandidates({ excludeUserId: null, limit: 200 });
+  return suggestComplements(product, candidates);
+}
+
+export type SellerTryOnStats = {
+  /** Pruebas generadas sobre productos de la tienda en los últimos 7 y 30 días. */
+  last7Days: number;
+  last30Days: number;
+  /** Veces que alguien quiso probarse algo y no pudo (sin pruebas activas), últimos 7 días. */
+  requestedLast7Days: number;
+  trialLeft: number;
+  trialLimit: number;
+};
+
+/** Lo que ve quien vende en su Studio: cuánto se prueban sus productos y cuánta demanda dejó pasar. */
+export async function sellerTryOnStats(
+  sellerId: string,
+  now = new Date(),
+): Promise<SellerTryOnStats> {
+  const since = (days: number) => new Date(now.getTime() - days * DAY_MS);
+  const productIds = (await db.product.findMany({ where: { sellerId }, select: { id: true } })).map(
+    (product) => product.id,
+  );
+  const [last7Days, last30Days, requestedLast7Days, trialUsed] = await Promise.all([
+    db.tryOnResult.count({ where: { sellerId, status: "READY", createdAt: { gte: since(7) } } }),
+    db.tryOnResult.count({ where: { sellerId, status: "READY", createdAt: { gte: since(30) } } }),
+    productIds.length === 0
+      ? Promise.resolve(0)
+      : db.analyticsEvent.count({
+          where: {
+            type: "TRY_ON_REQUESTED",
+            entityType: "PRODUCT",
+            entityId: { in: productIds },
+            createdAt: { gte: since(7) },
+          },
+        }),
+    storeTrialUsed(sellerId),
+  ]);
+  return {
+    last7Days,
+    last30Days,
+    requestedLast7Days,
+    trialLeft: Math.max(0, STORE_TRIAL_TRY_ONS - trialUsed),
+    trialLimit: STORE_TRIAL_TRY_ONS,
+  };
+}
+
+/** Pruebas generadas por producto de una tienda en los últimos 30 días (para su lista del Studio). */
+export async function countTryOnsByProduct(
+  sellerId: string,
+  now = new Date(),
+): Promise<Map<string, number>> {
+  const rows = await db.tryOnResult.findMany({
+    where: { sellerId, status: "READY", createdAt: { gte: new Date(now.getTime() - 30 * DAY_MS) } },
+    select: { productIds: true },
+  });
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const main = row.productIds[0];
+    if (main) counts.set(main, (counts.get(main) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /**
@@ -324,45 +464,16 @@ export async function generateTryOn({
   }
   if (existing && existing.status === "PENDING") throw new TryOnError("IN_PROGRESS");
 
-  // Quién paga, en orden (ADR-044).
+  // Quién paga, en orden (ADR-046): la tienda del producto principal o su cortesía; nunca quien compra.
   const main = garments[0]!.product;
-  const [seller, allowance, budget] = await Promise.all([
-    db.sellerProfile.findUnique({
-      where: { id: main.sellerId },
-      select: {
-        id: true,
-        userId: true,
-        sponsorsTryOn: true,
-        tryOnDailyCapCents: true,
-        user: { select: { wallet: { select: { balanceCents: true } } } },
-      },
-    }),
-    tryOnAllowance(userId, now),
+  const [context, budget] = await Promise.all([
+    fundingContextFor(main.sellerId, now),
     import("@/modules/platform/settings").then((m) => m.getAiBudget()),
   ]);
-  const options = fundingOptions({
-    priceCents: allowance.priceCents,
-    sponsor: seller
-      ? {
-          sellerId: seller.id,
-          userId: seller.userId,
-          enabled: seller.sponsorsTryOn,
-          dailyCapCents: seller.tryOnDailyCapCents,
-          spentTodayCents: await chargedTodayCents(db, seller.userId, "SPONSORED_TRY_ON", now),
-          balanceCents: seller.user.wallet?.balanceCents ?? 0,
-        }
-      : null,
-    freeUsed: allowance.freeUsed,
-    freeLimit: allowance.freeLimit,
-    userBalanceCents: allowance.balanceCents,
-    userIsSponsor: seller?.userId === userId,
-  });
+  const options = fundingOptions(context);
   if (options.length === 0) {
-    throw new TryOnError("NEEDS_BALANCE", {
-      priceCents: allowance.priceCents,
-      balanceCents: allowance.balanceCents,
-      freeLeft: 0,
-    });
+    recordTryOnDemand(userId, main.id);
+    throw new TryOnError("STORE_NOT_FUNDED", { priceCents: context.priceCents });
   }
 
   const target = { id: provider.id, model: provider.model, promptVersion: tryOnTask.promptVersion };
@@ -372,6 +483,7 @@ export async function generateTryOn({
     target,
     photoId: photo.id,
     productIds: products.map((product) => product.id),
+    sellerId: main.sellerId,
     cacheKey,
     tryOnDailyCapMicros: Math.round(budget.tryOnDailyCapUsd * 1_000_000),
     now,
@@ -468,6 +580,7 @@ async function reserveWithFunding({
   target,
   photoId,
   productIds,
+  sellerId,
   cacheKey,
   tryOnDailyCapMicros,
   now,
@@ -477,18 +590,14 @@ async function reserveWithFunding({
   target: { id: string; model: string; promptVersion: string };
   photoId: string;
   productIds: string[];
+  sellerId: string;
   cacheKey: string;
   tryOnDailyCapMicros: number;
   now: Date;
 }): Promise<Reserved> {
   let lastError: unknown = null;
   for (const option of options) {
-    const payerUserId =
-      option.funding === "USER_PAID"
-        ? userId
-        : option.funding === "SELLER_PAID"
-          ? option.sponsorUserId
-          : null;
+    const payerUserId = option.funding === "SELLER_PAID" ? option.sponsorUserId : null;
     let resultId = "";
     try {
       const { requestId } = await reserveAiRequest({
@@ -505,7 +614,7 @@ async function reserveWithFunding({
             const debit = await debitWallet(tx, {
               userId: payerUserId,
               amountCents: option.chargedCents,
-              kind: option.funding === "USER_PAID" ? "TRY_ON" : "SPONSORED_TRY_ON",
+              kind: "SPONSORED_TRY_ON",
               reference: requestId,
             });
             if (!debit.ok)
@@ -516,6 +625,7 @@ async function reserveWithFunding({
               userId,
               photoId,
               productIds,
+              sellerId,
               cacheKey,
               aiRequestId: requestId,
               funding: option.funding,
@@ -539,12 +649,10 @@ async function reserveWithFunding({
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new TryOnError("IN_PROGRESS");
       }
-      // Sin saldo del patrocinador o sin subsidio del día: la siguiente opción. Las cuotas por
+      // Sin saldo de la tienda o sin subsidio del día: la siguiente opción. Las cuotas por
       // persona y el resto de errores sí detienen.
       const skippable =
-        (error instanceof TryOnError &&
-          error.code === "NEEDS_BALANCE" &&
-          option.funding !== "USER_PAID") ||
+        (error instanceof TryOnError && error.code === "NEEDS_BALANCE") ||
         (error instanceof AIError && error.code === "DAILY_CAP") ||
         (error instanceof AIError &&
           error.code === "BUDGET_EXCEEDED" &&
@@ -554,7 +662,7 @@ async function reserveWithFunding({
     }
   }
   if (lastError instanceof AIError) throw lastError;
-  throw new TryOnError("NEEDS_BALANCE");
+  throw new TryOnError("STORE_NOT_FUNDED");
 }
 
 /** El proveedor falló: la solicitud queda FAILED, el resultado FAILED y el cobro se devuelve. */

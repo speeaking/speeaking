@@ -5,6 +5,7 @@ import {
   CircleUser,
   LogOut,
   type LucideIcon,
+  MessageCircle,
   Plus,
   ReceiptText,
   Search,
@@ -55,6 +56,32 @@ function CartLink({ count, className }: { count: number; className?: string }) {
           className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
         >
           {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+/** Mensajes con su número de conversaciones sin leer (ADR-047). */
+function MessagesLink({ unread, className }: { unread: number; className?: string }) {
+  const label = unread > 0 ? `Mensajes (${unread} sin leer)` : "Mensajes";
+  return (
+    <Link
+      href="/mensajes"
+      aria-label={label}
+      title={label}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" }),
+        className,
+      )}
+    >
+      <MessageCircle className="size-5" />
+      {unread > 0 ? (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
+        >
+          {unread > 99 ? "99+" : unread}
         </span>
       ) : null}
     </Link>
@@ -118,6 +145,9 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
         <MenuLink href="/perfil" icon={CircleUser}>
           Perfil
         </MenuLink>
+        <MenuLink href="/mensajes" icon={MessageCircle}>
+          Mensajes
+        </MenuLink>
         <MenuLink href="/pedidos" icon={ReceiptText}>
           Mis pedidos
         </MenuLink>
@@ -165,7 +195,10 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
             <ThemeToggle />
           </span>
           {viewer ? (
-            <CartLink count={viewer.cartCount} className="size-11" />
+            <>
+              <MessagesLink unread={viewer.unreadMessages} className="size-11" />
+              <CartLink count={viewer.cartCount} className="size-11" />
+            </>
           ) : (
             <Link
               href="/registro"
@@ -182,7 +215,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
       </div>
 
       <div className={cn(shellGrid, "hidden h-16 items-center md:grid")}>
-        <Logo className="justify-self-center lg:justify-self-start [&>span]:hidden lg:[&>span]:inline" />
+        <Logo className="justify-self-center nav-open:justify-self-start [&>span]:hidden nav-open:[&>span]:inline" />
         {/* En xl este contenedor desaparece y sus hijos ocupan las columnas 2 y 3 de la rejilla. */}
         <div className="flex min-w-0 items-center gap-3 xl:contents">
           <Suspense fallback={<div className="h-11 min-w-0 flex-1 rounded-full bg-secondary" />}>
@@ -200,6 +233,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
                   <Plus className="size-[18px]" strokeWidth={2.6} />
                   Crear
                 </Link>
+                <MessagesLink unread={viewer.unreadMessages} />
                 <CartLink count={viewer.cartCount} />
                 <AccountMenu viewer={viewer} />
               </>

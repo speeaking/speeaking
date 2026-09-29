@@ -11,6 +11,8 @@ export type ViewerSummary = {
   /** Presente (y `true`) solo para el equipo (rol ADMIN); para los demás la llave no existe. */
   isAdmin?: true;
   cartCount: number;
+  /** Conversaciones con mensajes sin leer (ADR-047). */
+  unreadMessages: number;
   /**
    * Sus comunidades, las más recientes primero (máximo 8). `unread`: publicaciones nuevas desde
    * su última visita («N nuevas», F7), topado en 100 («99+»); se omite cuando no hay.

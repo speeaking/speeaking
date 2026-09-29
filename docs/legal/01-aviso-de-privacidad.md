@@ -516,11 +516,29 @@ del cuerpo con fines de simulación constituye dato sensible bajo la LFPDPPP (ar
 caso, la forma del consentimiento (expreso y por escrito) y el aviso de que no se usa para
 identificar a la persona.
 
-**Saldo.** Datos: monto, fecha, referencia del proveedor de pagos y cada movimiento. Nunca datos de
-tarjeta (los procesa el proveedor). Plazo: mientras exista la cuenta y el que exija la contabilidad.
-El saldo no es dinero ni se transfiere; devolución del saldo no usado dentro de 5 días hábiles
-después de la recarga **[VERIFICAR CON ABOGADO y CONTADOR: naturaleza del saldo prepagado, IVA y
-CFDI]**.
+**Saldo de la tienda (actualizado 2026-09-30, ADR-046).** Solo las tiendas tienen saldo; quien
+compra no paga por las simulaciones. Datos: monto, fecha, referencia del proveedor de pagos y cada
+movimiento (simulación pagada, días de producto destacado). Nunca datos de tarjeta (los procesa el
+proveedor). Plazo: mientras exista la cuenta y el que exija la contabilidad. El saldo no es dinero
+ni se transfiere; devolución del saldo no usado dentro de 5 días hábiles después de la recarga
+**[VERIFICAR CON ABOGADO y CONTADOR: naturaleza del saldo prepagado, IVA y CFDI]**.
+
+**Demanda de simulaciones.** Cuando alguien quiere probarse un producto cuya tienda no tiene
+simulaciones activas, se registra un evento con el producto y la cuenta (como el resto de la
+actividad, §4); la tienda solo ve un número agregado por periodo, nunca quién.
+
+### 7 ter. Mensajes privados (agregado 2026-09-30, ADR-047)
+
+**Finalidad:** que dos personas se escriban dentro de la plataforma (por ejemplo, preguntar por un
+producto). **Datos:** el texto de cada mensaje, quién lo envió, la fecha y la marca de lectura.
+**Quién los ve:** solo las dos personas de la conversación; el equipo no los lee, salvo cuando una
+de ellas reporta a la otra y solo lo necesario para atender el reporte **[VERIFICAR CON ABOGADO:
+alcance de la revisión y aviso a la persona reportada]**. No se usan para personalizar el feed ni
+para publicidad. **Plazo:** mientras exista tu cuenta; al borrarla se borran todas tus
+conversaciones. No hay cifrado de extremo a extremo en esta versión (los mensajes se guardan
+cifrados en reposo por el proveedor de base de datos). Regla: los pagos van dentro del pedido; si
+un mensaje parece contener datos bancarios, la plataforma muestra un recordatorio automático (sin
+bloquear ni leerlo una persona).
 
 ### 8. Con quién compartimos tus datos
 

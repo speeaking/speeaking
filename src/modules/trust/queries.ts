@@ -346,6 +346,15 @@ export async function findReportTarget(
   targetType: ReportableTarget,
   targetId: string,
 ): Promise<ReportTarget | null> {
+  if (targetType === "USER") {
+    // Una cuenta con perfil terminado (ADR-047): quien reporta es otra persona (se valida arriba).
+    const profile = await db.profile.findUnique({
+      where: { userId: targetId },
+      select: { onboardedAt: true },
+    });
+    if (!profile) return null;
+    return { ownerUserId: targetId, visible: profile.onboardedAt !== null, productId: null };
+  }
   if (targetType === "PRODUCT") {
     const product = await db.product.findUnique({
       where: { id: targetId },
@@ -646,6 +655,15 @@ export function findProductsForQueue(ids: readonly string[]) {
       moderationStatus: true,
       seller: { select: { displayName: true } },
     },
+  });
+}
+
+/** Cuentas reportadas (ADR-047): nombre y usuario para la cola. */
+export function findProfilesForQueue(userIds: readonly string[]) {
+  if (userIds.length === 0) return Promise.resolve([]);
+  return db.profile.findMany({
+    where: { userId: { in: [...userIds] } },
+    select: { userId: true, username: true, displayName: true },
   });
 }
 

@@ -18,12 +18,17 @@ import { MediaCarousel } from "@/components/media/media-carousel";
 import { formatMoney } from "@/lib/format";
 import { frameAspect, PRODUCT_FRAME } from "@/lib/image";
 import { track } from "@/modules/analytics/track";
+import { SponsoredCard } from "@/modules/billing/components/sponsored-products";
 import { ProductCard } from "@/modules/catalog/components/product-card";
 import { ProductShareButton } from "@/modules/catalog/components/product-share-button";
 import { QuickQuestions } from "@/modules/catalog/components/quick-questions";
 import { SaveProductButton } from "@/modules/catalog/components/save-product-button";
 import { CONDITION_LABELS } from "@/modules/catalog/dto";
-import { getPublicProduct, listRelatedProducts } from "@/modules/catalog/queries";
+import {
+  getPublicProduct,
+  listFeaturedProducts,
+  listRelatedProducts,
+} from "@/modules/catalog/queries";
 import {
   answerQuickQuestion,
   localDeliveryLine,
@@ -33,6 +38,7 @@ import {
 import { getAdminViewer } from "@/modules/admin/guard";
 import { BuyBox } from "@/modules/commerce/components/buy-box";
 import { getViewer } from "@/modules/identity/session";
+import { MessageButton } from "@/modules/messages/components/message-button";
 import { FollowButton } from "@/modules/social/components/follow-button";
 import { ProductStylistActions } from "@/modules/stylist/components/product-actions";
 import { PostCard } from "@/modules/social/components/post-card";
@@ -40,6 +46,7 @@ import { hydratePosts } from "@/modules/social/post-queries";
 import { AuthenticityNotice } from "@/modules/trust/components/authenticity-notice";
 import { ReportButton } from "@/modules/trust/components/report-button";
 import { db } from "@/server/db";
+import { env } from "@/server/env";
 
 export async function generateMetadata({
   params,
@@ -109,6 +116,8 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
       entityId: product.id,
       sourcePostId,
       surface: ref === "compartir" ? "SHARE_LINK" : sourcePostId ? "FEED" : "PRODUCT_PAGE",
+      // Llegó desde un lugar patrocinado (ADR-046): la tienda ve estas visitas en Campañas.
+      ...(ref === "destacado" ? { metadata: { placement: "destacado" } } : {}),
     });
   }
   const review = product.authenticityReview;
@@ -122,8 +131,13 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         ]
       : undefined;
 
-  const [related, postRows, saved, followsSeller] = await Promise.all([
+  const [related, sponsored, postRows, saved, followsSeller] = await Promise.all([
     listRelatedProducts(categoryId, product.id),
+    listFeaturedProducts({
+      limit: 1,
+      excludeUserId: viewer?.userId ?? null,
+      excludeProductId: product.id,
+    }),
     db.post.findMany({
       where: { productId: product.id, status: "PUBLISHED" },
       orderBy: { publishedAt: "desc" },
@@ -288,11 +302,17 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
 
         {moderation.hidden ? null : (
           <ProductStylistActions
-            slug={product.slug}
-            categorySlug={product.category.slug}
-            title={product.title}
-            tags={product.tags}
-            isSignedIn={Boolean(viewer)}
+            product={{
+              id: product.id,
+              slug: product.slug,
+              title: product.title,
+              priceCents: product.priceCents,
+              sellerId: product.seller.id,
+              categorySlug: product.category.slug,
+              tags: product.tags,
+            }}
+            viewerUserId={viewer?.userId ?? null}
+            isOwner={isOwner}
           />
         )}
 
@@ -333,15 +353,23 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           </span>
         </Link>
         {!isOwner && product.seller.username ? (
-          <FollowButton
-            targetUserId={product.seller.userId}
-            targetName={product.seller.displayName}
-            initialFollowing={Boolean(followsSeller)}
-            isSignedIn={Boolean(viewer)}
-            // «Comprar ahora» es la acción principal de la página: seguir va en rosa suave.
-            variant="soft"
-            className="shrink-0"
-          />
+          <span className="flex shrink-0 gap-2">
+            {/* Preguntar a la tienda (ADR-047): el primer mensaje llega con el producto. */}
+            <MessageButton
+              username={product.seller.username}
+              isSignedIn={Boolean(viewer)}
+              label="Preguntar"
+              variant="soft"
+              text={`Hola, te escribo por «${product.title}» (${env.APP_URL}/producto/${product.slug}).`}
+            />
+            <FollowButton
+              targetUserId={product.seller.userId}
+              targetName={product.seller.displayName}
+              initialFollowing={Boolean(followsSeller)}
+              isSignedIn={Boolean(viewer)}
+              variant="soft"
+            />
+          </span>
         ) : null}
       </div>
 
@@ -384,13 +412,18 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         </section>
       ) : null}
 
-      {related.length > 0 ? (
+      {related.length > 0 || sponsored.length > 0 ? (
         <section className="flex flex-col gap-3 px-4 md:px-0">
           <h2 className="text-lg font-bold">También te puede gustar</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
+            {sponsored.map((item) => (
+              <SponsoredCard key={item.id} product={item} />
             ))}
+            {related
+              .filter((item) => !sponsored.some((s) => s.id === item.id))
+              .map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
           </div>
         </section>
       ) : null}

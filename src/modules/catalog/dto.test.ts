@@ -30,6 +30,7 @@ const row: PublicProductRow = {
   saveCount: 3,
   category: { slug: "audio", name: "Audio y audífonos" },
   seller: {
+    id: "0199a000-0000-7000-8000-0000000000e2",
     userId: "0199a000-0000-7000-8000-000000000002",
     displayName: "Electro Demo",
     acceptedPaymentMethods: ["CARD"],

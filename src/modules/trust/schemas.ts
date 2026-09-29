@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ReportReason } from "@/generated/prisma/enums";
 
 /** Lo que se puede reportar desde la interfaz (el modelo también admite personas y comentarios). */
-export const REPORTABLE_TARGETS = ["PRODUCT", "POST"] as const;
+export const REPORTABLE_TARGETS = ["PRODUCT", "POST", "USER"] as const;
 export type ReportableTarget = (typeof REPORTABLE_TARGETS)[number];
 
 export const REPORT_DETAILS_MAX = 1000;

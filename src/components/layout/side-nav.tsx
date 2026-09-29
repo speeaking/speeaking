@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronRight, PanelLeftClose, PanelLeftOpen, ShieldCheck, Sparkles } from "lucide-react";
 import { unreadLabel, unreadSpokenLabel } from "@/modules/social/unread-labels";
 import type { Route } from "next";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
 import { JoinButton } from "@/modules/social/components/join-button";
+import { useNav } from "./shell-frame";
 
 /** Sin sesión solo se muestran las secciones públicas (Guardados y Mis pedidos piden cuenta). */
 const PUBLIC_NAV = new Set<string>(["/", "/descubrir", "/comprar"]);
@@ -28,7 +29,7 @@ const railScroll =
   "sticky top-16 -mx-1.5 max-h-[calc(100dvh-4rem)] self-start overflow-y-auto overscroll-contain px-1.5 pt-4 pb-6 [scrollbar-color:transparent_transparent] [scrollbar-width:thin] mask-b-from-[calc(100%-1.5rem)] hover:[scrollbar-color:var(--color-line-strong)_transparent]";
 
 /** Texto que en la columna de íconos (md) solo leen los lectores de pantalla. */
-const railLabel = "sr-only lg:not-sr-only lg:truncate";
+const railLabel = "sr-only nav-open:not-sr-only nav-open:truncate";
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
@@ -38,7 +39,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       title={item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-11 items-center justify-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-ink-2 transition-colors hover:bg-secondary hover:text-foreground lg:h-[38px] lg:justify-start",
+        "flex h-11 items-center justify-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-ink-2 transition-colors hover:bg-secondary hover:text-foreground nav-open:h-[38px] nav-open:justify-start",
         active && "bg-card font-extrabold text-foreground shadow-sm hover:bg-card",
       )}
     >
@@ -59,7 +60,7 @@ function RailHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="hidden items-baseline justify-between px-3 pb-1 leading-4 lg:flex">
+    <div className="hidden items-baseline justify-between px-3 pb-1 leading-4 nav-open:flex">
       <h2
         id={id}
         className="font-sans text-[11.5px] leading-4 font-extrabold tracking-[0.1em] text-muted-foreground uppercase"
@@ -75,10 +76,10 @@ const headingLink =
   "rounded-md text-[12.5px] leading-4 font-bold text-primary-text hover:underline underline-offset-4";
 
 const rowClass =
-  "flex h-11 min-w-0 items-center justify-center gap-3 rounded-xl text-[14.5px] font-bold transition-colors hover:bg-secondary lg:h-[39px] lg:justify-start lg:px-2";
+  "flex h-11 min-w-0 items-center justify-center gap-3 rounded-xl text-[14.5px] font-bold transition-colors hover:bg-secondary nav-open:h-[39px] nav-open:justify-start nav-open:px-2";
 
 /** Lista de filas: con separación en la columna de íconos, pegadas en escritorio (maqueta). */
-const rowList = "flex flex-col gap-0.5 lg:gap-0";
+const rowList = "flex flex-col gap-0.5 nav-open:gap-0";
 
 const sectionClass = "mt-3 border-t pt-[11px]";
 
@@ -117,7 +118,7 @@ function UnreadCount({ count }: { count: number }) {
     <span
       aria-hidden="true"
       data-slot="unread"
-      className="hidden shrink-0 items-center gap-[5px] text-xs leading-4 font-bold text-muted-foreground lg:flex"
+      className="hidden shrink-0 items-center gap-[5px] text-xs leading-4 font-bold text-muted-foreground nav-open:flex"
     >
       <span className="size-[7px] rounded-full community-bar" />
       {unreadLabel(count)}
@@ -148,7 +149,7 @@ function YourCommunities({
       {communities.length === 0 ? (
         <Link
           href="/descubrir"
-          className="hidden rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-secondary lg:block"
+          className="hidden rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-secondary nav-open:block"
         >
           Aún no te unes a ninguna.{" "}
           <span className="font-bold text-primary-text">Explora comunidades</span>
@@ -187,11 +188,11 @@ function YourCommunities({
                       <span
                         aria-hidden="true"
                         data-slot="unread-dot"
-                        className="absolute -top-1 -right-1 size-2.5 rounded-full bg-foreground ring-2 ring-background lg:hidden"
+                        className="absolute -top-1 -right-1 size-2.5 rounded-full bg-foreground ring-2 ring-background nav-open:hidden"
                       />
                     ) : null}
                   </span>
-                  <span className={cn(railLabel, "lg:flex-1")}>{community.name}</span>
+                  <span className={cn(railLabel, "nav-open:flex-1")}>{community.name}</span>
                   {unread > 0 ? <UnreadCount count={unread} /> : null}
                 </Link>
               </li>
@@ -206,7 +207,10 @@ function YourCommunities({
 function ToDiscover({ communities }: { communities: NavCommunities }) {
   if (communities.items.length === 0) return null;
   return (
-    <section aria-labelledby="riel-para-descubrir" className={cn(sectionClass, "hidden lg:block")}>
+    <section
+      aria-labelledby="riel-para-descubrir"
+      className={cn(sectionClass, "hidden nav-open:block")}
+    >
       <RailHeading
         id="riel-para-descubrir"
         action={
@@ -272,9 +276,9 @@ function ToSell({ signedIn }: { signedIn: boolean }) {
         <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary text-ink-2">
           <Sparkles className="size-[17px]" aria-hidden="true" />
         </span>
-        <span className={cn(railLabel, "lg:flex-1")}>{siteConfig.sellerFeatureName}</span>
+        <span className={cn(railLabel, "nav-open:flex-1")}>{siteConfig.sellerFeatureName}</span>
         <ChevronRight
-          className="hidden size-4 shrink-0 text-muted-foreground lg:block"
+          className="hidden size-4 shrink-0 text-muted-foreground nav-open:block"
           aria-hidden="true"
         />
       </Link>
@@ -295,7 +299,7 @@ function ToAdmin({ active }: { active: boolean }) {
         <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary text-ink-2">
           <ShieldCheck className="size-[17px]" aria-hidden="true" />
         </span>
-        <span className={cn(railLabel, "lg:flex-1")}>Administración</span>
+        <span className={cn(railLabel, "nav-open:flex-1")}>Administración</span>
       </Link>
     </div>
   );
@@ -311,13 +315,16 @@ function AllCommunities({ communities }: { communities: NavCommunities }) {
         corta: su fila entera es suya (`min-w-max` lo manda a la siguiente línea) y la que queda
         sola antes también se estira, sin dejar huecos.
       */}
-      <ul className="flex flex-col gap-0.5 lg:flex-row lg:flex-wrap lg:gap-x-1">
+      <ul className="flex flex-col gap-0.5 nav-open:flex-row nav-open:flex-wrap nav-open:gap-x-1">
         {communities.items.map((community) => (
-          <li key={community.id} className="min-w-0 lg:min-w-max lg:grow lg:basis-[calc(50%-2px)]">
+          <li
+            key={community.id}
+            className="min-w-0 nav-open:min-w-max nav-open:grow nav-open:basis-[calc(50%-2px)]"
+          >
             <Link
               href={`/c/${community.slug}` as Route}
               title={community.name}
-              className="flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg text-[13px] font-bold transition-colors hover:bg-secondary lg:h-9 lg:justify-start lg:px-1"
+              className="flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg text-[13px] font-bold transition-colors hover:bg-secondary nav-open:h-9 nav-open:justify-start nav-open:px-1"
             >
               <CommunityAvatar
                 name={community.name}
@@ -325,7 +332,7 @@ function AllCommunities({ communities }: { communities: NavCommunities }) {
                 hue={community.hue}
                 size="sm"
                 decorative
-                className="lg:size-6 lg:rounded-[7px] lg:text-[13px]"
+                className="nav-open:size-6 nav-open:rounded-[7px] nav-open:text-[13px]"
               />
               <span className={railLabel}>{community.name}</span>
             </Link>
@@ -339,7 +346,8 @@ function AllCommunities({ communities }: { communities: NavCommunities }) {
 /**
  * Columna izquierda de escritorio: navegación, tus comunidades (o todas, sin sesión), comunidades
  * para descubrir y la entrada a Sube y vende. Sticky con scroll propio (y desvanecido abajo) para
- * que nada se corte en ventanas bajas. Entre md y lg se reduce a íconos.
+ * que nada se corte en ventanas bajas. Entre md y lg se reduce a íconos; en escritorio la persona
+ * la pliega con el botón de arriba (`nav-open:`, ADR-046).
  */
 export function SideNav({
   viewer,
@@ -350,9 +358,25 @@ export function SideNav({
 }) {
   const pathname = usePathname();
   const items = viewer ? sideNav : sideNav.filter((item) => PUBLIC_NAV.has(item.href));
+  const nav = useNav();
 
   return (
     <div className={cn(railScroll, "hidden md:block")}>
+      {/* Plegar o expandir (ADR-046): solo en escritorio; en tabletas la columna ya es de íconos. */}
+      <button
+        type="button"
+        onClick={nav.toggle}
+        aria-expanded={nav.open}
+        aria-label={nav.open ? "Contraer el menú" : "Expandir el menú"}
+        title={nav.open ? "Contraer el menú" : "Expandir el menú"}
+        className="mb-1 hidden h-9 w-full items-center justify-center rounded-xl text-muted-foreground transition-colors outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring lg:flex nav-open:justify-end nav-open:px-2"
+      >
+        {nav.open ? (
+          <PanelLeftClose className="size-5" aria-hidden="true" />
+        ) : (
+          <PanelLeftOpen className="size-5" aria-hidden="true" />
+        )}
+      </button>
       <nav aria-label="Navegación principal">
         <ul className="flex flex-col gap-0.5">
           {items.map((item) => (
@@ -375,8 +399,8 @@ export function SideNav({
       <ToSell signedIn={viewer !== null} />
       {viewer?.isAdmin ? <ToAdmin active={pathname.startsWith("/admin")} /> : null}
 
-      <div className="mt-3 flex items-center justify-center border-t pt-3 lg:justify-between lg:border-t-0 lg:pt-0 lg:pl-3">
-        <p className="hidden text-xs text-muted-foreground lg:block">Hecho en México</p>
+      <div className="mt-3 flex items-center justify-center border-t pt-3 nav-open:justify-between nav-open:border-t-0 nav-open:pt-0 nav-open:pl-3">
+        <p className="hidden text-xs text-muted-foreground nav-open:block">Hecho en México</p>
         <ThemeToggle />
       </div>
     </div>

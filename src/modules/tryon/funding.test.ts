@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type FundingContext, fundingOptions } from "./funding";
+import { describeFunding, type FundingContext, fundingOptions, fundingStatus } from "./funding";
 
 const base: FundingContext = {
   priceCents: 350,
@@ -11,40 +11,45 @@ const base: FundingContext = {
     spentTodayCents: 0,
     balanceCents: 5_000,
   },
-  freeUsed: 0,
-  freeLimit: 3,
-  userBalanceCents: 1_000,
-  userIsSponsor: false,
+  trialUsed: 0,
+  trialLimit: 10,
 };
 
-describe("orden de financiamiento de una prueba (ADR-044)", () => {
-  it("patrocinio primero, luego gratis, luego saldo", () => {
+describe("quién paga una prueba (ADR-046): la tienda, nunca quien compra", () => {
+  it("primero la tienda con saldo y tope; después las pruebas de cortesía de Estreno", () => {
     expect(fundingOptions(base).map((option) => option.funding)).toEqual([
       "SELLER_PAID",
       "PLATFORM",
-      "USER_PAID",
     ]);
     expect(fundingOptions(base)[0]).toMatchObject({ sponsorSellerId: "s1", chargedCents: 350 });
+    expect(fundingStatus(base)).toBe("sponsored");
   });
 
-  it("el patrocinio se salta sin tope del día, sin saldo del vendedor o si vende quien prueba", () => {
+  it("sin tope del día, sin saldo o sin activar, quedan las pruebas de cortesía de la tienda", () => {
     expect(
-      fundingOptions({ ...base, sponsor: { ...base.sponsor!, spentTodayCents: 1_700 } })[0]
-        ?.funding,
-    ).toBe("PLATFORM");
-    expect(
-      fundingOptions({ ...base, sponsor: { ...base.sponsor!, balanceCents: 100 } })[0]?.funding,
-    ).toBe("PLATFORM");
-    expect(fundingOptions({ ...base, userIsSponsor: true })[0]?.funding).toBe("PLATFORM");
-    expect(fundingOptions({ ...base, sponsor: null })[0]?.funding).toBe("PLATFORM");
-  });
-
-  it("sin gratis ni saldo no hay opciones (la interfaz ofrece recargar)", () => {
-    expect(fundingOptions({ ...base, sponsor: null, freeUsed: 3, userBalanceCents: 300 })).toEqual(
-      [],
-    );
-    expect(fundingOptions({ ...base, sponsor: null, freeUsed: 3, userBalanceCents: 350 })).toEqual([
-      { funding: "USER_PAID", chargedCents: 350 },
+      fundingOptions({ ...base, sponsor: { ...base.sponsor!, spentTodayCents: 1_700 } }),
+    ).toEqual([{ funding: "PLATFORM", chargedCents: 0 }]);
+    expect(fundingOptions({ ...base, sponsor: { ...base.sponsor!, balanceCents: 100 } })).toEqual([
+      { funding: "PLATFORM", chargedCents: 0 },
     ]);
+    expect(fundingStatus({ ...base, sponsor: { ...base.sponsor!, enabled: false } })).toBe("trial");
+    expect(fundingStatus({ ...base, sponsor: null })).toBe("trial");
+  });
+
+  it("con la cortesía agotada y sin tienda que pague, no hay opciones: la demanda se registra", () => {
+    expect(fundingOptions({ ...base, sponsor: null, trialUsed: 10 })).toEqual([]);
+    expect(fundingStatus({ ...base, sponsor: null, trialUsed: 10 })).toBe("none");
+    // Quien compra nunca aparece como quien paga.
+    expect(
+      fundingOptions(base)
+        .map((option) => option.funding)
+        .includes("USER_PAID" as never),
+    ).toBe(false);
+  });
+
+  it("describe cada financiamiento para la persona", () => {
+    expect(describeFunding("SELLER_PAID")).toBe("Cortesía de la tienda");
+    expect(describeFunding("PLATFORM")).toBe("Cortesía de Estreno");
+    expect(describeFunding("USER_PAID")).toBe("Pagada con saldo");
   });
 });

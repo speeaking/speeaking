@@ -26,6 +26,7 @@ import { SellerActivation } from "@/modules/identity/components/seller-activatio
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { isFeatureOn } from "@/modules/ai/features-store";
 import { countMatchingIntents, matchingLabel } from "@/modules/stylist/matching";
+import { countTryOnsByProduct } from "@/modules/tryon/service";
 import { SELLER_AUTHENTICITY_LABELS, SELLER_NOT_DECLARED_LABEL } from "@/modules/trust/labels";
 
 export const metadata: Metadata = { title: "Productos" };
@@ -41,10 +42,11 @@ const STATUS_BADGES: Record<ProductStatus, "secondary" | "outline" | "destructiv
 export default async function StudioProductsPage({ searchParams }: PageProps<"/studio/productos">) {
   const viewer = await requireOnboardedViewer("/studio/productos");
   if (!viewer.sellerProfileId) return <SellerActivation defaultName={viewer.profile.displayName} />;
-  const [products, { guardado }, matchingOn] = await Promise.all([
+  const [products, { guardado }, matchingOn, tryOns] = await Promise.all([
     listSellerProducts(viewer.sellerProfileId),
     searchParams,
     isFeatureOn("buyerMatching"),
+    countTryOnsByProduct(viewer.sellerProfileId),
   ]);
   // «N personas buscan algo así» (ADR-043): solo un número agregado, nunca quiénes.
   const matches = matchingOn
@@ -143,6 +145,13 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
                       {matches.get(product.id) ? (
                         <span className="font-semibold text-success">
                           {matchingLabel(matches.get(product.id)!)}
+                        </span>
+                      ) : null}
+                      {tryOns.get(product.id) ? (
+                        <span className="font-semibold text-success">
+                          {tryOns.get(product.id) === 1
+                            ? "1 persona se lo probó"
+                            : `${tryOns.get(product.id)} personas se lo probaron`}
                         </span>
                       ) : null}
                       {authenticityLabel ? (

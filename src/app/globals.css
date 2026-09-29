@@ -9,6 +9,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+ * Columna izquierda plegable (ADR-046): `nav-open:` aplica solo en escritorio (≥ lg) y cuando el
+ * marco lleva data-nav="open" (`shell-frame.tsx`). Plegada, o en tabletas, la columna es de íconos.
+ */
+@custom-variant nav-open {
+  @media (width >= 64rem) {
+    &:where([data-nav="open"] *) {
+      @slot;
+    }
+  }
+}
+
+/*
  * Identidad «rosa mexicano» (ADR-027) en uso sereno (ADR-042): superficies blancas sobre gris
  * frío, tinta casi negra y el rosa mexicano #E4007C como acento de marca, igual en claro y en
  * oscuro; solo la acción principal de cada pantalla, los enlaces y la marca lo llevan. El modo

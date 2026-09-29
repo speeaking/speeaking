@@ -1,11 +1,12 @@
 # Modelo de ingresos: quién paga qué y cómo baja el precio con la comunidad
 
-Fecha: 2026-09-29 · Estado: aprobado como base (ADR-044) · Dueño: dirección (IA-CEO propone, una
-persona aprueba los precios)
+Fecha: 2026-09-29 (revisado el mismo día, ADR-046) · Estado: aprobado como base (ADR-044, ADR-046) ·
+Dueño: dirección (IA-CEO propone, una persona aprueba los precios)
 
-> Regla del fundador: la plataforma se autofinancia, cada peso se reinvierte en la IA y en nuevas
-> funciones, nada debe ser caro porque el costo se reparte entre todas las personas que la usan, y
-> conforme entra más gente el precio baja sin que dejemos de ganar.
+> Reglas del fundador: la plataforma se autofinancia, cada peso se reinvierte en la IA y en nuevas
+> funciones, nada debe ser caro porque el costo se reparte entre todas las personas que la usan,
+> conforme entra más gente el precio baja sin que dejemos de ganar, y **quien compra no paga por ver
+> cómo le queda algo: eso lo paga quien vende**, porque es quien gana con la venta.
 
 Todas las cifras son **[estimación]** con precios de lista consultados el 2026-09-29 (fuentes al
 final). Se revisan al contratar y cada vez que cambie la tabla de costos del código
@@ -18,42 +19,49 @@ final). Se revisan al contratar y cada vez que cambie la tabla de costos del có
 | «¿Qué necesitas?» (interpretar una necesidad)      | ≈ US$0.0002–0.0005 por consulta   | Comprador        | Alta, barata            |
 | «Crea mi look» / «Completa mi look» (combinar)     | US$0 (lo calcula el código)       | Comprador        | Alta, gratis            |
 | Nombre y explicación de un look (texto)            | ≈ US$0.0003, se guarda y se reusa | Comprador        | Media, barata           |
-| **«Pruébatelo»** (una imagen generada)             | **≈ US$0.034–0.075 por imagen**   | Comprador        | Media, **la cara**      |
+| **«Ver cómo me veo»** (una imagen generada)        | **≈ US$0.034–0.075 por imagen**   | Comprador        | Media, **la cara**      |
 | Texto de publicación del vendedor («Sube y vende») | ≈ US$0.001–0.01 por propuesta     | Vendedor         | Baja, barata            |
 | Kit de anuncios (texto)                            | ≈ US$0.005                        | Vendedor         | Baja, barata            |
+| Producto destacado (publicidad)                    | US$0 (solo lugar en pantalla)     | Vendedor         | Media, **margen puro**  |
+| Mensajes privados                                  | ≈ US$0 (texto en la base)         | Todos            | Alta, gratis            |
 | Imágenes publicitarias (fase 3)                    | ≈ US$0.03–0.07 por imagen         | Vendedor         | Media, cara             |
 | Video promocional (fase 3)                         | ≈ US$0.5–3 por clip               | Vendedor         | Baja, **muy cara**      |
-| Fotos de las personas para «Pruébatelo»            | ≈ US$0.015 por GB al mes (R2)     | Comprador        | Despreciable (30 días)  |
+| Fotos de las personas para «Ver cómo me veo»       | ≈ US$0.015 por GB al mes (R2)     | Comprador        | Despreciable (30 días)  |
 | Infraestructura (Vercel + Neon + R2)               | ≈ US$30–40 al mes en el piloto    | Todos            | Fija, crece con tráfico |
 
-**Conclusión:** solo dos cosas pueden desfinanciarnos: las **imágenes** (Pruébatelo y creativos) y el
-**video**. Todo lo demás cuesta centavos y sirve para traer gente: se regala con cuotas.
+**Conclusión:** solo dos cosas pueden desfinanciarnos: las **imágenes** («Ver cómo me veo» y
+creativos) y el **video**. Todo lo demás cuesta centavos y sirve para traer gente: se regala con
+cuotas. Y hay una cosa que no cuesta nada y sí se cobra: el **lugar en pantalla** (destacados).
 
-## 2. Dónde cobramos sí o sí
+## 2. Dónde cobramos sí o sí (y a quién)
 
-| Cobro                                        | Quién paga | Cuándo                                          | Por qué es obligatorio                                         |
-| -------------------------------------------- | ---------- | ----------------------------------------------- | -------------------------------------------------------------- |
-| **Pruébatelo** después de las pruebas gratis | Comprador  | Desde la 4.ª prueba del mes                     | Cada imagen cuesta dinero real; sin tope nos vacían la caja    |
-| **Pruebas patrocinadas**                     | Vendedor   | Cuando activa «pruebas gratis en mis productos» | Convierte más y el vendedor es quien gana con la venta         |
-| **Impulsar** (P12, publicidad por resultado) | Vendedor   | Cuando haya tráfico (umbral de P12)             | Presupuesto, no planes: «si no vendes, no pagas»               |
-| Imágenes y video para anuncios (fase 3)      | Vendedor   | Por generación, desde su saldo                  | Costo alto y beneficio directo para quien vende                |
-| Comisión por venta                           | Vendedor   | Solo con pagos reales (hoy 0 %, ADR-024)        | Es la fuente principal cuando el dinero pase por la plataforma |
+| Cobro                                        | Quién paga | Cuándo                                               | Por qué es obligatorio                                              |
+| -------------------------------------------- | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
+| **«Ver cómo me veo»** sobre sus productos    | Vendedor   | Cada prueba, después de las de cortesía de su tienda | Cada imagen cuesta dinero real y quien vende es quien gana con ella |
+| **Producto destacado**                       | Vendedor   | Por día, por adelantado                              | Es publicidad: la columna derecha y las sugerencias son ese espacio |
+| **Impulsar** (P12, publicidad por resultado) | Vendedor   | Cuando haya tráfico (umbral de P12)                  | Presupuesto, no planes: «si no vendes, no pagas»                    |
+| Imágenes y video para anuncios (fase 3)      | Vendedor   | Por generación, desde su saldo                       | Costo alto y beneficio directo para quien vende                     |
+| Comisión por venta                           | Vendedor   | Solo con pagos reales (hoy 0 %, ADR-024)             | Es la fuente principal cuando el dinero pase por la plataforma      |
 
-**Lo que NO se cobra** (y por qué): publicar productos, el texto de la publicación con IA, el kit de
-anuncios básico, buscar, «¿Qué necesitas?», «Crea mi look» y «Completa mi look». Son baratos y traen
-oferta y demanda. Van con **cuotas** (por hora, día y mes) y con el guardián de presupuesto, no con
-precio.
+**Quien compra no paga nunca** por probarse ropa, armar looks, buscar, publicar, comentar ni
+mandar mensajes. Es una red social: la gente entra a compartir y a ver; el dinero lo ponen las
+tiendas, que son quienes venden gracias a esa gente. Lo gratis va con **cuotas** (por hora, día y
+mes) y con el guardián de presupuesto, no con precio.
 
-## 3. Saldo y precio comunitario (cómo baja el precio con la gente)
+**Lo que tampoco se cobra a quien vende** (y por qué): publicar productos, el texto de la
+publicación con IA y el kit de anuncios básico. Son baratos y traen oferta.
 
-Una sola idea para compradores y vendedores: un **saldo** en pesos (ADR-044, `Wallet`) del que se
-descuenta cada uso que cuesta dinero, al **precio comunitario** vigente.
+## 3. Saldo de la tienda y precio comunitario
 
-### 3.1 Precio comunitario de «Pruébatelo»
+Una sola idea para quien vende: un **saldo** en pesos (ADR-044, `Wallet`) del que se descuenta cada
+uso que le trae ventas, al **precio comunitario** vigente. Sin planes ni suscripciones que venzan:
+el saldo se gasta cuando trabaja.
 
-El precio por prueba lo calcula el código (P2) con el **volumen de pruebas de toda la plataforma en el
-mes anterior** (gratis y pagadas). Más gente = más volumen = mejor precio de los proveedores y costos
-fijos repartidos entre más personas = precio más bajo para todos.
+### 3.1 Precio comunitario de «Ver cómo me veo»
+
+El precio por prueba lo calcula el código (P2) con el **volumen de pruebas de toda la plataforma en
+el mes anterior** (de cortesía y pagadas). Más gente = más volumen = mejor precio de los proveedores
+y costos fijos repartidos entre más tiendas = precio más bajo para todas.
 
 | Nivel | Pruebas al mes en toda la plataforma | Precio por prueba (IVA incluido) | Margen bruto sobre el costo [estimación] |
 | ----- | ------------------------------------ | -------------------------------- | ---------------------------------------- |
@@ -68,80 +76,99 @@ fijos repartidos entre más personas = precio más bajo para todos.
 - **Piso de seguridad:** el precio nunca baja de **1.5 × el costo unitario** de la tabla de costos.
   Si un proveedor sube de precio y el piso queda por encima del nivel, se cobra el piso y el equipo
   recibe una decisión de riesgo ALTO para revisar la tabla. Nunca vendemos por debajo del costo.
-- **Lo que ve la persona:** «Precio comunitario · nivel 1 de 4 · $3.50 por prueba. Baja a $3.00
-  cuando la comunidad pase de 5,000 pruebas al mes». Transparente y honesto: el precio baja por
-  la comunidad, no por un descuento inventado.
+- **Lo que ve la tienda:** «Precio comunitario · nivel 1 de 4 · $3.50 por prueba. Baja a $3.00
+  cuando la comunidad pase de 5,000 pruebas al mes». Transparente y honesto.
 - El nivel se recalcula el día 1 de cada mes en la operación diaria; el cambio de nivel dentro de
   esta tabla **no** es una decisión nueva (la tabla ya está aprobada). Cambiar la tabla sí lo es
   (riesgo ALTO, una persona).
 
-### 3.2 Pruebas gratis
+### 3.2 Quién paga cada prueba (en este orden)
 
-- **3 pruebas al mes** por cuenta con perfil terminado. Costo máximo del subsidio: 3 × $1.26 =
-  $3.78 MXN por persona activa al mes; con un uso realista (30 % de las cuentas usan sus 3) ≈ $1.15.
-- El subsidio sale del presupuesto de IA (`ai.budget`) y tiene su propio **tope diario**
-  (`tryOnDailyCapUsd`, US$5 al día en el piloto ≈ 70 pruebas gratis al día). Al agotarse, las gratis
-  se pausan hasta el día siguiente («Hoy se acabaron las pruebas gratis; con saldo puedes seguir») y
-  las **pagadas siguen**: las financia el saldo, no el subsidio.
-- Las pruebas **patrocinadas** por un vendedor son gratis para quien compra y las paga el vendedor
-  a precio comunitario. Se usan antes que las gratis de la persona (le cuidan sus 3 del mes).
+1. **La tienda del producto principal**, si tiene «Ver cómo me veo» activo, saldo y tope del día.
+2. **Las pruebas de cortesía de esa tienda**: Estreno pone las primeras **10 pruebas de cada tienda**
+   (`STORE_TRIAL_TRY_ONS`), para que el botón funcione desde el primer día y quien vende vea el
+   resultado antes de poner saldo. Costo máximo del subsidio: 10 × $1.26 = **$12.60 MXN por tienda,
+   una sola vez**; con 100 tiendas, $1,260. Sale del presupuesto de IA (`ai.budget`) y tiene su
+   propio tope diario (`tryOnDailyCapUsd`, US$5 al día en el piloto ≈ 70 pruebas al día).
+3. **Sin ninguna de las dos**, el botón sigue en la ficha: al tocarlo se explica que la tienda no
+   tiene pruebas activas y se registra la **demanda** (`TRY_ON_REQUESTED`). Quien vende ve en su
+   Studio «12 personas quisieron probarse tu ropa esta semana y no pudieron»: ese número vende el
+   saldo mejor que cualquier anuncio.
 
-### 3.3 Recargas de saldo
+Quien compra no aparece en esta lista. Las cuotas por persona (10 por hora, 30 por día) y la caché
+por foto y prenda siguen: evitan el abuso, no cobran.
 
-| Recarga | Bono de saldo  | Pruebas al nivel 1 |
-| ------- | -------------- | ------------------ |
-| $39     | —              | 11                 |
-| $99     | +5 % ($4.95)   | 29                 |
-| $199    | +10 % ($19.90) | 62                 |
+### 3.3 Recargas de saldo de la tienda
 
+| Recarga    | Precio | Bono de saldo   | ≈ Pruebas al nivel 1 | ≈ Días destacado |
+| ---------- | ------ | --------------- | -------------------- | ---------------- |
+| Arranque   | $99    | —               | 28                   | 6                |
+| Impulso    | $299   | +10 % ($29.90)  | 94                   | 21               |
+| Tienda pro | $799   | +15 % ($119.85) | 262                  | 61               |
+
+- Un solo saldo para todo: pruebas, destacados y, después, Impulsar y creativos. No son «paquetes»
+  que venzan: son presupuesto. La tienda decide en qué se va (`/studio/saldo`, `/studio/campanas`).
 - El bono se registra aparte (`PROMO` en el libro del saldo): no es ingreso.
 - Hoy la recarga usa el `PaymentProvider` **simulado** (ADR-032): no se cobra nada y el saldo se marca
   como simulado. Con Mercado Pago/Stripe se acredita solo por webhook con firma verificada.
 - Comisión del procesador ≈ 4 % + IVA por recarga [supuesto; confirmar al contratar]. Con la recarga
-  mínima de $39 la comisión queda por debajo del 8 %.
+  mínima de $99 la comisión queda por debajo del 5 %.
 - El saldo no es dinero: no se transfiere ni se retira en efectivo; se devuelve el saldo no usado si
-  la persona lo pide dentro de los 5 días hábiles siguientes a la recarga (términos, pendiente del
+  la tienda lo pide dentro de los 5 días hábiles siguientes a la recarga (términos, pendiente del
   abogado). IVA incluido en los precios; factura (CFDI) a quien la pida [pendiente del contador].
 
-### 3.4 Vendedores: presupuesto, no planes
+### 3.4 Producto destacado (la columna de publicidad)
 
-- **Pruebas patrocinadas:** el vendedor activa «pruebas gratis en mis productos» con un **tope diario**
-  (mínimo $20 MXN). Cada prueba sobre sus productos se descuenta de su saldo a precio comunitario. Ve
-  cuántas pruebas hubo y cuántas terminaron en carrito o compra.
-- **Impulsar (P12):** presupuesto con tope diario y cobro por resultado, sin planes de IA. Se activa
-  con tráfico.
+- **Dónde aparece:** la columna derecha de escritorio (bloque «Patrocinado»), el primer lugar de
+  «También te puede gustar» en las fichas de productos y una fila «Destacados» arriba de Comprar.
+  Siempre con la etiqueta **Patrocinado** (Ley Federal de Protección al Consumidor, P12).
+- **Precio:** **$15 MXN por día** por producto, de 3 a 30 días, por adelantado desde el saldo.
+  Costo para nosotros: cero. Es el ingreso de margen puro que financia lo demás.
+- **Reglas:** rotación justa entre los destacados vigentes (orden determinista por hora), nunca el
+  producto propio a su dueño, nada oculto por moderación (sin devolución: la moderación es
+  responsabilidad de quien publica). Quien vende ve visitas que llegaron desde un destacado.
+- Referencia [estimación]: un anuncio en redes en México cuesta entre $30 y $80 MXN por cada mil
+  vistas; a $15 por día, con las vistas del piloto, el destacado sale más barato por vista y no
+  exige saber de campañas.
+
+### 3.5 Vendedores: presupuesto, no planes
+
+- **«Ver cómo me veo» activo:** interruptor con **tope diario** (mínimo $20 MXN). Cada prueba sobre
+  sus productos se descuenta de su saldo a precio comunitario. Ve cuántas pruebas hubo, cuántas
+  personas quisieron y no pudieron, y qué productos se prueban más.
+- **Destacar:** días por producto, desde el mismo saldo.
+- **Impulsar (P12):** presupuesto con tope diario y cobro por resultado. Se activa con tráfico.
 - **Creativos con imagen y video (fase 3):** por generación, con precio comunitario propio y un tope
-  interno de generaciones por producto (nunca video para todos los productos «por si acaso»).
-
-Nada de «compras 50 generaciones»: el vendedor piensa «le doy presupuesto a la plataforma y ella
-encuentra compradores».
+  interno de generaciones por producto.
 
 ## 4. Cómo se reinvierte cada peso
 
 1. **Lo pagado cubre su propio costo por construcción:** una prueba pagada se cobra antes de generarse
    (se descuenta del saldo de forma atómica) y su costo real queda en `AIResponse.costMicrosUsd`.
-2. **El excedente alimenta el subsidio y las funciones nuevas:** el presupuesto de IA del mes es
+2. **El excedente alimenta la cortesía y las funciones nuevas:** el presupuesto de IA del mes es
    semilla + un porcentaje de los ingresos del mes anterior (ADR-020, `ai.budget`). Recomendación al
    tener ingresos por saldo: subir `revenueSharePercent` de 20 a 50 (decisión del fundador, riesgo
-   ALTO), porque el costo de lo pagado ya está cubierto y el margen puede ir entero a más pruebas
-   gratis, más creativos y las fases 3–5 de la IA.
+   ALTO), porque el costo de lo pagado ya está cubierto y el margen puede ir entero a más pruebas de
+   cortesía para tiendas nuevas, más creativos y las fases 3–5 de la IA.
 3. **Cobertura:** el resumen del equipo (`/admin/ia`) muestra ingresos por IA ÷ costo de IA, separando
-   lo subsidiado (`funding = PLATFORM`) de lo pagado (`USER_PAID`, `SELLER_PAID`).
+   lo subsidiado (`funding = PLATFORM`) de lo pagado (`SELLER_PAID`).
 
-## 5. Cifras de referencia del piloto (100 vendedores, 2,000 compradores activos) [estimación]
+## 5. Cifras de referencia del piloto (100 tiendas, 2,000 compradores activos) [estimación]
 
-| Concepto                                                    | Al mes                                                                        |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Pruebas gratis usadas (2,000 × 30 % × 3)                    | 1,800 → ≈ $2,270 MXN de costo                                                 |
-| Pruebas pagadas (10 % de compradores recargan $39)          | 200 recargas → $7,800 MXN de ingreso; ≈ 2,200 pruebas → ≈ $2,770 MXN de costo |
-| Pruebas patrocinadas (20 vendedores × $20 al día × 15 días) | $6,000 MXN de ingreso; ≈ 1,700 pruebas → ≈ $2,150 MXN de costo                |
-| Texto (propuestas, kits, necesidades, looks)                | ≈ $900 MXN                                                                    |
-| Infraestructura                                             | ≈ $700 MXN                                                                    |
-| **Ingresos − costos directos**                              | **≈ +$5,000 MXN** (sin sueldos ni legal)                                      |
+| Concepto                                                      | Al mes                                                                    |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Pruebas de cortesía (100 tiendas × 10, una sola vez)          | 1,000 → ≈ $1,260 MXN de costo el primer mes                               |
+| Pruebas pagadas por tiendas (30 tiendas activas × 40 pruebas) | 1,200 pruebas → $4,200 MXN de ingreso; ≈ $1,510 MXN de costo              |
+| Destacados (25 tiendas × 7 días)                              | $2,625 MXN de ingreso; costo cero                                         |
+| Recargas del mes (55 tiendas; mezcla Arranque/Impulso)        | ≈ $9,000 MXN de caja (el ingreso se reconoce al usarse)                   |
+| Texto (propuestas, kits, necesidades, looks)                  | ≈ $900 MXN                                                                |
+| Infraestructura                                               | ≈ $700 MXN                                                                |
+| **Ingresos − costos directos**                                | **≈ +$2,500 MXN el primer mes; ≈ +$3,700 después** (sin sueldos ni legal) |
 
-Con estas cifras la IA se paga sola desde el piloto y el margen financia las pruebas gratis. El riesgo
-real no es el uso normal sino el **abuso**: por eso las cuotas por persona (hora, día, mes), el tope
-diario del subsidio y el candado atómico del saldo existen antes que cualquier precio.
+Con estas cifras la IA se paga sola desde el piloto y el margen financia la cortesía de las tiendas
+nuevas. El riesgo real no es el uso normal sino el **abuso**: por eso las cuotas por persona (hora,
+día, mes), el tope diario del subsidio y el candado atómico del saldo existen antes que cualquier
+precio.
 
 ## 6. Fuentes
 
@@ -153,4 +180,7 @@ diario del subsidio y el candado atómico del saldo existen antes que cualquier 
    https://fal.ai/learn/tools/best-virtual-try-on-apis-2026 · consultado 2026-09-29.
 3. OpenRouter, precios de modelos de texto (Gemini 2.5 Flash Lite US$0.10/0.40, Qwen3.5-9B
    US$0.10/0.15 por millón de tokens). https://openrouter.ai/api/v1/models · consultado 2026-09-27.
-4. Infraestructura: `docs/plan-90-dias.md` §6.1 y ADR-040.
+4. Costo por mil impresiones de anuncios en redes sociales en México: rangos publicados por agencias
+   en 2025–2026 (entre $30 y $80 MXN según formato y público) [estimación; confirmar con la primera
+   campaña propia].
+5. Infraestructura: `docs/plan-90-dias.md` §6.1 y ADR-040.
