@@ -61,7 +61,9 @@ sus módulos con la misma forma.
 - `proposal-numbers.ts`: rango de precio y presupuesto diario calculados por código (P2).
 - `output-guard.ts`: revisa lo que escribió la IA contra los datos (SEC-28); reglas reutilizables.
 - `ad-kit/*`: kit de anuncios (datos P4, guardián con las afirmaciones que respaldan los datos,
-  composición con el precio vigente y la liga con atribución, servicio y acciones). Solo productos
+  composición con el precio vigente y la liga con atribución, servicio y acciones). El precio lo pone
+  el código siempre: sustituye `[PRECIO]` donde el modelo lo dejó y, si no lo dejó, encabeza la
+  línea de datos; un anuncio nunca sale sin precio ni con uno viejo. Solo productos
   propios, activos, con existencias y visibles (uno oculto por moderación no lleva kit). La
   originalidad sigue a la ficha (`buyerAuthenticityOf` + `adKitAuthenticityClaim`): «original» solo
   con lo declarado de riesgo bajo (o aún sin revisión) o con el comprobante revisado; con riesgo
@@ -92,3 +94,21 @@ modelo con el prompt vigente en los últimos 30 días deben estar aprobadas (bas
 a correr hasta que salga aprobada no sirve). No son concluyentes, y no cuentan en ningún sentido, las
 corridas con errores del proveedor ni las parciales (`--limit`, que además nunca aprueban). El mínimo
 de 25 casos se cuenta sobre los que respondió el modelo, no sobre los que bloqueó la política.
+
+## Banderas, quién paga y proveedor de imágenes (ADR-043, ADR-044)
+
+- **`features.ts` / `features-store.ts`:** las 20 funciones del plan «Ecosistema de IA» más las
+  existentes, con fase y estado (`built` o `planned`). `ai.features` en `PlatformSetting`; solo
+  ADMIN lo cambia en `/admin/ia` (`features-decisions.ts`, decisión HUMAN de riesgo ALTO). Los
+  servicios llaman `requireFeature("virtualTryOn")` antes de gastar.
+- **`AIRequest.funding`:** `PLATFORM` y `SYSTEM` consumen el presupuesto de subsidio (`ai.budget`);
+  `USER_PAID` y `SELLER_PAID` se cobran del saldo (`billing/wallet.ts`) dentro de la misma
+  transacción que la reserva (`reserveAiRequest({ funding, reserve })`) y no consumen presupuesto.
+  Pruébatelo gratis además tiene tope diario global (`ai.budget.tryOnDailyCapUsd`, error
+  `DAILY_CAP`). Cada función puede traer cuotas propias por hora y por día (`limits`).
+- **Tareas nuevas:** `shopping_intent` (`stylist/need.ts`) y `look_copy` (`stylist/look-copy.ts`);
+  sin evaluación todavía, así que solo usan el modelo predeterminado o el simulado (ADR-034).
+- **Imágenes:** `server/providers/image` con la misma forma que el texto (`ImageTask`, simulador y
+  adaptador compatible con OpenAI con `modalities: ["image","text"]`). Precio por imagen con fecha y
+  fuente en `cost.ts` (`IMAGE_PRICES_USD_PER_IMAGE`); `maxCallCostMicrosUsd` de un modelo de imagen
+  es el precio de una imagen. Modelo en `AI_IMAGE_MODEL`; sin él, el simulador.

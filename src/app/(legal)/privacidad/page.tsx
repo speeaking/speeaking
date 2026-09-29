@@ -245,6 +245,44 @@ export default function PrivacyNoticePage() {
         datos personales.
       </p>
 
+      <h2 id="estilista">Estilista: «¿Qué necesitas?», «Crea mi look» y «Completa mi look»</h2>
+      <p>
+        Lo que escribes en «¿Qué necesitas?» se usa para interpretar tu necesidad (ocasión, estilo,
+        presupuesto, colores) y armar looks con productos reales de la plataforma. Guardamos ese
+        texto sin correos, teléfonos ni cuentas, junto con los looks que armamos para ti, y lo
+        convertimos en una intención de compra vigente por 30 días («Lo que buscas»), que puedes
+        quitar cuando quieras. Si tienes cuenta y la función está activa, el texto se envía al
+        proveedor de inteligencia artificial descrito arriba, sin tu nombre; el presupuesto lo
+        calcula nuestro código, no el modelo.
+      </p>
+
+      <h2 id="pruebatelo">«Pruébatelo»: tu foto</h2>
+      <p>
+        Para simular cómo podría verse una prenda en ti, subes una foto tuya (debe ser tuya y ser
+        mayor de edad) y aceptas expresamente su uso. La usamos solo para generar esas simulaciones.
+        La foto y cada simulación son privadas: solo tú las ves, ni el equipo ni los vendedores
+        tienen acceso, no se publican ni se comparten y no se pueden adjuntar a publicaciones ni
+        productos. Se borran solas a los 30 días y puedes borrarlas antes desde Ajustes («Mis fotos
+        de prueba»); al borrar la foto se borran sus simulaciones.
+      </p>
+      <p>
+        Para generar la imagen enviamos al proveedor de inteligencia artificial tu foto, las fotos
+        públicas de los productos y una instrucción sin tu nombre ni tus datos; le pedimos no
+        conservarla ni usarla para entrenar sus modelos. Guardamos el registro de cada solicitud
+        (fecha, modelo, costo y qué productos) sin la imagen, para medir y auditar el uso. Cada
+        simulación se muestra como lo que es: una imagen generada con IA, no una garantía de talla,
+        color o caída.
+      </p>
+
+      <h2 id="saldo">Saldo y recargas</h2>
+      <p>
+        Si recargas saldo guardamos el monto, la fecha, la referencia del proveedor de pagos y cada
+        movimiento (recargas, cargos por simulaciones, devoluciones). Nunca vemos ni guardamos los
+        datos de tu tarjeta: los maneja el proveedor de pagos. El saldo no es dinero ni se
+        transfiere; los precios y las condiciones de devolución están en la página de precios y en
+        los términos.
+      </p>
+
       <h2 id="autenticidad">Autenticidad de los productos</h2>
       <p>
         Para proteger a quien compra de falsificaciones revisamos el riesgo de imitación de cada
@@ -300,7 +338,9 @@ export default function PrivacyNoticePage() {
           Los registros de intentos por IP: se borran al terminar su ventana (de minutos a unos
           días).
         </li>
-        <li>El texto de «Sube y vende»: 90 días.</li>
+        <li>El texto de «Sube y vende» y el de «¿Qué necesitas?»: 90 días.</li>
+        <li>Tu foto de «Pruébatelo» y cada simulación: 30 días, o antes si las borras.</li>
+        <li>Los movimientos de tu saldo: mientras tengas la cuenta (registro contable).</li>
         <li>
           Tu actividad, incluidas las publicaciones que viste en pantalla: ligada a tu cuenta
           mientras la tengas y tengas activada la personalización. Al desactivarla se desliga,

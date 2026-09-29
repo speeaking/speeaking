@@ -11,6 +11,9 @@ const hiddenProductLinks = vi.fn();
 /** Adjuntos públicos: una fila (`findFirst` por `mediaId`) o `null`. */
 const publicPostLink = vi.fn();
 const publicProductLink = vi.fn();
+/** Fotos de Pruébatelo (ADR-045): la foto de la persona y el resultado, por `mediaId`. */
+const tryOnPhoto = vi.fn();
+const tryOnResult = vi.fn();
 const findUserRole = vi.fn();
 
 /** Almacenamiento en memoria: originales y variantes (`variants/...`). */
@@ -33,6 +36,8 @@ vi.mock("@/server/db", () => ({
     authenticityProofHistory: { findMany: pastProofs },
     postMedia: { findFirst: publicPostLink },
     productMedia: { count: hiddenProductLinks, findFirst: publicProductLink },
+    tryOnPhoto: { findUnique: tryOnPhoto },
+    tryOnResult: { findUnique: tryOnResult },
   },
 }));
 vi.mock("@/server/providers/storage", () => ({ getStorage: () => ({ get, put }) }));
@@ -108,6 +113,8 @@ beforeEach(() => {
   hiddenProductLinks.mockResolvedValue(0);
   publicPostLink.mockResolvedValue(null);
   publicProductLink.mockResolvedValue(null);
+  tryOnPhoto.mockResolvedValue(null);
+  tryOnResult.mockResolvedValue(null);
   findUserRole.mockImplementation(async (id: string) => (id === ADMIN ? "ADMIN" : "USER"));
 });
 
@@ -243,6 +250,37 @@ describe("GET /media/[...key] (SEC-14)", () => {
     as(ADMIN);
 
     expect((await request()).status).toBe(404);
+  });
+
+  it("una foto de Pruébatelo la ve solo su dueña o dueño: ni el equipo, ni aunque se adjunte a algo público", async () => {
+    findUnique.mockResolvedValue(row(1));
+    tryOnPhoto.mockResolvedValue({ id: "0199a000-0000-7000-8000-0000000000e1" });
+
+    expect((await request()).status).toBe(404);
+    as(STRANGER);
+    expect((await request()).status).toBe(404);
+    as(ADMIN);
+    expect((await request()).status).toBe(404);
+    expect(tryOnPhoto).toHaveBeenCalledWith({ where: { mediaId: MEDIA_ID }, select: { id: true } });
+
+    as(OWNER);
+    const asOwner = await request();
+    expect(asOwner.status).toBe(200);
+    expect(asOwner.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
+  it("un resultado de Pruébatelo en un producto oculto: tampoco para el equipo por aquí", async () => {
+    hide();
+    tryOnResult.mockResolvedValue({ id: "0199a000-0000-7000-8000-0000000000e2" });
+    as(ADMIN);
+
+    expect((await request()).status).toBe(404);
+    expect(tryOnResult).toHaveBeenCalledWith({
+      where: { resultMediaId: MEDIA_ID },
+      select: { id: true },
+    });
+    as(OWNER);
+    expect((await request()).status).toBe(200);
   });
 
   it("un comprobante REEMPLAZADO (solo en la bitácora) tampoco es público: solo su dueño, sin caché", async () => {

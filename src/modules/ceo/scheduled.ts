@@ -2,6 +2,7 @@ import "server-only";
 import { redactExpiredAiInputs } from "@/modules/ai/retention";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { deleteOrphanMedia } from "@/modules/media/orphans";
+import { deleteExpiredTryOnMedia } from "@/modules/tryon/service";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import type { Narrator } from "./narrative";
@@ -24,6 +25,7 @@ export function runScheduledDailyPipeline(
           deleteOrphanMedia(db, getStorage(), cleanupOptions),
         redactExpiredAiInputs: (now: Date, batchSize: number) =>
           redactExpiredAiInputs(now, batchSize),
+        deleteExpiredTryOnMedia: (now: Date) => deleteExpiredTryOnMedia(db, getStorage(), now),
       };
   return runDailyPipeline({
     client: db,

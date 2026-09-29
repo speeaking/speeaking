@@ -34,6 +34,7 @@ import { getAdminViewer } from "@/modules/admin/guard";
 import { BuyBox } from "@/modules/commerce/components/buy-box";
 import { getViewer } from "@/modules/identity/session";
 import { FollowButton } from "@/modules/social/components/follow-button";
+import { ProductStylistActions } from "@/modules/stylist/components/product-actions";
 import { PostCard } from "@/modules/social/components/post-card";
 import { hydratePosts } from "@/modules/social/post-queries";
 import { AuthenticityNotice } from "@/modules/trust/components/authenticity-notice";
@@ -282,6 +283,16 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             inStock={inStock}
             unavailableLabel={product.facts.status === "PAUSED" ? "Pausado" : "Agotado"}
             sourcePostId={sourcePostId}
+          />
+        )}
+
+        {moderation.hidden ? null : (
+          <ProductStylistActions
+            slug={product.slug}
+            categorySlug={product.category.slug}
+            title={product.title}
+            tags={product.tags}
+            isSignedIn={Boolean(viewer)}
           />
         )}
 

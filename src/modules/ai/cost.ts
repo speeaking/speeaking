@@ -37,6 +37,49 @@ const MODEL_ALIASES: Record<string, string> = {
   "google/gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
 };
 
+/**
+ * Precio por IMAGEN generada, en dólares (ADR-043, ADR-044). Fuente: OpenRouter, consultado el
+ * 2026-09-29 (salida de imagen a US$60 por millón de tokens; una imagen de 1024×1024 ≈ 1,120
+ * tokens ≈ US$0.067). La «lite» a la mitad. `docs/modelo-de-ingresos.md` §6.
+ */
+export const IMAGE_PRICES_USD_PER_IMAGE: Record<string, number> = {
+  "gemini-3.1-flash-image-preview": 0.0672,
+  "gemini-3.1-flash-lite-image-preview": 0.0336,
+  "mock-image": 0,
+};
+
+const IMAGE_MODEL_ALIASES: Record<string, string> = {
+  "google/gemini-3.1-flash-image-preview": "gemini-3.1-flash-image-preview",
+  "google/gemini-3.1-flash-lite-image-preview": "gemini-3.1-flash-lite-image-preview",
+};
+
+/** Id del modelo de imagen en la tabla, o `null` si no es un modelo de imagen con precio. */
+export function pricedImageModelId(model: string): string | null {
+  const id = model.trim().toLowerCase();
+  if (id in IMAGE_PRICES_USD_PER_IMAGE) return id;
+  const alias = IMAGE_MODEL_ALIASES[id];
+  if (alias) return alias;
+  const withoutVendor = id.includes("/") ? id.slice(id.lastIndexOf("/") + 1) : null;
+  return withoutVendor && withoutVendor in IMAGE_PRICES_USD_PER_IMAGE ? withoutVendor : null;
+}
+
+/** Costo de UNA imagen en micro-dólares, o `null` si el modelo no tiene precio. */
+export function imagePriceMicrosUsd(model: string): number | null {
+  const id = pricedImageModelId(model);
+  return id === null ? null : Math.ceil(IMAGE_PRICES_USD_PER_IMAGE[id]! * 1_000_000);
+}
+
+/** Costo que se REGISTRA de una generación de imágenes (por imagen; los tokens no se cobran aparte). */
+export function recordedImageCost(
+  model: string,
+  images: number,
+): { micros: number; known: boolean } {
+  const perImage = imagePriceMicrosUsd(model);
+  if (perImage !== null) return { micros: perImage * Math.max(1, images), known: true };
+  const highest = Math.max(...Object.values(IMAGE_PRICES_USD_PER_IMAGE));
+  return { micros: Math.ceil(highest * 1_000_000) * Math.max(1, images), known: false };
+}
+
 /** Id del modelo en la tabla de precios, o `null` si no tiene precio. */
 export function pricedModelId(model: string): string | null {
   const id = model.trim().toLowerCase();
@@ -62,8 +105,13 @@ export const AI_MAX_INPUT_TOKENS = 4_000;
 export const AI_MAX_OUTPUT_TOKENS = 4_000;
 export const AI_CALL_TIMEOUT_MS = 45_000;
 
-/** Costo máximo de una llamada (tokens tope × precio). `null` si el modelo no tiene precio. */
+/**
+ * Costo máximo de una llamada (tokens tope × precio; en un modelo de imagen, una imagen). `null` si
+ * el modelo no tiene precio.
+ */
 export function maxCallCostMicrosUsd(model: string): number | null {
+  const image = imagePriceMicrosUsd(model);
+  if (image !== null) return image;
   const price = modelPrice(model);
   if (!price) return null;
   return Math.ceil(AI_MAX_INPUT_TOKENS * price.input + AI_MAX_OUTPUT_TOKENS * price.output);

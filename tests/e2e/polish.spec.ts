@@ -121,20 +121,22 @@ test.describe("unirse y salir de una comunidad", () => {
 
 test.describe("búsqueda de Comprar", () => {
   test("sin acentos ni mayúsculas y por palabras, igual que /buscar", async ({ page }) => {
-    // «audífonos» es una etiqueta real de la semilla (AirPods Pro 2).
-    await page.goto("/comprar?q=audifonos");
+    // «mecánico» es una etiqueta real de la semilla (el teclado) y ninguna otra prueba publica
+    // teclados: la comparación no depende de lo que otras pruebas creen en paralelo.
+    await page.goto("/comprar?q=mecanico");
     const main = page.getByRole("main");
-    await expect(main.getByRole("link", { name: /AirPods Pro 2/ })).toBeVisible();
+    const keyboard = main.getByRole("link", { name: /Teclado mecánico/ });
+    await expect(keyboard).toBeVisible();
     const plain = await productHrefs(page);
-    expect(plain).toContain("/producto/airpods-pro-2-demo");
+    expect(plain.some((href) => href?.includes("teclado-mecanico"))).toBe(true);
 
     // Con acento y en mayúsculas es la misma búsqueda.
-    await page.goto(`/comprar?q=${encodeURIComponent("AUDÍFONOS")}`);
-    await expect(main.getByRole("link", { name: /AirPods Pro 2/ })).toBeVisible();
+    await page.goto(`/comprar?q=${encodeURIComponent("MECÁNICO")}`);
+    await expect(keyboard).toBeVisible();
     expect(await productHrefs(page)).toEqual(plain);
 
     // Coincide con la sección de productos de /buscar.
-    await page.goto("/buscar?q=audifonos");
+    await page.goto("/buscar?q=mecanico");
     const section = page.getByRole("region", { name: "Productos" });
     await expect(section).toBeVisible();
     expect(await productHrefs(page, section)).toEqual(plain);

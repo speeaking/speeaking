@@ -40,15 +40,21 @@ export function productShareUrl(appUrl: string, slug: string, channel: AdKitChan
 export function composeAdKit(copy: AdCopy, product: AdKitProduct, appUrl: string): AdKitVariant[] {
   const price = priceLabel(product);
   const fill = (text: string) => text.split(PRICE_TOKEN).join(price).trim();
-  const facts = factLines(product).join(" · ");
+  // Si el modelo no dejó dónde va el precio, el precio encabeza los datos: nunca falta (P2, P4).
+  const factsFor = (text: string) =>
+    [...(text.includes(PRICE_TOKEN) ? [] : [price]), ...factLines(product)].join(" · ");
   const url = (channel: AdKitChannel) => productShareUrl(appUrl, product.slug, channel);
   const hashtags = copy.instagram.hashtags.map((tag) => `#${tag}`);
 
   const variants: Record<AdKitChannel, string> = {
-    whatsapp: [fill(copy.whatsapp), facts, url("whatsapp")].filter(Boolean).join("\n\n"),
-    facebook: [fill(copy.facebook), facts, url("facebook")].filter(Boolean).join("\n\n"),
+    whatsapp: [fill(copy.whatsapp), factsFor(copy.whatsapp), url("whatsapp")]
+      .filter(Boolean)
+      .join("\n\n"),
+    facebook: [fill(copy.facebook), factsFor(copy.facebook), url("facebook")]
+      .filter(Boolean)
+      .join("\n\n"),
     // Instagram no abre ligas en el pie de foto: la liga se copia aparte (para el perfil).
-    instagram: [fill(copy.instagram.caption), facts, hashtags.join(" ")]
+    instagram: [fill(copy.instagram.caption), factsFor(copy.instagram.caption), hashtags.join(" ")]
       .filter(Boolean)
       .join("\n\n"),
     headline: fill(copy.headline),

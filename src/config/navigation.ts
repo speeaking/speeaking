@@ -11,8 +11,10 @@ import {
   Package,
   Plus,
   ReceiptText,
+  Shirt,
   ShoppingBag,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 import type { Route } from "next";
 
@@ -40,7 +42,17 @@ export const socialNav: readonly NavItem[] = [
     href: "/comprar",
     label: "Comprar",
     icon: ShoppingBag,
-    also: ["/producto", "/carrito", "/checkout", "/pedidos"],
+    // El estilista, Pruébatelo, el saldo y los precios son parte de comprar (ADR-043, ADR-044).
+    also: [
+      "/producto",
+      "/carrito",
+      "/checkout",
+      "/pedidos",
+      "/estilista",
+      "/probar",
+      "/saldo",
+      "/precios",
+    ],
   },
   {
     href: "/perfil",
@@ -62,8 +74,9 @@ export const sideNav: readonly NavItem[] = [
     href: "/comprar",
     label: "Comprar",
     icon: ShoppingBag,
-    also: ["/producto", "/carrito", "/checkout"],
+    also: ["/producto", "/carrito", "/checkout", "/saldo", "/precios"],
   },
+  { href: "/estilista", label: "Estilista", icon: Shirt, also: ["/probar"] },
   { href: "/guardados", label: "Guardados", icon: Bookmark },
   { href: "/pedidos", label: "Mis pedidos", icon: ReceiptText },
 ];
@@ -75,6 +88,7 @@ export const studioNav: readonly NavItem[] = [
   { href: "/studio/contenido", label: "Contenido", icon: Clapperboard },
   { href: "/studio/sube-y-vende", label: "Sube y vende", icon: Sparkles },
   { href: "/studio/campanas", label: "Campañas", icon: Megaphone },
+  { href: "/studio/saldo", label: "Saldo", icon: Wallet },
   { href: "/studio/pedidos", label: "Pedidos", icon: ReceiptText },
   { href: "/studio/analitica", label: "Analítica", icon: ChartColumn },
 ];

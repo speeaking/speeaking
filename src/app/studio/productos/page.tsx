@@ -24,6 +24,8 @@ import { listSellerProducts } from "@/modules/catalog/queries";
 import { toggleTargetFor } from "@/modules/catalog/status";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { isFeatureOn } from "@/modules/ai/features-store";
+import { countMatchingIntents, matchingLabel } from "@/modules/stylist/matching";
 import { SELLER_AUTHENTICITY_LABELS, SELLER_NOT_DECLARED_LABEL } from "@/modules/trust/labels";
 
 export const metadata: Metadata = { title: "Productos" };
@@ -39,10 +41,15 @@ const STATUS_BADGES: Record<ProductStatus, "secondary" | "outline" | "destructiv
 export default async function StudioProductsPage({ searchParams }: PageProps<"/studio/productos">) {
   const viewer = await requireOnboardedViewer("/studio/productos");
   if (!viewer.sellerProfileId) return <SellerActivation defaultName={viewer.profile.displayName} />;
-  const [products, { guardado }] = await Promise.all([
+  const [products, { guardado }, matchingOn] = await Promise.all([
     listSellerProducts(viewer.sellerProfileId),
     searchParams,
+    isFeatureOn("buyerMatching"),
   ]);
+  // «N personas buscan algo así» (ADR-043): solo un número agregado, nunca quiénes.
+  const matches = matchingOn
+    ? await countMatchingIntents(products.filter((product) => product.status === "ACTIVE"))
+    : new Map<string, number>();
 
   return (
     <div className="flex flex-col gap-4">
@@ -132,6 +139,11 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
                           <EyeOff data-icon="inline-start" />
                           Oculto por moderación
                         </Badge>
+                      ) : null}
+                      {matches.get(product.id) ? (
+                        <span className="font-semibold text-success">
+                          {matchingLabel(matches.get(product.id)!)}
+                        </span>
                       ) : null}
                       {authenticityLabel ? (
                         <Badge variant="outline">

@@ -129,7 +129,8 @@ test("el vendedor crea su kit de anuncios: 4 textos etiquetados según quién lo
     .click();
 
   const cards = page.getByRole("article");
-  await expect(cards).toHaveCount(4);
+  // Con un modelo real, el kit tarda lo que tarde el proveedor (hasta su plazo de 45 s).
+  await expect(cards).toHaveCount(4, { timeout: 60_000 });
   const label = simulated ? SIMULATED_LABEL : AI_LABEL;
   for (const title of [
     "Mensaje de WhatsApp",

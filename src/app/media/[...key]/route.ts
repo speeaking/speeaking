@@ -8,6 +8,7 @@ import {
   readVariant,
 } from "@/modules/media/delivery";
 import { isProofMedia } from "@/modules/trust/proof-media";
+import { isTryOnMedia } from "@/modules/tryon/media";
 import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
@@ -75,12 +76,16 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
   if (!media || media.status !== "READY") return notFound();
 
   const publiclyAttached = await isPubliclyAttached(media.id);
-  // Un comprobante (vigente o anterior) nunca es público. Solo se consulta cuando cambia la respuesta
-  // (lo que no está adjunto a nada visible ya es privado). Consultas con índice (GIN y `mediaId`).
+  // Un comprobante (vigente o anterior) y una foto de Pruébatelo (ADR-045) nunca son públicos. Solo
+  // se consulta cuando cambia la respuesta (lo que no está adjunto a nada visible ya es privado).
+  // Consultas con índice (GIN y `mediaId`).
   const isProof = () => isProofMedia(db, media.id);
+  const isTryOn = () => isTryOnMedia(db, media.id);
 
-  const isPublic = publiclyAttached && !(await isProof());
-  if (!isPublic && !(await canSeePrivate(media, publiclyAttached, isProof))) return notFound();
+  const isPublic = publiclyAttached && !(await isProof()) && !(await isTryOn());
+  if (!isPublic && !(await canSeePrivate(media, publiclyAttached, isProof, isTryOn))) {
+    return notFound();
+  }
 
   // Autorizada: recién ahora se lee el archivo o su variante.
   const storage = getStorage();
@@ -142,12 +147,15 @@ async function canSeePrivate(
   media: { id: string; ownerId: string },
   publiclyAttached: boolean,
   isProof: () => Promise<boolean>,
+  isTryOn: () => Promise<boolean>,
 ) {
   const viewerId = (await getSession())?.user.id;
   if (!viewerId) return false;
   if (viewerId === media.ownerId) return true;
-  // Adjunta a algo público pero es comprobante: solo su dueño.
+  // Adjunta a algo público pero es comprobante o foto de Pruébatelo: solo su dueño.
   if (publiclyAttached) return false;
+  // Una foto de Pruébatelo la ve solo su dueña o dueño: ni el equipo (ADR-045).
+  if (await isTryOn()) return false;
   if ((await findUserRole(viewerId)) !== "ADMIN") return false;
   const hiddenProductLinks = await db.productMedia.count({
     where: { mediaId: media.id, product: { moderationStatus: "HIDDEN" } },

@@ -26,9 +26,17 @@ export const categories: CategorySeed[] = [
   {
     slug: "moda",
     name: "Moda",
+    // Los huecos de un look (ADR-043, `stylist/slots.ts`) salen de estas categorías; «Ropa» queda
+    // como genérica y se clasifica por palabras.
     children: [
-      { slug: "ropa", name: "Ropa" },
+      { slug: "camisas-y-blusas", name: "Camisas, blusas y playeras" },
+      { slug: "pantalones-y-faldas", name: "Pantalones, jeans y faldas" },
+      { slug: "vestidos", name: "Vestidos y conjuntos" },
+      { slug: "chamarras-y-sacos", name: "Chamarras, sacos y suéteres" },
+      { slug: "ropa", name: "Otra ropa" },
       { slug: "tenis", name: "Tenis y calzado" },
+      { slug: "bolsas", name: "Bolsas y mochilas" },
+      { slug: "relojes-y-joyeria", name: "Relojes y joyería" },
       { slug: "accesorios-moda", name: "Accesorios" },
     ],
   },

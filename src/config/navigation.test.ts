@@ -93,6 +93,7 @@ describe("columna izquierda (escritorio)", () => {
       "Inicio",
       "Descubrir",
       "Comprar",
+      "Estilista",
       "Guardados",
       "Mis pedidos",
     ]);
@@ -104,6 +105,7 @@ describe("columna izquierda (escritorio)", () => {
     ["/producto/tenis", "Comprar"],
     ["/carrito", "Comprar"],
     ["/checkout", "Comprar"],
+    ["/estilista", "Estilista"],
     ["/guardados", "Guardados"],
     ["/pedidos", "Mis pedidos"],
     ["/pedidos/0199a0b2-0000-7000-8000-000000000000", "Mis pedidos"],

@@ -8,6 +8,7 @@ import { PeopleSuggestions } from "@/modules/discovery/components/people-suggest
 import { Composer } from "@/modules/feed/components/composer";
 import type { FeedSlot } from "@/modules/feed/components/feed-list";
 import { HomeFeed } from "@/modules/feed/components/home-feed";
+import { StylistCard } from "@/modules/stylist/components/stylist-card";
 import { VisitorJoinCard } from "@/modules/feed/components/visitor-join-card";
 import { WelcomeCard } from "@/modules/feed/components/welcome-card";
 import { feedDateLabel, localDay } from "@/modules/feed/feed-date";
@@ -99,30 +100,36 @@ export default async function HomePage() {
       initialPage={page}
       slots={slots}
       beforeFeed={
-        viewer ? (
-          <>
-            {moment ? <WelcomeCard moment={moment} /> : null}
-            {onboarded && profile ? (
-              <Composer
-                firstName={firstNameOf(profile.displayName)}
-                displayName={profile.displayName}
-                username={profile.username}
-                avatarUrl={profile.avatarUrl}
-              />
-            ) : (
-              <Link
-                href="/bienvenida"
-                className="flex items-center gap-3 border-b bg-card p-4 md:rounded-3xl md:border"
-              >
-                <CircleUserRound aria-hidden="true" className="size-5 shrink-0 text-primary-text" />
-                <span className="text-sm">
-                  <span className="font-semibold">Termina tu perfil</span> para que tu feed hable de
-                  lo que te gusta.
-                </span>
-              </Link>
-            )}
-          </>
-        ) : null
+        <>
+          <StylistCard />
+          {viewer ? (
+            <>
+              {moment ? <WelcomeCard moment={moment} /> : null}
+              {onboarded && profile ? (
+                <Composer
+                  firstName={firstNameOf(profile.displayName)}
+                  displayName={profile.displayName}
+                  username={profile.username}
+                  avatarUrl={profile.avatarUrl}
+                />
+              ) : (
+                <Link
+                  href="/bienvenida"
+                  className="flex items-center gap-3 border-b bg-card p-4 md:rounded-3xl md:border"
+                >
+                  <CircleUserRound
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-primary-text"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold">Termina tu perfil</span> para que tu feed hable
+                    de lo que te gusta.
+                  </span>
+                </Link>
+              )}
+            </>
+          ) : null}
+        </>
       }
       empty={
         <div className="px-4 pt-4 md:p-0">

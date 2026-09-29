@@ -67,6 +67,9 @@ src/
 | `platform`  | `PlatformSetting` versionado, catálogo de ajustes con riesgo y límites (`tunables.ts`), `applySettingChange`, experimentos y calendario de congelamiento      |
 | `ceo`       | Motor de automejora: métricas diarias, analista, autonomía, experimentos, salvaguardas, operación diaria y Centro de decisiones (ADR-019, ADR-033, ADR-037)   |
 | `admin`     | Rol ADMIN: `requireAdmin`, `getAdminViewer`, `assertAdmin`, `make-admin` y estructura de `/admin` (ADR-035, ver Administración y operación)                   |
+| `stylist`   | «¿Qué necesitas?», «Crea mi look», «Completa mi look», cambiar piezas, comprar look y coincidencias comprador–producto (código determinista, ADR-043)         |
+| `tryon`     | «Pruébatelo»: foto privada con consentimiento, quién paga, reserva atómica, proveedor de imágenes, caché y retención de 30 días (ADR-044, ADR-045)            |
+| `billing`   | Saldo en pesos (cartera y libro), precio comunitario, recargas (simuladas hoy, webhook después) y patrocinio del vendedor (ADR-044)                           |
 
 **Reglas de dependencia**
 
@@ -91,13 +94,14 @@ src/
 
 ## Proveedores
 
-| Interfaz          | Sprint 1                                  | Después                                                                                                |
-| ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `AIProvider`      | `MockAIProvider` determinista             | Modelo abierto pagado por uso con API compatible con OpenAI (`AI_PROVIDER=openai_compatible`, ADR-033) |
-| `PaymentProvider` | `MockPaymentProvider` (pasarela simulada) | Mercado Pago / Stripe con reparto de fondos                                                            |
-| `StorageProvider` | Disco local (`.data/uploads`)             | Cloudflare R2 privado por API S3 (`STORAGE_DRIVER=s3`, ADR-040); implementado                          |
-| `EmailProvider`   | Consola                                   | Resend / SES                                                                                           |
-| `MediaProcessor`  | Imágenes con `sharp`                      | Video con proveedor gestionado (S2)                                                                    |
+| Interfaz          | Sprint 1                                                                     | Después                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `AIProvider`      | `MockAIProvider` determinista                                                | Modelo abierto pagado por uso con API compatible con OpenAI (`AI_PROVIDER=openai_compatible`, ADR-033) |
+| `PaymentProvider` | `MockPaymentProvider` (pasarela simulada)                                    | Mercado Pago / Stripe con reparto de fondos                                                            |
+| `StorageProvider` | Disco local (`.data/uploads`)                                                | Cloudflare R2 privado por API S3 (`STORAGE_DRIVER=s3`, ADR-040); implementado                          |
+| `ImageProvider`   | `MockImageProvider` (compone la foto con las prendas y una franja «ejemplo») | Modelo que genera imágenes desde el chat (`AI_IMAGE_MODEL`, OpenRouter con `modalities`, ADR-043)      |
+| `EmailProvider`   | Consola                                                                      | Resend / SES                                                                                           |
+| `MediaProcessor`  | Imágenes con `sharp`                                                         | Video con proveedor gestionado (S2)                                                                    |
 
 La implementación se elige por variable de entorno en `server/providers/<tipo>/index.ts`.
 
@@ -427,13 +431,52 @@ retiro de una foto (SEC-14, ventana de ADR-039) depende de cómo Vercel revalide
 comprueba en el primer despliegue (`docs/deploy.md`, paso 13) y, si pasa de una hora, se fija
 `Vercel-CDN-Cache-Control` en la ruta.
 
+## Núcleo de IA y compra asistida (ADR-043 a ADR-045)
+
+El plan «Ecosistema de IA» (20 funciones, 5 fases) se apoya en lo que ya existía (proveedores por
+interfaz, tareas estructuradas, enrutador, guardián, evaluaciones) más tres piezas nuevas:
+
+```
+Persona ──▶ /estilista · /probar · /saldo · ficha de producto
+                │
+                ▼
+   modules/stylist   necesidad (reglas + modelo) → candidatos reales → compositor (código) → looks
+   modules/tryon     foto privada + consentimiento → quién paga → reserva atómica → ImageProvider → resultado privado
+   modules/billing   saldo, precio comunitario, recargas, patrocinio
+                │
+                ▼
+   modules/ai        ai.features (banderas) · ai.routing · guardián (funding, tope diario, cuotas por función)
+                │
+                ▼
+   server/providers  ai (texto) · image (imágenes) · storage · payments
+```
+
+- **Banderas** (`ai.features`, `modules/ai/features.ts`): lista cerrada de las 20 funciones más las
+  existentes; solo ADMIN las cambia en `/admin/ia` (decisión HUMAN de riesgo alto); las planeadas
+  no tienen código y siempre están apagadas. Los servicios llaman `requireFeature` antes de gastar.
+- **Quién paga** (`AIRequest.funding`): `PLATFORM`/`SYSTEM` consumen el presupuesto de subsidio
+  (`ai.budget`, con tope diario para Pruébatelo); `USER_PAID`/`SELLER_PAID` se cobran del saldo en
+  la misma transacción que la reserva y no consumen presupuesto. Cada función tiene además cuotas
+  propias por hora y por día.
+- **La IA nunca inventa productos:** el estilista arma looks con código determinista sobre
+  productos activos, con existencias y visibles; el modelo solo interpreta la necesidad (el
+  presupuesto lo pone el código) y, cuando se encienda, nombra el look con guardián.
+- **Fotos de Pruébatelo:** privadas (solo su dueña o dueño, ni el equipo), nunca adjuntables
+  (validación + trigger `private_media_link`), excluidas del recolector de huérfanas, con
+  consentimiento versionado y borrado a los 30 días en la operación diaria (`tryon-retention`).
+- **Caché:** un resultado de Pruébatelo se identifica por foto + productos + prompt + modelo.
+- **Eventos (P5):** `NEED_SUBMITTED`, `LOOK_GENERATED`, `LOOK_ITEM_SWAPPED`, `TRY_ON_GENERATED`,
+  `WALLET_TOPUP`, `WALLET_CHARGE`; superficies `STYLIST` y `WALLET`.
+- **Cobro:** `docs/modelo-de-ingresos.md`. Página pública `/precios`.
+
 ## Seguridad
 
 - Cabeceras base en `next.config.ts` (nosniff, DENY de iframes, Referrer-Policy, Permissions-Policy,
   HSTS en producción) y sin `X-Powered-By`. CSP estricta con nonce por petición en TODO el HTML:
   `src/proxy.ts` genera el nonce y pone la política (`src/lib/csp.ts`) en la petición y la respuesta
   de cada página, con o sin sesión (ADR-029); `/media` conserva su CSP de sandbox y `/api/*` no lleva
-  CSP de página.
+  CSP de página. `src/instrumentation-client.ts` corre en el navegador antes que la app y deja a Zod
+  sin JIT (`Function()` violaría la CSP en producción).
 - Autorización en servicios; `proxy.ts` solo hace redirecciones optimistas.
 - Validación con Zod en cada frontera; límite de intentos en auth, IA y subidas.
 - **Límite de frecuencia propio** (`server/rate-limit.ts`, tabla `rate_limit_buckets`): el `rateLimit`

@@ -320,6 +320,126 @@ export const seedPhotos: Record<string, SeedPhoto> = {
     photographerUrl: "https://unsplash.com/@tugleash",
     alt: "Persona sujeta una correa retráctil negra junto a un perro color arena sentado sobre pasto sintético",
   },
+  "product:camisa-blanca-vestir-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/hMMXhKSZk7k",
+    imageUrl:
+      "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Nimble Made",
+    photographerUrl: "https://unsplash.com/@nimblemade",
+    alt: "Camisa blanca de botones en un gancho de madera sobre fondo claro",
+    fit: "contain",
+  },
+  "product:playera-polo-blanca-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/ve2dwNxZ5Rg",
+    imageUrl:
+      "https://images.unsplash.com/photo-1621773881532-fe65715b5137?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Lisanto 李奕良",
+    photographerUrl: "https://unsplash.com/@lisanto_",
+    alt: "Playera polo blanca colgada de un gancho frente a un mueble de madera",
+    fit: "contain",
+  },
+  "product:blusa-negra-satinada-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/cp-VMJ-mdKs",
+    imageUrl:
+      "https://images.unsplash.com/photo-1519554318711-aaf73ece6ff9?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "H&CO",
+    photographerUrl: "https://unsplash.com/@hngstrm",
+    alt: "Blusa negra sin mangas colgada de un gancho en un ropero",
+    fit: "contain",
+  },
+  "product:jeans-rectos-azul-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/Te7qwZmbqWU",
+    imageUrl:
+      "https://images.unsplash.com/photo-1624378440070-950d99e25830?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Matthew Moloney",
+    photographerUrl: "https://unsplash.com/@mattmoloney",
+    alt: "Jeans de mezclilla azul extendidos sobre una tela blanca",
+    fit: "contain",
+  },
+  "product:pantalon-vestir-negro-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/Tgbeg_lOuko",
+    imageUrl:
+      "https://images.unsplash.com/photo-1515459961680-58264ee27219?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Leighann Blackwood",
+    photographerUrl: "https://unsplash.com/@ohleighann",
+    alt: "Pantalones doblados en tonos negro, azul y gris apilados uno sobre otro",
+    fit: "contain",
+  },
+  "product:vestido-blanco-encaje-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/B_P6nONZk58",
+    imageUrl:
+      "https://images.unsplash.com/photo-1591221662157-6f62de5508eb?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Cate Bligh",
+    photographerUrl: "https://unsplash.com/@catebligh",
+    alt: "Vestido blanco de encaje sin mangas en un gancho de madera sobre una pared beige",
+    fit: "contain",
+  },
+  "product:saco-negro-entallado-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/ip4CjkTWGmI",
+    imageUrl:
+      "https://images.unsplash.com/photo-1585412459272-762fb93357c3?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Robbie",
+    photographerUrl: "https://unsplash.com/@lifeofrobbie",
+    alt: "Saco negro de vestir en un gancho blanco sobre fondo claro",
+    fit: "contain",
+  },
+  "product:tenis-blancos-minimal-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/BeClz11lyXY",
+    imageUrl:
+      "https://images.unsplash.com/photo-1544441892-794166f1e3be?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Mnz",
+    photographerUrl: "https://unsplash.com/@mnzoutfits",
+    alt: "Par de tenis blancos de bota baja sobre fondo liso",
+    fit: "contain",
+  },
+  "product:zapatos-piel-cafe-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/NfZiOJzZgcg",
+    imageUrl:
+      "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "David Lezcano",
+    photographerUrl: "https://unsplash.com/@_thedl",
+    alt: "Par de zapatos de vestir de piel café junto a su caja",
+    fit: "contain",
+  },
+  "product:bolsa-piel-cafe-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/IFlg3kFbR0E",
+    imageUrl:
+      "https://images.unsplash.com/photo-1691480150204-66dd1eb77391?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "personalgraphic.com",
+    photographerUrl: "https://unsplash.com/@personal_graphic",
+    alt: "Bolsa de piel café con asa sobre fondo blanco",
+    fit: "contain",
+  },
+  "product:bolsa-negra-piel-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/lnbuoKz2GlM",
+    imageUrl:
+      "https://images.unsplash.com/photo-1705909237050-7a7625b47fac?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Mobina Ghazazani",
+    photographerUrl: "https://unsplash.com/@mobinaghzz",
+    alt: "Bolsa de piel negra sobre un fondo amarillo",
+    fit: "contain",
+  },
+  "product:reloj-correa-cuero-demo": {
+    source: "unsplash",
+    pageUrl: "https://unsplash.com/photos/12V36G17IbQ",
+    imageUrl:
+      "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=1600&q=80&fm=jpg&fit=max",
+    photographer: "Pat Taylor",
+    photographerUrl: "https://unsplash.com/@ptaylor_",
+    alt: "Reloj cronógrafo con carátula plateada y correa de cuero café sobre una superficie reflejante",
+    fit: "contain",
+  },
 };
 
 /** Nombre del archivo procesado para una clave del manifiesto. */

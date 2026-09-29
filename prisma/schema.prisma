@@ -50,6 +50,11 @@ model User {
   reportsResolved      Report[]              @relation("reportsResolved")
   authenticityReviews  AuthenticityCheck[]   @relation("authenticityReviewer")
   decisionsApproved    PlatformDecision[]    @relation("decisionApprover")
+  // Saldo, Pruébatelo y looks (ADR-043, ADR-044, ADR-045).
+  wallet               Wallet?
+  tryOnPhotos          TryOnPhoto[]
+  tryOnResults         TryOnResult[]
+  styleLooks           StyleLook[]
 
   @@map("users")
 }
@@ -191,6 +196,10 @@ model SellerProfile {
   /// Métodos de pago aceptados (P4): el agente de IA solo puede citar estos.
   acceptedPaymentMethods PaymentMethod[] @default([])
   status                 SellerStatus    @default(ACTIVE)
+  /// «Pruebas gratis en mis productos» (ADR-044): el vendedor paga cada Pruébatelo sobre sus
+  /// productos a precio comunitario, hasta `tryOnDailyCapCents` al día.
+  sponsorsTryOn          Boolean         @default(false)
+  tryOnDailyCapCents     Int             @default(0)
   createdAt              DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt              DateTime        @updatedAt @db.Timestamptz(3)
 
@@ -206,6 +215,8 @@ enum ConsentType {
   PERSONALIZATION
   /// «Aparecer en sugerencias» de «Gente de tus comunidades» (Profile.discoverable).
   DISCOVERABILITY
+  /// Usar la foto de la persona para las simulaciones de «Pruébatelo» (ADR-045).
+  TRY_ON_PHOTOS
 }
 
 /// Historial inmutable de consentimientos: cada cambio agrega un registro.
@@ -361,6 +372,9 @@ model Media {
   productLinks ProductMedia[]
   /// Envíos como comprobante de autenticidad (P14): privada para siempre, nunca se adjunta.
   proofHistory AuthenticityProofHistory[]
+  /// Foto de Pruébatelo o su resultado (ADR-045): privadas, con fecha de borrado, nunca se adjuntan.
+  tryOnPhoto   TryOnPhoto?
+  tryOnResult  TryOnResult?               @relation("tryOnResultMedia")
 
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("media")
@@ -646,6 +660,25 @@ enum AIFeature {
   AUTHENTICITY_REVIEW
   /// Casos de evaluación para elegir modelo por tarea (`AIEvalRun`); cuentan en el presupuesto.
   MODEL_EVALUATION
+  /// «¿Qué necesitas?»: interpretar una necesidad en lenguaje natural (estilista, ADR-043).
+  SHOPPING_INTENT
+  /// Nombre y explicación de un look armado por código (estilista).
+  LOOK_COPY
+  /// «Pruébatelo»: una imagen generada con la foto de la persona y los productos (ADR-045).
+  VIRTUAL_TRY_ON
+}
+
+/// Quién financia una solicitud de IA (ADR-044). Solo PLATFORM y SYSTEM consumen el presupuesto
+/// de subsidio (`ai.budget`); lo pagado lo financia el saldo de quien lo pidió o lo patrocinó.
+enum AIFunding {
+  /// Subsidio de la plataforma, incluidas las pruebas gratis del mes.
+  PLATFORM
+  /// La persona la pagó con su saldo.
+  USER_PAID
+  /// Un vendedor la patrocinó con su saldo.
+  SELLER_PAID
+  /// Tareas del sistema (analista, evaluaciones).
+  SYSTEM
 }
 
 enum AIRequestStatus {
@@ -665,12 +698,15 @@ model AIRequest {
   promptVersion String
   /// Entrada saneada (sin datos sensibles innecesarios).
   input         Json
+  /// Quién la financia (ADR-044): decide si cuenta en el presupuesto de subsidio.
+  funding       AIFunding       @default(PLATFORM)
   status        AIRequestStatus @default(PENDING)
   errorCode     String?
   latencyMs     Int?
   createdAt     DateTime        @default(now()) @db.Timestamptz(3)
 
-  response AIResponse?
+  response    AIResponse?
+  tryOnResult TryOnResult?
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([feature, createdAt(sort: Desc)])
@@ -722,6 +758,18 @@ enum AnalyticsEventType {
   /// continuo, medida en el navegador y aceptada solo si la pieza se le sirvió a esa persona
   /// (`analytics/visible-impressions.ts`). `IMPRESSION` sigue siendo la pieza SERVIDA.
   VISIBLE_IMPRESSION
+  /// Estilista (ADR-043): la persona describió una necesidad («¿Qué necesitas?»).
+  NEED_SUBMITTED
+  /// Se armó un look con productos reales (`metadata.items`, `metadata.source`).
+  LOOK_GENERATED
+  /// La persona cambió una pieza del look («quiero otros zapatos»).
+  LOOK_ITEM_SWAPPED
+  /// Se generó una simulación de Pruébatelo (`metadata.funding`, `metadata.cached`).
+  TRY_ON_GENERATED
+  /// Recarga de saldo (`metadata.packId`, `metadata.simulated`).
+  WALLET_TOPUP
+  /// Cargo al saldo por un uso pagado (`metadata.kind`).
+  WALLET_CHARGE
 }
 
 enum EntityType {
@@ -743,6 +791,10 @@ enum Surface {
   SHARE_LINK
   STUDIO
   ONBOARDING
+  /// Estilista: «¿Qué necesitas?», looks y Pruébatelo.
+  STYLIST
+  /// Saldo y recargas.
+  WALLET
 }
 
 /// Sin llave foránea a User a propósito: se escribe en segundo plano y se borra por userId al
@@ -1291,4 +1343,173 @@ model PlatformLedgerEntry {
 
   @@index([kind, occurredAt])
   @@map("platform_ledger_entries")
+}
+
+// ─────────────────────────── Saldo (ADR-044) ───────────────────────────
+
+/// Una cartera por cuenta (P6), en centavos MXN. El saldo nunca baja de cero (CHECK en la
+/// migración) y cada cambio deja un movimiento en `WalletEntry`.
+model Wallet {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  userId       String   @unique @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceCents Int      @default(0)
+  currency     String   @default("MXN") @db.Char(3)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  entries WalletEntry[]
+  topUps  WalletTopUp[]
+
+  @@map("wallets")
+}
+
+enum WalletEntryKind {
+  /// Recarga pagada (o simulada: `simulated`).
+  TOPUP
+  /// Bono de una recarga: no es ingreso.
+  PROMO
+  /// Cargo por una prueba de Pruébatelo pagada por la persona.
+  TRY_ON
+  /// Cargo al vendedor por una prueba patrocinada sobre sus productos.
+  SPONSORED_TRY_ON
+  /// Devolución de un cargo cuya generación falló.
+  REFUND
+  /// Ajuste del equipo, con referencia.
+  ADJUSTMENT
+}
+
+/// Libro de movimientos del saldo: inmutable, con el saldo resultante para auditar.
+model WalletEntry {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  walletId          String          @db.Uuid
+  wallet            Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  kind              WalletEntryKind
+  /// Positivo abona, negativo carga (centavos MXN).
+  amountCents       Int
+  balanceAfterCents Int
+  /// Id de la recarga, de la solicitud de IA o del resultado de Pruébatelo.
+  reference         String?         @db.VarChar(80)
+  /// El abono vino de una recarga simulada (ADR-032): no cuenta como ingreso.
+  simulated         Boolean         @default(false)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@index([walletId, createdAt(sort: Desc)])
+  @@index([kind, createdAt])
+  @@map("wallet_entries")
+}
+
+enum TopUpStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+/// Recarga de saldo por el `PaymentProvider`. Con el simulado queda `simulated` y no es ingreso.
+model WalletTopUp {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  walletId    String      @db.Uuid
+  wallet      Wallet      @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  packId      String      @db.VarChar(40)
+  amountCents Int
+  bonusCents  Int         @default(0)
+  currency    String      @default("MXN") @db.Char(3)
+  status      TopUpStatus @default(PENDING)
+  provider    String      @db.VarChar(40)
+  providerRef String?     @unique
+  simulated   Boolean     @default(false)
+  paidAt      DateTime?   @db.Timestamptz(3)
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([walletId, createdAt(sort: Desc)])
+  @@map("wallet_top_ups")
+}
+
+// ─────────────────────────── Pruébatelo (ADR-045) ───────────────────────────
+
+/// Foto de la persona para las simulaciones: privada (solo su dueña o dueño la ve), con
+/// consentimiento versionado y fecha de borrado (30 días). Nunca se adjunta a nada público.
+model TryOnPhoto {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaId        String   @unique @db.Uuid
+  media          Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  consentVersion String   @db.VarChar(20)
+  expiresAt      DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  results TryOnResult[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("try_on_photos")
+}
+
+enum TryOnStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+/// Una simulación: la foto de la persona con uno o varios productos. Privada y con fecha de
+/// borrado; la firma (`cacheKey`) evita generar dos veces lo mismo.
+model TryOnResult {
+  id              String      @id @default(uuid(7)) @db.Uuid
+  userId          String      @db.Uuid
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photoId         String      @db.Uuid
+  photo           TryOnPhoto  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  /// Productos de la simulación en orden (la prenda principal primero).
+  productIds      String[]    @db.Uuid
+  /// SHA-256 de (foto, productos con sus fotos, versión del prompt, modelo).
+  cacheKey        String      @unique @db.VarChar(64)
+  status          TryOnStatus @default(PENDING)
+  resultMediaId   String?     @unique @db.Uuid
+  resultMedia     Media?      @relation("tryOnResultMedia", fields: [resultMediaId], references: [id], onDelete: SetNull)
+  aiRequestId     String?     @unique @db.Uuid
+  aiRequest       AIRequest?  @relation(fields: [aiRequestId], references: [id], onDelete: SetNull)
+  funding         AIFunding   @default(PLATFORM)
+  /// Vendedor que patrocinó la prueba (`SELLER_PAID`).
+  sponsorSellerId String?     @db.Uuid
+  /// Centavos cobrados a quien la financió (0 en las gratis).
+  chargedCents    Int         @default(0)
+  errorCode       String?     @db.VarChar(40)
+  expiresAt       DateTime    @db.Timestamptz(3)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@index([sponsorSellerId, createdAt])
+  @@map("try_on_results")
+}
+
+// ─────────────────────────── Estilista (ADR-043) ───────────────────────────
+
+/// Un look armado por código con productos reales (P2, P4). Se guarda para volver a verlo,
+/// probárselo y cambiar piezas; `items` conserva los ids y precios del momento.
+model StyleLook {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  userId           String?  @db.Uuid
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Lo que la persona escribió, recortado y sin datos de contacto.
+  needText         String   @db.VarChar(300)
+  /// Necesidad interpretada (ocasión, estilo, presupuesto, colores, palabras clave), validada.
+  need             Json
+  /// [{ productId, slot, priceCents }] en orden de importancia.
+  items            Json
+  totalCents       Int
+  currency         String   @default("MXN") @db.Char(3)
+  title            String   @db.VarChar(80)
+  explanation      String?  @db.VarChar(300)
+  /// Quién escribió el título: `rules` (código), `ai` (modelo) o `simulated`.
+  copySource       String   @db.VarChar(20)
+  /// «Completa mi look»: el producto del que partió.
+  anchorProductId  String?  @db.Uuid
+  algorithmVersion String   @db.VarChar(20)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("style_looks")
 }

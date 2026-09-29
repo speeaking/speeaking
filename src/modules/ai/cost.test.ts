@@ -67,3 +67,25 @@ describe("mxnCentsToMicrosUsd", () => {
     expect(mxnCentsToMicrosUsd(18_000, 18)).toBe(10_000_000);
   });
 });
+
+describe("precios por imagen (ADR-043)", async () => {
+  const { imagePriceMicrosUsd, maxCallCostMicrosUsd, recordedImageCost } = await import("./cost");
+
+  it("un modelo de imagen conocido tiene precio por imagen y ese es su costo máximo por llamada", () => {
+    expect(imagePriceMicrosUsd("google/gemini-3.1-flash-image-preview")).toBe(67_200);
+    expect(imagePriceMicrosUsd("GOOGLE/gemini-3.1-flash-lite-image-preview")).toBe(33_600);
+    expect(maxCallCostMicrosUsd("google/gemini-3.1-flash-image-preview")).toBe(67_200);
+    expect(imagePriceMicrosUsd("mock-image")).toBe(0);
+    expect(imagePriceMicrosUsd("qwen/qwen3.5-9b")).toBeNull();
+  });
+
+  it("sin precio se registra una cota superior marcada como desconocida, nunca 0", () => {
+    expect(recordedImageCost("google/gemini-3.1-flash-image-preview", 1)).toEqual({
+      micros: 67_200,
+      known: true,
+    });
+    const unknown = recordedImageCost("vendor/modelo-nuevo", 2);
+    expect(unknown.known).toBe(false);
+    expect(unknown.micros).toBeGreaterThan(0);
+  });
+});

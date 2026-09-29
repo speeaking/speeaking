@@ -18,7 +18,7 @@ import type { Narrator } from "./narrative";
 /**
  * Operación diaria (`pnpm ops:daily` y `/api/cron/daily`), en este orden:
  *   métricas → experimentos → salvaguardas → analista → checkouts vencidos → imágenes huérfanas →
- *   retención de entradas de IA.
+ *   retención de entradas de IA → retención de Pruébatelo.
  * Cada paso deja su `JobRun`; todos son idempotentes y se pueden volver a correr. Si las métricas
  * fallan, salvaguardas y analista no corren (no se decide con datos incompletos); el mantenimiento
  * sí. Dos ejecuciones simultáneas no se enciman: la segunda se registra como omitida.
@@ -48,6 +48,10 @@ export type PipelineDeps = {
   deleteOrphanMedia?: OrphanCleanup;
   /** `redactExpiredAiInputs` de IA (devuelve cuántas redactó en el lote). */
   redactExpiredAiInputs?: (now: Date, batchSize: number) => Promise<number>;
+  /** `deleteExpiredTryOnMedia` de Pruébatelo (ADR-045): fotos y simulaciones vencidas. */
+  deleteExpiredTryOnMedia?: (
+    now: Date,
+  ) => Promise<{ photos: number; results: number; failedFiles: string[] }>;
 };
 
 export type StepResult = { ok: true; summary: unknown } | { ok: false; error: string };
@@ -215,6 +219,23 @@ export async function runDailyPipeline(deps: PipelineDeps): Promise<PipelineSumm
             if (batch < REDACTION_BATCH) break;
           }
           return { redacted };
+        })
+      : skip(NOT_IN_RUN);
+
+    const tryOn = deps.deleteExpiredTryOnMedia;
+    summary.steps["tryon-retention"] = tryOn
+      ? await runJob(client, "tryon-retention", async () => {
+          let photos = 0;
+          let results = 0;
+          let failedFiles = 0;
+          for (let round = 0; round < MAX_ROUNDS; round++) {
+            const batch = await tryOn(now);
+            photos += batch.photos;
+            results += batch.results;
+            failedFiles += batch.failedFiles.length;
+            if (batch.photos === 0 && batch.results === 0) break;
+          }
+          return { photos, results, failedFiles };
         })
       : skip(NOT_IN_RUN);
 

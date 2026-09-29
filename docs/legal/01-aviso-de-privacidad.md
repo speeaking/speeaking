@@ -496,6 +496,32 @@ No escribas datos personales de nadie en esos textos.
 - Para elegir modelos los probamos con casos ficticios. Si algún día usamos textos reales, será con
   tu permiso y sin datos personales.
 
+### 7 bis. Estilista, «Pruébatelo» y saldo (agregado 2026-09-29, ADR-043 a ADR-045)
+
+**Estilista.** El texto de «¿Qué necesitas?» se guarda sin datos de contacto (90 días), se convierte
+en una intención de compra vigente por 30 días («Lo que buscas», cancelable) y, con cuenta y la
+función activa, se envía al proveedor de IA sin el nombre de la persona. El presupuesto lo calcula el
+código; los looks se arman con productos reales sin intervención del modelo.
+
+**«Pruébatelo».** Finalidad: generar simulaciones de cómo podría verse un producto en la persona.
+Base: consentimiento expreso y versionado (`UserConsent` TRY_ON_PHOTOS, texto en
+`src/modules/tryon/consent.ts`), con la afirmación de que la foto es propia y de una persona mayor
+de edad. La foto y cada resultado son privados (solo su titular; ni el equipo), no se publican, no se
+comparten con vendedores y no se pueden adjuntar a publicaciones ni productos (trigger en la base).
+Se transfieren al proveedor de IA (encargado) la foto, las fotos públicas de los productos y una
+instrucción sin datos personales, con la petición de no conservar ni entrenar. Plazo: 30 días, o
+antes a petición desde Ajustes (borrado de foto y simulaciones). Se conserva el registro de cada
+solicitud (fecha, modelo, costo, productos) sin la imagen. **[VERIFICAR CON ABOGADO]:** si una foto
+del cuerpo con fines de simulación constituye dato sensible bajo la LFPDPPP (art. 3 fr. VI) y, en su
+caso, la forma del consentimiento (expreso y por escrito) y el aviso de que no se usa para
+identificar a la persona.
+
+**Saldo.** Datos: monto, fecha, referencia del proveedor de pagos y cada movimiento. Nunca datos de
+tarjeta (los procesa el proveedor). Plazo: mientras exista la cuenta y el que exija la contabilidad.
+El saldo no es dinero ni se transfiere; devolución del saldo no usado dentro de 5 días hábiles
+después de la recarga **[VERIFICAR CON ABOGADO y CONTADOR: naturaleza del saldo prepagado, IVA y
+CFDI]**.
+
 ### 8. Con quién compartimos tus datos
 
 #### 8.1 Proveedores que tratan datos por nuestra cuenta (encargados)

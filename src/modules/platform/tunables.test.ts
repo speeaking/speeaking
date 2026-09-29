@@ -89,6 +89,8 @@ describe("clasificación de riesgo (código, nunca la IA)", () => {
   it("pagos, precios, comisiones y gasto están fuera del alcance del motor", () => {
     expect(isForbiddenSetting("commerce.fees")).toBe(true);
     expect(isForbiddenSetting("ai.budget")).toBe(true);
+    expect(isForbiddenSetting("ai.features")).toBe(true);
+    expect(isForbiddenSetting("billing.tryOn")).toBe(true);
     expect(isForbiddenSetting("pricing.anything")).toBe(true);
     expect(isForbiddenSetting("feed.policy.authorWindow")).toBe(false);
   });

@@ -6,7 +6,9 @@ export type AIErrorCode =
   | "PROVIDER_ERROR"
   | "NOT_ALLOWED"
   /** Sin IA disponible (ADR-038): se detecta ANTES de reservar, sin gastar la cuota. */
-  | "UNAVAILABLE";
+  | "UNAVAILABLE"
+  /** El tope diario del subsidio de la función se agotó (Pruébatelo gratis, ADR-044). */
+  | "DAILY_CAP";
 
 export class AIError extends Error {
   override name = "AIError";

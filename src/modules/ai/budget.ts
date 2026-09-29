@@ -27,6 +27,11 @@ export const aiBudgetSchema = z.object({
    * (pendientes, respondidas y fallidas), no las bloqueadas por presupuesto.
    */
   maxRequestsPerUserPerMonth: z.int().min(1).max(10_000).default(30),
+  /**
+   * Tope diario del SUBSIDIO de Pruébatelo (ADR-044): lo que la plataforma paga en pruebas gratis
+   * por día (UTC). Al agotarse, las gratis se pausan hasta mañana; las pagadas siguen.
+   */
+  tryOnDailyCapUsd: z.number().min(0).max(1_000).default(5),
 });
 
 export type AIBudget = z.infer<typeof aiBudgetSchema>;
@@ -40,6 +45,7 @@ export const DEFAULT_AI_BUDGET: AIBudget = {
   maxRequestsPerUserPerHour: 20,
   maxRequestsPerUserPerDay: 10,
   maxRequestsPerUserPerMonth: 30,
+  tryOnDailyCapUsd: 5,
 };
 
 const MICROS_PER_USD = 1_000_000;

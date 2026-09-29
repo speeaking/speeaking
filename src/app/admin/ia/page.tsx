@@ -6,7 +6,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
 import { getAdminViewer, requireAdmin } from "@/modules/admin/guard";
 import { getAdminAiOverview } from "@/modules/ai/admin-overview";
+import { FeatureToggles } from "@/modules/ai/components/feature-toggles";
 import { ProposalDiscardForm } from "@/modules/ai/components/proposal-discard-form";
+import { AI_FEATURES, isAiFeatureEnabled } from "@/modules/ai/features";
+import { getAiFeatures } from "@/modules/ai/features-store";
 import { RoutingForm } from "@/modules/ai/components/routing-form";
 import { formatUsdMicros } from "@/modules/ai/evals/report";
 import { closeStaleAiRoutingProposals } from "@/modules/ai/routing-decisions";
@@ -87,7 +90,10 @@ export default async function AdminAiPage() {
     unstable_rethrow(error);
     console.error("[ai] no se pudieron cerrar las propuestas sin nada que aplicar", error);
   }
-  const overview = await getAdminAiOverview(admin.userId);
+  const [overview, features] = await Promise.all([
+    getAdminAiOverview(admin.userId),
+    getAiFeatures(),
+  ]);
   const { spend } = overview;
   const usedShare = spend.limitMicros > 0 ? spend.committedMicros / spend.limitMicros : 1;
 
@@ -213,6 +219,22 @@ export default async function AdminAiPage() {
           ))}
         </ul>
         <RoutingForm routes={overview.routes} />
+      </Section>
+
+      <Section
+        title="Funciones de IA"
+        description="Cada función se enciende o apaga aquí sin desplegar (ADR-043). Las planeadas no existen todavía. Cambiar una es una decisión de producto: queda en la bitácora con tu motivo."
+      >
+        <FeatureToggles
+          features={AI_FEATURES.map((feature) => ({
+            key: feature.key,
+            label: feature.label,
+            description: feature.description,
+            phase: feature.phase,
+            status: feature.status,
+            enabled: isAiFeatureEnabled(features, feature.key),
+          }))}
+        />
       </Section>
 
       <Section

@@ -171,28 +171,29 @@ En Vercel → Settings → Environment Variables, entorno **Production**. Las se
 **Sensitive** activado (después nadie puede leerlas, [guía](https://vercel.com/docs/environment-variables/sensitive-environment-variables)).
 Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
 
-| Variable                       | Valor o ejemplo                                                    | Secreta | Obligatoria             |
-| ------------------------------ | ------------------------------------------------------------------ | ------- | ----------------------- |
-| `APP_URL`                      | `https://<tu-dominio>` (al inicio `https://<proyecto>.vercel.app`) | No      | Sí                      |
-| `DATABASE_URL`                 | La crea Neon: host con `-pooler`, `?sslmode=require`               | Sí      | Sí                      |
-| `DATABASE_URL_UNPOOLED`        | La crea Neon: host sin `-pooler`, `?sslmode=require`               | Sí      | Sí (migraciones)        |
-| `BETTER_AUTH_SECRET`           | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                      |
-| `CRON_SECRET`                  | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                      |
-| `TRUSTED_PROXY_HOPS`           | `1` (Vercel pone la IP real del cliente)                           | No      | Sí en Vercel            |
-| `STORAGE_DRIVER`               | `s3`                                                               | No      | Sí                      |
-| `S3_ENDPOINT`                  | `https://<id-de-cuenta>.r2.cloudflarestorage.com` (sin ruta)       | No      | Sí                      |
-| `S3_BUCKET`                    | `vendeia-media`                                                    | No      | Sí                      |
-| `S3_REGION`                    | `auto`                                                             | No      | No (por omisión `auto`) |
-| `S3_ACCESS_KEY_ID`             | Paso 4                                                             | Sí      | Sí                      |
-| `S3_SECRET_ACCESS_KEY`         | Paso 4                                                             | Sí      | Sí                      |
-| `PAYMENT_PROVIDER`             | `mock` (pagos por terceros o en persona, ADR-033 #4)               | No      | No (por omisión `mock`) |
-| `ALLOW_SIMULATED_PAYMENTS`     | `true` solo en el piloto cerrado (nadie paga por la plataforma)    | No      | Sí con `mock`           |
-| `AI_PROVIDER`                  | `openai_compatible` (o `mock`)                                     | No      | No (por omisión `mock`) |
-| `AI_BASE_URL`                  | `https://openrouter.ai/api/v1`                                     | No      | Con `openai_compatible` |
-| `AI_API_KEY`                   | Paso 6 (`sk-or-…`)                                                 | Sí      | Con `openai_compatible` |
-| `AI_DEFAULT_MODEL`             | `qwen/qwen3.5-9b`                                                  | No      | Con `openai_compatible` |
-| `ALLOW_SIMULATED_AI`           | `true` solo con `AI_PROVIDER=mock`                                 | No      | Sí con `mock`           |
-| `ENABLE_EXPERIMENTAL_COREPACK` | `1` (Vercel usa exactamente pnpm 10.33.2 de `packageManager`)      | No      | Recomendada             |
+| Variable                       | Valor o ejemplo                                                    | Secreta | Obligatoria                                                    |
+| ------------------------------ | ------------------------------------------------------------------ | ------- | -------------------------------------------------------------- |
+| `APP_URL`                      | `https://<tu-dominio>` (al inicio `https://<proyecto>.vercel.app`) | No      | Sí                                                             |
+| `DATABASE_URL`                 | La crea Neon: host con `-pooler`, `?sslmode=require`               | Sí      | Sí                                                             |
+| `DATABASE_URL_UNPOOLED`        | La crea Neon: host sin `-pooler`, `?sslmode=require`               | Sí      | Sí (migraciones)                                               |
+| `BETTER_AUTH_SECRET`           | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                                                             |
+| `CRON_SECRET`                  | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                                                             |
+| `TRUSTED_PROXY_HOPS`           | `1` (Vercel pone la IP real del cliente)                           | No      | Sí en Vercel                                                   |
+| `STORAGE_DRIVER`               | `s3`                                                               | No      | Sí                                                             |
+| `S3_ENDPOINT`                  | `https://<id-de-cuenta>.r2.cloudflarestorage.com` (sin ruta)       | No      | Sí                                                             |
+| `S3_BUCKET`                    | `vendeia-media`                                                    | No      | Sí                                                             |
+| `S3_REGION`                    | `auto`                                                             | No      | No (por omisión `auto`)                                        |
+| `S3_ACCESS_KEY_ID`             | Paso 4                                                             | Sí      | Sí                                                             |
+| `S3_SECRET_ACCESS_KEY`         | Paso 4                                                             | Sí      | Sí                                                             |
+| `PAYMENT_PROVIDER`             | `mock` (pagos por terceros o en persona, ADR-033 #4)               | No      | No (por omisión `mock`)                                        |
+| `ALLOW_SIMULATED_PAYMENTS`     | `true` solo en el piloto cerrado (nadie paga por la plataforma)    | No      | Sí con `mock`                                                  |
+| `AI_PROVIDER`                  | `openai_compatible` (o `mock`)                                     | No      | No (por omisión `mock`)                                        |
+| `AI_BASE_URL`                  | `https://openrouter.ai/api/v1`                                     | No      | Con `openai_compatible`                                        |
+| `AI_API_KEY`                   | Paso 6 (`sk-or-…`)                                                 | Sí      | Con `openai_compatible`                                        |
+| `AI_DEFAULT_MODEL`             | `qwen/qwen3.5-9b`                                                  | No      | Con `openai_compatible`                                        |
+| `AI_IMAGE_MODEL`               | `google/gemini-3.1-flash-image-preview` (Pruébatelo, ADR-043)      | No      | No (sin él, imágenes simuladas: en producción «no disponible») |
+| `ALLOW_SIMULATED_AI`           | `true` solo con `AI_PROVIDER=mock`                                 | No      | Sí con `mock`                                                  |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1` (Vercel usa exactamente pnpm 10.33.2 de `packageManager`)      | No      | Recomendada                                                    |
 
 No pongas `NODE_ENV` (Vercel ya usa `production`), ni `STORAGE_LOCAL_ROOT`, ni `ALLOW_LOCAL_STORAGE`:
 en Vercel el disco es efímero y la app rechaza guardar fotos en él aunque la bandera diga `true`.

@@ -4,7 +4,12 @@ import { registerAndOnboard, TINY_PNG } from "./helpers";
 const SALE_TEXT = "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.";
 
 /** Vendedor: Sube y vende → propuesta → activar tienda → producto prellenado → publicado. */
+/** Tiempo máximo de un paso que espera al modelo real: su plazo (45 s) más el margen del servicio. */
+export const AI_STEP_TIMEOUT = 60_000;
+
 async function sellWithAi(page: Page) {
+  // Con un modelo real, la propuesta puede tardar lo que tarde el proveedor (hasta su plazo).
+  test.slow();
   await page.goto("/studio/sube-y-vende");
   await page.getByLabel("¿Qué quieres vender hoy?").fill(SALE_TEXT);
 
@@ -14,7 +19,9 @@ async function sellWithAi(page: Page) {
   await expect(page.getByLabel("Piezas")).toHaveValue("50");
   await page.getByRole("button", { name: "Crear mi propuesta" }).click();
 
-  await expect(page.getByRole("heading", { name: "Tus números" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tus números" })).toBeVisible({
+    timeout: AI_STEP_TIMEOUT,
+  });
   await expect(page.getByText("$1,099 (31.4 %)")).toBeVisible();
   await page.getByRole("link", { name: "Crear producto con esta propuesta" }).click();
 

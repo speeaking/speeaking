@@ -347,6 +347,24 @@ Reglas:
 > protege por derecho de autor (SCJN, AD 6/2025) [19] (secundaria). Proveedor de IA como encargado
 > fuera de México: 00 §2.7.
 
+### A11 bis. Estilista, «Pruébatelo» y saldo (agregado 2026-09-29)
+
+- **Looks:** sugerencias armadas por código con productos reales de vendedores; cada pieza se compra a
+  quien la vende con las condiciones de su ficha. No son una oferta de Estreno y pueden dejar de
+  estar disponibles.
+- **«Pruébatelo»:** imagen generada con IA, orientativa; no garantiza talla, color, caída ni el
+  aspecto real; no da derecho a devolución por diferencias con la simulación (aplican las condiciones
+  de devolución de cada vendedor). Quien sube la foto declara que es suya y que es mayor de edad;
+  prohibido subir fotos de terceros.
+- **Saldo:** simulaciones gratis al mes y, después, cobro con saldo al precio publicado en `/precios`
+  (baja con el uso de la plataforma; nunca por debajo del costo). El saldo no es dinero, no genera
+  intereses, no se transfiere ni se retira; devolución del no usado dentro de 5 días hábiles tras la
+  recarga; si una simulación falla no se cobra. Los vendedores pueden patrocinar simulaciones con
+  tope diario. En el piloto las recargas son simuladas. **[VERIFICAR CON ABOGADO]:** LFPC art. 76 BIS
+  (información previa, precio total, cancelación), tratamiento del saldo prepagado y si aplica
+  regulación de fondos de pago electrónico (Ley Fintech) —no debería, al no ser transferible ni
+  redimible en efectivo—; **[CONTADOR]:** IVA y CFDI de las recargas.
+
 ### A12. Personalización, sugerencias y mejoras del producto
 
 - Si **aceptas la personalización** (es opcional), ordenamos tu feed con lo que haces dentro de

@@ -338,10 +338,13 @@ comunidad, proporción y desenfoque de fotos) y sonner inyecta un `<style>` sin 
 **Consecuencias.** Todas las páginas se renderizan por petición (el layout lee las cabeceras): no hay
 páginas estáticas ni ISR. Agregar un tercero (SDK de pagos, analítica, CDN de imágenes) es cambiar
 `contentSecurityPolicy` y su prueba. Las rutas que el proxy no toca (`/api/*`, prefetch de
-`next/link`) no llevan CSP; el 404 HTML de `/api/*` es estático y sin datos de la persona. La E2E se
-corrió contra `pnpm dev` (que permite `'unsafe-eval'`); hay que correrla también contra
-`pnpm build && pnpm start`, donde cualquier `eval` de una dependencia sí se bloquea. Pendiente: un
-endpoint `report-to` para recibir violaciones en producción.
+`next/link`) no llevan CSP; el 404 HTML de `/api/*` es estático y sin datos de la persona. La E2E corre
+contra `pnpm dev` (que permite `'unsafe-eval'`) y también contra `pnpm build && pnpm start`
+(modo CI), donde cualquier `eval` de una dependencia sí se bloquea: ahí apareció que Zod 4 sondea
+`Function()` para compilar esquemas en cada página que valida en el cliente, así que
+`src/instrumentation-client.ts` siembra `jitless` en su configuración global antes de que cargue
+(sin traer Zod a todas las páginas). Pendiente: un endpoint `report-to` para recibir violaciones en
+producción.
 
 ## ADR-030 · Privacidad de la actividad y de las sugerencias
 

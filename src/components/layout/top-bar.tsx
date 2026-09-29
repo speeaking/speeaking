@@ -214,9 +214,13 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
                 >
                   Entrar
                 </Link>
+                {/* Contorno (ADR-042): la bienvenida de la columna derecha ya lleva el botón rosa. */}
                 <Link
                   href="/registro"
-                  className={buttonVariants({ className: "h-10 px-4 text-[15px] font-bold" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    className: "h-10 px-4 text-[15px] font-bold",
+                  })}
                 >
                   Crear cuenta
                 </Link>

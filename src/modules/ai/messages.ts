@@ -37,6 +37,8 @@ export function aiErrorMessage(
     }
     case "BUDGET_EXCEEDED":
       return unavailable;
+    case "DAILY_CAP":
+      return "Hoy se acabaron las pruebas gratis. Mañana vuelven; con saldo puedes seguir ahora.";
     case "INVALID_OUTPUT":
       return "La IA respondió algo que no pudimos validar. Intenta de nuevo.";
     case "NOT_ALLOWED":

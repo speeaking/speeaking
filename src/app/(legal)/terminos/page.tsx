@@ -100,6 +100,32 @@ export default function TermsPage() {
         </li>
       </ul>
 
+      <h2>Estilista, «Pruébatelo» y saldo</h2>
+      <p>
+        El estilista arma looks con productos reales publicados por vendedores; cada pieza se compra
+        a quien la vende, con el precio y las condiciones de su ficha. Los looks son sugerencias, no
+        una oferta de la plataforma, y pueden dejar de estar disponibles.
+      </p>
+      <p>
+        «Pruébatelo» genera con inteligencia artificial una simulación de cómo podría verse un
+        producto en ti. Es una imagen orientativa: no garantiza talla, color, caída ni el aspecto
+        real del producto, y no da derecho a devolución por diferencias con la simulación (aplican
+        las condiciones de devolución de cada vendedor). Al subir tu foto declaras que es tuya, que
+        eres mayor de edad y aceptas el uso descrito en el aviso de privacidad. No subas fotos de
+        otras personas.
+      </p>
+      <p>
+        Tienes un número de simulaciones gratis al mes; las demás se pagan con saldo al precio
+        vigente publicado en la página de precios, que puede bajar conforme crece el uso de la
+        plataforma y nunca baja de nuestro costo. El saldo se recarga en los montos publicados, no
+        es dinero, no genera intereses, no se transfiere entre cuentas ni se retira en efectivo, y
+        sirve solo para usos dentro de la plataforma. Puedes pedir la devolución del saldo no usado
+        dentro de los 5 días hábiles siguientes a una recarga. Si una simulación falla, no se cobra
+        (o se devuelve el cargo). Los vendedores pueden patrocinar simulaciones sobre sus productos
+        con un tope diario que ellos fijan; el cargo sale de su saldo por cada simulación generada.
+        Durante la etapa de prueba las recargas son simuladas y no se cobra nada.
+      </p>
+
       <h2>Pagos</h2>
       <p>
         Durante la etapa de prueba los pagos son simulados: no se realizan cargos reales ni se

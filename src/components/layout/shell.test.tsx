@@ -102,7 +102,7 @@ describe("SideNav", () => {
       within(nav)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Inicio", "Descubrir", "Comprar", "Guardados", "Mis pedidos"]);
+    ).toEqual(["Inicio", "Descubrir", "Comprar", "Estilista", "Guardados", "Mis pedidos"]);
     expect(within(nav).getByRole("link", { name: "Descubrir" })).toHaveAttribute(
       "aria-current",
       "page",

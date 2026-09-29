@@ -7,6 +7,8 @@ import { AdminAuthorizationError } from "@/modules/admin/service";
 import { AI_PROVIDERS } from "@/server/env-schema";
 import { AI_TASKS } from "@/server/providers/ai/types";
 import { limitOrError, rateLimit, rateLimitKey } from "@/server/rate-limit";
+import { AI_FEATURE_KEYS, aiFeatureDefinition } from "./features";
+import { FeatureChangeError, setAiFeature } from "./features-decisions";
 import { changeAiRouting, discardAiRoutingProposal, RoutingChangeError } from "./routing-decisions";
 
 export type RoutingFormState = {
@@ -137,4 +139,51 @@ export async function discardAiRoutingProposalAction(
   }
   revalidatePath("/admin/ia");
   return { ok: "Listo: descartaste la propuesta. Quedó en la bitácora con tu motivo." };
+}
+
+export type FeatureToggleState = { key?: string; error?: string; ok?: string };
+
+const featureSchema = z.object({
+  key: z.enum(AI_FEATURE_KEYS, { error: "Función desconocida." }),
+  enabled: z.enum(["true", "false"]).transform((value) => value === "true"),
+  reason: z
+    .string()
+    .trim()
+    .min(10, "Explica en una frase por qué la enciendes o apagas (mínimo 10 caracteres).")
+    .max(300, "Máximo 300 caracteres."),
+});
+
+/** /admin/ia: enciende o apaga una función de IA (ADMIN; decisión HUMAN de riesgo alto, ADR-043). */
+export async function setAiFeatureAction(
+  _previous: FeatureToggleState,
+  formData: FormData,
+): Promise<FeatureToggleState> {
+  const key = String(formData.get("key") ?? "");
+  const admin = await getAdminViewer();
+  if (!admin) return { key, error: GENERIC_ERROR };
+  const limited = await adminLimit(admin.userId);
+  if (limited) return { key, error: limited };
+  const parsed = featureSchema.safeParse({
+    key,
+    enabled: formData.get("enabled"),
+    reason: formData.get("reason") ?? "",
+  });
+  if (!parsed.success) {
+    const fieldErrors = z.flattenError(parsed.error).fieldErrors;
+    return { key, error: fieldErrors.reason?.[0] ?? fieldErrors.key?.[0] ?? GENERIC_ERROR };
+  }
+  try {
+    const result = await setAiFeature(admin.userId, parsed.data);
+    revalidatePath("/admin/ia");
+    return {
+      key,
+      ok: result.changed
+        ? `Listo: «${aiFeatureDefinition(parsed.data.key).label}» quedó ${parsed.data.enabled ? "encendida" : "apagada"} y registrada como decisión.`
+        : "Ya estaba así: no hubo nada que cambiar.",
+    };
+  } catch (error) {
+    if (error instanceof FeatureChangeError) return { key, error: error.userMessage };
+    if (error instanceof AdminAuthorizationError) return { key, error: GENERIC_ERROR };
+    throw error;
+  }
 }

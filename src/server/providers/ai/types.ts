@@ -9,6 +9,10 @@ export const AI_TASKS = [
   "ad_copy",
   "analyst_narrative",
   "authenticity_text",
+  /** «¿Qué necesitas?»: interpretar una necesidad (estilista, ADR-043). */
+  "shopping_intent",
+  /** Nombre y explicación de un look armado por código. */
+  "look_copy",
 ] as const;
 export type AITaskId = (typeof AI_TASKS)[number];
 

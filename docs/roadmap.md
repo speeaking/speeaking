@@ -106,6 +106,39 @@ Pagos, precios, comisiones y gasto quedan fuera de su alcance.
 | Proveedor de correo: verificación de cuenta (SEC-10), recuperar contraseña y avisos de pedido                            | ⏳     |
 | Registro de 5xx, monitor de salvaguardas cada hora, `Narrator` con IA y alerta si la operación diaria no corre           | ⏳     |
 
+## Sprint 5 — Estilista, Pruébatelo y autofinanciamiento ✅ (2026-09-29)
+
+Marca **Estreno** (ADR-041), diseño sereno (ADR-042), núcleo de IA con banderas (ADR-043), saldo y
+precio comunitario (ADR-044) y Pruébatelo con privacidad de fotos (ADR-045). Detalle del cobro en
+[`modelo-de-ingresos.md`](modelo-de-ingresos.md).
+
+| Entregable                                                                                                         | Estado |
+| ------------------------------------------------------------------------------------------------------------------ | ------ |
+| Marca Estreno en toda la interfaz y los documentos; «Sube y vende» con redirección desde la ruta anterior          | ✅     |
+| Diseño sereno: una acción principal por pantalla, `soft` neutro, tintes suaves, sin lima                           | ✅     |
+| Banderas `ai.features` (20 funciones, 9 encendidas) con interruptores en `/admin/ia` y bitácora                    | ✅     |
+| Proveedor de imágenes por interfaz (simulador + adaptador compatible con OpenAI), precios por imagen con fecha     | ✅     |
+| Guardián de presupuesto con `funding` (subsidiado vs. pagado), tope diario de Pruébatelo, cuotas por función       | ✅     |
+| «¿Qué necesitas?» (reglas + modelo), «Crea mi look», «Completa mi look», cambiar piezas, comprar look              | ✅     |
+| Pruébatelo: foto privada con consentimiento, hasta 4 prendas, caché, retención de 30 días, Ajustes → Mis fotos     | ✅     |
+| Saldo: cartera, movimientos, recargas simuladas, precio comunitario, `/precios`, patrocinio del vendedor en Studio | ✅     |
+| Semilla de moda con 12 productos y fotos con licencia; categorías de moda por hueco                                | ✅     |
+| Prueba E2E `stylist.spec.ts` (visitante, ficha, look → foto → simulación → carrito, saldo)                         | ✅     |
+| Recargas con procesador real (webhook) y textos legales del saldo                                                  | ⏳     |
+| Modelo de imagen real (`AI_IMAGE_MODEL`) evaluado con fotos reales antes de encender en producción                 | ⏳     |
+| Evaluación (`pnpm ai:eval`) para `shopping_intent` y modelo de texto aprobado                                      | ⏳     |
+| Studio: «N personas buscan algo como esto» por producto (matching, `buyerMatching`)                                | ⏳     |
+
+### Ecosistema de IA por fases (plan del fundador, 2026-09-29)
+
+| Fase | Funciones                                                                                        | Estado                     |
+| ---- | ------------------------------------------------------------------------------------------------ | -------------------------- |
+| 1    | Núcleo: proveedores por interfaz, banderas, prompts versionados, costo, caché, cuotas, auditoría | ✅                         |
+| 2    | ¿Qué necesitas?, Crea mi look, Pruébatelo, Completa mi look, coincidencias comprador–producto    | ✅ (matching en Studio ⏳) |
+| 3    | Sube y vende con foto, creativos con imagen, video, agente comercial                             | Banderas apagadas          |
+| 4    | Búsqueda por imagen, comprador IA, regalos, asistente general, feed personalizado                | Banderas apagadas          |
+| 5    | Negociación, tendencias, insights, antifraude, visualizadores de espacios y autos                | Banderas apagadas          |
+
 ## Sprint 4 — Crecer (fases 13–14) ⏳
 
 Campañas conceptuales (kit de difusión + estrategia), analítica con agregados diarios, centro de

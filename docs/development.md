@@ -81,6 +81,13 @@ textos de plantilla). Antes de desplegar, fija
 `TRUSTED_PROXY_HOPS` según los proxies que haya delante (ver `docs/architecture.md` → Seguridad).
 Detén `pnpm dev` antes de `pnpm build`: correrlos a la vez puede tumbar la caché de Turbopack.
 
+**Imágenes (Pruébatelo).** Sin `AI_IMAGE_MODEL`, el proveedor de imágenes es el simulador: compone la
+foto con las prendas al lado y una franja «Simulación de ejemplo», sin red ni costo (también en las
+pruebas E2E). Con `AI_PROVIDER=openai_compatible` y `AI_IMAGE_MODEL` (p. ej.
+`google/gemini-3.1-flash-image-preview` en OpenRouter) se generan imágenes reales y cada una cuesta lo
+que dice la tabla `IMAGE_PRICES_USD_PER_IMAGE` de `src/modules/ai/cost.ts`; un modelo sin precio no se
+llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`).
+
 ## Cuentas de prueba
 
 El seed crea cuentas editoriales (`equipo.<comunidad>`) y dos vendedores de demostración
@@ -110,6 +117,14 @@ PLAYWRIGHT_CHANNEL=chromium pnpm test:e2e
 Con `CI=1` Playwright arranca `pnpm start` (build de producción) en lugar de `pnpm dev`: hace falta
 `pnpm build` antes y, mientras el pago y la IA sean simulados, `ALLOW_SIMULATED_PAYMENTS=true` y
 `ALLOW_SIMULATED_AI=true` en el entorno del CI.
+
+En local, con `pnpm dev`, cada ruta se compila la primera vez que se pide. Por eso el proyecto
+`warmup` (`tests/e2e/warmup.setup.ts`) pide una vez las rutas principales antes de `mobile` y
+`desktop`: sin ese calentamiento, la primera visita durante una prueba puede pasar de los 15 s de
+espera y, con el servidor saturado, vencer transacciones a medias. Los pasos que esperan al modelo
+real (la propuesta de «Sube y vende», el kit de anuncios) esperan hasta 60 s: el proveedor tiene un
+plazo de 45 s y después entra el texto de respaldo, así que la prueba pasa por cualquiera de los dos
+caminos. Después de correr la suite, `pnpm db:clean-e2e` borra lo que dejó.
 
 ## shadcn/ui
 

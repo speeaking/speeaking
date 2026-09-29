@@ -11,6 +11,10 @@ import { PrismaClient } from "@/generated/prisma/client";
 export function createPrismaClient(connectionString: string) {
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString, options: "-c TimeZone=UTC" }),
+    // Margen para transacciones interactivas: con el servidor ocupado (Turbopack compila rutas en
+    // el mismo proceso; arranques fríos) los 5 s por omisión vencían a media transacción y las
+    // sentencias siguientes corrían fuera de ella (P2003 en `product_costs` al publicar).
+    transactionOptions: { maxWait: 10_000, timeout: 30_000 },
   });
 }
 

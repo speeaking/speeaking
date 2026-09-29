@@ -133,8 +133,11 @@ export const FORBIDDEN_SETTING_PREFIXES = [
   "payments.",
   "payment.",
   "pricing.",
+  "billing.",
   "fees.",
   "ai.budget",
+  // Encender o apagar funciones de IA es una decisión de producto (ADR-043): solo una persona.
+  "ai.features",
   "ai.routing",
   "platform.autonomy",
 ] as const;

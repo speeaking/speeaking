@@ -26,9 +26,11 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
+    // Compila las rutas principales antes de las pruebas (tests/e2e/warmup.setup.ts).
+    { name: "warmup", testMatch: /warmup.setup.ts/ },
     // Mobile-first: el proyecto móvil es la referencia principal.
-    { name: "mobile", use: { ...devices["Pixel 7"], channel } },
-    { name: "desktop", use: { ...devices["Desktop Chrome"], channel } },
+    { name: "mobile", use: { ...devices["Pixel 7"], channel }, dependencies: ["warmup"] },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], channel }, dependencies: ["warmup"] },
   ],
   webServer: {
     command: process.env.CI ? "pnpm start" : "pnpm dev",

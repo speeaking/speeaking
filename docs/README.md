@@ -11,4 +11,5 @@
 | [data-model.md](data-model.md)                 | Modelo de datos completo e índices                                    |
 | [decisions.md](decisions.md)                   | Registro de decisiones (ADR)                                          |
 | [roadmap.md](roadmap.md)                       | Sprints, fases y estado                                               |
+| [modelo-de-ingresos.md](modelo-de-ingresos.md) | Quién paga qué, precio comunitario, pruebas gratis y patrocinio       |
 | [development.md](development.md)               | Entorno local, scripts, convenciones y pruebas                        |

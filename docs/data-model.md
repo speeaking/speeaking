@@ -174,6 +174,25 @@ para que un producto oculto desaparezca de verdad:
 - `Conversation` / `Message` (mensajería comprador–vendedor; base del AI Sales Agent).
 - `Notification`.
 
+## Estilista, Pruébatelo y saldo (2026-09-29, ADR-043 a ADR-045)
+
+| Entidad             | Campos clave                                                                                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AIRequest.funding` | `AIFunding`: PLATFORM (subsidio, cuenta en `ai.budget`), USER_PAID, SELLER_PAID (cobrados del saldo, no cuentan), SYSTEM                                                                                                                         |
+| `Wallet`            | userId (único), balanceCents (CHECK ≥ 0), currency                                                                                                                                                                                               |
+| `WalletEntry`       | walletId, kind (TOPUP, PROMO, TRY_ON, SPONSORED_TRY_ON, REFUND, ADJUSTMENT), amountCents (±, ≠ 0), balanceAfterCents, reference, simulated                                                                                                       |
+| `WalletTopUp`       | walletId, packId, amountCents, bonusCents, status (PENDING, PAID, FAILED, EXPIRED), provider, providerRef (único), simulated, paidAt                                                                                                             |
+| `TryOnPhoto`        | userId, mediaId (único; privada, nunca adjuntable), consentVersion, expiresAt (30 días)                                                                                                                                                          |
+| `TryOnResult`       | userId, photoId, productIds[], cacheKey (único: foto + productos + prompt + modelo), status (PENDING, READY, FAILED), resultMediaId (único, privada), aiRequestId (único), funding, sponsorSellerId, chargedCents, errorCode, expiresAt          |
+| `StyleLook`         | userId?, needText, need (JSON validado), items (JSON: productId, slot, priceCents), totalCents, currency, title, explanation, copySource, anchorProductId, algorithmVersion                                                                      |
+| `SellerProfile`     | + sponsorsTryOn, tryOnDailyCapCents (CHECK ≥ 0)                                                                                                                                                                                                  |
+| `PlatformSetting`   | + `ai.features` (banderas por función; solo ADMIN, decisión de riesgo ALTO), `ai.budget.tryOnDailyCapUsd`                                                                                                                                        |
+| Enums               | `AIFeature` + SHOPPING_INTENT, LOOK_COPY, VIRTUAL_TRY_ON · `AnalyticsEventType` + NEED_SUBMITTED, LOOK_GENERATED, LOOK_ITEM_SWAPPED, TRY_ON_GENERATED, WALLET_TOPUP, WALLET_CHARGE · `Surface` + STYLIST, WALLET · `ConsentType` + TRY_ON_PHOTOS |
+
+El trigger `reject_proof_media_link` (`post_media`, `product_media`) también rechaza las fotos de
+`try_on_photos` y los resultados de `try_on_results` (`private_media_link`); el recolector de
+huérfanas las excluye y la operación diaria (`tryon-retention`) borra las vencidas.
+
 ## Índices principales
 
 | Consulta                       | Índice                                                                                                                                                               |

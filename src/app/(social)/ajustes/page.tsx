@@ -1,4 +1,4 @@
-import { History, ShieldCheck, Users } from "lucide-react";
+import { Camera, History, ShieldCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,6 +13,9 @@ import {
   setDiscoverableAction,
 } from "@/modules/identity/privacy-actions";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { TryOnPhotoList } from "@/modules/tryon/components/photo-list";
+import { TRY_ON_RETENTION_DAYS } from "@/modules/tryon/consent";
+import { listTryOnPhotos } from "@/modules/tryon/service";
 import { db } from "@/server/db";
 import { clearSearchHistoryAction, setPersonalizationAction } from "./actions";
 
@@ -20,7 +23,7 @@ export const metadata: Metadata = { title: "Ajustes" };
 
 export default async function SettingsPage() {
   const viewer = await requireOnboardedViewer("/ajustes");
-  const [interests, intents, discoverable, searches] = await Promise.all([
+  const [interests, intents, discoverable, searches, tryOnPhotos] = await Promise.all([
     db.userInterest.findMany({ where: { userId: viewer.userId }, select: { label: true } }),
     db.shoppingIntent.findMany({
       where: { userId: viewer.userId, status: "ACTIVE" },
@@ -28,6 +31,7 @@ export default async function SettingsPage() {
     }),
     isDiscoverable(viewer.userId),
     listSearchHistory(viewer.userId),
+    listTryOnPhotos(viewer.userId),
   ]);
   const enabled = viewer.profile.personalizationEnabled;
 
@@ -114,6 +118,19 @@ export default async function SettingsPage() {
               </form>
             </>
           ) : null}
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-3xl border bg-card p-4">
+          <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
+            <Camera aria-hidden="true" className="size-5" />
+            Mis fotos de prueba
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Las fotos que subes para «Pruébatelo» y cada simulación son privadas: solo tú las ves,
+            no se comparten con nadie y se borran solas a los {TRY_ON_RETENTION_DAYS} días. Aquí
+            puedes borrarlas antes.
+          </p>
+          <TryOnPhotoList photos={tryOnPhotos} />
         </section>
 
         <section className="flex flex-col gap-2 rounded-3xl border bg-card p-4 text-sm">

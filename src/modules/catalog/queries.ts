@@ -237,6 +237,9 @@ export async function listSellerProducts(sellerId: string) {
     select: {
       ...cardSelect,
       saveCount: true,
+      tags: true,
+      categoryId: true,
+      publishedAt: true,
       cost: { select: { unitCostCents: true } },
       authenticity: true,
       moderationStatus: true,
@@ -248,6 +251,9 @@ export async function listSellerProducts(sellerId: string) {
     status: row.status,
     stock: row.stock,
     saveCount: row.saveCount,
+    tags: row.tags,
+    categoryId: row.categoryId,
+    publishedAt: row.publishedAt,
     /** Oculto por el equipo: no aparece en nada público (el vendedor lo sigue viendo aquí). */
     hidden: row.moderationStatus === "HIDDEN",
     authenticityStatus: row.authenticityCheck?.status ?? null,

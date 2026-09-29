@@ -173,6 +173,21 @@ describe("composeAdKit", () => {
     expect(headline!.text).toBe("Audífonos a $799");
   });
 
+  it("si el modelo no dejó dónde va el precio, el precio encabeza los datos (P4)", () => {
+    const { copy } = guardAdCopy(
+      {
+        ...honest,
+        whatsapp: "¡Hola! Tengo estos audífonos con cancelación de ruido. Escríbeme por aquí.",
+        instagram: { caption: "Silencio para tu trayecto diario.", hashtags: ["audifonos"] },
+      },
+      product,
+    );
+    const [whatsapp, , instagram] = composeAdKit(copy, product, "https://vendeia.mx");
+    expect(whatsapp!.text).toContain("\n\n$899 · Nuevo · + $99 de envío a todo México");
+    expect(instagram!.text).toContain("\n\n$899 · Nuevo · ");
+    expect(whatsapp!.text.match(/\$899/g)).toHaveLength(1);
+  });
+
   it("la liga escapa el slug", () => {
     expect(productShareUrl("https://vendeia.mx", "a b", "headline")).toBe(
       "https://vendeia.mx/producto/a%20b?ref=compartir&canal=headline",

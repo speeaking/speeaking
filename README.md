@@ -19,6 +19,12 @@ presentarlo y a encontrar compradores».
   Instagram.
 - Comprar: carrito, checkout con una orden por vendedor y pago simulado; el vendedor ve el pedido y su
   beneficio en el Studio.
+- Estilista: escribir qué necesitas («tengo una boda el viernes y $3,000») y recibir looks completos
+  con productos reales de distintos vendedores; «Completa mi look» desde una prenda; cambiar piezas
+  y comprar el look.
+- «Pruébatelo»: subir tu foto (privada, con consentimiento, se borra a los 30 días) y ver una
+  simulación de una prenda o de un look completo; 3 gratis al mes y después con saldo a precio
+  comunitario (`/precios`); los vendedores pueden patrocinar pruebas.
 - Confianza: reportar productos; los productos de marca se revisan por riesgo de imitación (nunca se
   acusa ni se certifica) y quien vende puede enviar un comprobante.
 - Equipo (`/admin`, solo rol ADMIN): Centro de decisiones del motor de automejora, experimentos,
