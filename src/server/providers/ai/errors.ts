@@ -9,6 +9,8 @@ export type AIProviderErrorKind =
   | "unavailable"
   /** 401/403: llave inválida o sin permisos. */
   | "auth"
+  /** 402: la cuenta del proveedor no tiene saldo (o la llave llegó a su límite de crédito). */
+  | "no_credit"
   /** Otro 4xx: modelo inexistente, parámetros no soportados… */
   | "bad_request"
   /** Sin respuesta (DNS, conexión cortada). No se reintenta: pudo haberse cobrado. */

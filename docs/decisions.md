@@ -440,6 +440,7 @@ pedido pasa a pagado solo por webhook con firma verificada, nunca por una acció
 | ADR-036 | Autenticidad: riesgo por reglas, una fila por producto, comprobante ligado al artículo; nunca acusar ni certificar | Aceptada |
 | ADR-037 | Impresiones visibles (T5) aceptadas solo si la pieza se sirvió; el motor decide solo con personas con sesión       | Aceptada |
 | ADR-038 | IA en producción: proveedor real o IA simulada solo con `ALLOW_SIMULATED_AI=true` (piloto cerrado)                 | Aceptada |
+| ADR-040 | Hosting que escala solo: Vercel Pro + Neon Launch + Cloudflare R2 privado; migraciones en el build de producción   | Aceptada |
 
 ## ADR-033 · Decisiones del piloto (delegadas por el fundador)
 
@@ -912,3 +913,95 @@ la cola), disco (a lo más 5 variantes por foto: solo anchos menores que el guar
   **Pendiente:** actualizar `tests/e2e/security-headers.spec.ts` (el caso SEC-35 busca URLs de
   `/_next/image` en `/comprar` y espera 200) y `tests/e2e/uploads.spec.ts` (espera
   `public, max-age=86400`).
+
+## ADR-040 · Hosting con escalado automático: Vercel + Neon + Cloudflare R2
+
+**Contexto.** ADR-033 #10 eligió Vercel + Neon + R2 y el fundador lo confirmó el 2026-09-26 con una
+condición: si la plataforma crece, que la infraestructura crezca sola, sin administrar servidores.
+Faltaba lo que impedía desplegar: sin disco persistente en Vercel, las fotos (`LocalStorageProvider`)
+se perderían.
+
+**Decisión.**
+
+- **App: Vercel Pro** con Fluid compute (instancias que se abren con el tráfico, varias peticiones
+  por instancia, sin cobro de CPU sin tráfico) en `iad1`, junto a la base. Hobby queda descartado: es
+  solo para uso no comercial. Tope: Spend Management con pausa de producción.
+- **Base: Neon Launch** en `aws-us-east-1`, autoscaling de 0.25 a 2 CU con scale to zero, historial
+  de 7 días (restauración a un instante). La app usa la cadena con pooler (PgBouncer en modo
+  transacción; acepta el `-c TimeZone=UTC` de ADR-028 porque `timezone` es de los parámetros que
+  rastrea); las migraciones, la directa (`DATABASE_URL_UNPOOLED`): Prisma Migrate no funciona por el
+  pooler.
+- **Fotos: Cloudflare R2**, bucket **privado** (`S3StorageProvider`, `STORAGE_DRIVER=s3`, AWS SDK v3
+  oficial `@aws-sdk/client-s3@3.1140.0`, publicado el 2026-09-24, fuera de la cuarentena de 24 h). El
+  navegador nunca recibe una URL del bucket: `publicUrl` sigue siendo `/media/<clave>` y la ruta
+  autoriza cada petición (SEC-14, ADR-039); las variantes viven en el mismo bucket. Token de R2 con
+  «Object Read & Write» limitado al bucket. Cada operación: conexión 3 s, 10 s por intento (lanza y se
+  reintenta), 3 intentos con espera exponencial (5xx, `SlowDown`, red), tope total de 20 s;
+  `Content-MD5` en cada subida (el servicio rechaza bytes alterados) y las sumas CRC32 del SDK solo
+  cuando la operación las exige (desde 3.729 el SDK las agrega por omisión y no todo servicio
+  compatible con S3 las acepta). Solo `NoSuchKey` es «no existe»: `NoSuchBucket` o `AccessDenied`
+  lanzan (un error de configuración no se disfraza de foto borrada). `get` no carga objetos de más de
+  32 MiB: cuenta los bytes mientras lee el stream y corta al pasar el tope, aunque la respuesta no
+  declare su largo.
+- **Falla cerrada (espejo de SEC-01):** en producción, `STORAGE_DRIVER=local` hace fallar el arranque
+  salvo `ALLOW_LOCAL_STORAGE=true` (solo un servidor con disco persistente y respaldado); en Vercel
+  (`VERCEL=1`) falla aunque la bandera diga `true`. Loopback se permite para el build local y E2E,
+  como `CRON_SECRET`. Con `s3`, endpoint, bucket y llaves son obligatorios; el endpoint va por https
+  (salvo loopback), sin credenciales ni ruta, y nunca es una URL pública `*.r2.dev` (que exista
+  significa que el bucket quedó público).
+- **Migraciones en el build de producción** (`pnpm vercel-build` = `scripts/vercel-build.mts`):
+  `prisma generate` (el cliente no está en el repositorio y Vercel reutiliza la caché de
+  dependencias), `next build` y, solo si compila y solo con `VERCEL_ENV=production`,
+  `prisma migrate deploy` por la conexión directa, que se revisa antes de compilar (URL
+  `postgresql://`, sin `-pooler`, con `sslmode`). Nunca `migrate dev`, `reset` ni `db push`. Una migración rota hace fallar el build y Vercel no publica; el código
+  anterior solo convive con el esquema nuevo los segundos que tarda la promoción. Por eso toda
+  migración es compatible con el código anterior (agregar primero, quitar después) y un Instant
+  Rollback no deshace migraciones. Se descartó migrar a mano (se olvida y exige credenciales de
+  producción en la PC) y migrar antes del build (deja minutos de esquema nuevo con código viejo y
+  migra aunque el build falle). Las vistas previas no migran ni reciben variables de producción
+  (Ignored Build Step: «Only build production»).
+- **Cron:** `vercel.json` programa `/api/cron/daily` a las `0 9 * * *` (09:00 UTC = 03:00 en la
+  Ciudad de México, sin horario de verano), con la precisión de minuto de Pro. Vercel manda
+  `Authorization: Bearer <CRON_SECRET>`, que la ruta ya verifica; no reintenta un cron fallido y
+  puede entregar uno dos veces (la operación es idempotente y no se encima). El plazo de 300 s lo
+  declara la ruta (`maxDuration`); no hace falta `functions` en `vercel.json`.
+- **Seed en producción:** una sola vez, a mano (`NODE_ENV=production`, `pnpm db:seed` con la cadena
+  directa): solo categorías, comunidades y ajustes. El contenido editorial (ADR-033 #11) se publica a
+  mano; nada se automatiza.
+
+**Alternativas.**
+
+| Opción                                            | Por qué no ahora                                                                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase (base + archivos + auth)                 | Duplica lo ya resuelto (Better Auth, `/media` con autorización); su almacenamiento cobra la salida de datos y el cómputo se escala por plan |
+| Railway / Render (contenedor)                     | Disco persistente y más control, pero se escala por réplicas que hay que configurar y pagar aunque no haya tráfico                          |
+| Google Cloud Run en Querétaro + Cloud SQL         | Datos en México y menor latencia, pero Cloud SQL no escala a cero ni se autoescala en CPU, y hay más piezas que operar (IAM, red, CDN)      |
+| AWS `mx-central-1` (México)                       | Residencia en México, pero hay que armar cómputo, base, S3 y CDN a mano: demasiada operación para un equipo sin DevOps                      |
+| Servidor propio con disco (Hetzner, DigitalOcean) | El más barato, pero no crece solo y el fundador tendría que administrar servidor, respaldos y parches                                       |
+
+**Consecuencias.**
+
+- Guía paso a paso para el fundador: `docs/deploy.md` (cuentas, variables, dominio, seed,
+  `make-admin`, verificación, respaldos y costos con fuentes). Piloto esperado ≈ US$30–40 al mes más
+  la IA (tope US$50) [estimación].
+- Los datos personales se tratan en Estados Unidos (Vercel, Neon, Cloudflare y, con IA real,
+  OpenRouter): el aviso de privacidad debe nombrar a estos encargados con su país antes del primer
+  vendedor real.
+- `scripts/cleanup-orphan-media.ts`, `scripts/clean-e2e.ts` y `prisma/seed.ts` siguen con
+  `LocalStorageProvider`. En producción la limpieza de huérfanas corre por el cron, que usa
+  `getStorage()` (R2). Para correr esos scripts contra producción hay que cambiarlos a
+  `createStorage(parseEnv(serverEnvSchema, process.env))` (`providers/storage/factory.ts`).
+- Pruebas: `providers/storage/s3-storage.test.ts` (el cliente real del SDK con un manejador HTTP
+  falso, sin red: firma, cabeceras, errores XML, reintentos, tope de tiempo y de tamaño) y
+  `server/env.test.ts` (reglas de almacenamiento).
+
+**Cuándo revisar.**
+
+- **Residencia de datos:** si la ley, un contrato o un cliente exige datos en México → Cloud Run en
+  Querétaro o AWS `mx-central-1` (el código ya es portable: S3 compatible y PostgreSQL estándar).
+- **Latencia:** si la mayoría de las peticiones tarda por la distancia CDMX–Virginia, o Vercel abre
+  una región en México.
+- **Costo:** si el uso de Vercel pasa de ≈ US$150 al mes de forma sostenida, o Neon pasa de 2 CU de
+  forma constante (con tráfico parejo, un servidor dedicado puede salir más barato).
+- **Salida de datos y fotos:** si las fotos pasan de ≈ 100 GB o las lecturas de R2 de 10 millones al
+  mes, poner una CDN delante de `/media` (con la purga y la clave de caché de ADR-039).

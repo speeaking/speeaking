@@ -5,17 +5,17 @@
  * Uso: `tsx scripts/cleanup-orphan-media.ts [--dry-run]`. Pensado para correr a diario (cron).
  */
 import "dotenv/config";
+import { parseEnv } from "../src/lib/env/parse-env";
 import { deleteOrphanMedia, ORPHAN_MAX_AGE_HOURS } from "../src/modules/media/orphans";
 import { createPrismaClient } from "../src/server/db-client";
-import { LocalStorageProvider } from "../src/server/providers/storage/local-storage";
+import { serverEnvSchema } from "../src/server/env-schema";
+import { createStorage } from "../src/server/providers/storage/factory";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("Falta DATABASE_URL.");
-
+const env = parseEnv(serverEnvSchema, process.env);
 const dryRun = process.argv.includes("--dry-run");
-const db = createPrismaClient(databaseUrl);
-// Hoy solo existe el almacenamiento local (ADR-005); con S3/R2 se cambia aquí el proveedor.
-const storage = new LocalStorageProvider(process.env.STORAGE_LOCAL_ROOT ?? ".data/uploads");
+const db = createPrismaClient(env.DATABASE_URL);
+// El mismo almacenamiento que la app (disco local o S3/R2 según STORAGE_DRIVER, ADR-040).
+const storage = createStorage(env);
 
 async function main() {
   const { deleted, failedFiles } = await deleteOrphanMedia(db, storage, { dryRun });

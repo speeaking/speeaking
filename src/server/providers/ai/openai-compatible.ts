@@ -68,14 +68,22 @@ export function unwrapJson(text: string) {
 }
 
 /**
- * Ajustes de privacidad por proveedor conocido. OpenRouter: solo proveedores que no guardan ni
- * entrenan con los datos (`data_collection: "deny"`) y que soportan todos los parámetros pedidos
- * (sin `response_format`, la salida no vendría estructurada). Otros servidores (vLLM, Ollama,
- * DeepInfra…) no reciben campos que no conocen.
+ * Ajustes por proveedor conocido. OpenRouter:
+ * - Privacidad: solo proveedores que no recolectan datos (`data_collection: "deny"`) y con cero
+ *   retención (`zdr: true`), y que soportan todos los parámetros pedidos (sin `response_format`, la
+ *   salida no vendría estructurada).
+ * - Sin razonamiento (`reasoning.enabled: false`): los modelos que «piensan» por defecto (Qwen 3.5)
+ *   gastaban todo `max_tokens` en el razonamiento y nunca escribían la respuesta (evaluación del
+ *   2026-09-27: 0 de 29 JSON válidos). Nuestras tareas son cortas y estructuradas; el razonamiento
+ *   solo sumaba costo.
+ * Otros servidores (vLLM, Ollama, DeepInfra…) no reciben campos que no conocen.
  */
 function providerExtras(baseUrl: URL): Record<string, unknown> {
   if (baseUrl.hostname === "openrouter.ai" || baseUrl.hostname.endsWith(".openrouter.ai")) {
-    return { provider: { data_collection: "deny", require_parameters: true } };
+    return {
+      provider: { data_collection: "deny", zdr: true, require_parameters: true },
+      reasoning: { enabled: false },
+    };
   }
   return {};
 }
@@ -250,7 +258,9 @@ export class OpenAICompatibleProvider implements AIProvider {
             ? "unavailable"
             : status === 401 || status === 403
               ? "auth"
-              : "bad_request";
+              : status === 402
+                ? "no_credit"
+                : "bad_request";
       throw new AIProviderError(
         kind,
         `[ai] ${task} (${this.model}): HTTP ${status}`,

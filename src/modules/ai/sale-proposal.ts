@@ -53,9 +53,35 @@ export type SaleProposal = z.infer<typeof saleProposalSchema>;
  */
 export const saleProposalAiSchema = saleProposalSchema
   .omit({ suggestedPriceRange: true, suggestedDailyBudgetCents: true })
-  .extend({ suggestedPriceRange: z.object({ rationale: z.string().max(400) }) });
+  .extend({
+    suggestedPriceRange: z.object({ rationale: z.string().max(400) }),
+    // Sin patrón: el código la normaliza con `knownCategorySlug` antes de usarla.
+    categorySlug: z.string().max(120).nullable(),
+  });
 
 export type SaleProposalAiOutput = z.infer<typeof saleProposalAiSchema>;
+
+function categoryKey(text: string) {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
+}
+
+/**
+ * La categoría que eligió el modelo, solo si existe en la plataforma. Varios modelos devuelven la
+ * línea completa de la lista («audio: Audio»), el nombre en vez del slug, mayúsculas o una cadena
+ * vacía en vez de null: eso no invalida la propuesta, se normaliza aquí o queda sin categoría.
+ */
+export function knownCategorySlug(
+  value: string | null,
+  categories: readonly { slug: string; name: string }[],
+): string | null {
+  if (!value) return null;
+  const key = categoryKey(value.split(":")[0] ?? "");
+  if (!key) return null;
+  const match = categories.find(
+    (category) => category.slug === key || categoryKey(category.name) === key,
+  );
+  return match?.slug ?? null;
+}
 
 /** Datos confirmados por el vendedor que recibe la IA. */
 export type SaleProposalRequest = {

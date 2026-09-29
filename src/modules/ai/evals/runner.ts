@@ -12,7 +12,7 @@ import {
   suggestedPriceRange,
   withCodeNumbers,
 } from "../proposal-numbers";
-import { saleProposalSchema, withoutCostMentions } from "../sale-proposal";
+import { knownCategorySlug, saleProposalSchema, withoutCostMentions } from "../sale-proposal";
 import { adCopyTask } from "../tasks/ad-copy";
 import { type CategoryOption, saleProposalTask } from "../tasks/sale-proposal";
 import { type AdCopyCase, adKitProductOf, type SaleProposalCase } from "./cases";
@@ -264,8 +264,8 @@ export async function evaluateSaleProposal(
       allowedClaims: new Set(),
     });
 
-    const known = new Set(deps.categories.map((category) => category.slug));
-    const got = output.categorySlug && known.has(output.categorySlug) ? output.categorySlug : null;
+    // Como en producción (`service.ts`): una categoría mal escrita se normaliza o queda sin categoría.
+    const got = knownCategorySlug(output.categorySlug, deps.categories);
     if (expected.categories.length > 0) {
       const correct = got !== null && expected.categories.includes(got);
       result.category = { expected: expected.categories, got, correct };
@@ -276,9 +276,11 @@ export async function evaluateSaleProposal(
       }
     }
     // La tubería de producción (cifras del código + esquema + guardián) debe aceptar la salida.
-    const full = saleProposalSchema.safeParse(withCodeNumbers(output, input));
+    const full = saleProposalSchema.safeParse(
+      withCodeNumbers({ ...output, categorySlug: got }, input),
+    );
     if (full.success) {
-      result.guardRemoved = guardProposal({ ...full.data, categorySlug: got }, input).removed;
+      result.guardRemoved = guardProposal(full.data, input).removed;
     } else {
       result.failures.push("La propuesta completa no cumple el esquema.");
     }
@@ -366,6 +368,8 @@ export type EvalMetrics = {
   called: number;
   jsonValid: number;
   providerErrors: number;
+  /** Errores 402: la cuenta del proveedor no tiene saldo (no es culpa del modelo). */
+  noCredit: number;
   inventedNumbersCases: number;
   unsupportedClaimsCases: number;
   urgencyCases: number;
@@ -417,6 +421,7 @@ export function summarize(
     called: called.length,
     jsonValid: count((result) => result.jsonValid === true),
     providerErrors: count((result) => result.providerError !== null),
+    noCredit: count((result) => result.providerError === "no_credit"),
     inventedNumbersCases: count((result) => result.inventedNumbers.length > 0),
     unsupportedClaimsCases: count((result) => result.unsupportedClaims.length > 0),
     urgencyCases: count((result) => result.urgency),
@@ -468,7 +473,11 @@ export function evalGate(metrics: Omit<EvalMetrics, "gate">): EvalMetrics["gate"
       `Solo ${cases(answered)} con respuesta del modelo: se necesitan al menos ${EVAL_GATE.minCases}.`,
     );
   }
-  if (metrics.providerErrors > 0) {
+  if (metrics.noCredit > 0) {
+    reasons.push(
+      `Sin saldo en el proveedor en ${cases(metrics.noCredit)}: recarga créditos y repite la corrida.`,
+    );
+  } else if (metrics.providerErrors > 0) {
     reasons.push(`Errores del proveedor en ${cases(metrics.providerErrors)}: repite la corrida.`);
   }
   const invalid = metrics.called - metrics.providerErrors - metrics.jsonValid;

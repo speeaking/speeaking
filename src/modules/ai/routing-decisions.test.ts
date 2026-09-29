@@ -4,7 +4,7 @@ const ADMIN = "0199a000-0000-7000-8000-00000000000a";
 const approvedRun = {
   id: "0199a000-0000-7000-8000-0000000000e1",
   model: "qwen/qwen3.5-9b",
-  promptVersion: "ad-copy@1",
+  promptVersion: "ad-copy@2",
   cases: 32,
   passed: 31,
   metrics: { gate: { approved: true, reasons: [] } },
@@ -129,7 +129,7 @@ describe("changeAiRouting (ADMIN, riesgo medio)", () => {
         where: expect.objectContaining({
           task: "CONTENT_GENERATION",
           model: "qwen/qwen3.5-9b",
-          promptVersion: "ad-copy@1",
+          promptVersion: "ad-copy@2",
           createdAt: { gte: new Date("2026-08-27T12:00:00Z") },
         }),
       }),

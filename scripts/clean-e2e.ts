@@ -3,15 +3,16 @@
  * para que el feed vuelva a mostrar solo contenido semilla y el tuyo. Uso: `pnpm db:clean-e2e`.
  */
 import "dotenv/config";
+import { parseEnv } from "../src/lib/env/parse-env";
 import { createPrismaClient } from "../src/server/db-client";
-import { LocalStorageProvider } from "../src/server/providers/storage/local-storage";
+import { serverEnvSchema } from "../src/server/env-schema";
+import { createStorage } from "../src/server/providers/storage/factory";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("Falta DATABASE_URL.");
-if (process.env.NODE_ENV === "production") throw new Error("No se ejecuta en producción.");
+const env = parseEnv(serverEnvSchema, process.env);
+if (env.NODE_ENV === "production") throw new Error("No se ejecuta en producción.");
 
-const db = createPrismaClient(databaseUrl);
-const storage = new LocalStorageProvider(process.env.STORAGE_LOCAL_ROOT ?? ".data/uploads");
+const db = createPrismaClient(env.DATABASE_URL);
+const storage = createStorage(env);
 
 /**
  * Rastro de moderación que apunta a contenido de prueba ya borrado: reportes, decisiones del equipo

@@ -88,12 +88,12 @@ describe("generateSaleProposal", () => {
     expect(call.provider).toEqual({
       id: "openai_compatible",
       model: "qwen/qwen3.5-9b",
-      promptVersion: "sale-proposal@2",
+      promptVersion: "sale-proposal@4",
     });
     expect(getAIProvider).toHaveBeenCalledWith("sale_proposal");
   });
 
-  it("registra tokens y costo del modelo (US$0.08 / US$0.13 por millón)", async () => {
+  it("registra tokens y costo del modelo (US$0.10 / US$0.15 por millón)", async () => {
     provider.generate.mockResolvedValueOnce(honestOutput());
 
     await generateSaleProposal("user-1", request);
@@ -101,11 +101,11 @@ describe("generateSaleProposal", () => {
     const stored = vi.mocked(db.aIResponse.create).mock.calls[0]![0] as {
       data: { inputTokens: number; outputTokens: number; costMicrosUsd: number };
     };
-    // 1,200 × 0.08 + 900 × 0.13 = 96 + 117 = 213 micro-dólares.
+    // 1,200 × 0.10 + 900 × 0.15 = 120 + 135 = 255 micro-dólares.
     expect(stored.data).toMatchObject({
       inputTokens: 1_200,
       outputTokens: 900,
-      costMicrosUsd: 213,
+      costMicrosUsd: 255,
     });
   });
 

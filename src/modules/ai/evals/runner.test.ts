@@ -142,8 +142,8 @@ describe("runEval con el proveedor simulado", () => {
       expect.objectContaining({ ok: false, errorCode: "INVALID_OUTPUT" }),
     );
     expect(results[1]!.jsonValid).toBe(false);
-    // 500 (3k/2k) + 210 (1k/1k) micro-dólares: el costo de la salida inválida también cuenta.
-    expect(metrics.costMicros).toBe(710);
+    // 600 (3k/2k) + 250 (1k/1k) micro-dólares: el costo de la salida inválida también cuenta.
+    expect(metrics.costMicros).toBe(850);
     expect(metrics.gate.reasons).toEqual(
       expect.arrayContaining([
         "JSON inválido en 1 caso (debe ser 0).",
@@ -196,6 +196,12 @@ describe("evalGate (ADR-033 #9)", () => {
       "Errores del proveedor en 2 casos: repite la corrida.",
     ]);
   });
+
+  it("sin saldo en el proveedor (402) pide recargar créditos, no culpa al modelo", () => {
+    expect(evalGate({ ...base, providerErrors: 30, noCredit: 30, jsonValid: 0 }).reasons).toContain(
+      "Sin saldo en el proveedor en 30 casos: recarga créditos y repite la corrida.",
+    );
+  });
 });
 
 describe("política de productos en la evaluación", () => {
@@ -227,7 +233,7 @@ describe("reporte", () => {
       results: [],
       provider: "openai_compatible",
       model: "qwen/qwen3.5-9b",
-      promptVersion: "sale-proposal@2",
+      promptVersion: "sale-proposal@4",
       startedAt: new Date("2026-09-26T12:00:00Z"),
       casesFile: "evals/sale-proposal.jsonl",
     });

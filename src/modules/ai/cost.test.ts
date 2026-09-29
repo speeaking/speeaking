@@ -15,10 +15,10 @@ describe("costMicrosUsd", () => {
     );
   });
 
-  it("Qwen3.5-9B por uso: US$0.08 / US$0.13 por millón (ADR-033), redondeado hacia arriba", () => {
-    // 3,000 × 0.08 + 2,000 × 0.13 = 240 + 260 = 500 micro-dólares (US$0.0005).
-    expect(costMicrosUsd("qwen/qwen3.5-9b", { inputTokens: 3_000, outputTokens: 2_000 })).toBe(500);
-    // 1 × 0.08 + 1 × 0.13 = 0.21 → 1 (nunca 0 si hubo tokens).
+  it("Qwen3.5-9B por uso: US$0.10 / US$0.15 por millón (OpenRouter, 2026-09-27), redondeado hacia arriba", () => {
+    // 3,000 × 0.10 + 2,000 × 0.15 = 300 + 300 = 600 micro-dólares (US$0.0006).
+    expect(costMicrosUsd("qwen/qwen3.5-9b", { inputTokens: 3_000, outputTokens: 2_000 })).toBe(600);
+    // 1 × 0.10 + 1 × 0.15 = 0.25 → 1 (nunca 0 si hubo tokens).
     expect(costMicrosUsd("qwen3.5-9b", { inputTokens: 1, outputTokens: 1 })).toBe(1);
   });
 
@@ -42,14 +42,14 @@ describe("pricedModelId", () => {
 
   it("no iguala variantes con otro precio", () => {
     expect(pricedModelId("qwen/qwen3.5-9b:free")).toBeNull();
-    expect(pricedModelId("qwen/qwen3.5-27b")).toBeNull();
+    expect(pricedModelId("qwen/qwen3.5-122b-a10b")).toBeNull();
   });
 });
 
 describe("recordedCost", () => {
   it("con precio, registra el costo real", () => {
     expect(recordedCost("qwen3.5-9b", { inputTokens: 3_000, outputTokens: 2_000 })).toEqual({
-      micros: 500,
+      micros: 600,
       known: true,
     });
   });

@@ -1,7 +1,13 @@
-/** Almacenamiento de archivos (ADR-005): disco local en desarrollo, S3/R2 en producción. */
+/**
+ * Almacenamiento de archivos (ADR-005): disco local en desarrollo, S3/R2 en producción (ADR-040).
+ * `get` y `put` manejan el archivo completo en memoria: son fotos ya re-codificadas (≤ 1600 px) y
+ * `/media` calcula el ETag sobre los bytes que entrega.
+ */
 export interface StorageProvider {
   put(key: string, data: Buffer): Promise<void>;
+  /** `null` si no existe. Cualquier otra falla (red, credenciales, bucket) lanza. */
   get(key: string): Promise<{ data: Buffer; contentType: string } | null>;
+  /** Borrar algo que no existe no falla. */
   delete(key: string): Promise<void>;
   /** URL con la que el navegador puede pedir el archivo. */
   publicUrl(key: string): string;
@@ -31,4 +37,13 @@ export function assertSafeKey(key: string): string {
     throw new InvalidStorageKeyError();
   }
   return CONTENT_TYPES[match[2] as keyof typeof CONTENT_TYPES];
+}
+
+/**
+ * La URL de un archivo es SIEMPRE `/media/<clave>`, con cualquier proveedor: esa ruta autoriza cada
+ * petición (SEC-14, ADR-039). Nunca una URL del bucket: el bucket es privado.
+ */
+export function mediaUrl(key: string) {
+  assertSafeKey(key);
+  return `/media/${key}`;
 }

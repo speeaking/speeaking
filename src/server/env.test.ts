@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { aiProviderConfig, serverEnvSchema, simulatedAIAllowed } from "./env-schema";
+import { createStorage, s3StorageConfig } from "./providers/storage/factory";
+import { LocalStorageProvider } from "./providers/storage/local-storage";
+import { S3StorageProvider } from "./providers/storage/s3-storage";
 
 const valid = {
   DATABASE_URL: "postgresql://u:p@localhost:5434/vendeia",
@@ -53,6 +56,7 @@ describe("serverEnvSchema", () => {
       ALLOW_SIMULATED_PAYMENTS: "true",
       ALLOW_SIMULATED_AI: "true",
       CRON_SECRET: "c".repeat(32),
+      ALLOW_LOCAL_STORAGE: "true",
     };
     const issues = (input: Record<string, string>) =>
       (serverEnvSchema.safeParse(input).error?.issues ?? []).map((issue) => issue.path.join("."));
@@ -232,6 +236,7 @@ describe("serverEnvSchema", () => {
         ALLOW_SIMULATED_PAYMENTS: "true",
         ALLOW_SIMULATED_AI: "true",
         CRON_SECRET: "c".repeat(32),
+        ALLOW_LOCAL_STORAGE: "true",
       };
       const result = serverEnvSchema.safeParse(production);
       expect(result.error?.issues.map((issue) => issue.path.join("."))).toEqual([
@@ -259,6 +264,7 @@ describe("serverEnvSchema", () => {
       BETTER_AUTH_SECRET: "x".repeat(32),
       ALLOW_SIMULATED_PAYMENTS: "true",
       CRON_SECRET: "c".repeat(32),
+      ALLOW_LOCAL_STORAGE: "true",
     };
     const external = {
       AI_PROVIDER: "openai_compatible",
@@ -377,6 +383,139 @@ describe("serverEnvSchema", () => {
 
     it("también se valida fuera de producción si se define", () => {
       expect(cronIssues({ ...valid, CRON_SECRET: "corto" })).toEqual(["CRON_SECRET"]);
+    });
+  });
+
+  describe("almacenamiento (ADR-040)", () => {
+    const secret = "s".repeat(64);
+    const r2 = {
+      STORAGE_DRIVER: "s3",
+      S3_ENDPOINT: "https://0123456789abcdef.r2.cloudflarestorage.com",
+      S3_BUCKET: "vendeia-media",
+      S3_ACCESS_KEY_ID: "a".repeat(32),
+      S3_SECRET_ACCESS_KEY: secret,
+    };
+    const production = {
+      NODE_ENV: "production",
+      APP_URL: "https://vendeia.mx",
+      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+      ALLOW_SIMULATED_PAYMENTS: "true",
+      ALLOW_SIMULATED_AI: "true",
+      CRON_SECRET: "c".repeat(32),
+    };
+    const storageIssues = (input: Record<string, string>) =>
+      (serverEnvSchema.safeParse(input).error?.issues ?? [])
+        .map((issue) => issue.path.join("."))
+        .filter((path) => path.startsWith("STORAGE_") || path.startsWith("S3_"));
+
+    it("por omisión es el disco local y no pide nada más fuera de producción", () => {
+      const env = serverEnvSchema.parse(valid);
+      expect(env.STORAGE_DRIVER).toBe("local");
+      expect(env.STORAGE_LOCAL_ROOT).toBe(".data/uploads");
+      expect(env.ALLOW_LOCAL_STORAGE).toBe(false);
+      expect(env.S3_REGION).toBe("auto");
+      expect(createStorage(env)).toBeInstanceOf(LocalStorageProvider);
+    });
+
+    it("en producción el disco local FALLA salvo decisión explícita (espejo de SEC-01)", () => {
+      expect(storageIssues(production)).toEqual(["STORAGE_DRIVER"]);
+      expect(storageIssues({ ...production, STORAGE_DRIVER: "local" })).toEqual(["STORAGE_DRIVER"]);
+      expect(storageIssues({ ...production, ALLOW_LOCAL_STORAGE: "true" })).toEqual([]);
+    });
+
+    it("el mensaje explica el riesgo y cómo resolverlo", () => {
+      const message = serverEnvSchema
+        .safeParse(production)
+        .error?.issues.find((issue) => issue.path.join(".") === "STORAGE_DRIVER")?.message;
+      expect(message).toContain("STORAGE_DRIVER=s3");
+      expect(message).toContain("ALLOW_LOCAL_STORAGE=true");
+    });
+
+    it("permite el disco local en un build de producción en loopback (pnpm start, E2E)", () => {
+      expect(storageIssues({ ...production, APP_URL: "http://localhost:3000" })).toEqual([]);
+    });
+
+    it("en Vercel el disco local nunca vale, ni con la bandera", () => {
+      expect(storageIssues({ ...production, VERCEL: "1", ALLOW_LOCAL_STORAGE: "true" })).toEqual([
+        "STORAGE_DRIVER",
+      ]);
+      expect(storageIssues({ ...production, VERCEL: "1", ...r2 })).toEqual([]);
+    });
+
+    it("acepta Cloudflare R2 en producción y arma el proveedor S3", () => {
+      expect(storageIssues({ ...production, ...r2 })).toEqual([]);
+      const env = serverEnvSchema.parse({ ...production, ...r2 });
+      expect(s3StorageConfig(env)).toEqual({
+        endpoint: r2.S3_ENDPOINT,
+        bucket: "vendeia-media",
+        region: "auto",
+        accessKeyId: r2.S3_ACCESS_KEY_ID,
+        secretAccessKey: secret,
+      });
+      expect(createStorage(env)).toBeInstanceOf(S3StorageProvider);
+      expect(serverEnvSchema.parse({ ...valid, ...r2, S3_REGION: "" }).S3_REGION).toBe("auto");
+      expect(serverEnvSchema.parse({ ...valid, ...r2, S3_REGION: "us-east-1" }).S3_REGION).toBe(
+        "us-east-1",
+      );
+    });
+
+    it("con s3 exige endpoint, bucket y llaves (vacías cuentan como faltantes)", () => {
+      expect(storageIssues({ ...valid, STORAGE_DRIVER: "s3" })).toEqual([
+        "S3_ENDPOINT",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+      ]);
+      expect(storageIssues({ ...valid, ...r2, S3_SECRET_ACCESS_KEY: "" })).toEqual([
+        "S3_SECRET_ACCESS_KEY",
+      ]);
+      expect(() => s3StorageConfig(serverEnvSchema.parse(valid))).toThrow(/incompleta/);
+    });
+
+    it("el endpoint va cifrado, sin credenciales y sin ruta", () => {
+      for (const endpoint of [
+        "http://0123456789abcdef.r2.cloudflarestorage.com",
+        "https://u:p@0123456789abcdef.r2.cloudflarestorage.com",
+        "https://0123456789abcdef.r2.cloudflarestorage.com/vendeia-media",
+        "https://0123456789abcdef.r2.cloudflarestorage.com/?x=1",
+        "ftp://0123456789abcdef.r2.cloudflarestorage.com",
+        "no es url",
+        // La URL pública de desarrollo del bucket: significa que quedó público.
+        "https://pub-0123456789abcdef.r2.dev",
+      ]) {
+        expect(storageIssues({ ...valid, ...r2, S3_ENDPOINT: endpoint })).toEqual(["S3_ENDPOINT"]);
+      }
+      // Un servicio compatible en la misma máquina (p. ej. MinIO para pruebas) puede ir por http.
+      expect(storageIssues({ ...valid, ...r2, S3_ENDPOINT: "http://127.0.0.1:9000" })).toEqual([]);
+    });
+
+    it("rechaza drivers desconocidos, buckets y regiones inválidos y llaves cortas", () => {
+      expect(storageIssues({ ...valid, STORAGE_DRIVER: "r2" })).toEqual(["STORAGE_DRIVER"]);
+      for (const bucket of ["Vendeia", "ve", "vendeia.media", "-vendeia", "v".repeat(64)]) {
+        expect(storageIssues({ ...valid, ...r2, S3_BUCKET: bucket })).toEqual(["S3_BUCKET"]);
+      }
+      expect(storageIssues({ ...valid, ...r2, S3_REGION: "US East" })).toEqual(["S3_REGION"]);
+      expect(storageIssues({ ...valid, ...r2, S3_ACCESS_KEY_ID: "corta" })).toEqual([
+        "S3_ACCESS_KEY_ID",
+      ]);
+      expect(storageIssues({ ...valid, ...r2, S3_SECRET_ACCESS_KEY: "corta" })).toEqual([
+        "S3_SECRET_ACCESS_KEY",
+      ]);
+      expect(
+        serverEnvSchema.safeParse({ ...valid, ALLOW_LOCAL_STORAGE: "si" }).error?.issues[0]?.path,
+      ).toEqual(["ALLOW_LOCAL_STORAGE"]);
+    });
+
+    it("los errores nunca incluyen la llave secreta", () => {
+      const result = serverEnvSchema.safeParse({
+        ...production,
+        ...r2,
+        S3_ENDPOINT: "http://u:p@r2.example.com/x",
+        S3_BUCKET: "Mal.Bucket",
+      });
+      expect(result.success).toBe(false);
+      expect(JSON.stringify(result.error?.issues)).not.toContain(secret);
     });
   });
 });

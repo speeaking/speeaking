@@ -16,6 +16,7 @@ import { maybeRedactExpiredAiInputs } from "./retention";
 import {
   type SaleProposalAiOutput,
   type SaleProposalRequest,
+  knownCategorySlug,
   saleProposalSchema,
 } from "./sale-proposal";
 import { assertAiAvailable, simulatedRecord } from "./tasks/availability";
@@ -42,6 +43,12 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 export function providerFailure(error: unknown): "INVALID_OUTPUT" | "PROVIDER_ERROR" {
   if (error instanceof AIProviderError) {
     console.error(error.message);
+    if (error.kind === "no_credit") {
+      // Aviso operativo claro en los registros de Vercel: la IA no vuelve hasta recargar saldo.
+      console.error(
+        "[ai] el proveedor de IA no tiene saldo: recarga créditos (docs/deploy.md, paso 6).",
+      );
+    }
     return error.kind === "invalid_output" ? "INVALID_OUTPUT" : "PROVIDER_ERROR";
   }
   console.error("[ai] error inesperado del proveedor", error);
@@ -114,21 +121,21 @@ export async function generateSaleProposal(
     throw new AIError(code);
   }
 
-  const parsed = saleProposalSchema.safeParse(withCodeNumbers(result.output, request));
+  // Una categoría que no existe no se usa (el prellenado buscaría un slug inválido).
+  const parsed = saleProposalSchema.safeParse(
+    withCodeNumbers(
+      {
+        ...result.output,
+        categorySlug: knownCategorySlug(result.output.categorySlug, categories),
+      },
+      request,
+    ),
+  );
   if (!parsed.success) {
     await fail("INVALID_OUTPUT");
     throw new AIError("INVALID_OUTPUT");
   }
-  // Una categoría que no existe no se usa (el prellenado buscaría un slug inválido).
-  const known = new Set(categories.map((category) => category.slug));
-  const proposal = {
-    ...parsed.data,
-    categorySlug:
-      parsed.data.categorySlug && known.has(parsed.data.categorySlug)
-        ? parsed.data.categorySlug
-        : null,
-  };
-  const guarded = guardProposal(proposal, request);
+  const guarded = guardProposal(parsed.data, request);
   const cost = recordedCost(provider.model, result.usage);
   if (!cost.known) console.error(`[ai] costo desconocido para ${provider.model}`);
 

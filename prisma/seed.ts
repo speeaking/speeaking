@@ -13,23 +13,26 @@ import { siteConfig } from "../src/config/site";
 import { AI_BUDGET_KEY, DEFAULT_AI_BUDGET } from "../src/modules/ai/budget";
 import { COMMERCE_FEES_KEY, DEFAULT_COMMERCE_FEES } from "../src/modules/commerce/fees";
 import { DEFAULT_FEED_POLICY, FEED_POLICY_KEY } from "../src/modules/feed/policy";
+import { parseEnv } from "../src/lib/env/parse-env";
 import { processImage } from "../src/modules/media/image-processing";
 import { createPrismaClient, type Database } from "../src/server/db-client";
-import { LocalStorageProvider } from "../src/server/providers/storage/local-storage";
+import { serverEnvSchema } from "../src/server/env-schema";
+import { createStorage } from "../src/server/providers/storage/factory";
 import { categories } from "./seed/categories";
 import { communities } from "./seed/communities";
 import { posterSvg } from "./seed/images";
 import { PHOTO_LICENSES, photoFileName, seedPhotos } from "./seed/photos";
 import { demoSellers } from "./seed/products";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
+if (!process.env.DATABASE_URL) {
   throw new Error("Falta DATABASE_URL. Ejecuta `pnpm db:setup` primero.");
 }
+const env = parseEnv(serverEnvSchema, process.env);
 
-const db = createPrismaClient(databaseUrl);
-const storage = new LocalStorageProvider(process.env.STORAGE_LOCAL_ROOT ?? ".data/uploads");
-const isProduction = process.env.NODE_ENV === "production";
+const db = createPrismaClient(env.DATABASE_URL);
+// El mismo almacenamiento que la app: las imágenes semilla quedan en S3/R2 si así está configurado.
+const storage = createStorage(env);
+const isProduction = env.NODE_ENV === "production";
 const HOUR = 60 * 60 * 1000;
 
 async function seedCategories() {

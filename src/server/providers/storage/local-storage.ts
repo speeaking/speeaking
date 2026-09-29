@@ -1,8 +1,11 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
-import { assertSafeKey, InvalidStorageKeyError, type StorageProvider } from "./types";
+import { assertSafeKey, InvalidStorageKeyError, mediaUrl, type StorageProvider } from "./types";
 
-/** Guarda archivos en disco (desarrollo). Se sirven con la ruta `/media/[...key]`. */
+/**
+ * Guarda archivos en disco (desarrollo, o un servidor con disco persistente y
+ * `ALLOW_LOCAL_STORAGE=true`). Se sirven con la ruta `/media/[...key]`.
+ */
 export class LocalStorageProvider implements StorageProvider {
   private readonly root: string;
 
@@ -41,7 +44,6 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   publicUrl(key: string) {
-    assertSafeKey(key);
-    return `/media/${key}`;
+    return mediaUrl(key);
   }
 }

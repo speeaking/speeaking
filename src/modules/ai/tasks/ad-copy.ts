@@ -71,7 +71,7 @@ function mockAdCopy(input: AdCopyInput): AdCopy {
 /** «Kit de anuncios» (Studio → Contenido): 4 textos por canal, anclados a los datos del producto. */
 export const adCopyTask: AITask<AdCopyInput, AdCopy> = {
   task: "ad_copy",
-  promptVersion: "ad-copy@1",
+  promptVersion: "ad-copy@2",
   format: "json",
   schemaName: "ad_copy",
   output: adCopySchema,

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { saleProposalTask } from "./tasks/sale-proposal";
-import { parseSellerText, saleProposalSchema, withoutCostMentions } from "./sale-proposal";
+import { PROPOSAL_FINAL_CHECK, saleProposalTask } from "./tasks/sale-proposal";
+import {
+  knownCategorySlug,
+  parseSellerText,
+  saleProposalSchema,
+  withoutCostMentions,
+} from "./sale-proposal";
 
 describe("parseSellerText (extracción determinista, P2)", () => {
   it("entiende el ejemplo de los AirPods", () => {
@@ -78,5 +83,61 @@ describe("withoutCostMentions (H3: el costo nunca sale hacia el proveedor)", () 
       expect(text).not.toMatch(/24,000|2,400|240000|24000/);
     }
     expect(user).toContain("[costo]");
+  });
+});
+
+describe("knownCategorySlug (la categoría que eligió el modelo)", () => {
+  const categories = [
+    { slug: "audio", name: "Audio" },
+    { slug: "electronica", name: "Electrónica" },
+    { slug: "ropa-y-moda", name: "Ropa y moda" },
+  ];
+
+  it("acepta el slug tal cual", () => {
+    expect(knownCategorySlug("audio", categories)).toBe("audio");
+  });
+
+  it("normaliza la línea completa de la lista, mayúsculas y espacios", () => {
+    expect(knownCategorySlug("audio: Audio", categories)).toBe("audio");
+    expect(knownCategorySlug("  ROPA-Y-MODA ", categories)).toBe("ropa-y-moda");
+  });
+
+  it("reconoce el nombre en vez del slug, con o sin acentos", () => {
+    expect(knownCategorySlug("Electrónica", categories)).toBe("electronica");
+    expect(knownCategorySlug("ropa y moda", categories)).toBe("ropa-y-moda");
+  });
+
+  it("deja sin categoría lo vacío o lo que no existe", () => {
+    expect(knownCategorySlug(null, categories)).toBeNull();
+    expect(knownCategorySlug("", categories)).toBeNull();
+    expect(knownCategorySlug("categoria-inventada", categories)).toBeNull();
+  });
+});
+
+describe("prompt de «Vende con IA» (sale-proposal@4)", () => {
+  const { system, user } = saleProposalTask.messages({
+    text: "Tenis Nike originales, con garantía",
+    productName: "Tenis Nike",
+    quantity: 3,
+    priceCents: 150_000,
+    costCents: 90_000,
+    city: "Ciudad de México",
+    hasPhoto: true,
+    categories: [],
+  });
+
+  it("prohíbe la urgencia más común y ofrece llamados neutros", () => {
+    expect(system).toContain("no te quedes sin el tuyo");
+    expect(system).toContain("Pídelo aquí");
+  });
+
+  it("no repite originalidad ni garantía aunque el vendedor las escriba (P4, P14)", () => {
+    expect(system).toMatch(/Aunque el vendedor escriba que es original/);
+    expect(system).toMatch(/No menciones envíos/);
+  });
+
+  it("cierra con la revisión final DESPUÉS del texto del vendedor", () => {
+    expect(user.endsWith(PROPOSAL_FINAL_CHECK)).toBe(true);
+    expect(user.indexOf("Tenis Nike originales")).toBeLessThan(user.indexOf(PROPOSAL_FINAL_CHECK));
   });
 });

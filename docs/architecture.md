@@ -95,7 +95,7 @@ src/
 | ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `AIProvider`      | `MockAIProvider` determinista             | Modelo abierto pagado por uso con API compatible con OpenAI (`AI_PROVIDER=openai_compatible`, ADR-033) |
 | `PaymentProvider` | `MockPaymentProvider` (pasarela simulada) | Mercado Pago / Stripe con reparto de fondos                                                            |
-| `StorageProvider` | Disco local (`.data/uploads`)             | S3 / Cloudflare R2                                                                                     |
+| `StorageProvider` | Disco local (`.data/uploads`)             | Cloudflare R2 privado por API S3 (`STORAGE_DRIVER=s3`, ADR-040); implementado                          |
 | `EmailProvider`   | Consola                                   | Resend / SES                                                                                           |
 | `MediaProcessor`  | Imágenes con `sharp`                      | Video con proveedor gestionado (S2)                                                                    |
 
@@ -358,16 +358,10 @@ La respuesta es el resumen de cada paso (sin datos personales).
 **En un hosting de pago.** Los horarios de cron van en UTC; programa la diaria después de las
 06:00 UTC (medianoche en la Ciudad de México), por ejemplo a las 07:15 UTC.
 
-- **Vercel (Pro) con Vercel Cron** (hosting elegido, ADR-033 #10): define `CRON_SECRET` en las
-  variables del proyecto (Vercel lo manda solo como `Authorization: Bearer …`) y agrega a
-  `vercel.json`:
-
-  ```json
-  { "crons": [{ "path": "/api/cron/daily", "schedule": "15 7 * * *" }] }
-  ```
-
-  Antes de desplegar en Vercel hace falta el adaptador R2 de `StorageProvider` (H10): sin disco
-  persistente, las fotos se perderían.
+- **Vercel (Pro) con Vercel Cron** (hosting elegido, ADR-033 #10 y ADR-040): `vercel.json` ya la
+  programa a las `0 9 * * *` (09:00 UTC = 03:00 en la Ciudad de México). Basta definir `CRON_SECRET`
+  en las variables del proyecto: Vercel lo manda solo como `Authorization: Bearer …`. Vercel no
+  reintenta un cron fallido (se repite a mano con `curl -X POST`). Ver [Infraestructura](#infraestructura).
 
 - **VPS** (servidor propio rentado): una entrada de cron que llame la misma ruta, con el secreto en
   un archivo que solo lea el usuario del cron (nunca en la línea del crontab ni en el repositorio):
@@ -385,6 +379,53 @@ La respuesta es el resumen de cada paso (sin datos personales).
 checkouts vencidos cada 5 minutos (hoy diario y oportunista; el código de pagos no se toca en esta
 etapa), respaldos de Neon con simulacro de restauración y Sentry. El monitor de salvaguardas es
 diario a propósito (métricas diarias).
+
+## Infraestructura
+
+Producción en **Vercel Pro + Neon Launch + Cloudflare R2** (ADR-033 #10, ADR-040). Todo escala solo,
+sin servidores que administrar. Paso a paso para el fundador: [`docs/deploy.md`](deploy.md).
+
+```
+Navegador ──▶ Vercel CDN ──▶ Funciones de Next (iad1, Fluid compute)
+                                 │  páginas, Server Actions, /api, /media (autoriza cada foto)
+                                 ├──▶ Neon PostgreSQL (aws-us-east-1): app por el pooler
+                                 │     (DATABASE_URL), migraciones por la directa (DATABASE_URL_UNPOOLED)
+                                 ├──▶ Cloudflare R2 (bucket privado, API S3): originales y variantes
+                                 └──▶ OpenRouter (IA por uso, AI_PROVIDER=openai_compatible)
+Vercel Cron (09:00 UTC) ──▶ /api/cron/daily (Bearer CRON_SECRET)
+```
+
+| Pieza         | Cómo escala                                                                               | Tope de costo                                     |
+| ------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Vercel        | Instancias bajo demanda con varias peticiones cada una; sin tráfico no cobra CPU          | Spend Management con pausa de producción          |
+| Neon          | Autoscaling de 0.25 a 2 CU y scale to zero a los 5 min; pooler de hasta 10,000 conexiones | El máximo de CU                                   |
+| Cloudflare R2 | Sin servidores; almacenamiento sin límite; sin cobro por salida de datos                  | Ninguno automático (alertas de facturación)       |
+| OpenRouter    | Por llamada                                                                               | Límite de crédito de la llave + presupuesto de IA |
+
+- **Configuración en el repositorio:** `vercel.json` (región `iad1` junto a la base, cron diario y
+  `buildCommand: pnpm vercel-build`). No hace falta `output` ni cambios en `next.config.ts`: Vercel
+  usa su adaptador de Next.
+- **Build y migraciones:** `scripts/vercel-build.mts` corre `prisma generate`, `next build` y, solo
+  en producción y solo si compiló, `prisma migrate deploy` por la conexión directa (revisada antes de
+  compilar: sin `-pooler` y con `sslmode`). Las vistas previas no migran ni reciben
+  variables de producción. Toda migración debe ser compatible con el código anterior (un Instant
+  Rollback no deshace migraciones). A mano: `pnpm db:deploy`.
+- **Almacenamiento:** `STORAGE_DRIVER=s3` → `S3StorageProvider` (`server/providers/storage`,
+  `createStorage` en `factory.ts`). El bucket es privado; `publicUrl` siempre es `/media/<clave>`.
+  En producción, el disco local falla al arrancar salvo `ALLOW_LOCAL_STORAGE=true`, y en Vercel
+  siempre.
+- **Variables:** `server/env-schema.ts` valida todo en el build y al arrancar; la tabla completa está
+  en `docs/deploy.md` (paso 8). En Vercel, `TRUSTED_PROXY_HOPS=1`.
+- **Respaldos:** historial de Neon de 7 días (restauración a un instante) con simulacro mensual; las
+  fotos borradas por la app no se recuperan.
+
+**Pendiente.** `attachDatabasePool` (`@vercel/functions`) para cerrar conexiones inactivas antes de
+que Vercel suspenda una instancia; alerta externa del cron; copia periódica del bucket. El CDN de
+Vercel usa el `Cache-Control` de las funciones cuando no hay `CDN-Cache-Control`: las fotos públicas
+de `/media` (`public, max-age=3600, stale-while-revalidate=86400`) quedan en su caché, así que el
+retiro de una foto (SEC-14, ventana de ADR-039) depende de cómo Vercel revalide ante el 404; se
+comprueba en el primer despliegue (`docs/deploy.md`, paso 13) y, si pasa de una hora, se fija
+`Vercel-CDN-Cache-Control` en la ruta.
 
 ## Seguridad
 

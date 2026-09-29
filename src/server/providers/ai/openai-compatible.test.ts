@@ -99,8 +99,8 @@ describe("OpenAICompatibleProvider", () => {
     const { usage } = await provider.generate(task, { product: "Audífonos" });
 
     expect(usage).toEqual({ inputTokens: 3_000, outputTokens: 2_000 });
-    // 3,000 × 0.08 + 2,000 × 0.13 = 500 micro-dólares.
-    expect(costMicrosUsd(provider.model, usage)).toBe(500);
+    // 3,000 × 0.10 + 2,000 × 0.15 = 600 micro-dólares (precio de OpenRouter del 2026-09-27).
+    expect(costMicrosUsd(provider.model, usage)).toBe(600);
   });
 
   it("si el proveedor no informa el uso, lo estima y lo marca (nunca 0 a ciegas)", async () => {
@@ -191,6 +191,15 @@ describe("OpenAICompatibleProvider", () => {
     expect(JSON.stringify(error)).not.toContain(API_KEY);
   });
 
+  it("un 402 (sin saldo) no se reintenta y se distingue de una petición inválida", async () => {
+    const { provider, calls } = setup([new Response("{}", { status: 402 })]);
+
+    const error = await provider.generate(task, { product: "Audífonos" }).catch((e) => e);
+
+    expect(error).toMatchObject({ kind: "no_credit", status: 402 });
+    expect(calls).toHaveLength(1);
+  });
+
   it("corta con AbortController al pasar el plazo (y no reintenta: pudo haberse cobrado)", async () => {
     const hang = (init: RequestInit) =>
       new Promise<Response>((_, reject) => {
@@ -215,7 +224,7 @@ describe("OpenAICompatibleProvider", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("con OpenRouter pide proveedores que no guardan datos y que soportan json_schema", async () => {
+  it("con OpenRouter pide proveedores sin recolección ni retención, con json_schema y sin razonamiento", async () => {
     const { provider, calls } = setup([completion(good)], {
       baseUrl: "https://openrouter.ai/api/v1/",
     });
@@ -223,10 +232,26 @@ describe("OpenAICompatibleProvider", () => {
     await provider.generate(task, { product: "Audífonos" });
 
     expect(calls[0]!.url).toBe("https://openrouter.ai/api/v1/chat/completions");
-    expect(JSON.parse(String(calls[0]!.init.body)).provider).toEqual({
+    const body = JSON.parse(String(calls[0]!.init.body));
+    expect(body.provider).toEqual({
       data_collection: "deny",
+      zdr: true,
       require_parameters: true,
     });
+    // Qwen 3.5 gastaba todo max_tokens «pensando» y no escribía la respuesta.
+    expect(body.reasoning).toEqual({ enabled: false });
+  });
+
+  it("otros servidores no reciben los campos propios de OpenRouter", async () => {
+    const { provider, calls } = setup([completion(good)], {
+      baseUrl: "https://ia.example.com/v1",
+    });
+
+    await provider.generate(task, { product: "Audífonos" });
+
+    const body = JSON.parse(String(calls[0]!.init.body));
+    expect(body.provider).toBeUndefined();
+    expect(body.reasoning).toBeUndefined();
   });
 
   it("la llave solo va al servidor configurado: sin redirecciones ni rutas que cambien de host", async () => {

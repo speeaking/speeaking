@@ -32,6 +32,18 @@ export function simulatedAIAllowed(config: {
   );
 }
 
+/**
+ * Almacenamiento de archivos (ADR-040): `local` = disco del servidor (desarrollo); `s3` = bucket
+ * privado compatible con S3 (Cloudflare R2 en producción).
+ */
+export const STORAGE_DRIVERS = ["local", "s3"] as const;
+
+/** Nombre de bucket de S3/R2: 3 a 63 caracteres, minúsculas, números y guiones (sin puntos). */
+const BUCKET_NAME = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/;
+
+/** Región de S3 (`us-east-1`…) o `auto` (R2). */
+const S3_REGION = /^[a-z0-9-]{2,32}$/;
+
 /** Id de modelo del proveedor: `qwen/qwen3.5-9b`, `Qwen/Qwen3.5-9B-Instruct`, `modelo:free`… */
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$/;
 
@@ -50,8 +62,30 @@ export const serverEnvSchema = z
     APP_URL: z.url({ protocol: /^https?$/ }).default("http://localhost:3000"),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
-    STORAGE_DRIVER: z.enum(["local"]).default("local"),
+    STORAGE_DRIVER: z
+      .enum(STORAGE_DRIVERS, { error: `Debe ser uno de: ${STORAGE_DRIVERS.join(", ")}.` })
+      .default("local"),
     STORAGE_LOCAL_ROOT: z.string().min(1).default(".data/uploads"),
+    // Disco local en producción: solo en un servidor con disco persistente y respaldado, como
+    // decisión explícita. En Vercel no sirve (su disco es efímero y de solo lectura).
+    ALLOW_LOCAL_STORAGE: z.stringbool({ error: "Debe ser true o false." }).default(false),
+    // Bucket compatible con S3 (con STORAGE_DRIVER=s3 son obligatorias, salvo la región). El
+    // endpoint es solo el origen (R2: https://<cuenta>.r2.cloudflarestorage.com); las llaves son
+    // secretos y el bucket es privado (las fotos salen solo por /media).
+    S3_ENDPOINT: optional(
+      z.url({ protocol: /^https?$/, error: "Debe ser una URL http(s) (solo el origen)." }),
+    ),
+    S3_BUCKET: optional(
+      z.string().regex(BUCKET_NAME, "Nombre de bucket inválido (minúsculas, números y guiones)."),
+    ),
+    S3_REGION: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.string().regex(S3_REGION, "Región inválida (p. ej. auto o us-east-1).").default("auto"),
+    ),
+    S3_ACCESS_KEY_ID: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
+    S3_SECRET_ACCESS_KEY: optional(z.string().min(32, "Debe tener al menos 32 caracteres.")),
+    // Vercel la define como "1" en el build y en las funciones (variables de sistema).
+    VERCEL: optional(z.string()),
     // Proxies de confianza delante de Next, para la IP del cliente (ver src/server/client-ip.ts).
     // 0 = Next expuesto directo: se ignora X-Forwarded-For y no hay IP confiable (los límites por IP no
     // aplican). N = la IP es la N-ésima entrada de X-Forwarded-For contando desde la derecha.
@@ -176,7 +210,101 @@ export const serverEnvSchema = z
           "Obligatoria en producción (mínimo 32 caracteres): protege las tareas programadas.",
       });
     }
+    checkStorage(env, app, ctx);
   });
+
+/**
+ * Almacenamiento (ADR-040). En producción, el disco local se pierde en una plataforma serverless
+ * (cada despliegue o instancia nueva arranca sin él): se exige un bucket o una decisión explícita
+ * (`ALLOW_LOCAL_STORAGE=true`, solo en un servidor con disco persistente). Loopback se permite para
+ * probar el build de producción en local, como `CRON_SECRET`. En Vercel, nunca: ni con la bandera.
+ */
+function checkStorage(
+  env: {
+    NODE_ENV: "development" | "test" | "production";
+    STORAGE_DRIVER: (typeof STORAGE_DRIVERS)[number];
+    ALLOW_LOCAL_STORAGE: boolean;
+    S3_ENDPOINT?: string | undefined;
+    S3_BUCKET?: string | undefined;
+    S3_ACCESS_KEY_ID?: string | undefined;
+    S3_SECRET_ACCESS_KEY?: string | undefined;
+    VERCEL?: string | undefined;
+  },
+  app: URL | null,
+  ctx: z.RefinementCtx,
+) {
+  if (env.NODE_ENV === "production" && env.STORAGE_DRIVER === "local") {
+    if (env.VERCEL === "1") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["STORAGE_DRIVER"],
+        message:
+          "En Vercel el disco es efímero y de solo lectura: las fotos se perderían. Usa STORAGE_DRIVER=s3 (Cloudflare R2, docs/deploy.md).",
+      });
+    } else if (!env.ALLOW_LOCAL_STORAGE && !(app && isLoopback(app.hostname))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["STORAGE_DRIVER"],
+        message:
+          "En producción el disco local puede perderse (serverless, contenedores): usa STORAGE_DRIVER=s3 (Cloudflare R2) o, solo en un servidor con disco persistente y respaldado, ALLOW_LOCAL_STORAGE=true.",
+      });
+    }
+  }
+  if (env.STORAGE_DRIVER === "s3") {
+    for (const name of [
+      "S3_ENDPOINT",
+      "S3_BUCKET",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY",
+    ] as const) {
+      if (env[name] === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: [name],
+          message: "Obligatoria con STORAGE_DRIVER=s3.",
+        });
+      }
+    }
+  }
+  // Cada petición va firmada con la llave y lleva las fotos: fuera de la máquina, solo cifrada. Solo
+  // el origen (el bucket va aparte) y nunca credenciales en la URL.
+  const endpoint = env.S3_ENDPOINT === undefined ? null : parseUrl(env.S3_ENDPOINT);
+  if (endpoint) {
+    if (endpoint.protocol === "http:" && !isLoopback(endpoint.hostname)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message: "Debe usar https (las fotos y la firma de la llave viajan en cada petición).",
+      });
+    }
+    if (endpoint.username !== "" || endpoint.password !== "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message:
+          "No pongas credenciales en la URL; van en S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY.",
+      });
+    }
+    // `pub-….r2.dev` es la URL PÚBLICA de desarrollo de un bucket de R2 (lectura sin firma): que
+    // exista significa que el bucket quedó público, y no sirve para la API S3.
+    if (endpoint.hostname === "r2.dev" || endpoint.hostname.endsWith(".r2.dev")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message:
+          "Esa es la URL pública r2.dev del bucket: desactívala (el bucket es privado) y usa el endpoint de la API S3, https://<cuenta>.r2.cloudflarestorage.com.",
+      });
+    }
+    if (endpoint.pathname !== "/" || endpoint.search !== "" || endpoint.hash !== "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message:
+          "Solo el origen, sin ruta (p. ej. https://<cuenta>.r2.cloudflarestorage.com); el bucket va en S3_BUCKET.",
+      });
+    }
+  }
+}
 
 export type ServerEnv = z.output<typeof serverEnvSchema>;
 

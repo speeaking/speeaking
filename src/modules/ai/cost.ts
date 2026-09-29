@@ -4,7 +4,9 @@
  * el proveedor. Micro-dólares = tokens × precio.
  *
  * - Claude: lista de Anthropic, consultada 2026-06 (referencia de calidad, ADR-033 #9).
- * - Qwen3.5-9B: OpenRouter, US$0.08 de entrada y US$0.13 de salida (ADR-033 #6), 2026-09.
+ * - Modelos abiertos y de referencia vía OpenRouter: API pública de modelos
+ *   (https://openrouter.ai/api/v1/models), consultada el 2026-09-27. Qwen3.5-9B subió de
+ *   US$0.08/0.13 a US$0.10/0.15.
  *
  * Un modelo que no esté aquí NO tiene precio: el guardián no lo llama (ADR-031) y, si aun así llega
  * una respuesta, su costo se marca como desconocido en lugar de contarse como 0.
@@ -13,7 +15,11 @@ export const MODEL_PRICES_USD_PER_MTOK: Record<string, { input: number; output: 
   "claude-opus-5": { input: 5, output: 25 },
   "claude-sonnet-5": { input: 2, output: 10 },
   "claude-haiku-4-5": { input: 1, output: 5 },
-  "qwen3.5-9b": { input: 0.08, output: 0.13 },
+  "qwen3.5-9b": { input: 0.1, output: 0.15 },
+  "qwen3.5-27b": { input: 0.195, output: 1.56 },
+  "qwen3.5-flash-02-23": { input: 0.065, output: 0.26 },
+  "mistral-small-2603": { input: 0.15, output: 0.6 },
+  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
   mock: { input: 0, output: 0 },
 };
 
@@ -27,6 +33,8 @@ const MODEL_ALIASES: Record<string, string> = {
   "anthropic/claude-sonnet-5": "claude-sonnet-5",
   "anthropic/claude-haiku-4.5": "claude-haiku-4-5",
   "anthropic/claude-haiku-4-5": "claude-haiku-4-5",
+  "mistralai/mistral-small-2603": "mistral-small-2603",
+  "google/gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
 };
 
 /** Id del modelo en la tabla de precios, o `null` si no tiene precio. */
