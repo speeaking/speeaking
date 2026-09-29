@@ -33,6 +33,12 @@ test.describe("feed", () => {
     await like.click();
     await expect(like).toHaveAttribute("aria-pressed", "true");
 
+    // Red social primero: en Crear, compartir va antes que vender.
+    await page.goto("/crear");
+    const createOptions = page
+      .getByRole("main")
+      .getByRole("link", { name: /^(Publicación|Sube y vende|Producto a mano)/ });
+    await expect(createOptions.first()).toContainText("Publicación");
     await page.goto("/crear/publicacion");
     await page.getByLabel("¿Qué quieres compartir?").fill("Mi primera publicación de prueba 🎉");
     await page.getByLabel("Elegir imágenes").setInputFiles({

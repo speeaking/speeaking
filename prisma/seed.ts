@@ -3,15 +3,19 @@
  *
  * - Siempre: categorías, comunidades y ajustes de plataforma por defecto.
  * - Solo fuera de producción: cuentas editoriales con contenido semilla y vendedores de demostración.
+ * - Solo contra una base de esta máquina: la cuenta de prueba local (`seed/test-account.ts`).
  */
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { hashPassword } from "better-auth/crypto";
 import sharp from "sharp";
 import { siteConfig } from "../src/config/site";
+import { isProductionTarget } from "../src/modules/admin/grant";
 import { AI_BUDGET_KEY, DEFAULT_AI_BUDGET } from "../src/modules/ai/budget";
 import { COMMERCE_FEES_KEY, DEFAULT_COMMERCE_FEES } from "../src/modules/commerce/fees";
+import { LEGAL_VERSIONS } from "../src/modules/identity/constants";
 import { DEFAULT_FEED_POLICY, FEED_POLICY_KEY } from "../src/modules/feed/policy";
 import { parseEnv } from "../src/lib/env/parse-env";
 import { processImage } from "../src/modules/media/image-processing";
@@ -23,6 +27,7 @@ import { communities } from "./seed/communities";
 import { posterSvg } from "./seed/images";
 import { PHOTO_LICENSES, photoFileName, seedPhotos } from "./seed/photos";
 import { demoSellers } from "./seed/products";
+import { testAccount } from "./seed/test-account";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("Falta DATABASE_URL. Ejecuta `pnpm db:setup` primero.");
@@ -363,6 +368,83 @@ async function seedDemoSellers(
   return created;
 }
 
+/**
+ * Cuenta de prueba local, como si hubiera pasado por el registro y el onboarding: contraseña con el
+ * mismo hash que usa Better Auth, términos y aviso aceptados en su versión vigente, comunidades,
+ * personalización y tienda activa. Si ya existe no se toca (ni su contraseña). Nunca contra una base
+ * remota, aunque `NODE_ENV` no diga producción.
+ */
+async function seedTestAccount(communityIds: Map<string, string>) {
+  if (isProductionTarget(env)) return "remote" as const;
+  const existing = await db.user.findUnique({
+    where: { email: testAccount.email },
+    select: { id: true },
+  });
+  if (existing) return "exists" as const;
+
+  const passwordHash = await hashPassword(testAccount.password);
+  const joined = testAccount.communities
+    .map((slug) => communityIds.get(slug))
+    .filter((id): id is string => id !== undefined);
+  await db.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: { email: testAccount.email, name: testAccount.name, emailVerified: true },
+      select: { id: true },
+    });
+    await tx.account.create({
+      data: {
+        userId: user.id,
+        accountId: user.id,
+        providerId: "credential",
+        password: passwordHash,
+      },
+    });
+    await tx.profile.create({
+      data: {
+        userId: user.id,
+        username: testAccount.username,
+        displayName: testAccount.name,
+        bio: testAccount.bio,
+        onboardedAt: new Date(),
+      },
+    });
+    await tx.userConsent.createMany({
+      data: [
+        { userId: user.id, type: "TERMS", version: LEGAL_VERSIONS.terms, granted: true },
+        {
+          userId: user.id,
+          type: "PRIVACY_NOTICE",
+          version: LEGAL_VERSIONS.privacyNotice,
+          granted: true,
+        },
+        {
+          userId: user.id,
+          type: "PERSONALIZATION",
+          version: LEGAL_VERSIONS.personalization,
+          granted: true,
+        },
+      ],
+    });
+    await tx.communityMembership.createMany({
+      data: joined.map((communityId) => ({ userId: user.id, communityId })),
+    });
+    await tx.community.updateMany({
+      where: { id: { in: joined } },
+      data: { memberCount: { increment: 1 } },
+    });
+    await tx.sellerProfile.create({
+      data: {
+        userId: user.id,
+        displayName: testAccount.store.displayName,
+        city: testAccount.store.city,
+        state: testAccount.store.state,
+        acceptedPaymentMethods: [...testAccount.store.paymentMethods],
+      },
+    });
+  });
+  return "created" as const;
+}
+
 async function main() {
   const categoryIds = await seedCategories();
   const communityIds = await seedCommunities(categoryIds);
@@ -378,6 +460,15 @@ async function main() {
   const photos = await refreshSeedPhotos();
   console.warn(
     `✓ ${posts} publicaciones editoriales y ${products} productos de demostración nuevos; ${photos} carteles cambiados por fotos`,
+  );
+
+  const account = await seedTestAccount(communityIds);
+  console.warn(
+    {
+      created: "✓ Cuenta de prueba local creada: sus datos están en prisma/seed/test-account.ts",
+      exists: "• La cuenta de prueba local ya existía: no se tocó",
+      remote: "• Base remota: se omite la cuenta de prueba local",
+    }[account],
   );
 }
 

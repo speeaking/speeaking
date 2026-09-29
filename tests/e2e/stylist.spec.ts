@@ -10,6 +10,13 @@ test.describe("estilista", () => {
   test("una persona visitante pide un look y recibe combinaciones con productos reales", async ({
     page,
   }) => {
+    // Red social primero: el inicio no abre con el estilista; su entrada está arriba de Comprar.
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "¿Qué necesitas?" })).toHaveCount(0);
+    await page.goto("/comprar");
+    await expect(page.getByRole("heading", { name: "¿Qué necesitas?" })).toBeVisible();
+
     await page.goto(`/estilista?necesidad=${encodeURIComponent(NEED)}`);
     await expect(page.getByRole("heading", { level: 1, name: "Tu estilista" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: /Entendí: boda/ })).toBeVisible();

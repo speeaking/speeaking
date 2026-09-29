@@ -6,18 +6,19 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = { title: "Crear" };
 
+// Red social primero: compartir va antes que vender.
 const options: { href: Route; title: string; description: string; icon: typeof Sparkles }[] = [
+  {
+    href: "/crear/publicacion",
+    title: "Publicación",
+    description: "Tu día, una experiencia, una noticia o una foto para tus comunidades.",
+    icon: ImagePlus,
+  },
   {
     href: siteConfig.sellerFeaturePath,
     title: siteConfig.sellerFeatureName,
     description: "Sube una foto y pon tu precio: te armamos la publicación y tus números.",
     icon: Sparkles,
-  },
-  {
-    href: "/crear/publicacion",
-    title: "Publicación",
-    description: "Comparte una foto, una idea o una recomendación con tus comunidades.",
-    icon: ImagePlus,
   },
   {
     href: "/studio/productos/nuevo",
@@ -27,7 +28,7 @@ const options: { href: Route; title: string; description: string; icon: typeof S
   },
 ];
 
-/** Crear (ADR-042): tres opciones iguales, sin bloque oscuro ni distintivo de IA. */
+/** Crear (ADR-042): tres opciones iguales, sin bloque oscuro ni distintivo de IA; compartir primero. */
 export default function CreatePage() {
   return (
     <>

@@ -43,10 +43,14 @@ export function CreatePostForm({
           name="body"
           rows={5}
           maxLength={MAX_POST_LENGTH}
-          placeholder="Una recomendación, una receta, algo que te hizo reír…"
+          placeholder="Tu día, una experiencia, una noticia, un chisme…"
           className="text-base"
+          aria-describedby="cuerpo-ayuda"
           aria-invalid={state.fieldErrors?.body ? true : undefined}
         />
+        <p id="cuerpo-ayuda" className="text-xs text-muted-foreground">
+          Chismes sí; exhibir a alguien, no: sin datos ni fotos de otras personas sin su permiso.
+        </p>
         {state.fieldErrors?.body ? (
           <p role="alert" className="text-sm text-destructive">
             {state.fieldErrors.body[0]}

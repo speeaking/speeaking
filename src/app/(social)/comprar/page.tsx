@@ -11,6 +11,7 @@ import { ProductCard } from "@/modules/catalog/components/product-card";
 import { listCategories, listShopProducts } from "@/modules/catalog/queries";
 import { getViewer } from "@/modules/identity/session";
 import { parseSearchQuery, SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
+import { StylistCard } from "@/modules/stylist/components/stylist-card";
 
 export const metadata: Metadata = { title: "Comprar" };
 
@@ -48,6 +49,9 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
     <>
       <PageHeader title="Comprar" description="Productos de vendedores de tu comunidad." />
       <div className="flex flex-col gap-4">
+        {/* Lo que cambia es cómo se compra: el estilista abre Comprar (no el feed). Con una búsqueda o
+            una categoría activa, los resultados van primero. */}
+        {!query && !categorySlug ? <StylistCard /> : null}
         <form action="/comprar" className="relative px-4 md:px-0" role="search">
           {categorySlug ? <input type="hidden" name="categoria" value={categorySlug} /> : null}
           <Search className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground md:left-3" />

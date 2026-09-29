@@ -15,7 +15,7 @@ vendedor reales, activos, con existencias y visibles (P2, P4).
 | `service.ts`   | `interpretNeed` (IA con cuota propia o reglas), `createLooks`, `completeLook`, `getLook`, `swapLookItem`, `listMyLooks`, `saveNeedAsIntent` (alimenta «Lo que buscas»).                                                  |
 | `actions.ts`   | «Otra opción» / «Más barato» y «Comprar look» (carrito).                                                                                                                                                                 |
 | `matching.ts`  | «N personas buscan algo así» en el Studio: intenciones activas de 30 días que coinciden con cada producto y cuyo presupuesto alcanza; solo un número agregado, nunca quiénes.                                            |
-| `components/*` | Campo «¿Qué necesitas?», tarjeta de look, tarjeta del inicio y acciones en la ficha de producto.                                                                                                                         |
+| `components/*` | Campo «¿Qué necesitas?», tarjeta de look, tarjeta de Comprar y acciones en la ficha de producto.                                                                                                                         |
 
 Páginas: `/estilista?necesidad=…` (GET, compartible) y `/estilista/completa/[slug]?max=…`. Un
 prefetch no arma ni guarda looks. Los looks de personas con sesión se guardan (`StyleLook`) para

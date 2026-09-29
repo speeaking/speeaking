@@ -241,7 +241,8 @@ Pruébatelo → comprar», con 20 funciones de IA en 5 fases y una regla: no con
    por interfaz con simulador, caché de resultados, cuotas por función, retención y privacidad de
    fotos. Las 15 funciones restantes existen solo como banderas apagadas.
 5. **Impacto en el MVP.** Ninguno en lo existente: rutas nuevas (`/estilista`, `/probar`), una
-   tarjeta en el inicio y dos enlaces en la ficha de las prendas.
+   tarjeta arriba de Comprar y dos enlaces en la ficha de las prendas. Nunca arriba del feed: el
+   inicio empieza por lo que la gente comparte (principios 1 y 2; corrección del 2026-09-29).
 6. **Cuándo.** Construido el 2026-09-29 (fase 2 del plan). Fases 3–5 se encienden una por una,
    midiendo antes de invertir en la siguiente.
 

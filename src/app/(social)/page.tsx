@@ -8,7 +8,6 @@ import { PeopleSuggestions } from "@/modules/discovery/components/people-suggest
 import { Composer } from "@/modules/feed/components/composer";
 import type { FeedSlot } from "@/modules/feed/components/feed-list";
 import { HomeFeed } from "@/modules/feed/components/home-feed";
-import { StylistCard } from "@/modules/stylist/components/stylist-card";
 import { VisitorJoinCard } from "@/modules/feed/components/visitor-join-card";
 import { WelcomeCard } from "@/modules/feed/components/welcome-card";
 import { feedDateLabel, localDay } from "@/modules/feed/feed-date";
@@ -99,9 +98,10 @@ export default async function HomePage() {
       isSignedIn={viewer !== null}
       initialPage={page}
       slots={slots}
+      // Red social primero (principios 1 y 2): arriba del feed va lo que la persona comparte, nunca
+      // una invitación a comprar. El estilista vive en Comprar y en la ficha de las prendas.
       beforeFeed={
         <>
-          <StylistCard />
           {viewer ? (
             <>
               {moment ? <WelcomeCard moment={moment} /> : null}

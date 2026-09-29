@@ -90,11 +90,20 @@ llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`).
 
 ## Cuentas de prueba
 
-El seed crea cuentas editoriales (`equipo.<comunidad>`) y dos vendedores de demostración
-(`demo.electro`, `demo.casa`) sin contraseña: no sirven para iniciar sesión. Para probar, crea tu
-cuenta en `/registro` (en desarrollo el límite de registros por minuto es holgado). Para entrar a
-`/admin`, termina la bienvenida y date el rol con `pnpm make-admin <tu-correo>` (arriba); sin él,
-`/admin` responde 404.
+El seed crea cuentas editoriales (`equipo.<comunidad>`) y vendedores de demostración
+(`demo.electro`, `demo.casa`, `demo.moda`) sin contraseña: no sirven para iniciar sesión.
+
+Para entrar sin registrarte, el seed crea además una **cuenta de prueba local** con la bienvenida
+terminada, cuatro comunidades y una tienda activa. Su correo y su contraseña están en
+`prisma/seed/test-account.ts` (valores de prueba: no los uses en otro servicio). Solo existe en una
+base de esta máquina: el seed la omite en producción y contra cualquier servidor remoto, y si ya
+existe no la toca. Para que también vea `/admin`, dale el rol con
+`pnpm make-admin prueba@estreno.test`.
+
+También puedes crear tu cuenta en `/registro` (en desarrollo el límite de registros por minuto es
+holgado). Para entrar a `/admin`, termina la bienvenida y date el rol con
+`pnpm make-admin <tu-correo>` (arriba); sin él, `/admin` responde 404. Una contraseña olvidada no
+se puede leer (se guarda cifrada) y la recuperación por correo llega con el proveedor de correo.
 
 ## Convenciones
 
