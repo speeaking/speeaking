@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
 
 /**
- * Barra inferior móvil. "Crear" va al centro, elevada, porque es la puerta a Vende con IA. Cada
+ * Barra inferior móvil. "Crear" va al centro, elevada, porque es la puerta a Sube y vende. Cada
  * pestaña sigue activa en sus pantallas hijas (`/c/*` en Descubrir, el carrito en Comprar…) y
  * Perfil muestra el avatar de quien navega.
  */

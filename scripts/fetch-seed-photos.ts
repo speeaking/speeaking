@@ -91,7 +91,7 @@ async function main() {
     const file = path.join(OUT_DIR, photoFileName(key));
     if (existsSync(file) && !force) continue;
 
-    const response = await fetch(photo.imageUrl, { headers: { "User-Agent": "VendeIA-seed/1.0" } });
+    const response = await fetch(photo.imageUrl, { headers: { "User-Agent": "Estreno-seed/1.0" } });
     const type = response.headers.get("content-type") ?? "";
     if (!response.ok || !type.startsWith("image/")) {
       throw new Error(`No se pudo descargar ${key}: ${response.status} ${type}`);

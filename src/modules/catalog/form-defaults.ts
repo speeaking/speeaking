@@ -24,7 +24,7 @@ export type ProductFormDefaults = {
   returnWindowDays?: string;
   authenticity?: Authenticity;
   postBody?: string;
-  /** Propuesta de "Vende con IA" que originó el producto (P3). */
+  /** Propuesta de "Sube y vende" que originó el producto (P3). */
   proposalId?: string;
   initialMedia?: { id: string; url: string; width: number; height: number }[];
 };

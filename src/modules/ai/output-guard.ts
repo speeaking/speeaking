@@ -141,7 +141,7 @@ export const CLAIM_PATTERNS: Record<ClaimKind, RegExp> = {
   ]),
 };
 
-/** Las que se revisan en la propuesta de «Vende con IA» (no conoce envíos ni entregas). */
+/** Las que se revisan en la propuesta de «Sube y vende» (no conoce envíos ni entregas). */
 const PROPOSAL_CLAIMS: readonly ClaimKind[] = [
   "warranty",
   "authenticity",

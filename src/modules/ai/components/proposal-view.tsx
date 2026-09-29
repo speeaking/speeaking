@@ -85,7 +85,7 @@ function AiNote({ text, simulated }: { text: string; simulated: boolean }) {
 const percent = (value: number) => `${Math.round(Math.abs(value) * 100)} %`;
 
 /**
- * Propuesta de "Vende con IA": separa lo CALCULADO (código, P2) de lo que REDACTÓ la IA. Todas las
+ * Propuesta de "Sube y vende": separa lo CALCULADO (código, P2) de lo que REDACTÓ la IA. Todas las
  * cifras salen del código con tus datos (SEC-28); la IA solo escribe textos e hipótesis. Con la IA
  * simulada de un piloto (`simulated`, ADR-038) los textos se marcan como ejemplo, nunca como de la IA.
  */

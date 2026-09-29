@@ -45,7 +45,7 @@ export function ImageUploader({
 }: {
   name: string;
   max: number;
-  /** Imágenes ya subidas (p. ej. la foto que se usó en Vende con IA o las de un producto). */
+  /** Imágenes ya subidas (p. ej. la foto que se usó en Sube y vende o las de un producto). */
   initial?: Uploaded[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);

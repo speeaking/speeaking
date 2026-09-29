@@ -162,7 +162,7 @@ function CommunityChip({ community }: { community: Community }) {
 }
 
 /**
- * Cabecera. Cuenta editorial: empieza por la comunidad (su avatar con el sello de VendeIA, su nombre
+ * Cabecera. Cuenta editorial: empieza por la comunidad (su avatar con el sello de Estreno, su nombre
  * y la insignia «Editorial» en su color) y debajo el equipo y la hora. Personas y tiendas: su
  * avatar y nombre, «Tienda» si venden, y la comunidad como chip pequeño.
  */

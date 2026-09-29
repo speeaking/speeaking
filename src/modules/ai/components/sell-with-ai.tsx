@@ -6,7 +6,7 @@ import { PUBLISH_BY_HAND } from "../tasks/simulation";
 import { SellWithAiForm } from "./sell-with-ai-form";
 
 /**
- * «Vende con IA». Componente de servidor: con la IA simulada en un piloto marca la propuesta como
+ * «Sube y vende». Componente de servidor: con la IA simulada en un piloto marca la propuesta como
  * ejemplo; sin IA disponible (ADR-038) no ofrece generar plantillas: invita a publicar a mano.
  */
 export async function SellWithAi() {

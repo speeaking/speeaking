@@ -92,7 +92,7 @@ export default function PrivacyNoticePage() {
         </li>
         <li>
           Si vendes: datos de tus productos (incluido su costo, que solo ves tú), ciudad y estado
-          (nunca tu domicilio exacto publicado), lo que escribes en «Vende con IA» y, si te lo
+          (nunca tu domicilio exacto publicado), lo que escribes en «Sube y vende» y, si te lo
           pedimos, las fotos de tu comprobante de compra.
         </li>
         <li>
@@ -216,7 +216,7 @@ export default function PrivacyNoticePage() {
         una sugerencia no te interesa, toca «Quitar» y no te volveremos a sugerir a esa persona.
       </p>
 
-      <h2 id="vende-con-ia">Inteligencia artificial: «Vende con IA» y «Kit de anuncios»</h2>
+      <h2 id="sube-y-vende">Inteligencia artificial: «Sube y vende» y «Kit de anuncios»</h2>
       <p>
         Lo que escribes para pedir una propuesta de venta, y los datos que confirmas (producto,
         piezas, costo y precio), se usan solo para generarla. Para el kit de anuncios usamos los
@@ -300,7 +300,7 @@ export default function PrivacyNoticePage() {
           Los registros de intentos por IP: se borran al terminar su ventana (de minutos a unos
           días).
         </li>
-        <li>El texto de «Vende con IA»: 90 días.</li>
+        <li>El texto de «Sube y vende»: 90 días.</li>
         <li>
           Tu actividad, incluidas las publicaciones que viste en pantalla: ligada a tu cuenta
           mientras la tengas y tengas activada la personalización. Al desactivarla se desliga,

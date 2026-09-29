@@ -3,6 +3,7 @@
 import { FileText, Sparkles } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { TextField } from "@/components/forms/text-field";
+import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MarginPreview } from "@/modules/catalog/components/margin-preview";
@@ -21,7 +22,7 @@ const pesos = (cents: number | null) =>
   cents === null ? "" : (cents / 100).toLocaleString("es-MX");
 
 /**
- * Formulario de «Vende con IA». `simulated`: piloto con la IA simulada (ADR-038); la propuesta se
+ * Formulario de «Sube y vende». `simulated`: piloto con la IA simulada (ADR-038); la propuesta se
  * marca como texto de ejemplo.
  */
 export function SellWithAiForm({ simulated = false }: { simulated?: boolean }) {
@@ -73,17 +74,10 @@ export function SellWithAiForm({ simulated = false }: { simulated?: boolean }) {
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <div className="dark flex flex-col gap-3 rounded-3xl border bg-card p-5 text-foreground">
-        {simulated ? (
-          // La lima es solo de la IA: con la IA simulada de un piloto, el distintivo es neutro.
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">
-            Vende con IA · piloto
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-ai px-2.5 py-1 text-xs font-bold text-ai-foreground">
-            <Sparkles aria-hidden="true" className="size-3.5" />
-            Vende con IA
-          </span>
-        )}
+        {/* Distintivo neutro (ADR-042): la función se llama por lo que hace, no por la IA. */}
+        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">
+          {simulated ? `${siteConfig.sellerFeatureName} · piloto` : siteConfig.sellerFeatureName}
+        </span>
         <label htmlFor="que-vendes" className="font-heading text-3xl leading-tight font-extrabold">
           ¿Qué quieres vender hoy?
         </label>

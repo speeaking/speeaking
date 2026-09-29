@@ -3,7 +3,7 @@ import { parsePesosToCents } from "@/modules/catalog/pricing";
 import { MAX_PROPOSAL_CENTS } from "./proposal-numbers";
 
 /**
- * Contrato de "Vende con IA". Cualquier proveedor (simulado o real) debe devolver exactamente
+ * Contrato de "Sube y vende". Cualquier proveedor (simulado o real) debe devolver exactamente
  * esta forma; se valida SIEMPRE antes de usarla. Las cifras financieras NO salen de aquí: las
  * calcula el código con los números que confirmó el vendedor (P2). El rango de precio y el
  * presupuesto diario los pone el código (`proposal-numbers.ts`) sobre lo que devuelva la IA; el

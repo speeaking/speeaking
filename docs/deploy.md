@@ -1,6 +1,6 @@
 # Despliegue en producción: Vercel + Neon + Cloudflare R2
 
-Guía paso a paso para poner VendeIA en internet (decisión ADR-033 #10 y ADR-040). Está escrita para
+Guía paso a paso para poner Estreno en internet (decisión ADR-033 #10 y ADR-040). Está escrita para
 hacerse desde el navegador y una terminal, sin conocimientos de servidores. Tiempo estimado: 2 a 3
 horas la primera vez.
 
@@ -297,7 +297,7 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
       ejecución (`JobRun`) y Vercel → Logs la petición del cron. Vercel no reintenta un cron fallido:
       si falló, repite el `curl.exe`.
 - [ ] Vercel → Logs sin el aviso de «sin IP confiable» (`TRUSTED_PROXY_HOPS=1`).
-- [ ] Con IA real: genera una propuesta en «Vende con IA» y revisa el gasto en `/admin/ia` y en
+- [ ] Con IA real: genera una propuesta en «Sube y vende» y revisa el gasto en `/admin/ia` y en
       OpenRouter.
 
 ## 14. Respaldos
@@ -362,7 +362,7 @@ completo está en `docs/legal/00-marco-legal-2026.md` (§2.7, encargados y trans
   Vercel Inc. (funciones en `iad1` y registros), Neon/Databricks (base en `aws-us-east-1`),
   Cloudflare Inc. (fotos, bucket con sugerencia ENAM) y, con IA real, OpenRouter Inc. y el proveedor
   del modelo al que enruta. Estas regiones son las que fija esta guía: confírmalas en cada consola.
-- Son **encargados** (tratan datos por cuenta de VendeIA): mandarles datos no es una transferencia,
+- Son **encargados** (tratan datos por cuenta de Estreno): mandarles datos no es una transferencia,
   pero la relación debe constar en un contrato de encargo. El aviso de privacidad de la app promete
   nombrarlos con su país: antes del primer vendedor real hay que completar «Encargados y
   transferencias» y el proveedor de IA en `src/app/(legal)/privacidad/page.tsx` y subir

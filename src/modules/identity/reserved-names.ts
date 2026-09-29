@@ -10,8 +10,12 @@
  * como la «I» mayúscula que imita («VendelA») y se toleran un par de letras de otros alfabetos.
  */
 
-/** Marca de la plataforma: no puede aparecer en ningún nombre (tampoco «Vende IA» o «vende_ia»). */
-const BRAND = "vendeia";
+/**
+ * Marcas de la plataforma: ninguna puede aparecer en un nombre (tampoco «Vende IA» o «vende_ia»).
+ * «Estreno» es la marca vigente (ADR-041); «VendeIA» fue el nombre provisional y sigue reservado
+ * para que nadie ocupe el hueco.
+ */
+const BRANDS = ["estreno", "vendeia"] as const;
 
 /** Palabras de rol: un nombre formado solo por ellas («Soporte técnico») suplanta a la plataforma. */
 const ROLE_WORDS = new Set([
@@ -78,6 +82,7 @@ const RESERVED_USERNAMES = new Set([
   "api",
   "media",
   "vendeia",
+  "estreno",
   "equipo",
   "oficial",
 ]);
@@ -85,7 +90,7 @@ const RESERVED_USERNAMES = new Set([
 /** Un usuario no puede empezar así: `equipo.<comunidad>` es el espacio de las cuentas editoriales. */
 const RESERVED_USERNAME_PREFIXES = [
   "equipo",
-  BRAND,
+  ...BRANDS,
   "admin",
   "soporte",
   "oficial",
@@ -285,17 +290,21 @@ function brandSkeleton(value: string) {
   );
 }
 
-/** La marca en el esqueleto, con a lo más `MAX_UNKNOWN_IN_BRAND` letras desconocidas en su lugar. */
+/** Una marca en el esqueleto, con a lo más `MAX_UNKNOWN_IN_BRAND` letras desconocidas en su lugar. */
 function containsBrand(skeleton: string) {
-  if (skeleton.includes(BRAND)) return true;
+  return BRANDS.some((brand) => containsWord(skeleton, brand));
+}
+
+function containsWord(skeleton: string, brand: string) {
+  if (skeleton.includes(brand)) return true;
   if (!skeleton.includes(UNKNOWN)) return false;
-  for (let start = 0; start + BRAND.length <= skeleton.length; start += 1) {
+  for (let start = 0; start + brand.length <= skeleton.length; start += 1) {
     let unknown = 0;
     let matches = true;
-    for (let index = 0; index < BRAND.length; index += 1) {
+    for (let index = 0; index < brand.length; index += 1) {
       const char = skeleton[start + index];
       if (char === UNKNOWN) unknown += 1;
-      else if (char !== BRAND[index]) {
+      else if (char !== brand[index]) {
         matches = false;
         break;
       }
@@ -345,7 +354,7 @@ export function isReservedUsername(username: string): boolean {
     const readable = segments.map(read);
     const compact = readable.join("");
     return (
-      compact.includes(BRAND) ||
+      BRANDS.some((brand) => compact.includes(brand)) ||
       usernamePrefixes.some((prefix) => compact.startsWith(prefix)) ||
       readable.some((segment) => usernameSegments.has(segment))
     );

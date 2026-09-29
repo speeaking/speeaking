@@ -28,7 +28,7 @@ describe("Composer", () => {
     );
   });
 
-  it("no tiene el botón lima de Vende con IA", () => {
+  it("no tiene el botón lima de Sube y vende", () => {
     render(<Composer firstName="Ana" displayName="Ana" username="ana" avatarUrl={null} />);
 
     expect(screen.queryByText(/Vende/)).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
 /**
- * Cifras de la propuesta de "Vende con IA" que decide el CÓDIGO, no la IA (P2, SEC-28): el rango de
+ * Cifras de la propuesta de "Sube y vende" que decide el CÓDIGO, no la IA (P2, SEC-28): el rango de
  * precio de prueba y el presupuesto diario inicial. Lo que devuelva el proveedor en esos campos se
  * descarta y se reemplaza por estos cálculos; la IA solo redacta la explicación.
  */

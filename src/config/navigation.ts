@@ -73,7 +73,7 @@ export const studioNav: readonly NavItem[] = [
   { href: "/studio", label: "Resumen", icon: LayoutDashboard, match: "exact" },
   { href: "/studio/productos", label: "Productos", icon: Package },
   { href: "/studio/contenido", label: "Contenido", icon: Clapperboard },
-  { href: "/studio/vende-con-ia", label: "Vende con IA", icon: Sparkles },
+  { href: "/studio/sube-y-vende", label: "Sube y vende", icon: Sparkles },
   { href: "/studio/campanas", label: "Campañas", icon: Megaphone },
   { href: "/studio/pedidos", label: "Pedidos", icon: ReceiptText },
   { href: "/studio/analitica", label: "Analítica", icon: ChartColumn },

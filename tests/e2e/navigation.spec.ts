@@ -59,16 +59,16 @@ test.describe("navegación", () => {
         "href",
         "/registro",
       );
-      // Y la columna muestra todas las comunidades y la entrada a Vende con IA (sin Studio).
+      // Y la columna muestra todas las comunidades y la entrada a Sube y vende (sin Studio).
       await expect(
         page
           .getByRole("region", { name: "Comunidades", exact: true })
           .getByRole("link", { name: "Gaming", exact: true }),
       ).toBeVisible();
       const sell = page.getByRole("region", { name: "Para vender", exact: true });
-      await expect(sell.getByRole("link", { name: "Vende con IA" })).toHaveAttribute(
+      await expect(sell.getByRole("link", { name: "Sube y vende" })).toHaveAttribute(
         "href",
-        "/studio/vende-con-ia",
+        "/studio/sube-y-vende",
       );
       await expect(sell.getByRole("link", { name: "Ir a Studio" })).toHaveCount(0);
     }
@@ -130,7 +130,7 @@ test.describe("navegación", () => {
       page.getByRole("heading", { level: 2, name: "Aún no guardas nada" }),
     ).toBeVisible();
 
-    // En una ventana baja la columna tiene scroll propio: Vende con IA siempre se alcanza.
+    // En una ventana baja la columna tiene scroll propio: Sube y vende siempre se alcanza.
     await page.setViewportSize({ width: 1352, height: 643 });
     const rail = nav.locator("..");
     const box = await rail.evaluate((element) => ({
@@ -140,11 +140,11 @@ test.describe("navegación", () => {
     }));
     expect(box.overflowY).toBe("auto");
     expect(box.bottom).toBeLessThanOrEqual(box.viewport);
-    const sell = rail.getByRole("link", { name: "Vende con IA" });
+    const sell = rail.getByRole("link", { name: "Sube y vende" });
     await sell.scrollIntoViewIfNeeded();
     await expect(sell).toBeInViewport({ ratio: 1 });
     await sell.click();
-    await expect(page).toHaveURL("/studio/vende-con-ia");
+    await expect(page).toHaveURL("/studio/sube-y-vende");
   });
 
   test("la búsqueda global no distingue acentos y dice cuando no hay resultados", async ({

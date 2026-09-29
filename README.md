@@ -1,7 +1,9 @@
-# VendeIA (nombre provisional)
+# Estreno
 
-Red social de entretenimiento y descubrimiento donde el comercio aparece de forma natural y la IA
-ayuda a vender: "Tú tienes el producto. La IA encuentra cómo venderlo."
+Red social de entretenimiento y descubrimiento donde el comercio aparece de forma natural. Lema:
+«Descubre, pruébatelo, estrena». Para quien compra: «Dime qué necesitas y te ayudo a encontrarlo,
+combinarlo y verlo puesto». Para quien vende: «Sube una foto, pon tu precio y te ayudamos a
+presentarlo y a encontrar compradores».
 
 - **Mercado inicial:** México (MXN), piloto en la Ciudad de México.
 - **Estado:** MVP 0.1 — Sprint 1 completo, núcleo de compra del Sprint 2 y primera versión de la

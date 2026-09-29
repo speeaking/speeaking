@@ -35,14 +35,14 @@ saturar la barra (el documento de visión proponía 7 secciones).
 | Inicio "Para ti"     | Feed con posts, productos integrados y chips comprables; like/comentar/guardar                                                         | 1.5      |
 | Descubrir            | Búsqueda, comunidades, tendencias, creadores                                                                                           | 1.5–1.6  |
 | Comunidad            | Portada, unirse, feed del nicho                                                                                                        | 1.5      |
-| Crear (hoja)         | Publicación · Producto · ✨ Vende con IA                                                                                               | 1.5–1.8  |
+| Crear (hoja)         | Publicación · Producto · ✨ Sube y vende                                                                                               | 1.5–1.8  |
 | Publicación          | Detalle, comentarios, producto asociado                                                                                                | 1.5      |
 | Producto (pública)   | Galería, precio, vendedor, ubicación, disponibilidad, envío, garantía, compartir                                                       | 1.6      |
 | Comprar              | Categorías, búsqueda, filtros                                                                                                          | 1.6 / S2 |
 | Carrito / Checkout   | Una orden por vendedor, pago simulado, confirmación                                                                                    | S2       |
 | Perfil               | Publicaciones, productos (si vende), seguidores, activar "Vender"                                                                      | 1.4      |
 | Ajustes y privacidad | Personalización on/off, descargar/borrar datos                                                                                         | 1.4 / S4 |
-| Studio (vendedor)    | Resumen (beneficio, ventas, pedidos, productos, visitas, conversión), Productos, Contenido, Vende con IA, Campañas, Pedidos, Analítica | 1.7      |
+| Studio (vendedor)    | Resumen (beneficio, ventas, pedidos, productos, visitas, conversión), Productos, Contenido, Sube y vende, Campañas, Pedidos, Analítica | 1.7      |
 | Centro de decisiones | Propuestas del motor de automejora: aprobar, rechazar, revertir                                                                        | S2–S3    |
 
 ## 2. Recorridos
@@ -52,7 +52,7 @@ saturar la barra (el documento de visión proponía 7 secciones).
   vendedor o a la comunidad.
 - **Comprador orgánico:** registro → elige comunidades → "Para ti" → interactúa → el Commerce Engine
   detecta intención → producto → compra.
-- **Vendedor:** registro → Crear → Vende con IA → "Tengo 50 AirPods Pro 2, me costaron $2,400, los
+- **Vendedor:** registro → Crear → Sube y vende → "Tengo 50 AirPods Pro 2, me costaron $2,400, los
   vendo a $3,499" → propuesta (cifras calculadas por código) → "Crear producto con esta propuesta" (P3)
   → publicar + post automático → kit para compartir → ventas → el Studio muestra su beneficio.
 - **Creador (V3):** publica un video con producto etiquetado → comisión por venta atribuida
@@ -62,7 +62,7 @@ saturar la barra (el documento de visión proponía 7 secciones).
 
 | Capacidad                           | V0.1                                 | Después                                  |
 | ----------------------------------- | ------------------------------------ | ---------------------------------------- |
-| Propuesta de venta (Vende con IA)   | Proveedor simulado + salida validada | LLM real con salida estructurada         |
+| Propuesta de venta (Sube y vende)   | Proveedor simulado + salida validada | LLM real con salida estructurada         |
 | Cálculos financieros                | Código determinista (nunca IA)       | Igual                                    |
 | Generación de contenido y variantes | Interfaz + simulado                  | LLM real; imagen/video vía proveedores   |
 | Contenido precargado de comunidades | Semillas curadas y etiquetadas       | Pipeline editorial asistido por IA       |

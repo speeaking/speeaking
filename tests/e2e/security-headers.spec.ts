@@ -197,7 +197,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
 
     // Studio.
     await visit(page, collected, "/studio");
-    await visit(page, collected, "/studio/vende-con-ia");
+    await visit(page, collected, "/studio/sube-y-vende");
 
     // Checkout con un producto semilla en el carrito.
     await visit(page, collected, productPath);

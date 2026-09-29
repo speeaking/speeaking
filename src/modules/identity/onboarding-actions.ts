@@ -54,7 +54,7 @@ export async function completeOnboardingAction(
 
   // Quien viene a vender entra directo a "¿Qué quieres vender hoy?" (P6).
   if (parsed.data.goals.includes("SELL")) {
-    redirect("/studio/vende-con-ia");
+    redirect("/studio/sube-y-vende");
   }
   // Sin otro destino (o de vuelta al inicio), el inicio abre con el momento «¡Listo, …!». Si llegó
   // desde un enlace (p. ej. una publicación compartida), regresa a él.

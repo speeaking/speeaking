@@ -230,7 +230,7 @@ async function seedEditorialContent(communityIds: Map<string, string>) {
   let created = 0;
   for (const [communityIndex, community] of communities.entries()) {
     const communityId = communityIds.get(community.slug)!;
-    // La comunidad ya se muestra junto al autor, así que la cuenta se llama solo «Equipo VendeIA».
+    // La comunidad ya se muestra junto al autor, así que la cuenta se llama solo «Equipo Estreno».
     const editorName = `Equipo ${siteConfig.name}`;
     const editor = await upsertUser(db, {
       email: `editorial.${community.slug}@vendeia.invalid`,

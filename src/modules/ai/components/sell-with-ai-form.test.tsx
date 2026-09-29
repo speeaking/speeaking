@@ -84,7 +84,7 @@ describe("SellWithAiForm: la etiqueta sigue a la propuesta que llegó (ADR-038)"
 
   it("un error de IA no disponible se muestra con la salida a mano", async () => {
     generateProposalAction.mockResolvedValue({
-      error: "Por ahora publica tu producto a mano: Vende con IA no está disponible.",
+      error: "Por ahora publica tu producto a mano: la ayuda para redactar no está disponible.",
     });
     render(<SellWithAiForm />);
 
@@ -95,15 +95,15 @@ describe("SellWithAiForm: la etiqueta sigue a la propuesta que llegó (ADR-038)"
     );
   });
 
-  it("en el piloto el distintivo no usa la lima de la IA ni se presenta como IA de verdad", () => {
+  it("el distintivo es neutro (sin lima) y en el piloto dice que la IA está simulada", () => {
     const { unmount } = render(<SellWithAiForm simulated />);
-    const pilot = screen.getByText("Vende con IA · piloto");
+    const pilot = screen.getByText("Sube y vende · piloto");
     expect(pilot).not.toHaveClass("bg-ai");
     expect(screen.getByText(/Piloto: la IA está simulada/)).toBeInTheDocument();
     unmount();
 
     render(<SellWithAiForm />);
-    expect(screen.getByText("Vende con IA")).toHaveClass("bg-ai");
+    expect(screen.getByText("Sube y vende")).not.toHaveClass("bg-ai");
     expect(screen.queryByText(/Piloto/)).not.toBeInTheDocument();
   });
 });

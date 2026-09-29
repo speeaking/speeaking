@@ -28,10 +28,10 @@ typecheck, lint, formato y build de producción en verde. Seguridad: ver
 | 1.5  | Publicar con imágenes, feed "Para ti" (RecommendationEngine + Commerce Engine v0), likes, comentarios, guardados, comunidades, impresiones | ✅     |
 | 1.6  | Productos con costo privado y datos P4, página pública con compartir, preguntas rápidas y relacionados, Comprar con búsqueda               | ✅     |
 | 1.7  | Studio: beneficio (métrica norte), ventas, pedidos, productos, visitas, conversión, camino a la primera venta                              | ✅     |
-| 1.8  | Vende con IA: proveedor simulado detrás de `AIProvider`, propuesta validada, cifras P2, guardián de presupuesto, P3                        | ✅     |
+| 1.8  | Sube y vende: proveedor simulado detrás de `AIProvider`, propuesta validada, cifras P2, guardián de presupuesto, P3                        | ✅     |
 
 **Definición de terminado cumplida** (pruebas E2E): registrarme, iniciar sesión, crear perfil, entrar
-al feed, crear publicación, crear producto, ver producto, entrar al dashboard y entrar a Vende con IA.
+al feed, crear publicación, crear producto, ver producto, entrar al dashboard y entrar a Sube y vende.
 
 ## Sprint 2 — Comprar (fases 7–9) 🟡
 
@@ -58,7 +58,7 @@ Detalle en [`design/rediseno-revista.md`](design/rediseno-revista.md).
 | Fase                                                                                                  | Estado |
 | ----------------------------------------------------------------------------------------------------- | ------ |
 | F0 · Paleta rosa mexicano, tinte por comunidad (AA) y `CommunityAvatar`                               | ✅     |
-| F1 · Barra superior y columna izquierda de escritorio (única entrada a Vende con IA en «Para vender») | ✅     |
+| F1 · Barra superior y columna izquierda de escritorio (única entrada a Sube y vende en «Para vender») | ✅     |
 | F2 · PostCard v2 con contadores honestos y tarjeta de producto P4                                     | ✅     |
 | F3 · Variantes al pintar (portada, tipográfica, estándar)                                             | ✅     |
 | F4 · Columna derecha con datos reales (debates, comunidades en movimiento, lo que buscas)             | ✅     |

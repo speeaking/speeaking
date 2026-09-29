@@ -13,7 +13,7 @@ const quickAction =
 /**
  * Compositor del inicio (F5): «¿Qué quieres compartir, Sofía?» como un campo que abre la página de
  * crear publicación, más «Foto» y «Pregunta» con una pista en la URL (`?tipo=`). Sin el botón lima
- * de Vende con IA: su única entrada en escritorio es la columna izquierda.
+ * de Sube y vende: su única entrada en escritorio es la columna izquierda.
  */
 export function Composer({
   firstName,

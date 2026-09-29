@@ -237,7 +237,7 @@ export function AdKitPanel({
             </Button>
             <p className="text-xs text-ink-2">
               {simulated
-                ? `Llevas ${usage.used} de ${formatCount(usage.limit, "uso", "usos")} este mes (cuentan también las propuestas de Vende con IA).`
+                ? `Llevas ${usage.used} de ${formatCount(usage.limit, "uso", "usos")} este mes (cuentan también las propuestas de Sube y vende).`
                 : `Llevas ${usage.used} de ${formatCount(usage.limit, "generación", "generaciones")} con IA este mes (cuenta todo lo que haces con IA).`}
             </p>
           </form>

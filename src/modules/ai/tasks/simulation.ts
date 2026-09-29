@@ -12,7 +12,7 @@ import { AIProviderError } from "@/server/providers/ai/errors";
  * - `unavailable`: producción con el simulador SIN esa bandera (p. ej. una ruta de `ai.routing` al
  *   simulador como interruptor de apagado). No se entregan plantillas: la función ofrece hacerlo a
  *   mano («Por ahora escribe tu anuncio a mano» en el kit, «Por ahora publica tu producto a mano» en
- *   Vende con IA), y si aun así se llama, el simulador falla (`simulatedOutput`).
+ *   Sube y vende), y si aun así se llama, el simulador falla (`simulatedOutput`).
  *
  * En las métricas, una salida simulada nunca cuenta como generación de IA, en ningún entorno
  * (`countsAsAiGeneration`).
@@ -29,7 +29,7 @@ export const AI_OUTPUT_LABEL = "Creado con ayuda de IA";
 export const SIMULATED_OUTPUT_LABEL = "Texto de ejemplo (IA simulada)";
 /** Salida a mano del kit de anuncios sin IA disponible. */
 export const WRITE_BY_HAND = "Por ahora escribe tu anuncio a mano";
-/** Salida a mano de «Vende con IA» sin IA disponible (la misma frase que su mensaje de error). */
+/** Salida a mano de «Sube y vende» sin IA disponible (la misma frase que su mensaje de error). */
 export const PUBLISH_BY_HAND = "Por ahora publica tu producto a mano";
 
 export type SimulationConfig = {

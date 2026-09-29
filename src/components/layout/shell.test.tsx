@@ -123,9 +123,9 @@ describe("SideNav", () => {
     expect(within(discover).getAllByRole("button", { name: "Unirme" })).toHaveLength(2);
 
     const sell = screen.getByRole("region", { name: "Para vender" });
-    expect(within(sell).getByRole("link", { name: "Vende con IA" })).toHaveAttribute(
+    expect(within(sell).getByRole("link", { name: "Sube y vende" })).toHaveAttribute(
       "href",
-      "/studio/vende-con-ia",
+      "/studio/sube-y-vende",
     );
     expect(within(sell).getByRole("link", { name: "Ir a Studio" })).toHaveAttribute(
       "href",
@@ -151,7 +151,7 @@ describe("SideNav", () => {
     expect(screen.queryByRole("region", { name: "Para descubrir" })).toBeNull();
   });
 
-  it("sin sesión: solo secciones públicas, todas las comunidades y Vende con IA sin Studio", () => {
+  it("sin sesión: solo secciones públicas, todas las comunidades y Sube y vende sin Studio", () => {
     render(<SideNav viewer={null} communities={suggestions} />);
 
     const nav = screen.getByRole("navigation", { name: "Navegación principal" });
@@ -164,11 +164,11 @@ describe("SideNav", () => {
     expect(within(all).getAllByRole("link")).toHaveLength(2);
     expect(screen.queryByRole("region", { name: "Tus comunidades" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Unirme" })).toBeNull();
-    // Maqueta de visitante: la entrada a Vende con IA sigue ahí; «Ir a Studio» no (no hay panel).
+    // Maqueta de visitante: la entrada a Sube y vende sigue ahí; «Ir a Studio» no (no hay panel).
     const sell = screen.getByRole("region", { name: "Para vender" });
-    expect(within(sell).getByRole("link", { name: "Vende con IA" })).toHaveAttribute(
+    expect(within(sell).getByRole("link", { name: "Sube y vende" })).toHaveAttribute(
       "href",
-      "/studio/vende-con-ia",
+      "/studio/sube-y-vende",
     );
     expect(screen.queryByRole("link", { name: /Studio/ })).toBeNull();
   });

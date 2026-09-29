@@ -1,6 +1,7 @@
 # Documentación
 
-> "VendeIA" es un nombre provisional interno (ADR-014).
+> **Estreno** es la marca de la plataforma (ADR-041); «Sube y vende» es la función del vendedor.
+> Registro de dominio y consulta en el IMPI pendientes del fundador.
 
 | Documento                                      | Contenido                                                             |
 | ---------------------------------------------- | --------------------------------------------------------------------- |

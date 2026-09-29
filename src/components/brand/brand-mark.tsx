@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca: burbuja de conversación (lo social) con una "v" de aprobación y una chispa (la IA).
- * Es la misma figura que `public/brand/mark.svg` (fuente de los íconos de la PWA).
+ * Marca (ADR-041): la etiqueta de estreno, la que se le quita a algo nuevo antes de usarlo. Una
+ * sola figura en el rosa de marca con el ojal en blanco; sin la chispa de la IA. Es la misma figura
+ * que `public/brand/mark.svg` (fuente de los íconos de la PWA) y `src/app/icon.svg`.
  */
 export function BrandMark({ className, title }: { className?: string; title?: string }) {
   return (
@@ -14,23 +15,10 @@ export function BrandMark({ className, title }: { className?: string; title?: st
       aria-label={title}
     >
       <path
-        d="M20 8h18a14 14 0 0 1 14 14v12a14 14 0 0 1-14 14H25l-11 8 2.5-9.2A14 14 0 0 1 6 34V22A14 14 0 0 1 20 8z"
+        d="M27.5 6.5h23a7 7 0 0 1 7 7v23a7 7 0 0 1-2.05 4.95l-22.5 22.5a7 7 0 0 1-9.9 0L7.6 48.5a7 7 0 0 1 0-9.9l14.95-14.95V13.5a7 7 0 0 1 4.95-7z"
         className="fill-primary"
       />
-      <path
-        d="M19 24.5l9.5 11.5 9.5-11.5"
-        fill="none"
-        strokeWidth={5.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="stroke-primary-foreground"
-      />
-      <path
-        d="M54 1.5c1.1 5.6 2.4 6.9 8 8-5.6 1.1-6.9 2.4-8 8-1.1-5.6-2.4-6.9-8-8 5.6-1.1 6.9-2.4 8-8z"
-        strokeWidth={3}
-        strokeLinejoin="round"
-        className="fill-ai stroke-background"
-      />
+      <circle cx="45" cy="19" r="5.5" className="fill-primary-foreground" />
     </svg>
   );
 }

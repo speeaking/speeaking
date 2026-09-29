@@ -64,7 +64,7 @@ async function categoryOptions(): Promise<CategoryOption[]> {
 }
 
 /**
- * Genera la propuesta de "Vende con IA": revisa la política de productos y que haya IA disponible
+ * Genera la propuesta de "Sube y vende": revisa la política de productos y que haya IA disponible
  * (ADR-038; si no, `UNAVAILABLE` sin gastar la cuota), reserva cuota y presupuesto ANTES de llamar
  * (SEC-19), llama al modelo que enruta `ai.routing` (sin el costo del vendedor, H3), pone las cifras
  * del código, valida la forma, revisa el contenido (SEC-28) y registra uso, costo y latencia. Lo que

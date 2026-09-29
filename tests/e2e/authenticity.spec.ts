@@ -174,7 +174,7 @@ test("una réplica declarada original: sin verificar para quien compra, reporte,
       admin.page.getByText("Listo: el producto muestra «Comprobante revisado»."),
     ).toBeVisible();
     await buyer.page.goto(plainPath);
-    await expect(buyer.page.getByText("Comprobante revisado por VendeIA").first()).toBeVisible();
+    await expect(buyer.page.getByText("Comprobante revisado por Estreno").first()).toBeVisible();
     await expect(buyer.page.getByText(/No es una certificación ni una garantía/)).toBeVisible();
 
     await review.getByRole("button", { name: "Ocultar producto" }).click();

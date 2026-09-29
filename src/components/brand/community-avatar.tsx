@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./brand-mark";
 
@@ -12,7 +13,7 @@ export type CommunityAvatarSize = keyof typeof SIZES;
 
 /**
  * Avatar de comunidad: su emoji sobre su color (`community-tile`), en un cuadrado redondeado como
- * ícono de app. `editorial` agrega el sello de VendeIA para las cuentas del equipo.
+ * ícono de app. `editorial` agrega el sello de Estreno para las cuentas del equipo.
  *
  * Accesibilidad: el emoji nunca se lee. Si el nombre de la comunidad ya está visible junto al
  * avatar, usa `decorative` para que el lector de pantalla no lo repita; si no, el avatar se
@@ -35,7 +36,7 @@ export function CommunityAvatar({
   decorative?: boolean;
   className?: string;
 }) {
-  const label = editorial ? `${name}, cuenta editorial de VendeIA` : name;
+  const label = editorial ? `${name}, cuenta editorial de ${siteConfig.name}` : name;
   return (
     <span
       style={{ "--hue": hue } as CSSProperties}

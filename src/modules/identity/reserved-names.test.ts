@@ -3,6 +3,12 @@ import { isPlatformImpersonation, isReservedUsername } from "./reserved-names";
 
 describe("isPlatformImpersonation (SEC-18)", () => {
   it.each([
+    "Equipo Estreno",
+    "estreno",
+    "Estreno Oficial",
+    "Soporte Estreno",
+    "E.s.t.r.e.n.o",
+    "Estrén0",
     "Equipo VendeIA",
     "equipo vendeia",
     "VendeIA",
@@ -119,6 +125,9 @@ describe("isReservedUsername (SEC-18)", () => {
     "equipo.soporte",
     "equipo_moda",
     "equipogaming",
+    "estreno",
+    "estreno.oficial",
+    "tienda.estreno",
     "vendeia",
     "vendeia.oficial",
     "vendeia.mx",

@@ -28,11 +28,11 @@ describe("CommunityAvatar", () => {
     expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("las cuentas editoriales llevan el sello de VendeIA y lo dicen", () => {
+  it("las cuentas editoriales llevan el sello de Estreno y lo dicen", () => {
     const { container } = render(<CommunityAvatar {...gaming} editorial />);
 
     expect(
-      screen.getByRole("img", { name: "Gaming, cuenta editorial de VendeIA" }),
+      screen.getByRole("img", { name: "Gaming, cuenta editorial de Estreno" }),
     ).toBeInTheDocument();
     expect(container.querySelector("svg")).not.toBeNull();
   });

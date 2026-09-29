@@ -113,7 +113,7 @@ export const serverEnvSchema = z
       z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. qwen/qwen3.5-9b)."),
     ),
     // IA simulada en producción (ADR-038): solo para un piloto cerrado, como decisión explícita. Con
-    // `mock`, «Vende con IA» y el kit de anuncios entregan textos de plantilla, no de un modelo. En
+    // `mock`, «Sube y vende» y el kit de anuncios entregan textos de plantilla, no de un modelo. En
     // desarrollo y pruebas no hace falta; en producción, sin ella el arranque falla con `mock`.
     ALLOW_SIMULATED_AI: z.stringbool({ error: "Debe ser true o false." }).default(false),
     // Secreto de las tareas programadas (`/api/cron/*`, cabecera `Authorization: Bearer …`).

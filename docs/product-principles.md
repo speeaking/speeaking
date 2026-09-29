@@ -1,6 +1,7 @@
 # Principios de producto
 
-> "VendeIA" es un nombre provisional interno. "Vende con IA" es el nombre de la función para vendedores.
+> **Estreno** es la marca de la plataforma (ADR-041; dominio e IMPI pendientes). «Sube y vende» es la
+> función para vendedores y «Pruébatelo», «Crea mi look» y «Completa mi look» las de compra asistida.
 > Mercado inicial: México (MXN, es-MX).
 
 ## Definición de trabajo
@@ -191,7 +192,7 @@ decimos «falso» ni «certificado».
    - **Reportar** en productos y publicaciones (posible falsificación, estafa, prohibido, spam,
      ofensivo, otro): con límite de frecuencia, uno por persona y objetivo, anónimo para el vendedor.
    - **Cola del equipo** en `/admin/moderacion`: revisar el comprobante («Comprobante revisado por
-     VendeIA», que dice explícitamente que no es certificación ni garantía), rechazar la
+     Estreno», que dice explícitamente que no es certificación ni garantía), rechazar la
      declaración (queda genérico), ocultar, restaurar y descartar reportes. Todo queda en la
      bitácora con quién lo hizo. Oculto = fuera del feed, la búsqueda, Comprar, «similares»,
      Guardados, los perfiles y su página (salvo su dueño y el equipo).

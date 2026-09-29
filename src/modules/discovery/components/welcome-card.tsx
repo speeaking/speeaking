@@ -45,7 +45,10 @@ export function WelcomeCard() {
       </p>
       <p className="mt-4 border-t border-primary-foreground/30 pt-3 text-xs">
         ¿Vendes algo?{" "}
-        <Link href="/studio/vende-con-ia" className="font-bold underline underline-offset-2">
+        <Link
+          href={siteConfig.sellerFeaturePath}
+          className="font-bold underline underline-offset-2"
+        >
           Hazlo con {siteConfig.sellerFeatureName}
         </Link>
       </p>

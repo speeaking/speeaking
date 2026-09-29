@@ -50,12 +50,12 @@ test.describe("cuenta", () => {
     await expect(password).toHaveValue("clave-visible-123");
   });
 
-  test("elegir 'Vender' en el onboarding lleva directo a Vende con IA", async ({ page }) => {
+  test("elegir 'Vender' en el onboarding lleva directo a Sube y vende", async ({ page }) => {
     const user = uniqueUser();
     await register(page, user);
     await completeOnboarding(page, user, { sell: true });
 
-    await expect(page).toHaveURL("/studio/vende-con-ia");
+    await expect(page).toHaveURL("/studio/sube-y-vende");
   });
 
   test("cerrar sesión e iniciar sesión de nuevo", async ({ page, isMobile }) => {

@@ -40,7 +40,7 @@ export async function generateProposalAction(
   _previous: ProposalState,
   formData: FormData,
 ): Promise<ProposalState> {
-  const viewer = await requireOnboardedViewer("/studio/vende-con-ia");
+  const viewer = await requireOnboardedViewer("/studio/sube-y-vende");
   const parsed = requestSchema.safeParse({
     text: formData.get("text"),
     productName: formData.get("productName"),
@@ -106,7 +106,7 @@ export async function generateProposalAction(
     return {
       error: aiErrorMessage(
         error,
-        `${PUBLISH_BY_HAND}: Vende con IA no está disponible en este momento. Hazlo desde Productos → Nuevo producto.`,
+        `${PUBLISH_BY_HAND}: la ayuda para redactar no está disponible en este momento. Hazlo desde Productos → Nuevo producto.`,
         await aiErrorMode(error, "sale_proposal"),
       ),
     };

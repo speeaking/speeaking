@@ -69,11 +69,11 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
         <EmptyState
           icon={Package}
           title="Aún no tienes productos"
-          description="Publica tu primer producto o deja que la IA lo arme por ti."
+          description="Sube una foto, pon tu precio y te ayudamos a armar la publicación."
           action={
-            <Link href="/studio/vende-con-ia" className={buttonVariants()}>
+            <Link href="/studio/sube-y-vende" className={buttonVariants()}>
               <Sparkles data-icon="inline-start" />
-              Vende con IA
+              Sube y vende
             </Link>
           }
         />

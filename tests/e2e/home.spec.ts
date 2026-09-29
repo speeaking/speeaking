@@ -75,7 +75,7 @@ test.describe("inicio: visitante", () => {
     await page.locator('main article a[href^="/p/"]').first().click();
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
 
-    const prompt = page.getByRole("region", { name: /^Únete a .+ en VendeIA$/ });
+    const prompt = page.getByRole("region", { name: /^Únete a .+ en Estreno$/ });
     await expect(prompt).toBeVisible();
     await expect(prompt.getByRole("link", { name: "Crear cuenta gratis" })).toHaveAttribute(
       "href",

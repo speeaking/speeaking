@@ -3,9 +3,9 @@ import { registerAndOnboard, TINY_PNG } from "./helpers";
 
 const SALE_TEXT = "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.";
 
-/** Vendedor: Vende con IA → propuesta → activar tienda → producto prellenado → publicado. */
+/** Vendedor: Sube y vende → propuesta → activar tienda → producto prellenado → publicado. */
 async function sellWithAi(page: Page) {
-  await page.goto("/studio/vende-con-ia");
+  await page.goto("/studio/sube-y-vende");
   await page.getByLabel("¿Qué quieres vender hoy?").fill(SALE_TEXT);
 
   // Los números se detectan del texto y la persona los confirma (P2).
@@ -64,7 +64,7 @@ async function fillAddress(page: Page) {
 }
 
 test.describe("comercio", () => {
-  test("Vende con IA crea un producto publicado y su costo nunca llega al comprador", async ({
+  test("Sube y vende crea un producto publicado y su costo nunca llega al comprador", async ({
     page,
     browser,
     isMobile,

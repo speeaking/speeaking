@@ -11,7 +11,7 @@ import type { ViewerSummary } from "@/modules/identity/viewer-summary";
  * Columna derecha de escritorio «Para ti» (F4 + F6b), solo con datos reales.
  *
  * - Con sesión: Lo que buscas, Debates abiertos, Comunidades en movimiento, Gente de tus
- *   comunidades y el pie legal. Vende con IA vive solo en la columna izquierda (una entrada en
+ *   comunidades y el pie legal. Sube y vende vive solo en la columna izquierda (una entrada en
  *   escritorio, decisión del rediseño).
  * - Visitante: tarjeta de bienvenida, Debates abiertos, Comunidades en movimiento y el pie legal.
  *

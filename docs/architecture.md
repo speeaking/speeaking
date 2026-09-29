@@ -62,7 +62,7 @@ src/
 | `catalog`   | Productos, categorías, costo privado, datos estructurados de envío y garantía                                                                                 |
 | `commerce`  | Carrito, checkout, órdenes, pagos simulados (fuera del alcance de esta etapa, ADR-033)                                                                        |
 | `trust`     | Riesgo de falsificación por reglas, reportes, comprobante del vendedor y cola de moderación (ADR-036)                                                         |
-| `ai`        | Vende con IA, kit de anuncios, proveedor por tarea (`ai.routing`), presupuesto y cuotas, guardianes, evaluaciones (ADR-031, ADR-034, ADR-038)                 |
+| `ai`        | Sube y vende, kit de anuncios, proveedor por tarea (`ai.routing`), presupuesto y cuotas, guardianes, evaluaciones (ADR-031, ADR-034, ADR-038)                 |
 | `analytics` | `track()`, taxonomía de eventos, atribución, métricas del Studio, impresiones visibles (`/api/impressions`, ADR-037), agregados de solo lectura para el motor |
 | `platform`  | `PlatformSetting` versionado, catálogo de ajustes con riesgo y límites (`tunables.ts`), `applySettingChange`, experimentos y calendario de congelamiento      |
 | `ceo`       | Motor de automejora: métricas diarias, analista, autonomía, experimentos, salvaguardas, operación diaria y Centro de decisiones (ADR-019, ADR-033, ADR-037)   |

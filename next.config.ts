@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    // «Vende con IA» pasó a llamarse «Sube y vende» (ADR-041): los enlaces viejos siguen llegando.
+    return [
+      { source: "/studio/vende-con-ia", destination: "/studio/sube-y-vende", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

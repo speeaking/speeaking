@@ -250,7 +250,7 @@ function ToDiscover({ communities }: { communities: NavCommunities }) {
 }
 
 /**
- * Entrada única a Vende con IA en escritorio. «Ir a Studio» solo con sesión: el visitante aún no
+ * Entrada única a Sube y vende en escritorio. «Ir a Studio» solo con sesión: el visitante aún no
  * tiene panel (al tocar la fila, el servidor lo manda a entrar y lo regresa aquí).
  */
 function ToSell({ signedIn }: { signedIn: boolean }) {
@@ -268,9 +268,12 @@ function ToSell({ signedIn }: { signedIn: boolean }) {
       >
         Para vender
       </RailHeading>
-      <Link href="/studio/vende-con-ia" title={siteConfig.sellerFeatureName} className={rowClass}>
-        {/* Lima: es la función de IA (la única que la usa en la columna). */}
-        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-ai text-ai-foreground">
+      <Link
+        href={siteConfig.sellerFeaturePath}
+        title={siteConfig.sellerFeatureName}
+        className={rowClass}
+      >
+        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary text-ink-2">
           <Sparkles className="size-[17px]" aria-hidden="true" />
         </span>
         <span className={cn(railLabel, "lg:flex-1")}>{siteConfig.sellerFeatureName}</span>
@@ -339,7 +342,7 @@ function AllCommunities({ communities }: { communities: NavCommunities }) {
 
 /**
  * Columna izquierda de escritorio: navegación, tus comunidades (o todas, sin sesión), comunidades
- * para descubrir y la entrada a Vende con IA. Sticky con scroll propio (y desvanecido abajo) para
+ * para descubrir y la entrada a Sube y vende. Sticky con scroll propio (y desvanecido abajo) para
  * que nada se corte en ventanas bajas. Entre md y lg se reduce a íconos.
  */
 export function SideNav({

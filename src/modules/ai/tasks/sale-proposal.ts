@@ -72,7 +72,7 @@ ${PROPOSAL_FINAL_CHECK}`;
 /** Recordatorio al final del mensaje: las frases que más se colaban en las evaluaciones. */
 export const PROPOSAL_FINAL_CHECK = `Antes de responder, revisa cada texto: si dice «no te quedes sin», «hoy mismo», «solo hoy», «se acaban», «garantizado», «garantía», «auténtico», «original», «genuino», «envío» o «a domicilio», o una cifra que no esté en los datos (como «100 %»), reescríbelo sin eso. Termina los llamados a comprar con «Pídelo aquí» o «Aparta el tuyo».`;
 
-/** «Vende con IA»: la propuesta de venta (textos; las cifras las pone el código). */
+/** «Sube y vende»: la propuesta de venta (textos; las cifras las pone el código). */
 export const saleProposalTask: AITask<SaleProposalTaskInput, SaleProposalAiOutput> = {
   task: "sale_proposal",
   promptVersion: "sale-proposal@4",

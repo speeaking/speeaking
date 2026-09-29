@@ -29,11 +29,11 @@ Las columnas laterales llenan la pantalla con **datos reales**: tus comunidades,
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Encabezado              | «Para ti» con la fecha pequeña. **Sin** «Tu edición de hoy»: el juez de vida advirtió que se leía como portal de noticias.                                                                                                                             |
 | Comunidades             | Avatar de comunidad = emoji sobre su color. Por ahora emoji; un set de íconos propio queda para después.                                                                                                                                               |
-| Autor editorial         | La cabecera empieza por la comunidad: avatar de comunidad, nombre de la comunidad e insignia «Editorial» en su color. Debajo, «Equipo VendeIA · hace 11 h». Adiós a las iniciales «GE».                                                                |
+| Autor editorial         | La cabecera empieza por la comunidad: avatar de comunidad, nombre de la comunidad e insignia «Editorial» en su color. Debajo, «Equipo Estreno · hace 11 h». Adiós a las iniciales «GE».                                                                |
 | Contadores              | Los ceros se ocultan y se reemplazan por una invitación honesta («Sé la primera persona en comentar»). Nada inflado.                                                                                                                                   |
 | Comercio                | 1 pieza comercial cada 4 (política existente). El producto de «Lo que buscas» en la columna derecha **cuenta dentro de ese presupuesto** y no se repite si ya está en la primera página del feed. Sin estante fijo de productos.                       |
 | Intención               | El chip neutro «Porque buscas “tenis para correr”» reemplaza al chip lima con destello. El lima queda reservado para la IA. «En tu presupuesto» lo calcula el servidor (P2).                                                                           |
-| Vende con IA            | Una sola entrada en escritorio: una fila en la columna izquierda, sección «Para vender». La columna derecha ya no la repite. Sin tarjeta oscura grande ni botón lima en el compositor.                                                                 |
+| Sube y vende            | Una sola entrada en escritorio: una fila en la columna izquierda, sección «Para vender». La columna derecha ya no la repite. Sin tarjeta oscura grande ni botón lima en el compositor.                                                                 |
 | Búsqueda                | `/buscar` (barra superior en escritorio, lupa en móvil): comunidades, productos y publicaciones, por palabras y sin acentos. Comprar usa la misma búsqueda de productos.                                                                               |
 | Visitantes              | Sin banner oscuro. El feed empieza arriba, con una tarjeta de bienvenida en la columna derecha e invitaciones en contexto («Unirme», «Responder»). En móvil, una tarjeta «Arma tu feed» después de la 2.ª publicación.                                 |
 | Avisos (campana)        | **No** entra en esta iteración: no hay modelo de notificaciones, así que la campana no se muestra hasta que exista.                                                                                                                                    |
@@ -100,7 +100,7 @@ Funcionan con variantes (`has-checked:community-soft`). La receta está en
 
 **Avatar de comunidad.** `<CommunityAvatar name emoji hue size="sm|md|lg" editorial decorative />`
 (`src/components/brand/community-avatar.tsx`). Usa `decorative` cuando el nombre ya está visible al
-lado; `editorial` agrega el sello de VendeIA.
+lado; `editorial` agrega el sello de Estreno.
 
 ## Fases (cada una se entrega y verifica por separado)
 
@@ -110,7 +110,7 @@ Estados: ✅ hecha (según el código) · 🟡 en curso.
 2. **F1 · Estructura de escritorio.** ✅
    - Barra superior md+ con logo, búsqueda, «Crear», carrito y avatar (`src/components/layout/top-bar.tsx`).
    - Rejilla 232 / 680 / 320 alineada (`shellGrid`).
-   - Columna izquierda con navegación, «Tus comunidades», «Para descubrir» y «Para vender»: sticky, con scroll propio y desvanecido. «Para vender» es la **única entrada a Vende con IA en escritorio**.
+   - Columna izquierda con navegación, «Tus comunidades», «Para descubrir» y «Para vender»: sticky, con scroll propio y desvanecido. «Para vender» es la **única entrada a Sube y vende en escritorio**.
    - Datos nuevos: `ViewerSummary.communities` y comunidades sugeridas (`getNavCommunities`).
    - Unirse o salir de una comunidad (y seguir a alguien) revalida todo el layout social: ambas columnas se actualizan sin recargar.
    - «Unirme»/«Miembro» y «Seguir»/«Siguiendo» se nombran por lo que hacen y empiezan con el texto visible («Unirme a Gaming», «Miembro, salir de Gaming»; WCAG 2.5.3), sin `aria-pressed`. Mientras esperan al servidor conservan el foco de teclado.
@@ -126,7 +126,7 @@ Estados: ✅ hecha (según el código) · 🟡 en curso.
    - No cambian el ranking ni las posiciones de impresión.
 5. **F4 · Columna derecha con datos reales.** ✅
    - Debates abiertos (una sola invitación si no hay respuestas), Comunidades en movimiento (7 días) y Lo que buscas (con descartar).
-   - **Sin** fila de Vende con IA: se quitó para no repetir la entrada de la columna izquierda.
+   - **Sin** fila de Sube y vende: se quitó para no repetir la entrada de la columna izquierda.
    - Nueva `dismissIntentAction` con autorización en servicio.
 6. **F5 · Burbujas y compositor.** ✅
    - `CommunityBubbles`: Para ti, Siguiendo, tus comunidades, sugerencias y Explorar. Filtran con `community` o `following`.

@@ -48,9 +48,9 @@ export default async function StudioPage() {
         description={`Últimos ${metrics.days} días`}
         className="px-0 pt-0"
         actions={
-          <Link href="/studio/vende-con-ia" className={buttonVariants()}>
+          <Link href="/studio/sube-y-vende" className={buttonVariants()}>
             <Sparkles data-icon="inline-start" />
-            Vende con IA
+            Sube y vende
           </Link>
         }
       />
@@ -102,17 +102,17 @@ export default async function StudioPage() {
             ))}
           </ol>
           {nextStep.id === "product" ? (
-            <div className="flex flex-wrap gap-2">
-              <Link href="/studio/vende-con-ia" className={buttonVariants()}>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/studio/sube-y-vende" className={buttonVariants({ variant: "outline" })}>
                 <Sparkles data-icon="inline-start" />
-                Crear con IA
+                Sube y vende
               </Link>
               <Link
                 href="/studio/productos/nuevo"
-                className={buttonVariants({ variant: "outline" })}
+                className={buttonVariants({ variant: "link", className: "px-0" })}
               >
                 <Package data-icon="inline-start" />
-                Crear manualmente
+                Publicar a mano
               </Link>
             </div>
           ) : nextStep.id === "share" ? (

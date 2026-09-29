@@ -1,11 +1,16 @@
 /**
- * Marca y mercado. "VendeIA" es un nombre provisional interno (ver docs/decisions.md, ADR-014):
- * cambiarlo aquí debe bastar para renombrar la plataforma.
+ * Marca y mercado (ADR-041). «Estreno» es la marca de la plataforma; «Sube y vende» es la función
+ * del vendedor. Cambiar estas constantes debe bastar para renombrar la interfaz: el nombre técnico
+ * del paquete, la base de datos y las cookies (`vendeia`) son internos y no cambian.
  */
 export const siteConfig = {
-  name: "VendeIA",
-  sellerFeatureName: "Vende con IA",
-  description: "Descubre contenido, descubre productos y compra a quien te inspira.",
+  name: "Estreno",
+  tagline: "Descubre, pruébatelo, estrena.",
+  sellerFeatureName: "Sube y vende",
+  /** Ruta de la función del vendedor (la anterior, `/studio/vende-con-ia`, redirige aquí). */
+  sellerFeaturePath: "/studio/sube-y-vende",
+  description:
+    "Descubre contenido y productos de gente real, pruébatelos con una foto y compra a quien te inspira.",
   country: "MX",
   locale: "es-MX",
   currency: "MXN",

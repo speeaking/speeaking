@@ -1,7 +1,7 @@
-# Aviso de privacidad de VendeIA: integral, simplificado y cookies (borrador)
+# Aviso de privacidad de Estreno: integral, simplificado y cookies (borrador)
 
 > **BORRADOR PARA REVISIÓN LEGAL. NO PUBLICAR TAL CUAL.** Este texto lo preparó el equipo técnico
-> el 2026-09-26 a partir del código de VendeIA y de las fuentes de la Parte F. **No es asesoría
+> el 2026-09-26 a partir del código de Estreno y de las fuentes de la Parte F. **No es asesoría
 > legal.** Un abogado mexicano debe revisarlo antes de publicarlo en `/privacidad`.
 >
 > - **Base:** `docs/legal/00-marco-legal-2026.md` (marco legal) y el código en `main` a esta fecha.
@@ -64,7 +64,7 @@
 
 ## Parte A. Aviso de privacidad integral
 
-**Aviso de privacidad integral de VendeIA**
+**Aviso de privacidad integral de Estreno**
 
 Última actualización: [FECHA DE ÚLTIMA ACTUALIZACIÓN] · Versión: [VERSIÓN, igual a
 `LEGAL_VERSIONS.privacyNotice`]
@@ -83,14 +83,14 @@ claro, escríbenos a [CORREO DE PRIVACIDAD].
 - Tú decides en Ajustes si personalizamos tu feed y si apareces en sugerencias.
 - Usamos un proveedor de inteligencia artificial en Estados Unidos solo para los textos de venta
   que tú pides y para una revisión opcional de autenticidad. La IA nunca decide sola ni sanciona.
-- VendeIA no cobra ni recibe el dinero de tus compras: pagas directo a la tienda.
+- Estreno no cobra ni recibe el dinero de tus compras: pagas directo a la tienda.
 
 ### 1. Quién es responsable de tus datos
 
 | Dato                             | Valor                                                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Responsable                      | [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE]                                                                                       |
-| Nombre comercial                 | VendeIA (nombre provisional)                                                                                                  |
+| Nombre comercial                 | Estreno (nombre provisional)                                                                                                  |
 | RFC                              | [RFC]                                                                                                                         |
 | Domicilio                        | [DOMICILIO PARA OÍR Y RECIBIR NOTIFICACIONES] (calle, número, colonia, alcaldía o municipio, código postal, ciudad y entidad) |
 | Departamento de datos personales | [NOMBRE DE LA PERSONA O ÁREA DE DATOS PERSONALES], [CORREO DE PRIVACIDAD]                                                     |
@@ -105,12 +105,12 @@ claro, escríbenos a [CORREO DE PRIVACIDAD].
 
 ### 2. Solo para mayores de 18 años
 
-VendeIA es para personas de 18 años o más. Al crear tu cuenta confirmas que tienes 18 años o más.
+Estreno es para personas de 18 años o más. Al crear tu cuenta confirmas que tienes 18 años o más.
 **[REQUIERE CAMBIO EN CÓDIGO: casilla obligatoria «Tengo 18 años o más» en el registro]**
 
 No recabamos a sabiendas datos de menores de edad. Si sabemos que una cuenta es de una persona
 menor, la desactivamos y borramos sus datos, salvo lo que la ley nos obligue a conservar. Si crees
-que una persona menor usa VendeIA, avísanos a [CORREO DE SOPORTE].
+que una persona menor usa Estreno, avísanos a [CORREO DE SOPORTE].
 
 > **Nota interna.** La mayoría de edad y la capacidad para contratar están en el Código Civil
 > Federal (ver `00`, §2.13). Qué nivel de verificación basta: **[VERIFICAR CON ABOGADO]**.
@@ -120,7 +120,7 @@ que una persona menor usa VendeIA, avísanos a [CORREO DE SOPORTE].
 Los obtenemos de cuatro fuentes:
 
 - de ti, cuando los escribes o los subes;
-- de tu navegador, cuando usas VendeIA;
+- de tu navegador, cuando usas Estreno;
 - de otras personas usuarias, por ejemplo cuando alguien reporta tu publicación o te hace un
   pedido;
 - de nosotros mismos, por ejemplo el nivel de riesgo que calculamos para un producto.
@@ -134,7 +134,7 @@ otras empresas.
    función de un solo sentido: nadie del equipo la puede ver.
 2. **Perfil:** nombre de usuario, nombre visible y, si los agregas, biografía, foto, ciudad y estado.
 3. **Lo que nos dices al registrarte:**
-   - qué quieres hacer en VendeIA (por ejemplo, comprar o vender);
+   - qué quieres hacer en Estreno (por ejemplo, comprar o vender);
    - al menos 3 comunidades;
    - las marcas que te gustan;
    - qué buscas ahora y, si quieres, hasta cuánto quieres gastar (presupuesto).
@@ -145,12 +145,12 @@ otras empresas.
    - la dirección IP y el tipo de navegador o dispositivo de cada sesión;
    - la IP (o la red, en IPv6), para limitar intentos repetidos de inicio de sesión, registro,
      publicación y otras acciones.
-6. **Tu actividad dentro de VendeIA** (ver §6):
+6. **Tu actividad dentro de Estreno** (ver §6):
    - qué publicaciones te mostramos y cuáles aparecieron en tu pantalla;
    - clics, búsquedas, me gusta, guardados, comentarios, a quién sigues y «No me interesa»;
    - cuándo compartes y por qué canal;
    - a qué comunidades te unes y cuándo las visitaste por última vez;
-   - productos que ves, tu carrito, pedidos iniciados y completados, y uso de «Vende con IA».
+   - productos que ves, tu carrito, pedidos iniciados y completados, y uso de «Sube y vende».
 7. **Tu contenido:** publicaciones, comentarios y fotos. De cada foto quitamos la ubicación GPS y los
    demás metadatos.
 8. **Tus reportes:** qué reportaste, el motivo y el texto que agregues.
@@ -164,7 +164,7 @@ otras empresas.
 - **Carrito y pedidos:** productos, cantidades, precios, forma de entrega, método de pago que
   elegiste, total, estado y fechas.
 
-**No recabamos números de tarjeta, cuentas bancarias ni CLABE.** VendeIA no cobra ni recibe el
+**No recabamos números de tarjeta, cuentas bancarias ni CLABE.** Estreno no cobra ni recibe el
 dinero de tus compras: pagas directo a la tienda.
 
 Si registras un domicilio o un teléfono de otra persona (por ejemplo, de quien recibe), asegúrate de
@@ -178,7 +178,7 @@ que esté de acuerdo.
   declaras que es original.
 - **Costo de tus productos:** es privado. Solo tú lo ves; nunca se muestra a quien compra ni se le
   envía al proveedor de inteligencia artificial.
-- **Lo que escribes en «Vende con IA»** y los textos de tu kit de anuncios.
+- **Lo que escribes en «Sube y vende»** y los textos de tu kit de anuncios.
 - **Fotos de comprobante de compra** (ticket, factura, empaque o número de serie), si declaras que
   un producto es original y te las pedimos. Son privadas.
 - **Revisión de autenticidad de tus productos:** nivel de riesgo, señales, estado y notas del equipo
@@ -191,10 +191,10 @@ que esté de acuerdo.
 
 No te pedimos datos personales sensibles. Son los que pueden revelar, por ejemplo, origen étnico,
 estado de salud, creencias religiosas, opiniones políticas o preferencia sexual [1, art. 2 fr. VI].
-Las comunidades de VendeIA no tratan esos temas.
+Las comunidades de Estreno no tratan esos temas.
 
 Te pedimos no escribir datos sensibles, tuyos ni de nadie, en publicaciones, comentarios, reportes o
-«Vende con IA».
+«Sube y vende».
 
 > **Nota interna.** Riesgo residual: el historial de búsquedas o de compras de ciertos productos
 > (p. ej., de salud) podría revelar un dato sensible. Hoy no hay categorías de salud; si se agregan,
@@ -227,7 +227,7 @@ En tus comprobantes, tapa los datos de pago que no hagan falta, como los número
 
 #### 4.1 Finalidades necesarias
 
-Son las que dan origen a tu relación con VendeIA. Sin ellas no podemos darte el servicio:
+Son las que dan origen a tu relación con Estreno. Sin ellas no podemos darte el servicio:
 
 1. **Cuenta y seguridad:** crear, mantener y proteger tu cuenta; iniciar y cerrar sesiones; mostrarte
    dónde está abierta tu cuenta.
@@ -237,7 +237,7 @@ Son las que dan origen a tu relación con VendeIA. Sin ellas no podemos darte el
    comunidades, a quién sigues, lo que nos dijiste que buscas) y con la actividad general de cada
    publicación (ver §6.1).
 4. **Compras y ventas:** carrito, pedidos, entrega y comunicación del pedido a la tienda (ver §8.2).
-5. **Herramientas de venta que tú pides:** «Vende con IA» y el kit de anuncios (ver §7).
+5. **Herramientas de venta que tú pides:** «Sube y vende» y el kit de anuncios (ver §7).
 6. **Prevención de fraudes, falsificaciones y abusos:**
    - limitar intentos repetidos;
    - revisar el riesgo de imitación de los productos (§6.2);
@@ -256,13 +256,13 @@ Son las que dan origen a tu relación con VendeIA. Sin ellas no podemos darte el
 #### 4.2 Finalidades secundarias (puedes negarte)
 
 No son necesarias para el servicio. Puedes negarte o cambiar de opinión cuando quieras, y seguir
-usando VendeIA [2, arts. 14 y 42]:
+usando Estreno [2, arts. 14 y 42]:
 
 | #   | Finalidad                                                                                                                                         | Cómo decides                                                                                                                                                                                                                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | S1  | **Personalizar tu feed y tus recomendaciones con tu actividad** (productos que viste, abriste, guardaste o agregaste al carrito, y tus búsquedas) | En el registro eliges «Sí» o «No», sin respuesta marcada de antemano **[REQUIERE CAMBIO EN CÓDIGO]**. Después, en Ajustes → «Personalizar mi feed». Si la desactivas, también desligamos de tu cuenta la actividad anterior. |
 | S2  | **Sugerirte personas para seguir y sugerir tu perfil a otras personas** («Gente de tus comunidades»)                                              | Ajustes → «Aparecer en sugerencias». Si no te interesa una persona, toca «Quitar».                                                                                                                                           |
-| S3  | **Medir y mejorar VendeIA con tu actividad ligada a tu cuenta**, incluidas las pruebas de cambios al feed (§6.3)                                  | Va junto con S1: si desactivas la personalización, tu actividad deja de ligarse a tu cuenta y no se usa para medir pruebas.                                                                                                  |
+| S3  | **Medir y mejorar Estreno con tu actividad ligada a tu cuenta**, incluidas las pruebas de cambios al feed (§6.3)                                  | Va junto con S1: si desactivas la personalización, tu actividad deja de ligarse a tu cuenta y no se usa para medir pruebas.                                                                                                  |
 
 También puedes negarte a cualquiera de estas finalidades escribiendo a [CORREO DE PRIVACIDAD].
 
@@ -319,7 +319,7 @@ También puedes negarte a cualquiera de estas finalidades escribiendo a [CORREO 
 
 ### 6. Personalización, pruebas y decisiones automatizadas
 
-Algunas cosas de VendeIA las decide un programa sin que una persona las revise antes. Aquí te
+Algunas cosas de Estreno las decide un programa sin que una persona las revise antes. Aquí te
 decimos cuáles, con qué datos y qué puedes hacer [2, art. 112].
 
 Ninguna de ellas cierra tu cuenta, te sanciona ni decide sobre tus pagos. Eso lo decide siempre una
@@ -436,7 +436,7 @@ Por omisión está **apagada**. Si la activamos, funciona así:
 
 #### 7.1 Para qué la usamos
 
-- **«Vende con IA»:** te propone cómo vender un producto a partir de lo que escribes. Las cifras (el
+- **«Sube y vende»:** te propone cómo vender un producto a partir de lo que escribes. Las cifras (el
   rango de precio, por ejemplo) las calcula el sistema; la IA solo redacta.
 - **«Kit de anuncios»:** escribe textos para promocionar tu producto con los datos públicos de la
   ficha: nombre, descripción, etiquetas, precio, categoría, condición, ciudad y estado, entrega,
@@ -537,10 +537,10 @@ terceros. Si agregamos uno, lo nombraremos aquí antes de activarlo.
 
 | Quién recibe                                                                                                        | Qué datos                                                                                                                                                                                                                         | Para qué                                      | ¿Necesita tu consentimiento?                                                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **La tienda a la que le compras** (en México)                                                                       | Tu nombre visible, qué pediste, cantidades, total y forma de entrega. Si el pago se confirma a través de VendeIA, también el domicilio de entrega, **sin tu teléfono**, solo mientras el pedido está pagado, enviado o entregado. | Preparar y entregar tu pedido                 | No: es necesaria para el contrato que celebras con la tienda y para darte el servicio [1, art. 36 fr. IV y VII] **[VERIFICAR CON ABOGADO cuál aplica]** |
+| **La tienda a la que le compras** (en México)                                                                       | Tu nombre visible, qué pediste, cantidades, total y forma de entrega. Si el pago se confirma a través de Estreno, también el domicilio de entrega, **sin tu teléfono**, solo mientras el pedido está pagado, enviado o entregado. | Preparar y entregar tu pedido                 | No: es necesaria para el contrato que celebras con la tienda y para darte el servicio [1, art. 36 fr. IV y VII] **[VERIFICAR CON ABOGADO cuál aplica]** |
 | **Autoridades competentes** (por ejemplo, fiscalías, jueces, SAT, IMPI, PROFECO o la autoridad de datos personales) | Los datos que ordene la ley o el mandamiento                                                                                                                                                                                      | Cumplir la ley o una orden fundada y motivada | No [1, art. 36 fr. I, V y VI; art. 9 fr. VII]                                                                                                           |
 
-**Mientras VendeIA no procese pagos** (hoy pagas directo a la tienda), la tienda solo ve tu nombre
+**Mientras Estreno no procese pagos** (hoy pagas directo a la tienda), la tienda solo ve tu nombre
 visible y lo que pediste. La entrega la acuerdas directamente con ella.
 
 La tienda que recibe tus datos asume las mismas obligaciones que nosotros y solo puede usarlos para
@@ -623,7 +623,7 @@ respalde, si hace falta [1, art. 30].
 #### 10.4 Cómo comprobamos que eres tú
 
 - **Con tu cuenta:** si escribes desde el correo de tu cuenta, te pediremos confirmar la solicitud
-  desde tu sesión en VendeIA o con un código que te enviemos. Con eso damos por acreditada tu
+  desde tu sesión en Estreno o con un código que te enviemos. Con eso damos por acreditada tu
   identidad **[VERIFICAR CON ABOGADO]**. No te pedimos una identificación oficial si no hace falta.
 - **Si no puedes entrar a tu cuenta, o si actúa un representante:** te pediremos una copia de una
   identificación oficial vigente. Puedes tapar los datos que no sirven para identificarte (por
@@ -635,7 +635,7 @@ respalde, si hace falta [1, art. 30].
 
 > **Nota interna.** El Reglamento admite como acreditación la copia de identificación con cotejo del
 > original, los instrumentos electrónicos que identifiquen «fehacientemente» y los mecanismos de
-> autenticación «previamente establecidos por el responsable» [2, art. 89 fr. I]. VendeIA no conoce
+> autenticación «previamente establecidos por el responsable» [2, art. 89 fr. I]. Estreno no conoce
 > la identidad civil de nadie (el nombre es libre), así que controlar la cuenta es la prueba más
 > fuerte que tenemos. Pedir identificaciones a todos crearía una base de datos más riesgosa.
 
@@ -768,7 +768,7 @@ Protegemos tus datos con medidas administrativas, técnicas y físicas [1, art. 
 - quienes tratan datos por nuestra cuenta tienen deber de confidencialidad [1, art. 20].
 
 **Si hay una vulneración de seguridad** que afecte de forma significativa tus derechos patrimoniales
-o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de VendeIA. Te diremos:
+o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de Estreno. Te diremos:
 
 - qué pasó;
 - qué datos se vieron comprometidos;
@@ -782,14 +782,14 @@ o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de Vende
 
 ### 13. Cookies y almacenamiento en tu navegador
 
-VendeIA **no usa cookies de publicidad ni de rastreo**, ni píxeles, ni herramientas de analítica o
+Estreno **no usa cookies de publicidad ni de rastreo**, ni píxeles, ni herramientas de analítica o
 publicidad de otras empresas. Las fuentes tipográficas se sirven desde nuestro propio sitio.
 
 Esto es todo lo que guardamos en tu navegador:
 
 | Nombre                                                                            | Tipo                                            | Para qué                                                                                                   | Duración                                          | ¿Necesaria?                            |
 | --------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------- |
-| `vendeia.session_token` (en conexiones seguras: `__Secure-vendeia.session_token`) | Cookie propia                                   | Mantener tu sesión abierta y proteger tu cuenta                                                            | Hasta 30 días sin uso; se renueva al usar VendeIA | Sí. Sin ella no puedes iniciar sesión. |
+| `vendeia.session_token` (en conexiones seguras: `__Secure-vendeia.session_token`) | Cookie propia                                   | Mantener tu sesión abierta y proteger tu cuenta                                                            | Hasta 30 días sin uso; se renueva al usar Estreno | Sí. Sin ella no puedes iniciar sesión. |
 | `vendeia_bienvenida`                                                              | Cookie propia                                   | Mostrar una sola vez el mensaje de bienvenida al terminar tu registro. No te identifica.                   | 10 minutos, o hasta que cierres el mensaje        | No es esencial; no guarda datos tuyos. |
 | `theme`                                                                           | Almacenamiento local (`localStorage`)           | Recordar si prefieres el tema claro u oscuro. No se nos envía.                                             | Hasta que lo borres                               | Preferencia                            |
 | `vendeia.consent-refresh:…` y `vendeia:gente-de-tus-comunidades:cerrado`          | Almacenamiento de la pestaña (`sessionStorage`) | Recordar que ocultaste el aviso de documentos actualizados o las sugerencias de personas. No se nos envía. | Se borra al cerrar la pestaña                     | Preferencia                            |
@@ -830,12 +830,12 @@ borras la cookie de sesión, se cierra tu sesión.
 - **Dónde:** publicamos cada cambio en esta página, con su fecha, su versión y un recuadro «Qué
   cambió en esta versión».
 - **Si tienes cuenta:**
-  - verás un mensaje en la parte de arriba de VendeIA: «Actualizamos el aviso de privacidad. Revisa
+  - verás un mensaje en la parte de arriba de Estreno: «Actualizamos el aviso de privacidad. Revisa
     los cambios», con la liga;
   - al tocar «Aceptar», registramos la versión que viste y la fecha;
   - si tocas «Ocultar», el mensaje se esconde solo en esa pestaña y vuelve a aparecer hasta que lo
     aceptes;
-  - el mensaje no te impide usar VendeIA.
+  - el mensaje no te impide usar Estreno.
 - **Cambios que necesitan tu consentimiento:** te daremos un aviso nuevo y te pediremos permiso
   expreso, con una casilla sin marcar, **antes** de aplicarlos. Son estos:
   - una finalidad nueva que lo requiera;
@@ -879,13 +879,13 @@ abrir otra página. Los datos se recaban por medios electrónicos, así que el a
 simplificada: con las fracciones I a IV del art. 15 y el sitio del integral [1, art. 16 fr. II]. Se
 entrega antes de obtener los datos [3, Decimosegundo fr. I].
 
-> **Aviso de privacidad simplificado.** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE] («VendeIA»), con
+> **Aviso de privacidad simplificado.** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE] («Estreno»), con
 > domicilio en [DOMICILIO PARA OÍR Y RECIBIR NOTIFICACIONES], es responsable de tus datos
 > personales.
 >
 > **Qué datos tratamos:** tu nombre, correo y contraseña; los datos técnicos de tu conexión (IP y
 > navegador); lo que nos digas en el registro (comunidades, marcas, qué buscas y, si quieres, tu
-> presupuesto); tu actividad y tu contenido en VendeIA; y, si compras o vendes, tu domicilio de
+> presupuesto); tu actividad y tu contenido en Estreno; y, si compras o vendes, tu domicilio de
 > entrega, tu teléfono y los datos de tus productos y pedidos. No te pedimos datos sensibles.
 >
 > **Para qué (necesarias):** crear y proteger tu cuenta; operar la red y las compras y ventas;
@@ -913,7 +913,7 @@ entrega antes de obtener los datos [3, Decimosegundo fr. I].
 **Elección en el paso 3 del registro** (finalidad secundaria S1), sin respuesta marcada:
 
 > **¿Personalizamos tu feed con lo que haces aquí?** Usaríamos los productos que ves, guardas o
-> agregas al carrito y lo que buscas, solo dentro de VendeIA, nunca datos de otras apps. Si eliges
+> agregas al carrito y lo que buscas, solo dentro de Estreno, nunca datos de otras apps. Si eliges
 > «No», tu actividad se guarda sin ligarla a tu cuenta. Lo cambias cuando quieras en Ajustes.
 > ( ) Sí, personaliza ( ) No, gracias
 
@@ -933,9 +933,9 @@ consentimiento expreso:
 | Dónde                                              | Texto propuesto                                                                                                                                                                                        | Tipo                                                                                           |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | Presupuesto (registro, paso 3)                     | «Opcional. Solo lo usamos para marcarte los productos que caben en tu presupuesto. Nadie más lo ve y lo puedes borrar en Ajustes.»                                                                     | Consentimiento expreso por signo inequívoco, o casilla aparte **[VERIFICAR CON ABOGADO]**      |
-| Subir comprobante de compra                        | ☐ «Autorizo a VendeIA a guardar estas fotos en privado para revisar la autenticidad de este producto. Solo las vemos el equipo y yo. Taparé los datos de pago que no hagan falta.»                     | Consentimiento expreso, casilla sin marcar **[REQUIERE CAMBIO EN CÓDIGO]**                     |
-| Checkout, domicilio                                | «La tienda verá tu nombre visible y lo que pediste. Si el pago se confirma en VendeIA, también el domicilio de entrega, sin tu teléfono.» ☐ «Guardar este domicilio para mis próximas compras.»        | Informativo + elección de guardar [4, 8.1 c)] **[REQUIERE CAMBIO EN CÓDIGO]**                  |
-| «Vende con IA» y kit de anuncios                   | «Lo que escribas lo procesa un proveedor de inteligencia artificial en Estados Unidos, sin tus datos de contacto ni el costo. No escribas datos personales de nadie. Borramos tu texto a los 90 días.» | Informativo (encargado, §7)                                                                    |
+| Subir comprobante de compra                        | ☐ «Autorizo a Estreno a guardar estas fotos en privado para revisar la autenticidad de este producto. Solo las vemos el equipo y yo. Taparé los datos de pago que no hagan falta.»                     | Consentimiento expreso, casilla sin marcar **[REQUIERE CAMBIO EN CÓDIGO]**                     |
+| Checkout, domicilio                                | «La tienda verá tu nombre visible y lo que pediste. Si el pago se confirma en Estreno, también el domicilio de entrega, sin tu teléfono.» ☐ «Guardar este domicilio para mis próximas compras.»        | Informativo + elección de guardar [4, 8.1 c)] **[REQUIERE CAMBIO EN CÓDIGO]**                  |
+| «Sube y vende» y kit de anuncios                   | «Lo que escribas lo procesa un proveedor de inteligencia artificial en Estados Unidos, sin tus datos de contacto ni el costo. No escribas datos personales de nadie. Borramos tu texto a los 90 días.» | Informativo (encargado, §7)                                                                    |
 | Reportar                                           | «Quien publica no sabrá quién lo reportó. No escribas datos personales de nadie.»                                                                                                                      | Informativo                                                                                    |
 | Activar tienda                                     | «El nombre de tu tienda y la ciudad y el estado de tus productos serán públicos. Tu domicilio nunca se publica.»                                                                                       | Informativo                                                                                    |
 | Leyenda de riesgo en la ficha (vista del vendedor) | «Este nivel lo calculan reglas automáticas. ¿Crees que es un error? Pide que lo revise una persona.»                                                                                                   | Aviso de decisión automatizada y reconsideración [2, art. 112] **[REQUIERE CAMBIO EN CÓDIGO]** |
@@ -945,7 +945,7 @@ consentimiento expreso:
 **Dónde va:** en el pie de página y una vez en la primera visita, sin bloquear la navegación. No es
 un aviso de consentimiento de cookies: no usamos cookies que no sean necesarias.
 
-> VendeIA solo usa la cookie necesaria para tu sesión. Para saber qué se ve de verdad, tu navegador
+> Estreno solo usa la cookie necesaria para tu sesión. Para saber qué se ve de verdad, tu navegador
 > nos avisa qué publicaciones aparecen en tu pantalla; si no tienes cuenta o no activaste la
 > personalización, lo guardamos sin ligarlo a ti. No hay rastreadores ni publicidad de otras
 > empresas. [No medir] · [Aviso de privacidad]

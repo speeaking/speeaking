@@ -3,28 +3,28 @@
 Formato breve: decisión, motivo y estado. Una decisión nueva que contradiga otra la marca como
 "Reemplazada".
 
-| #       | Decisión                                                             | Estado   |
-| ------- | -------------------------------------------------------------------- | -------- |
-| ADR-001 | Monolito modular en Next.js                                          | Aceptada |
-| ADR-002 | Versiones exactas fijadas y trampas conocidas                        | Aceptada |
-| ADR-003 | Mercado inicial México: MXN, es-MX, America/Mexico_City              | Aceptada |
-| ADR-004 | Better Auth para autenticación                                       | Aceptada |
-| ADR-005 | Proveedores por interfaz con implementación simulada                 | Aceptada |
-| ADR-006 | La IA redacta, el código calcula (P2)                                | Aceptada |
-| ADR-007 | Datos verificables estructurados (P4)                                | Aceptada |
-| ADR-008 | Proporción comercial del feed como parámetro con límites             | Aceptada |
-| ADR-009 | Eventos y atribución desde el día 1 (P5)                             | Aceptada |
-| ADR-010 | Sprint 1 solo texto e imagen; video en Sprint 2                      | Aceptada |
-| ADR-011 | Pagos simulados; una orden por vendedor; nunca retener fondos        | Aceptada |
-| ADR-012 | Una cuenta con capacidades progresivas (P6)                          | Aceptada |
-| ADR-013 | Campañas con canal; promoción interna como primer canal real (P7)    | Aceptada |
-| ADR-014 | "VendeIA" es nombre provisional interno; marca en una sola constante | Aceptada |
-| ADR-015 | Herramientas de calidad y pruebas                                    | Aceptada |
-| ADR-016 | shadcn/ui con Base UI y CSS base copiado al repo                     | Aceptada |
-| ADR-017 | Base de datos de desarrollo: clúster propio con PostgreSQL 17 local  | Aceptada |
-| ADR-018 | Comunidades por nicho con contenido semilla honesto                  | Aceptada |
-| ADR-019 | Motor de automejora con autonomía por nivel de riesgo                | Aceptada |
-| ADR-020 | IA autofinanciada: presupuesto ligado a ingresos y costo medido      | Aceptada |
+| #       | Decisión                                                               | Estado                  |
+| ------- | ---------------------------------------------------------------------- | ----------------------- |
+| ADR-001 | Monolito modular en Next.js                                            | Aceptada                |
+| ADR-002 | Versiones exactas fijadas y trampas conocidas                          | Aceptada                |
+| ADR-003 | Mercado inicial México: MXN, es-MX, America/Mexico_City                | Aceptada                |
+| ADR-004 | Better Auth para autenticación                                         | Aceptada                |
+| ADR-005 | Proveedores por interfaz con implementación simulada                   | Aceptada                |
+| ADR-006 | La IA redacta, el código calcula (P2)                                  | Aceptada                |
+| ADR-007 | Datos verificables estructurados (P4)                                  | Aceptada                |
+| ADR-008 | Proporción comercial del feed como parámetro con límites               | Aceptada                |
+| ADR-009 | Eventos y atribución desde el día 1 (P5)                               | Aceptada                |
+| ADR-010 | Sprint 1 solo texto e imagen; video en Sprint 2                        | Aceptada                |
+| ADR-011 | Pagos simulados; una orden por vendedor; nunca retener fondos          | Aceptada                |
+| ADR-012 | Una cuenta con capacidades progresivas (P6)                            | Aceptada                |
+| ADR-013 | Campañas con canal; promoción interna como primer canal real (P7)      | Aceptada                |
+| ADR-014 | «VendeIA» como nombre provisional interno; marca en una sola constante | Reemplazada por ADR-041 |
+| ADR-015 | Herramientas de calidad y pruebas                                      | Aceptada                |
+| ADR-016 | shadcn/ui con Base UI y CSS base copiado al repo                       | Aceptada                |
+| ADR-017 | Base de datos de desarrollo: clúster propio con PostgreSQL 17 local    | Aceptada                |
+| ADR-018 | Comunidades por nicho con contenido semilla honesto                    | Aceptada                |
+| ADR-019 | Motor de automejora con autonomía por nivel de riesgo                  | Aceptada                |
+| ADR-020 | IA autofinanciada: presupuesto ligado a ingresos y costo medido        | Aceptada                |
 
 ## ADR-001 · Monolito modular en Next.js
 
@@ -103,10 +103,11 @@ No se elige tipo de cuenta al registrarse. "Vender" crea el `SellerProfile` en e
 `Campaign.channel`: INTERNAL, SHARE_KIT, META, GOOGLE, TIKTOK. En V0.1 "Lanzar" genera un kit de
 difusión con links atribuidos; la promoción interna en el feed es el primer canal pagado.
 
-## ADR-014 · Nombre provisional
+## ADR-014 · Nombre provisional (reemplazada por ADR-041)
 
-"VendeIA" es interno; "Vende con IA" es la función del vendedor. Cambiar `siteConfig.name` debe bastar
-para renombrar la plataforma.
+«VendeIA» fue el nombre provisional interno y «Vende con IA» la función del vendedor. La regla que
+sigue vigente: cambiar `siteConfig` debe bastar para renombrar la plataforma. El 2026-09-29 la marca
+pasó a ser **Estreno** y la función, **«Sube y vende»** (ADR-041).
 
 ## ADR-015 · Calidad y pruebas
 
@@ -184,7 +185,7 @@ de quien publica (evita adjuntar imágenes ajenas).
 Pedido por producto: conocer a la persona desde el inicio. Tres pasos que se pueden saltar
 (objetivos; comunidades, mínimo 3; marcas e "¿Buscas algo ahora?" con presupuesto). La intención
 declarada vence en 30 días y es la señal más fuerte del Commerce Engine. Elegir "Vender" lleva directo
-a Vende con IA. Todo se puede borrar desde Ajustes.
+a Sube y vende. Todo se puede borrar desde Ajustes.
 
 ## ADR-023 · Pagos simulados realistas
 
@@ -327,7 +328,7 @@ sesión de la persona (Server Actions, datos ya renderizados).
 - El optimizador de imágenes solo acepta `/media/**` sin query, sin orígenes remotos ni SVG (SEC-35).
 - **Modo de aplicación desde el día uno**, no `Report-Only`: `tests/e2e/security-headers.spec.ts`
   recorre como visitante, registro, onboarding, inicio con sesión, producto, comunidad, Studio,
-  Vende con IA, checkout y cambio de tema, y exige cero violaciones (evento
+  Sube y vende, checkout y cambio de tema, y exige cero violaciones (evento
   `securitypolicyviolation` y consola), hidratación completa y que un `onerror` inyectado no corra.
 
 **Riesgo aceptado.** `style-src 'unsafe-inline'`: la interfaz usa atributos `style` (tono de cada
@@ -409,7 +410,7 @@ mientras el proveedor sea simulado, pero es bloqueador antes de uno de pago.
   y otra vez al prellenar el producto. Es una lista de patrones (mitiga, no garantiza): el vendedor
   revisa todo antes de publicar.
 - **Retención:** el texto se guarda sin correos, teléfonos, ligas ni cuentas; a los 90 días la entrada
-  se reemplaza por `{ redacted: true }`. Hoy la limpieza es oportunista (al usar «Vende con IA», a lo
+  se reemplaza por `{ redacted: true }`. Hoy la limpieza es oportunista (al usar «Sube y vende», a lo
   más cada hora por proceso): sin uso, nada la dispara. Falta una tarea programada que llame
   `redactExpiredAiInputs` para cumplir los 90 días que promete el aviso. **Resuelto (2026-09-26):**
   es un paso de la operación diaria (`pnpm ops:daily`, `/api/cron/daily`); hay que programarla en
@@ -441,6 +442,16 @@ pedido pasa a pagado solo por webhook con firma verificada, nunca por una acció
 | ADR-037 | Impresiones visibles (T5) aceptadas solo si la pieza se sirvió; el motor decide solo con personas con sesión       | Aceptada |
 | ADR-038 | IA en producción: proveedor real o IA simulada solo con `ALLOW_SIMULATED_AI=true` (piloto cerrado)                 | Aceptada |
 | ADR-040 | Hosting que escala solo: Vercel Pro + Neon Launch + Cloudflare R2 privado; migraciones en el build de producción   | Aceptada |
+
+## Decisiones de marca, diseño sereno, estilista y autofinanciamiento (2026-09-29)
+
+| #       | Decisión                                                                                                             | Estado   |
+| ------- | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| ADR-041 | Marca **Estreno** (sin «IA» en el nombre); «Sube y vende» para la función del vendedor; ADR-014 reemplazada          | Aceptada |
+| ADR-042 | Diseño sereno: una sola acción principal por pantalla, color solo como acento, tintes de comunidad suaves            | Aceptada |
+| ADR-043 | Núcleo de IA: funciones como módulos con bandera, proveedor de imágenes por interfaz, caché, cuotas por función      | Aceptada |
+| ADR-044 | Autofinanciamiento: saldo en pesos, precio comunitario por volumen, pruebas gratis con tope, patrocinio del vendedor | Aceptada |
+| ADR-045 | «Pruébatelo»: la foto es de la persona; consentimiento explícito, privada, 30 días, borrable; siempre «simulación»   | Aceptada |
 
 ## ADR-033 · Decisiones del piloto (delegadas por el fundador)
 
@@ -614,7 +625,7 @@ las marcas registradas.
 - **Mide riesgo, no culpa.** Reglas deterministas (P2, `trust/rules.ts`, `RULES_VERSION` v2) con
   mensajes en español claro. Puntaje = suma de pesos con tope 1 → LOW, MEDIUM (≥ 0.3) o HIGH
   (≥ 0.6). Nunca dice «falso» ni «original»: quien compra ve «Autenticidad sin verificar»,
-  «Comprobante revisado por VendeIA» o una nota neutral («Revisa: …»).
+  «Comprobante revisado por Estreno» o una nota neutral («Revisa: …»).
 - **Una fila por producto** (`AuthenticityCheck.productId` único) con la revisión vigente, que se
   actualiza en su lugar. La cola y la página del producto necesitan el estado actual sin
   `DISTINCT ON` ni filas viejas que compitan; la huella queda en `rulesVersion`,
@@ -796,7 +807,7 @@ Código: `IMPRESSIONS_LIMITS` en `app/api/impressions/route.ts`.
 ## ADR-038 · IA en producción: proveedor real o simulación explícita
 
 **Contexto.** `AI_PROVIDER=mock` es el valor por omisión. En producción, un olvido de configuración
-haría que los vendedores recibieran en «Vende con IA» y en el kit de anuncios textos de PLANTILLA
+haría que los vendedores recibieran en «Sube y vende» y en el kit de anuncios textos de PLANTILLA
 (deterministas, sin modelo) creyendo que son de una IA. Es el mismo riesgo que el pago simulado
 (ADR-032).
 
@@ -1005,3 +1016,176 @@ se perderían.
   forma constante (con tráfico parejo, un servidor dedicado puede salir más barato).
 - **Salida de datos y fotos:** si las fotos pasan de ≈ 100 GB o las lecturas de R2 de 10 millones al
   mes, poner una CDN delante de `/media` (con la purga y la clave de caché de ADR-039).
+
+## ADR-041 · Marca «Estreno» y «Sube y vende»
+
+**Contexto.** El fundador reportó (2026-09-29) que el nombre provisional «VendeIA» provoca burlas por
+el simple hecho de llevar «IA», y que la plataforma debe transmitir confianza. La marca estaba
+centralizada en `siteConfig` (ADR-014) precisamente para este momento. Se revisaron candidatos con
+el criterio: español de México, sin «IA», corto, cálido, que describa lo que se siente al usar la
+plataforma y con dominios libres. Dominios revisados el 2026-09-29 (registrador de Vercel):
+zocalo.mx / .app / .com.mx, alameda.mx / .app, vitrina.mx / .app, rumbo.app, compa.mx, luce.mx y
+placita.mx están tomados; **estreno.mx, estreno.app, estreno.com.mx, estreno.shop y estreno.store
+están libres**.
+
+**Decisión.**
+
+- La plataforma se llama **Estreno**. «Estrenar» es lo que la gente hace cuando compra algo que le
+  gusta («¿vas a estrenar?», «estrené celular»), funciona para ropa y para cualquier categoría, y
+  conecta con el nuevo centro de la experiencia: descubrir, probártelo y estrenar. Lema:
+  «Descubre, pruébatelo, estrena».
+- La función del vendedor deja de llamarse «Vende con IA»: ahora es **«Sube y vende»** (foto +
+  precio → publicación lista). La IA sigue ayudando, pero no da nombre a nada. La ruta pasa de
+  `/studio/vende-con-ia` a `/studio/sube-y-vende` con redirección permanente de la anterior.
+- Las etiquetas honestas de contenido generado con IA («Con ayuda de IA», «Texto de ejemplo») se
+  conservan (principio 5 y términos), en estilo neutro, no como distintivo de marca.
+- La marca sigue viviendo en `src/config/site.ts` (`name`, `sellerFeatureName`, `tagline`); el
+  nombre técnico del paquete, la base de datos, las cookies y los identificadores internos NO
+  cambian (`vendeia`): renombrarlos no aporta nada y rompería sesiones y despliegues.
+- Marca gráfica: una etiqueta de estreno (la que se le quita a la prenda nueva) en rosa; sin la
+  chispa lima de la IA. `public/brand/mark.svg` es la fuente de los íconos (`pnpm icons`).
+- Nombres reservados (SEC-18): «Estreno», «Equipo Estreno», «Soporte Estreno» y las variantes
+  plegadas no pueden usarse como nombre ni usuario; «VendeIA» sigue reservado para no dejar un hueco.
+
+**Pendiente del fundador.** Registrar estreno.mx (y .app/.com.mx) y consultar la marca en el IMPI
+(clases 35, 42 y 9) con el abogado antes de la campaña pública. Mientras tanto la marca es
+provisional pero coherente en toda la interfaz y los documentos legales.
+
+## ADR-042 · Diseño sereno: confianza antes que color
+
+**Contexto.** El fundador (2026-09-29): «hay demasiados botones por todos lados y los colores están
+muy marcados; debe ser un diseño limpio y que genere confianza». Al revisar el inicio, Comprar, la
+ficha de producto y el Studio: hasta 6 acciones con relleno de color por pantalla, tintes saturados
+de comunidad (mosaicos, anillos, carteles y bloques tipográficos), la lima de la IA en la marca, el
+compositor y el Studio, y el rosa de marca en íconos de sección, insignias y contadores.
+
+**Decisión (se aplica en `globals.css`, `button.tsx`, `community-tint.ts` y los componentes).**
+
+1. **Una acción principal por pantalla.** Solo ella lleva relleno rosa (`variant="default"`):
+   «Crear» en la barra, «Comprar ahora» en la ficha, «Publicar» en formularios, «Crear cuenta» para
+   visitantes. Todo lo demás es contorno, texto o gris (`outline`, `ghost`, `secondary`, `link`).
+   `variant="soft"` deja de ser rosa suave y pasa a ser la acción secundaria neutra (gris claro con
+   tinta), así «Unirme», «Seguir» en listas y «Ver producto» dejan de competir con la principal sin
+   cambiar ningún nombre accesible.
+2. **El color es acento, no fondo.** Íconos de sección, insignias («Tienda», «Editorial»), contadores
+   («N nuevas») y el ícono activo de la navegación van en tinta o gris. El rosa queda para la marca,
+   enlaces y la acción principal; el verde `success` solo para estados positivos.
+3. **Tintes de comunidad suaves.** Los mosaicos del emoji bajan de croma (pastel), los anillos de las
+   burbujas son neutros (seleccionada = tinta), la variante tipográfica del feed usa `community-soft`
+   (fondo suave con tinta) en lugar del cartel de tinta saturada, y el titular de la portada va en
+   tinta neutra. El tono sigue identificando a cada comunidad, en pequeño.
+4. **Sin lima.** La lima de la IA se retira de la marca, del compositor, del Studio y de los
+   distintivos; las etiquetas de IA son chips grises con texto.
+5. **Menos botones.** El bloque de producto del feed es un solo enlace (sin botón «Ver producto» ni
+   círculo rosa en la etiqueta de precio); la tarjeta de bienvenida es blanca con un botón; el
+   Studio ofrece «Publicar producto» como única acción principal; el compositor usa íconos neutros.
+6. **Aire y jerarquía.** Se mantienen las tarjetas blancas de 20 px de radio, la tipografía y los
+   contrastes AA (`community-tint.test.ts` sigue auditando los 360 tonos). Nada cambia de nombre ni
+   de posición en la navegación: las pruebas E2E existentes siguen válidas.
+
+**Consecuencias.** ADR-027 sigue vigente en paleta y tokens; cambia el **uso**: menos superficie de
+color y una sola acción destacada. Las maquetas de `docs/design/rediseno-revista/` quedan como
+referencia histórica del layout, no del color.
+
+## ADR-043 · Núcleo de IA: módulos con bandera, proveedor de imágenes y caché
+
+**Contexto.** El fundador entregó (2026-09-29) el plan «Ecosistema de IA» (20 funciones en 5 fases)
+con dos reglas: no construir las 20 de golpe y no acoplar nada a un proveedor. Lo que ya existía
+cubre la mayor parte de la fase 1: `AIProvider` por interfaz con simulador (ADR-005), tareas
+estructuradas (`AITask`), enrutador por tarea (`ai.routing`, ADR-034), guardián de presupuesto y
+cuotas (ADR-031), costo por llamada, evaluaciones, retención y auditoría (`AIRequest`/`AIResponse`).
+Faltaban banderas por función, un proveedor de imágenes, caché de resultados y eventos.
+
+**Decisión.**
+
+- **Banderas por función (`ai.features`, `PlatformSetting`).** Una lista cerrada en código
+  (`src/modules/ai/features.ts`) con las 20 funciones del plan; cada una se enciende o apaga sin
+  desplegar. Predeterminadas ENCENDIDAS: las de la fase 2 (`shoppingIntent`, `createLook`,
+  `completeLook`, `virtualTryOn`, `buyerMatching`) y las que ya existían (`sellerListing`, `adKit`,
+  `authenticitySignal`, `platformAnalyst`). Todo lo demás, APAGADO hasta que se desarrolle. Solo una
+  persona ADMIN las cambia (`/admin/ia`), con una `PlatformDecision` como bitácora; la IA CEO no puede
+  proponerlas (`ai.features` está en la lista prohibida: son decisiones de producto).
+- **Un módulo por función.** `src/modules/stylist/` (necesidad, looks, completar look, matching),
+  `src/modules/tryon/` (Pruébatelo), `src/modules/billing/` (saldo y precios). Las fases 3–5 se
+  agregan como módulos nuevos detrás de su bandera, sin tocar el núcleo.
+- **Proveedor de imágenes por interfaz** (`server/providers/image`): `ImageProvider.edit(task,
+input)` con un simulador (`MockImageProvider`, compone la foto con las prendas y una marca de
+  agua, sin red ni costo) y un adaptador para servidores compatibles con OpenAI que generan imágenes
+  desde el chat (`modalities: ["image","text"]`, OpenRouter; modelo en `AI_IMAGE_MODEL`). Precio por
+  imagen con fecha y fuente en `cost.ts` (`IMAGE_PRICES_USD`); un modelo sin precio no se llama.
+  El mismo guardián de siempre reserva ANTES de llamar; el costo máximo de una imagen es su precio.
+- **Caché de resultados.** Un resultado de Pruébatelo se identifica por (foto, productos, versión
+  del prompt, modelo): pedirlo de nuevo devuelve el guardado sin cobrar ni gastar. Los textos de
+  look se guardan por (firma del look, versión del prompt).
+- **Cuotas por función.** Además de las cuotas globales por persona (ADR-034), cada función tiene su
+  límite por hora y por día (`FEATURE_LIMITS`), y el subsidio de Pruébatelo tiene tope diario global
+  (`ai.budget.tryOnDailyCapUsd`).
+- **Respaldo (fallback).** Si el modelo de texto falla, «¿Qué necesitas?» usa el intérprete
+  determinista (palabras clave y presupuesto por expresión regular) y lo dice; si el proveedor de
+  imágenes no está disponible, Pruébatelo se muestra como «no disponible por ahora» sin gastar cuota.
+- **Eventos (P5).** `NEED_SUBMITTED`, `LOOK_GENERATED`, `LOOK_ITEM_SWAPPED`, `TRY_ON_GENERATED`,
+  `WALLET_TOPUP`, `WALLET_CHARGE`, en la superficie `STYLIST`; miden qué función aporta valor antes
+  de invertir en la siguiente.
+- **La IA nunca inventa productos.** Toda recomendación lleva `productId`; los looks los arma código
+  determinista con productos activos, con existencias y visibles (P2, P4). El texto del modelo solo
+  nombra y explica; se revisa con el guardián de contenido antes de mostrarse.
+
+## ADR-044 · Autofinanciamiento: saldo, precio comunitario y patrocinio
+
+**Contexto.** Ver `docs/modelo-de-ingresos.md`. El fundador pide detectar dónde cobrar sí o sí, que
+nada sea caro porque el costo se reparte, que el precio baje al crecer la comunidad y que cada peso
+se reinvierta. ADR-020 ya liga el presupuesto de IA a los ingresos; faltaba cómo cobrar.
+
+**Decisión.**
+
+- **Saldo en pesos** (`Wallet`, `WalletEntry`, `WalletTopUp` en `src/modules/billing/`): una sola
+  cartera por cuenta (P6), en centavos MXN, con libro de movimientos inmutable y balance que nunca
+  baja de cero (CHECK y candado por cartera). Recargas de $39, $99 (+5 %) y $199 (+10 %) por el
+  `PaymentProvider`; con el simulado, el saldo queda marcado como simulado y no cuenta como ingreso
+  (como ADR-032). Ingreso real → `PlatformLedgerEntry` `AI_PREMIUM`, que sube el presupuesto de IA.
+- **Precio comunitario** (`billing/pricing.ts`, P2): tabla de 4 niveles por volumen mensual de
+  pruebas de toda la plataforma ($3.50 → $3.00 → $2.50 → $2.00 MXN), piso de 1.5 × el costo unitario
+  de la tabla de costos, nivel recalculado el día 1 en la operación diaria. Cambiar la tabla es
+  riesgo ALTO (código + ADR); cambiar de nivel dentro de la tabla no es una decisión nueva.
+- **Quién paga cada prueba, en este orden:** (1) el vendedor si patrocina el producto y tiene saldo y
+  tope diario; (2) las 3 gratis del mes de la persona, mientras quede subsidio del día; (3) el saldo
+  de la persona. Sin nada de eso, la interfaz ofrece recargar. Cada `AIRequest` guarda `funding`
+  (`PLATFORM`, `USER_PAID`, `SELLER_PAID`, `SYSTEM`) y las pagadas NO consumen el presupuesto de
+  subsidio (`committedSpendMicros` solo cuenta `PLATFORM` y `SYSTEM`).
+- **Cobro atómico antes de generar:** el débito del saldo y la reserva de la `AIRequest` van en la
+  misma transacción; si la generación falla, el movimiento se revierte (`REFUND`) en la misma
+  operación de fallo.
+- **Gratis con cuotas, no con precio:** publicar, texto de la publicación, kit de anuncios, búsqueda,
+  necesidades y looks.
+- **Publicidad por presupuesto, no por planes** (P12 sin cambios). Las suscripciones de vendedor de
+  `docs/mvp-0.1.md` §6 quedan descartadas en favor de saldo + resultados.
+
+**Consecuencias.** Términos y aviso de privacidad deben describir el saldo (no es dinero, no se
+transfiere, devolución del no usado en 5 días hábiles, IVA incluido, CFDI a quien lo pida) antes de
+cobrar de verdad; el contador confirma el tratamiento del IVA y la comisión del procesador. Página
+pública `/precios` con la tabla y el nivel vigente.
+
+## ADR-045 · «Pruébatelo»: la foto de la persona
+
+**Contexto.** Pruébatelo necesita una foto de cuerpo (o medio cuerpo) de la persona. Es un dato
+personal sensible en la práctica (imagen), aunque no se use para identificarla. LFPDPPP: finalidad
+explícita, consentimiento, plazo de conservación y derechos ARCO.
+
+**Decisión.**
+
+- **Consentimiento explícito y versionado** (`ConsentType.TRY_ON_PHOTOS`, `LEGAL_VERSIONS.tryOn`) al
+  subir la primera foto, con el texto exacto de para qué se usa y cuándo se borra.
+- **Privada siempre.** La foto y cada resultado se guardan bajo `private/tryon/…`; `/media` solo se la
+  sirve a su dueña o dueño, sin caché (`private, no-store`); ni el equipo ni el vendedor la ven. Nunca
+  se adjunta a una publicación ni a un producto (misma protección que los comprobantes).
+- **Solo lo necesario sale al proveedor:** la foto, las fotos públicas de los productos y un prompt
+  sin datos personales (sin nombre, sin usuario). Con OpenRouter se exige `data_collection: "deny"` y
+  `zdr: true`, como en el texto (ADR-034).
+- **Retención corta:** fotos y resultados se borran a los **30 días** (`expiresAt`) en la operación
+  diaria, y la persona puede borrarlos antes desde `/ajustes` («Mis fotos de prueba»). Los registros
+  de costo (`AIRequest`/`AIResponse`) se quedan sin la imagen.
+- **Siempre una simulación.** Cada resultado dice «Simulación generada con IA: la prenda puede verse
+  distinta en la realidad» y nunca se presenta como garantía de talla, color o caída; no se puede
+  compartir públicamente desde la plataforma en esta versión.
+- **Menores y terceros:** los términos exigen que la foto sea de la persona misma, mayor de edad. Sin
+  verificación técnica en esta versión (queda documentado como riesgo aceptado).

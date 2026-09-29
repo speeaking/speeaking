@@ -15,7 +15,7 @@ export const AI_ROUTING_RISK = "MEDIUM" as const;
 
 /** Nombre de cada tarea en la interfaz y la función con que se registra y presupuesta. */
 export const AI_TASK_INFO: Record<AITaskId, { label: string; feature: AIFeature }> = {
-  sale_proposal: { label: "Propuesta de venta (Vende con IA)", feature: "SALE_PROPOSAL" },
+  sale_proposal: { label: "Propuesta de venta (Sube y vende)", feature: "SALE_PROPOSAL" },
   ad_copy: { label: "Kit de anuncios", feature: "CONTENT_GENERATION" },
   analyst_narrative: { label: "Analista de la plataforma", feature: "PLATFORM_ANALYSIS" },
   authenticity_text: { label: "Revisión de autenticidad", feature: "AUTHENTICITY_REVIEW" },

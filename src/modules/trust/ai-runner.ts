@@ -11,7 +11,7 @@ import { recordAiFailure, recordAiSuccess } from "./queries";
 
 /**
  * Corre la tarea `authenticity_text` con el guardián de presupuesto (ADR-031): reserva ANTES de
- * llamar como tarea del sistema (`userId: null`: no gasta la cuota de «Vende con IA» del vendedor,
+ * llamar como tarea del sistema (`userId: null`: no gasta la cuota de «Sube y vende» del vendedor,
  * sí el presupuesto global), valida la salida con su esquema y registra uso, costo y latencia en
  * `AIRequest`/`AIResponse`. Cualquier falla devuelve `null`: la señal es opcional y la revisión
  * sigue con las reglas.

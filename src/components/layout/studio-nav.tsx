@@ -14,7 +14,6 @@ export function StudioSideNav() {
         {studioNav.map((item) => {
           const active = isNavItemActive(pathname, item);
           const Icon = item.icon;
-          const isAi = item.href === "/studio/vende-con-ia";
           return (
             <li key={item.href}>
               <Link
@@ -25,13 +24,8 @@ export function StudioSideNav() {
                   active && "bg-secondary text-foreground",
                 )}
               >
-                <Icon className={cn("size-[18px]", isAi && "text-primary")} />
+                <Icon className="size-[18px]" />
                 {item.label}
-                {isAi ? (
-                  <span className="ml-auto rounded-full bg-ai px-1.5 py-px text-[10px] font-bold text-ai-foreground">
-                    IA
-                  </span>
-                ) : null}
               </Link>
             </li>
           );

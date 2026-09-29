@@ -204,7 +204,7 @@ function checkText(
   if (!result.spanish) result.failures.push("El texto no está en español.");
 }
 
-/** Evalúa «Vende con IA» caso por caso (salida cruda del modelo + la tubería completa). */
+/** Evalúa «Sube y vende» caso por caso (salida cruda del modelo + la tubería completa). */
 export async function evaluateSaleProposal(
   testCase: SaleProposalCase,
   deps: EvalDeps,
