@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isNavItemActive } from "@/config/navigation";
 import { cn } from "@/lib/utils";
-import { ADMIN_AI_HREF, adminNav } from "../nav";
+import { adminNav } from "../nav";
 
 /** Barra lateral de /admin en escritorio. */
 export function AdminSideNav() {
@@ -16,7 +16,6 @@ export function AdminSideNav() {
         {adminNav.map((item) => {
           const active = isNavItemActive(pathname, item);
           const Icon = item.icon;
-          const isAi = item.href === ADMIN_AI_HREF;
           return (
             <li key={item.href}>
               <Link
@@ -29,11 +28,6 @@ export function AdminSideNav() {
               >
                 <Icon className="size-[18px]" />
                 {item.label}
-                {isAi ? (
-                  <span className="ml-auto rounded-full bg-ai px-1.5 py-px text-[10px] font-bold text-ai-foreground">
-                    IA
-                  </span>
-                ) : null}
               </Link>
             </li>
           );

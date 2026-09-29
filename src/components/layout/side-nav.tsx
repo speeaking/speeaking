@@ -42,11 +42,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         active && "bg-card font-extrabold text-foreground shadow-sm hover:bg-card",
       )}
     >
-      <Icon
-        className={cn("size-5 shrink-0", active && "text-primary-text")}
-        strokeWidth={active ? 2.4 : 2}
-        aria-hidden="true"
-      />
+      <Icon className="size-5 shrink-0" strokeWidth={active ? 2.4 : 2} aria-hidden="true" />
       <span className={railLabel}>{item.label}</span>
     </Link>
   );
@@ -121,7 +117,7 @@ function UnreadCount({ count }: { count: number }) {
     <span
       aria-hidden="true"
       data-slot="unread"
-      className="hidden shrink-0 items-center gap-[5px] text-xs leading-4 font-extrabold community-ink lg:flex"
+      className="hidden shrink-0 items-center gap-[5px] text-xs leading-4 font-bold text-muted-foreground lg:flex"
     >
       <span className="size-[7px] rounded-full community-bar" />
       {unreadLabel(count)}

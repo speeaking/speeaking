@@ -148,8 +148,8 @@ describe("FollowButton", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/registro?next=%2Fu%2Fana"));
   });
 
-  it("donde hay otra acción principal, «Seguir» va en rosa suave", () => {
+  it("donde hay otra acción principal, «Seguir» va en gris (acción secundaria)", () => {
     renderButton({ variant: "soft" });
-    expect(screen.getByRole("button", { name: "Seguir a Ana" })).toHaveClass("bg-primary-soft");
+    expect(screen.getByRole("button", { name: "Seguir a Ana" })).toHaveClass("bg-secondary");
   });
 });

@@ -115,7 +115,7 @@ function FilterBubble({
         className={bubble}
         style={hue === undefined ? undefined : ({ "--hue": hue } as CSSProperties)}
       >
-        <span aria-hidden="true" className={cn(ring, active ? "border-primary" : ringClass)}>
+        <span aria-hidden="true" className={cn(ring, active ? "border-foreground" : ringClass)}>
           {icon}
           {unread > 0 ? (
             <span
@@ -132,7 +132,7 @@ function FilterBubble({
         {/* Indicador del filtro activo (además de aria-pressed y del peso del texto). */}
         <span
           aria-hidden="true"
-          className={cn("h-1 w-5 rounded-full", active ? "bg-primary" : "bg-transparent")}
+          className={cn("h-1 w-5 rounded-full", active ? "bg-foreground" : "bg-transparent")}
         />
       </button>
     </li>
@@ -205,7 +205,7 @@ export function CommunityBubbles({
           onSelect={() => onChange(FOR_YOU)}
           ringClass="border-line-strong"
           icon={
-            <span className={cn(core, "bg-primary-soft")}>
+            <span className={cn(core, "bg-secondary")}>
               <BrandMark className="size-8" />
             </span>
           }
@@ -235,7 +235,8 @@ export function CommunityBubbles({
                 setSeen((current) => new Set(current).add(community.id));
                 onChange(filter);
               }}
-              ringClass="community-border"
+              // Anillo neutro (ADR-042): el color de la comunidad ya está en su mosaico.
+              ringClass="border-border"
               unread={seen.has(community.id) ? 0 : unread?.[community.id]}
               icon={
                 <CommunityAvatar
@@ -265,7 +266,7 @@ export function CommunityBubbles({
                   decorative
                   className="size-full rounded-full text-[26px]"
                 />
-                <span className="absolute -right-1 -bottom-1 grid size-[22px] place-items-center rounded-full bg-primary text-primary-foreground ring-[2.5px] ring-card">
+                <span className="absolute -right-1 -bottom-1 grid size-[22px] place-items-center rounded-full bg-foreground text-background ring-[2.5px] ring-card">
                   <Plus className="size-3.5" strokeWidth={3} />
                 </span>
               </span>

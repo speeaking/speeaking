@@ -38,7 +38,7 @@ export function VisitorJoinCard({
       )}
     >
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-bold tracking-[0.1em] text-primary-text uppercase">
+        <p className="text-[11px] font-bold tracking-[0.1em] text-muted-foreground uppercase">
           Gratis · una sola cuenta para todo
         </p>
         <h2 id="arma-tu-feed" className="text-2xl leading-tight font-extrabold">

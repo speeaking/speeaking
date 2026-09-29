@@ -9,12 +9,13 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Identidad «rosa mexicano» (ADR-027): superficies blancas sobre gris frío, tinta casi negra y el
- * rosa mexicano #E4007C como color de marca, igual en claro y en oscuro. El modo oscuro es negro
- * puro. La lima eléctrica es SOLO para la IA; los estados positivos usan el verde `success` y las
- * acciones de comunidad («Unirme») el rosa suave o un contorno de tinta. Nada de turquesa, crema,
- * café ni halos de fondo. Evita el azul de Facebook, el cian/magenta de TikTok y el amarillo de
- * Mercado Libre.
+ * Identidad «rosa mexicano» (ADR-027) en uso sereno (ADR-042): superficies blancas sobre gris
+ * frío, tinta casi negra y el rosa mexicano #E4007C como acento de marca, igual en claro y en
+ * oscuro; solo la acción principal de cada pantalla, los enlaces y la marca lo llevan. El modo
+ * oscuro es negro puro. Los estados positivos usan el verde `success`; las acciones secundarias
+ * («Unirme», «Ver producto») son grises con tinta. Sin lima (retirada con la IA como distintivo),
+ * sin turquesa, crema, café ni halos de fondo. Evita el azul de Facebook, el cian/magenta de
+ * TikTok y el amarillo de Mercado Libre.
  *
  * Los nombres son los de shadcn/ui, más estos propios:
  *   primary-soft / primary-text   fondo rosa suave y texto rosa AA (enlaces, precios, «Unirme»)
@@ -24,7 +25,6 @@
  *   line-strong                   bordes marcados
  *   glass                         barras translúcidas con backdrop-blur
  *   success                       verde de estados positivos («En tu presupuesto», «Disponible»)
- *   ai / ai-foreground            lima, solo para la IA
  * Colores por comunidad: utilidades community-* en src/styles/community-tint.css (leen --hue).
  */
 
@@ -34,8 +34,6 @@
   --tracking-display: -0.028em;
   --tracking-heading: -0.02em;
   --tracking-title: -0.012em;
-  --color-ai: var(--ai);
-  --color-ai-foreground: var(--ai-foreground);
   --color-success: var(--success);
   --color-primary-soft: var(--primary-soft);
   --color-primary-strong: var(--primary-strong);
@@ -120,8 +118,6 @@
   --ink-2: oklch(0.36 0.012 280); /* #3C3D43 */
   --destructive: oklch(0.53 0.2 29); /* #C51F17 · rojo, lejos del rosa */
   --success: oklch(0.5 0.13 150); /* #137738 · 5.7:1 en blanco, 4.6:1 sobre success/10 */
-  --ai: oklch(0.9 0.2 128); /* #B7F652 */
-  --ai-foreground: oklch(0.26 0.07 135); /* 11.8:1 sobre ai */
   --border: oklch(0.92 0.004 275); /* #E4E4E7 */
   --input: oklch(0.87 0.006 275); /* = line-strong: más definición en campos sobre blanco */
   --line-strong: oklch(0.87 0.006 275); /* #D3D4D8 */
@@ -170,8 +166,6 @@
   --ink-2: oklch(0.86 0.006 285); /* #D0D0D5 */
   --destructive: oklch(0.7 0.19 27); /* #FF655A */
   --success: oklch(0.78 0.17 150); /* #56D57B · 10:1 en card */
-  --ai: oklch(0.9 0.2 128);
-  --ai-foreground: oklch(0.24 0.07 135);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 17%);
   --line-strong: oklch(1 0 0 / 17%);

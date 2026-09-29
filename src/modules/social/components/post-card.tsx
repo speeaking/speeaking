@@ -29,7 +29,6 @@ import { CommunityAvatar } from "@/components/brand/community-avatar";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { MediaCarousel } from "@/components/media/media-carousel";
 import { MediaCollage } from "@/components/media/media-collage";
-import { buttonVariants } from "@/components/ui/button";
 import { formatCompactNumber, formatCount, formatMoney, formatRelativeTime } from "@/lib/format";
 import { FEED_FRAME, frameAspect, PRODUCT_FRAME } from "@/lib/image";
 import { cn } from "@/lib/utils";
@@ -118,7 +117,7 @@ function AiMark() {
     <span className="inline-flex shrink-0 items-center gap-1">
       <span
         aria-hidden="true"
-        className="grid size-3.5 place-items-center rounded-sm bg-ai text-ai-foreground"
+        className="grid size-3.5 place-items-center rounded-sm bg-secondary text-ink-2"
       >
         <Sparkles className="size-2.5" />
       </span>
@@ -131,10 +130,7 @@ function EditorialBadge({ hue }: { hue: number | undefined }) {
   return (
     <span
       style={hue === undefined ? undefined : ({ "--hue": hue } as CSSProperties)}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-1.5 py-px text-[10px] font-bold tracking-wide uppercase",
-        hue === undefined ? "text-primary-text" : "community-text",
-      )}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-1.5 py-px text-[10px] font-bold tracking-wide text-muted-foreground uppercase"
     >
       <PenLine aria-hidden="true" className="size-2.5" />
       Editorial
@@ -215,7 +211,7 @@ function CardHeader({ post }: { post: Post }) {
         ) : (
           <span
             aria-hidden="true"
-            className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-soft"
+            className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary"
           >
             <BrandMark className="size-7" />
           </span>
@@ -273,7 +269,7 @@ function CardHeader({ post }: { post: Post }) {
             {author.displayName}
           </Link>
           {author.isSeller ? (
-            <span className="shrink-0 rounded-full bg-primary-soft px-1.5 py-px text-[10px] font-bold tracking-wide text-primary-text uppercase">
+            <span className="shrink-0 rounded-full bg-secondary px-1.5 py-px text-[10px] font-bold tracking-wide text-ink-2 uppercase">
               Tienda
             </span>
           ) : null}
@@ -399,15 +395,11 @@ function PriceTag({ product, href }: { product: Product; href: Route }) {
     <Link
       href={href}
       // `after:-inset-1`: 36 px a la vista y 44 px al tacto.
-      className="absolute bottom-3 left-3 inline-flex h-9 items-center gap-2 rounded-full bg-card pr-1.5 pl-3 font-heading text-[15px] font-extrabold text-foreground shadow-lg transition-transform after:absolute after:-inset-1 motion-safe:hover:-translate-y-px"
+      // Pastilla blanca con el precio y una flecha en tinta (ADR-042): sin círculo rosa.
+      className="absolute bottom-3 left-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-card pr-2.5 pl-3 font-heading text-[15px] font-extrabold text-foreground shadow-lg transition-transform after:absolute after:-inset-1 motion-safe:hover:-translate-y-px"
     >
       {formatMoney(product.priceCents, product.currency)}
-      <span
-        aria-hidden="true"
-        className="grid size-6 place-items-center rounded-full bg-primary text-primary-foreground"
-      >
-        <ArrowRight className="size-3.5" />
-      </span>
+      <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
       <span className="sr-only">, ver {product.title}</span>
     </Link>
   );
@@ -473,12 +465,13 @@ function ProductBlock({
             </p>
           ) : null}
         </div>
+        {/* Enlace de texto, no botón (ADR-042): la acción principal de la tarjeta es abrir el producto. */}
         <Link
           href={href}
-          className={cn(buttonVariants({ variant: "soft" }), "h-11 shrink-0 px-3 md:h-9")}
+          className="relative inline-flex h-11 shrink-0 items-center gap-0.5 rounded-lg px-1 text-sm font-semibold text-foreground after:absolute after:-inset-1 hover:underline md:h-9"
         >
           Ver producto<span className="sr-only">: {product.title}</span>
-          <ChevronRight data-icon="inline-end" aria-hidden="true" />
+          <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
         </Link>
       </div>
       {withinBudget && available ? (
@@ -660,24 +653,12 @@ function ActionBar({
  * Fila de respuesta: lleva al formulario de la publicación. Sin comentarios, en lugar de un cero
  * invita con honestidad a abrir la conversación.
  */
-function ReplyRow({
-  post,
-  isSignedIn,
-  onPoster = false,
-}: {
-  post: Post;
-  isSignedIn: boolean;
-  /** Dentro del cartel (isla oscura) el campo es un velo de la tinta clara, como en la maqueta. */
-  onPoster?: boolean;
-}) {
+function ReplyRow({ post, isSignedIn }: { post: Post; isSignedIn: boolean }) {
   const postPath = `/p/${post.id}`;
   return (
     <Link
       href={isSignedIn ? (`${postPath}#comentar` as Route) : signUpHref(postPath)}
-      className={cn(
-        "flex h-11 items-center gap-2 rounded-full pr-3 pl-4 text-sm text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none",
-        onPoster ? "bg-foreground/10 hover:bg-foreground/15" : "bg-secondary hover:bg-accent",
-      )}
+      className="flex h-11 items-center gap-2 rounded-full bg-secondary pr-3 pl-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground motion-reduce:transition-none"
     >
       <span className="min-w-0 flex-1 truncate">
         {post.stats.comments === 0 ? "Sé la primera persona en comentar" : "¿Qué opinas?"}
@@ -772,7 +753,7 @@ export function PostCard({
             <h2
               data-size={headlineSize(headline)}
               className={cn(
-                "font-heading leading-[1.05] font-extrabold tracking-heading text-balance community-ink",
+                "font-heading leading-[1.05] font-extrabold tracking-heading text-balance text-foreground",
                 HEADLINE_CLASSES[headlineSize(headline)],
               )}
             >
@@ -790,14 +771,13 @@ export function PostCard({
     );
   }
 
-  // Tipográfica: cartel de tinta con el tono de la comunidad y el texto corto en grande, en blanco
-  // (`community-poster`, como el «Cartel de texto» de la maqueta). Es una isla oscura (`dark`): el
-  // texto secundario, los campos y el foco usan los tokens del tema oscuro, AA sobre la tinta.
+  // Tipográfica: el texto corto en grande sobre un tinte suave de su comunidad con tinta encima
+  // (`community-soft`, ADR-042). Ya no es un cartel de color saturado ni una isla oscura.
   if (variant === "bigType" && community && !cover && !isSale) {
     return (
       <article
         data-variant="bigType"
-        className="dark flex flex-col gap-4 community-poster px-4 pt-5 pb-4 motion-safe:animate-rise md:rounded-3xl md:px-6 md:pt-6"
+        className="flex flex-col gap-4 border-b community-soft px-4 pt-5 pb-4 motion-safe:animate-rise md:rounded-3xl md:border md:px-6 md:pt-6"
         style={style}
         aria-labelledby={labelledBy}
       >
@@ -807,7 +787,7 @@ export function PostCard({
         </p>
         <div className="flex flex-col gap-2">
           <ActionBar post={post} isSignedIn={isSignedIn} />
-          {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} onPoster /> : null}
+          {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
         </div>
       </article>
     );

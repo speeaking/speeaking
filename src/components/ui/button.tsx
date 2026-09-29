@@ -20,8 +20,9 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary-text underline-offset-4 hover:underline",
-        // Acción secundaria de marca («Unirme»): rosa suave con texto rosa AA (ADR-027).
-        soft: "bg-primary-soft text-primary-text hover:bg-[color-mix(in_oklch,var(--primary-soft),var(--primary)_6%)] aria-expanded:bg-primary-soft",
+        // Acción secundaria («Unirme», «Seguir» en listas, «Ver producto»): gris claro con tinta
+        // (ADR-042). Ya no es rosa: solo la acción principal de cada pantalla lleva el color.
+        soft: "bg-secondary text-foreground hover:bg-accent aria-expanded:bg-secondary",
       },
       size: {
         default:

@@ -32,7 +32,7 @@ Las columnas laterales llenan la pantalla con **datos reales**: tus comunidades,
 | Autor editorial         | La cabecera empieza por la comunidad: avatar de comunidad, nombre de la comunidad e insignia «Editorial» en su color. Debajo, «Equipo Estreno · hace 11 h». Adiós a las iniciales «GE».                                                                |
 | Contadores              | Los ceros se ocultan y se reemplazan por una invitación honesta («Sé la primera persona en comentar»). Nada inflado.                                                                                                                                   |
 | Comercio                | 1 pieza comercial cada 4 (política existente). El producto de «Lo que buscas» en la columna derecha **cuenta dentro de ese presupuesto** y no se repite si ya está en la primera página del feed. Sin estante fijo de productos.                       |
-| Intención               | El chip neutro «Porque buscas “tenis para correr”» reemplaza al chip lima con destello. El lima queda reservado para la IA. «En tu presupuesto» lo calcula el servidor (P2).                                                                           |
+| Intención               | El chip neutro «Porque buscas “tenis para correr”» reemplaza al chip lima con destello. La lima se retiró con la IA como distintivo (ADR-042). «En tu presupuesto» lo calcula el servidor (P2).                                                        |
 | Sube y vende            | Una sola entrada en escritorio: una fila en la columna izquierda, sección «Para vender». La columna derecha ya no la repite. Sin tarjeta oscura grande ni botón lima en el compositor.                                                                 |
 | Búsqueda                | `/buscar` (barra superior en escritorio, lupa en móvil): comunidades, productos y publicaciones, por palabras y sin acentos. Comprar usa la misma búsqueda de productos.                                                                               |
 | Visitantes              | Sin banner oscuro. El feed empieza arriba, con una tarjeta de bienvenida en la columna derecha e invitaciones en contexto («Unirme», «Responder»). En móvil, una tarjeta «Arma tu feed» después de la 2.ª publicación.                                 |
@@ -46,30 +46,30 @@ Las columnas laterales llenan la pantalla con **datos reales**: tus comunidades,
 Aprobada el 2026-09-25: **rosa mexicano** ([ADR-027](../decisions.md#adr-027--paleta-rosa-mexicano)).
 Los tokens están en `src/app/globals.css` y conservan los nombres de shadcn.
 
-| Uso                   | Utilidad                                     | Claro                | Oscuro                  |
-| --------------------- | -------------------------------------------- | -------------------- | ----------------------- |
-| Lienzo                | `bg-background`                              | `#F6F7F9`            | `#000000`               |
-| Tarjetas y menús      | `bg-card`, `bg-popover`                      | `#FFFFFF`            | `#101012`               |
-| Texto                 | `text-foreground`                            | `#0F0F14`            | `#F5F5F7`               |
-| Texto secundario      | `text-ink-2`, `text-muted-foreground`        | `#3C3D43`, `#5E6069` | `#D0D0D5`, `#9D9EA5`    |
-| Chips y campos        | `bg-secondary`, `bg-muted`                   | `#EFF0F3`            | `#1E1E20`               |
-| Hover de menús        | `bg-accent`                                  | `#E5E6EA`            | `#28282C`               |
-| Bordes                | `border-border`, `border-line-strong`        | `#E4E4E7`, `#D3D4D8` | blanco al 10 %, al 17 % |
-| Marca: crear, comprar | `bg-primary text-primary-foreground`         | `#E4007C` con blanco | igual                   |
-| Rosa oscuro (hover)   | `bg-primary-strong`, `text-primary-strong`   | `#C00168`            | igual                   |
-| Texto y enlaces rosa  | `text-primary-text`                          | `#C60C6D`            | `#FC84B4`               |
-| Rosa suave («Unirme») | `bg-primary-soft`, `<Button variant="soft">` | `#FFEAF1`            | `#4F0D2B`               |
-| Positivo              | `text-success`, `bg-success/10`              | `#137738`            | `#56D57B`               |
-| Error                 | `text-destructive`, `bg-destructive/10`      | `#C51F17`            | `#FF655A`               |
-| IA (y nada más)       | `bg-ai text-ai-foreground`                   | `#B7F652`            | igual                   |
-| Barras con desenfoque | `bg-glass backdrop-blur`                     | blanco al 86 %       | negro al 78 %           |
+| Uso                                          | Utilidad                                             | Claro                | Oscuro                  |
+| -------------------------------------------- | ---------------------------------------------------- | -------------------- | ----------------------- |
+| Lienzo                                       | `bg-background`                                      | `#F6F7F9`            | `#000000`               |
+| Tarjetas y menús                             | `bg-card`, `bg-popover`                              | `#FFFFFF`            | `#101012`               |
+| Texto                                        | `text-foreground`                                    | `#0F0F14`            | `#F5F5F7`               |
+| Texto secundario                             | `text-ink-2`, `text-muted-foreground`                | `#3C3D43`, `#5E6069` | `#D0D0D5`, `#9D9EA5`    |
+| Chips y campos                               | `bg-secondary`, `bg-muted`                           | `#EFF0F3`            | `#1E1E20`               |
+| Hover de menús                               | `bg-accent`                                          | `#E5E6EA`            | `#28282C`               |
+| Bordes                                       | `border-border`, `border-line-strong`                | `#E4E4E7`, `#D3D4D8` | blanco al 10 %, al 17 % |
+| Marca: crear, comprar                        | `bg-primary text-primary-foreground`                 | `#E4007C` con blanco | igual                   |
+| Rosa oscuro (hover)                          | `bg-primary-strong`, `text-primary-strong`           | `#C00168`            | igual                   |
+| Texto y enlaces rosa                         | `text-primary-text`                                  | `#C60C6D`            | `#FC84B4`               |
+| Rosa suave (enlaces y avisos)                | `bg-primary-soft`, `text-primary-text`               | `#FFEAF1`            | `#4F0D2B`               |
+| Acción secundaria («Unirme», «Ver producto») | `<Button variant="soft">` = gris con tinta (ADR-042) | `#EFF0F3`            | `#1E1E20`               |
+| Positivo                                     | `text-success`, `bg-success/10`                      | `#137738`            | `#56D57B`               |
+| Error                                        | `text-destructive`, `bg-destructive/10`              | `#C51F17`            | `#FF655A`               |
+| Barras con desenfoque                        | `bg-glass backdrop-blur`                             | blanco al 86 %       | negro al 78 %           |
 
 **Reglas.**
 
 - El rosa como texto siempre es `text-primary-text`: `text-primary` sobre el gris del lienzo no llega
   a AA.
-- Nada de turquesa ni de degradados. Los estados positivos son verdes (`success`) y la lima es solo
-  de la IA.
+- Nada de turquesa, lima ni degradados. Los estados positivos son verdes (`success`); el rosa es
+  solo para la marca, los enlaces y la acción principal de cada pantalla (ADR-042).
 - Radios: `rounded-3xl` = `rounded-card` = 20 px para tarjetas; los botones usan `rounded-lg`.
 - Titulares: `h1` lleva `tracking-display` (−0.028em) y `h2`/`h3` `tracking-heading` (−0.02em).
   Para títulos medianos de tarjeta, usa `tracking-title` (−0.012em).

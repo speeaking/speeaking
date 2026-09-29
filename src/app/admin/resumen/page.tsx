@@ -234,7 +234,7 @@ export default async function WeeklyReportPage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         <Section title="Costo de IA contra el tope" id="ia">
-          <p className="inline-flex w-fit items-center gap-1 rounded-full bg-ai px-2 py-0.5 text-xs font-bold text-ai-foreground">
+          <p className="inline-flex w-fit items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-ink-2">
             <Sparkles className="size-3" /> IA
           </p>
           <p className="font-heading text-2xl font-extrabold">
@@ -252,7 +252,7 @@ export default async function WeeklyReportPage() {
             <div
               className={cn(
                 "h-full rounded-full",
-                (ai.usedRatio ?? 0) >= 0.8 ? "bg-destructive" : "bg-ai",
+                (ai.usedRatio ?? 0) >= 0.8 ? "bg-destructive" : "bg-foreground",
               )}
               style={{ width: `${Math.min(1, ai.usedRatio ?? 0) * 100}%` }}
             />

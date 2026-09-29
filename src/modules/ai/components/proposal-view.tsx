@@ -111,7 +111,7 @@ export function ProposalView({
             {SIMULATED_OUTPUT_LABEL} · revísalo antes de publicar
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-ai px-2.5 py-1 text-xs font-bold text-ai-foreground">
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-ink-2">
             <Sparkles className="size-3.5" />
             Propuesta de IA · revísala antes de publicar
           </span>

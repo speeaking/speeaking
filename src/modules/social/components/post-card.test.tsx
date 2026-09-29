@@ -475,17 +475,16 @@ describe("PostCard: variantes", () => {
     expect(article).not.toHaveTextContent(/fin\?.*¿Algo para jugar/);
   });
 
-  it("tipográfica: cartel de tinta con el tono de la comunidad, isla oscura con sus acciones", () => {
+  it("tipográfica: tinte suave con el tono de la comunidad y tinta encima, con sus acciones", () => {
     const body = "¿Control o teclado y mouse para shooters?";
     render(<PostCard variant="bigType" post={post({ community: gaming, media: [], body })} />);
 
     const article = screen.getByRole("article");
     expect(article).toHaveAttribute("data-variant", "bigType");
-    // El cartel es toda la tarjeta (como en la maqueta) y lleva el tono de su comunidad.
-    expect(screen.getByText(body).closest(".community-poster")).toBe(article);
+    // El tinte es toda la tarjeta y lleva el tono de su comunidad; ya no es una isla oscura (ADR-042).
+    expect(screen.getByText(body).closest(".community-soft")).toBe(article);
     expect(article.style.getPropertyValue("--hue")).toBe("285");
-    // `dark`: el texto secundario, los campos y el foco usan los tokens oscuros sobre la tinta.
-    expect(article).toHaveClass("dark");
+    expect(article).not.toHaveClass("dark");
     expect(
       within(article).getByRole("link", { name: "Sé la primera persona en comentar" }),
     ).toBeInTheDocument();

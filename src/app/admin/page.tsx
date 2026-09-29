@@ -94,7 +94,7 @@ function SectionCard({
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary",
-          isAi && "bg-ai text-ai-foreground",
+          isAi && "bg-secondary text-ink-2",
         )}
       >
         <Icon className="size-5" />

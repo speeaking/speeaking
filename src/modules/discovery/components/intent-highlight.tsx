@@ -38,7 +38,7 @@ export function IntentHighlight({
         action={<DismissIntentButton query={intent.query} />}
       >
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-ink-2">
             <ShoppingBag aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0">

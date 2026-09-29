@@ -54,7 +54,7 @@ export function JoinPrompt({
         ) : (
           <span
             aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft"
+            className="grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary"
           >
             <BrandMark className="size-8" />
           </span>

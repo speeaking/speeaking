@@ -132,7 +132,7 @@ export default async function AdminAiPage() {
           className="h-2 overflow-hidden rounded-full bg-secondary"
         >
           <div
-            className={cn("h-full", usedShare >= 0.9 ? "bg-destructive" : "bg-ai")}
+            className={cn("h-full", usedShare >= 0.9 ? "bg-destructive" : "bg-foreground")}
             style={{ width: `${Math.min(100, usedShare * 100)}%` }}
           />
         </div>

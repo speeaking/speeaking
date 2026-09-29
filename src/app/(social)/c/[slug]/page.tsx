@@ -71,7 +71,8 @@ export default async function CommunityPage({ params }: PageProps<"/c/[slug]">) 
     <>
       <header
         style={{ "--hue": community.hue } as CSSProperties}
-        className="mx-4 mt-4 mb-5 flex flex-col gap-3 rounded-3xl community-poster p-5 md:mx-0"
+        // Tinte suave con tinta encima (ADR-042), no el cartel de color saturado.
+        className="mx-4 mt-4 mb-5 flex flex-col gap-3 rounded-3xl border community-soft p-5 md:mx-0"
       >
         <CommunityAvatar
           name={community.name}

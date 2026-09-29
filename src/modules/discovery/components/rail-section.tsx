@@ -38,7 +38,7 @@ export function RailSection({
           id={id}
           className="flex items-center gap-2 font-heading text-[17px] leading-tight font-bold tracking-title"
         >
-          <Icon aria-hidden="true" className="size-5 shrink-0 text-primary" />
+          <Icon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
           {title}
         </h2>
         {action}

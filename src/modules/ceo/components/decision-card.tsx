@@ -75,7 +75,7 @@ export function DecisionCard({ decision }: { decision: DecisionDTO }) {
 
       {decision.narrative?.source === "ai" ? (
         <div className="flex flex-col gap-1.5 rounded-2xl bg-muted p-3 text-sm">
-          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-ai px-2 py-0.5 text-xs font-bold text-ai-foreground">
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-ink-2">
             <Sparkles className="size-3" /> Redactado por IA
           </span>
           <p>{decision.narrative.text}</p>

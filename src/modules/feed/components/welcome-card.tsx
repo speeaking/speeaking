@@ -67,7 +67,7 @@ export function WelcomeCard({
       <div className="flex items-start gap-3 pr-10">
         <span
           aria-hidden="true"
-          className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary-text"
+          className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-ink-2"
         >
           <PartyPopper className="size-6" />
         </span>

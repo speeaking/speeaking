@@ -76,7 +76,7 @@ export function ConsentBanner({
   return (
     <section
       aria-label="Cambios en los documentos legales"
-      className="border-b border-border bg-primary-soft text-foreground"
+      className="border-b border-border bg-secondary text-foreground"
     >
       <div className="mx-auto flex w-full max-w-[1352px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 text-sm md:px-6">
         <p className="min-w-0 flex-1 basis-64 font-medium">

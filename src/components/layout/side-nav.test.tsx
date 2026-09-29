@@ -101,7 +101,7 @@ describe("SideNav · novedades por comunidad (F7)", () => {
       name: "Gaming, 1 publicación nueva",
     });
     expect(gaming.style.getPropertyValue("--hue")).toBe("285");
-    expect(gaming.querySelector('[data-slot="unread"]')).toHaveClass("community-ink");
+    expect(gaming.querySelector('[data-slot="unread"]')).toHaveClass("text-muted-foreground");
   });
 
   it("dentro de la comunidad ya no cuenta, y tampoco al volver (el layout no se vuelve a pintar)", () => {

@@ -44,7 +44,7 @@ export function Composer({
         <span className="truncate">¿Qué quieres compartir, {firstName}?</span>
       </Link>
       <Link href={`${CREATE_POST}?tipo=foto` as Route} aria-label="Foto" className={quickAction}>
-        <ImagePlus aria-hidden="true" className="size-5 text-success" />
+        <ImagePlus aria-hidden="true" className="size-5" />
         <span className="hidden md:inline">Foto</span>
       </Link>
       {/* En teléfonos solo «Foto» (como la maqueta de Plaza): con dos íconos el campo se corta
@@ -54,7 +54,7 @@ export function Composer({
         aria-label="Pregunta"
         className={cn(quickAction, "max-sm:hidden")}
       >
-        <CircleHelp aria-hidden="true" className="size-5 text-primary-text" />
+        <CircleHelp aria-hidden="true" className="size-5" />
         <span className="hidden md:inline">Pregunta</span>
       </Link>
     </section>

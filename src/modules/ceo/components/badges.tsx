@@ -16,13 +16,13 @@ export function RiskBadge({ risk, label }: { risk: RiskLevel; label: string }) {
 }
 
 const STATUS_CLASSES: Record<DecisionStatus | ExperimentStatus, string> = {
-  PROPOSED: "bg-primary-soft text-primary-text",
+  PROPOSED: "bg-secondary text-ink-2",
   APPROVED: "bg-secondary text-secondary-foreground",
   APPLIED: "bg-success/10 text-success",
   REVERTED: "bg-destructive/10 text-destructive",
   REJECTED: "bg-muted text-muted-foreground",
   DRAFT: "bg-muted text-muted-foreground",
-  RUNNING: "bg-primary-soft text-primary-text",
+  RUNNING: "bg-secondary text-ink-2",
   STOPPED: "bg-destructive/10 text-destructive",
   CONCLUDED: "bg-success/10 text-success",
 };

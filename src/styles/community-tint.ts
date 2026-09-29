@@ -35,14 +35,17 @@ export const TONES = {
   text: { light: { l: 0.52, c: 0.2 }, dark: { l: 0.82, c: 0.15 } },
   /** Fondo suave: selección y franjas de lectura. */
   soft: { light: { l: 0.965, c: 0.03 }, dark: { l: 0.21, c: 0.045 } },
-  /** Mosaico del emoji, saturado como ícono de app. Sin texto encima. */
-  tile: { light: { l: 0.8, c: 0.15, lift: 0.08 }, dark: { l: 0.72, c: 0.16, lift: 0.06 } },
-  /** Barras, reglas y bordes marcados. Sin texto encima. */
-  bar: { light: { l: 0.66, c: 0.21, lift: 0.18 }, dark: { l: 0.74, c: 0.18, lift: 0.08 } },
+  /**
+   * Mosaico del emoji: un tinte suave, no un ícono saturado (ADR-042: el tono identifica a la
+   * comunidad en pequeño; el color ya no es fondo). Sin texto encima.
+   */
+  tile: { light: { l: 0.93, c: 0.055, lift: 0.03 }, dark: { l: 0.3, c: 0.055, lift: 0.03 } },
+  /** Barras, reglas e indicadores pequeños. Sin texto encima. */
+  bar: { light: { l: 0.7, c: 0.13, lift: 0.14 }, dark: { l: 0.72, c: 0.13, lift: 0.06 } },
   /** Tinta profunda: titulares casi negros (casi blancos en oscuro), nunca cafés. */
   ink: { light: { l: 0.2, c: 0.035 }, dark: { l: 0.96, c: 0.02 } },
-  /** Bloque de color con texto: vivo en claro, profundo en oscuro. */
-  block: { light: { l: 0.82, c: 0.16, lift: 0.07 }, dark: { l: 0.21, c: 0.045 } },
+  /** Bloque con texto: un tinte apenas perceptible con tinta encima (ADR-042), en ambos temas. */
+  block: { light: { l: 0.955, c: 0.035, lift: 0.02 }, dark: { l: 0.22, c: 0.04 } },
   blockText: { light: { fixed: [0.17, 0.01, 285] }, dark: { fixed: [0.97, 0.003, 285] } },
   blockMuted: { light: { fixed: [0.3, 0.02, 285] }, dark: { fixed: [0.78, 0.01, 285] } },
   /** Cartel: bloque de tinta con texto blanco y kicker claro. */

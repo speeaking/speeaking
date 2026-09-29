@@ -66,7 +66,7 @@ function AiLabel({ simulated }: { simulated: boolean }) {
     );
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ai px-2 py-0.5 text-[11px] font-bold text-ai-foreground">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold text-ink-2">
       <Sparkles aria-hidden="true" className="size-3" />
       {AI_OUTPUT_LABEL}
     </span>
@@ -180,7 +180,7 @@ export function AdKitPanel({
     <div data-ai-availability={availability} className="flex flex-col gap-4">
       <section className="dark flex flex-col gap-3 rounded-3xl border bg-card p-5 text-foreground">
         {availability === "real" ? (
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-ai px-2.5 py-1 text-xs font-bold text-ai-foreground">
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-ink-2">
             <Sparkles aria-hidden="true" className="size-3.5" />
             Kit de anuncios
           </span>

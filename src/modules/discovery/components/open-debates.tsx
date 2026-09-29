@@ -51,7 +51,7 @@ export function OpenDebates({ debates, signedIn }: { debates: OpenDebatesDTO; si
           >
             <span
               aria-hidden="true"
-              className="font-heading text-[28px] leading-none font-extrabold tracking-display community-text tabular-nums"
+              className="font-heading text-[28px] leading-none font-extrabold tracking-display text-muted-foreground tabular-nums"
             >
               {String(index + 1).padStart(2, "0")}
             </span>
@@ -65,7 +65,7 @@ export function OpenDebates({ debates, signedIn }: { debates: OpenDebatesDTO; si
               <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
                 <Link
                   href={`/c/${debate.community.slug}` as Route}
-                  className="font-bold community-text hover:underline"
+                  className="font-bold text-ink-2 hover:underline"
                 >
                   <span aria-hidden="true">{debate.community.emoji}</span> {debate.community.name}
                 </Link>

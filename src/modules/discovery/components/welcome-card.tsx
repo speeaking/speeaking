@@ -4,17 +4,16 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 /**
- * Bienvenida del visitante en la columna derecha (F6): el bloque de marca, rosa sólido con texto
- * blanco. Sobre el rosa, el anillo de foco va en blanco y el texto rosa sobre blanco es
- * `text-primary-strong` (ver «Paleta» en docs/design/rediseno-revista.md).
+ * Bienvenida del visitante en la columna derecha (F6, ADR-042): tarjeta blanca con una sola acción
+ * principal («Crear cuenta gratis») y enlaces de texto para lo demás. Sin bloque rosa.
  */
 export function WelcomeCard() {
   return (
     <section
       aria-labelledby="columna-bienvenida"
-      className="rounded-3xl bg-primary p-5 text-primary-foreground [--ring:oklch(1_0_0)]"
+      className="rounded-3xl border bg-card p-5 text-foreground"
     >
-      <p className="text-[11px] font-bold tracking-[0.1em] uppercase">
+      <p className="text-[11px] font-bold tracking-[0.1em] text-muted-foreground uppercase">
         Gratis · una sola cuenta para todo
       </p>
       <h2
@@ -23,31 +22,30 @@ export function WelcomeCard() {
       >
         Arma tu propio inicio
       </h2>
-      <p className="mt-2 text-sm leading-snug">
+      <p className="mt-2 text-sm leading-snug text-ink-2">
         Elige tus comunidades y tu inicio se llena de memes, recetas, trucos y cosas que puedes
         comprar sin salir de la conversación.
       </p>
       <Link
         href="/registro"
-        // `cn` resuelve los conflictos con la variante (fondo, texto, alto y peso).
-        className={cn(
-          buttonVariants({ size: "lg" }),
-          "mt-4 h-10 w-full bg-primary-foreground font-bold text-primary-strong hover:bg-primary-foreground/90 focus-visible:ring-offset-primary",
-        )}
+        className={cn(buttonVariants({ size: "lg" }), "mt-4 h-10 w-full font-bold")}
       >
         Crear cuenta gratis
       </Link>
-      <p className="mt-2 text-center text-xs">
+      <p className="mt-2 text-center text-xs text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/entrar" className="font-bold underline underline-offset-2">
+        <Link
+          href="/entrar"
+          className="font-bold text-primary-text underline-offset-2 hover:underline"
+        >
           Entra
         </Link>
       </p>
-      <p className="mt-4 border-t border-primary-foreground/30 pt-3 text-xs">
+      <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
         ¿Vendes algo?{" "}
         <Link
           href={siteConfig.sellerFeaturePath}
-          className="font-bold underline underline-offset-2"
+          className="font-bold text-primary-text underline-offset-2 hover:underline"
         >
           Hazlo con {siteConfig.sellerFeatureName}
         </Link>
