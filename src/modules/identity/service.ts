@@ -14,6 +14,17 @@ export class OnboardingError extends Error {
   }
 }
 
+/**
+ * ¿La cuenta ya aceptó términos y aviso de privacidad? Una cuenta creada con Google (ADR-049) no
+ * pasó por el registro: la bienvenida le pide la casilla y lo registra al terminar.
+ */
+export async function hasLegalConsents(userId: string): Promise<boolean> {
+  const count = await db.userConsent.count({
+    where: { userId, type: { in: ["TERMS", "PRIVACY_NOTICE"] }, granted: true },
+  });
+  return count > 0;
+}
+
 /** Sugiere un nombre de usuario libre a partir del nombre (agrega números si está ocupado). */
 export async function suggestAvailableUsername(name: string) {
   const base = suggestUsername(name).slice(0, 26);
@@ -33,7 +44,11 @@ export async function suggestAvailableUsername(name: string) {
  * declarada y consentimiento de personalización (historial versionado).
  * Devuelve los IDs de las comunidades nuevas para registrar eventos.
  */
-export async function completeOnboarding(userId: string, input: OnboardingInput) {
+export async function completeOnboarding(
+  userId: string,
+  input: OnboardingInput,
+  options: { legalConsent?: boolean } = {},
+) {
   const communities = await db.community.findMany({
     where: { slug: { in: input.communities } },
     select: { id: true },
@@ -114,6 +129,20 @@ export async function completeOnboarding(userId: string, input: OnboardingInput)
           granted: input.personalizationEnabled,
         },
       });
+      if (options.legalConsent) {
+        // Cuenta creada con Google (ADR-049): aceptó términos y aviso aquí, con la casilla.
+        await tx.userConsent.createMany({
+          data: [
+            { userId, type: "TERMS", version: LEGAL_VERSIONS.terms, granted: true },
+            {
+              userId,
+              type: "PRIVACY_NOTICE",
+              version: LEGAL_VERSIONS.privacyNotice,
+              granted: true,
+            },
+          ],
+        });
+      }
 
       return { joinedCommunityIds: joined };
     });

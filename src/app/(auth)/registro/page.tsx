@@ -3,7 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CommunityAvatar } from "@/components/brand/community-avatar";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { GoogleButton } from "@/modules/identity/components/google-button";
 import { SignUpForm } from "@/modules/identity/components/sign-up-form";
+import { googleSignInEnabled } from "@/modules/identity/social";
 import { listCommunities } from "@/modules/identity/service";
 import { getSession } from "@/modules/identity/session";
 import { onboardingPath, parseJoinSlugs } from "../unirse";
@@ -59,6 +61,12 @@ export default async function SignUpPage({ searchParams }: PageProps<"/registro"
             Podrás elegir más (o quitarlas) al crear tu perfil.
           </p>
         </div>
+      ) : null}
+      {googleSignInEnabled() ? (
+        <>
+          <GoogleButton next={formNext || undefined} intent="signup" />
+          <p className="text-center text-xs text-muted-foreground">o con tu correo</p>
+        </>
       ) : null}
       <SignUpForm next={formNext || undefined} />
       <p className="text-center text-sm text-muted-foreground">

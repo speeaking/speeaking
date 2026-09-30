@@ -12,10 +12,7 @@ import { cn } from "@/lib/utils";
  */
 export function SupportCard({ href }: { href: string }) {
   return (
-    <section
-      aria-labelledby="apoya"
-      className="flex flex-col gap-2 rounded-3xl border bg-card p-4"
-    >
+    <section aria-labelledby="apoya" className="flex flex-col gap-2 rounded-3xl border bg-card p-4">
       <h2 id="apoya" className="flex items-center gap-2 font-heading text-base font-bold">
         <HeartHandshake aria-hidden="true" className="size-4 text-primary-text" />
         Apoya a {siteConfig.name}

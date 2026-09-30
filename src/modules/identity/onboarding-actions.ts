@@ -8,7 +8,7 @@ import { safeRedirectPath } from "@/lib/safe-redirect";
 import { track } from "@/modules/analytics/track";
 import { WELCOME_COOKIE, WELCOME_MAX_AGE_SECONDS } from "@/modules/feed/welcome";
 import { onboardingSchema } from "./onboarding-schema";
-import { completeOnboarding, OnboardingError } from "./service";
+import { completeOnboarding, hasLegalConsents, OnboardingError } from "./service";
 import { requireViewer } from "./session";
 
 export type OnboardingFormState = {
@@ -29,9 +29,22 @@ export async function completeOnboardingAction(
     };
   }
 
+  // Con Google no hubo casilla en el registro (ADR-049): la bienvenida la exige.
+  const legalConsent = !(await hasLegalConsents(viewer.userId));
+  if (legalConsent && formData.get("acceptLegal") !== "on") {
+    return {
+      error: "Revisa los datos marcados.",
+      fieldErrors: {
+        acceptLegal: ["Acepta los términos y el aviso de privacidad para continuar."],
+      },
+    };
+  }
+
   let joinedCommunityIds: string[];
   try {
-    ({ joinedCommunityIds } = await completeOnboarding(viewer.userId, parsed.data));
+    ({ joinedCommunityIds } = await completeOnboarding(viewer.userId, parsed.data, {
+      legalConsent,
+    }));
   } catch (error) {
     if (error instanceof OnboardingError) {
       return error.code === "USERNAME_TAKEN"

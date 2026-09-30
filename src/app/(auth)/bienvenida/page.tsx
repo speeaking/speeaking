@@ -2,7 +2,11 @@ import type { Metadata, Route } from "next";
 import { redirect } from "next/navigation";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { OnboardingForm } from "@/modules/identity/components/onboarding-form";
-import { listCommunities, suggestAvailableUsername } from "@/modules/identity/service";
+import {
+  hasLegalConsents,
+  listCommunities,
+  suggestAvailableUsername,
+} from "@/modules/identity/service";
 import { requireViewer } from "@/modules/identity/session";
 import { onboardingPath, parseJoinSlugs, unwrapOnboardingNext } from "../unirse";
 
@@ -28,9 +32,10 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/bienv
   const viewer = await requireViewer(onboardingPath({ join, next: safeNext }));
   if (viewer.profile?.onboarded) redirect((safeNext || "/") as Route);
 
-  const [communities, suggestedUsername] = await Promise.all([
+  const [communities, suggestedUsername, legalAccepted] = await Promise.all([
     listCommunities(),
     viewer.profile?.username ?? suggestAvailableUsername(viewer.name),
+    hasLegalConsents(viewer.userId),
   ]);
   // Solo se marcan comunidades que existen (la URL la puede escribir cualquiera).
   const known = new Set(communities.map((community) => community.slug));
@@ -43,6 +48,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/bienv
       defaultName={viewer.profile?.displayName ?? viewer.name}
       next={safeNext || undefined}
       preselected={preselected}
+      needsLegalConsent={!legalAccepted}
     />
   );
 }

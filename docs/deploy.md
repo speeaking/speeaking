@@ -148,6 +148,18 @@ Dos opciones para el piloto cerrado (ADR-038):
 - **IA simulada:** `AI_PROVIDER=mock` y `ALLOW_SIMULATED_AI=true`. Los vendedores reciben textos de
   plantilla, no de un modelo; sin costo.
 
+## 6 bis. Entrar con Google (opcional, ADR-049)
+
+1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «Estreno», correo de
+   contacto, dominio del sitio; alcance solo `email` y `profile`.
+2. Credenciales → Crear → «ID de cliente de OAuth» → Aplicación web. Orígenes autorizados:
+   `https://<tu dominio>` (y `http://localhost:3000` para probar). URI de redirección autorizada:
+   `https://<tu dominio>/api/auth/callback/google` (y la de localhost).
+3. Copia el ID y el secreto a `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. Con las dos variables
+   aparece «Continuar con Google» en Entrar y Registro; sin ellas, nada cambia.
+4. Prueba a mano: una cuenta nueva con Google debe caer en la bienvenida y aceptar términos y aviso
+   con la casilla antes de terminar el perfil.
+
 ## 7. Importar el proyecto en Vercel
 
 1. Vercel → **Add New… → Project** → **Import Git Repository** → autoriza la app de GitHub **solo**

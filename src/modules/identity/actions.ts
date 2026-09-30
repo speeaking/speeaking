@@ -8,13 +8,15 @@ import { z } from "zod";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { track } from "@/modules/analytics/track";
 import { auth } from "@/server/auth";
-import { withClientIpHeader } from "@/server/client-ip";
+import { clientIp, withClientIpHeader } from "@/server/client-ip";
+import { limitOrError, rateLimit, rateLimitKey } from "@/server/rate-limit";
 import { db } from "@/server/db";
 import { forgiveSignIn, limitSignIn, limitSignUp } from "./auth-limits";
 import { authErrorMessage } from "./auth-errors";
 import { LEGAL_VERSIONS } from "./constants";
 import { signInSchema, signUpSchema } from "./schemas";
 import { requireViewer } from "./session";
+import { googleSignInEnabled } from "./social";
 
 export type AuthFormState = {
   error?: string;
@@ -133,4 +135,39 @@ export async function signOutEverywhereAction() {
   // La sesión actual ya no existe; esto solo borra la cookie del navegador.
   await auth.api.signOut({ headers: requestHeaders });
   redirect("/entrar");
+}
+
+/**
+ * «Continuar con Google» (ADR-049): pide a Better Auth la URL de autorización y manda ahí. Al
+ * volver, Google entra por `/api/auth/callback/google`; una cuenta nueva cae en la bienvenida (donde
+ * acepta términos y aviso) y una existente regresa a `next`. Sin credenciales configuradas, la
+ * acción no existe para la interfaz (el botón no se pinta) y aquí responde 404.
+ */
+export async function signInWithGoogleAction(formData: FormData): Promise<void> {
+  if (!googleSignInEnabled()) redirect("/entrar?error=google" as Route);
+  const requestHeaders = await headers();
+  const ip = clientIp(requestHeaders);
+  const key = rateLimitKey("auth.google", "ip", ip);
+  if (key) {
+    const limited = limitOrError(await rateLimit({ key, limit: 20, windowSeconds: 10 * 60 }));
+    if (limited) redirect("/entrar?error=google" as Route);
+  }
+  const next = safeRedirectPath(formData.get("next"), "/");
+  let url: string | undefined;
+  try {
+    const result = await auth.api.signInSocial({
+      body: {
+        provider: "google",
+        callbackURL: next,
+        newUserCallbackURL: `/bienvenida?next=${encodeURIComponent(next)}`,
+        errorCallbackURL: "/entrar?error=google",
+        disableRedirect: true,
+      },
+      headers: withClientIpHeader(requestHeaders),
+    });
+    url = result?.url ?? undefined;
+  } catch (error) {
+    console.error("[identity] no se pudo iniciar el flujo de Google", error);
+  }
+  redirect((url ?? "/entrar?error=google") as Route);
 }

@@ -22,7 +22,7 @@ import { BRAND_SUGGESTIONS, GOAL_OPTIONS, MIN_COMMUNITIES } from "../onboarding-
 type Community = { slug: string; name: string; emoji: string; hue: number; description: string };
 
 const STEP_TITLES = ["Cuéntanos de ti", "Elige tus comunidades", "Para conocerte mejor"] as const;
-const STEP_ONE_FIELDS = ["username", "displayName", "goals"];
+const STEP_ONE_FIELDS = ["username", "displayName", "goals", "acceptLegal"];
 
 // El paso se refleja en la URL (?paso=2) para que el botón Atrás del navegador (o de Android)
 // regrese un paso en lugar de salir del cuestionario. Next integra window.history con su router,
@@ -54,11 +54,14 @@ export function OnboardingForm({
   defaultName,
   next,
   preselected = [],
+  needsLegalConsent = false,
 }: {
   communities: Community[];
   suggestedUsername: string;
   defaultName: string;
   next?: string;
+  /** La cuenta llegó por Google y aún no acepta términos ni aviso (ADR-049): casilla obligatoria. */
+  needsLegalConsent?: boolean;
   /**
    * Comunidades que eligió antes de tener cuenta (`?unirse=`, ya validadas en el servidor): llegan
    * marcadas y primero en el paso 2. Se pueden quitar.
@@ -228,6 +231,41 @@ export function OnboardingForm({
             ))}
           </div>
         </fieldset>
+        {needsLegalConsent ? (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="acceptLegal"
+              required
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+              aria-invalid={state.fieldErrors?.acceptLegal ? true : undefined}
+            />
+            <span>
+              Acepto los{" "}
+              <Link
+                href="/terminos"
+                className="font-medium underline underline-offset-2"
+                target="_blank"
+              >
+                términos
+              </Link>{" "}
+              y el{" "}
+              <Link
+                href="/privacidad"
+                className="font-medium underline underline-offset-2"
+                target="_blank"
+              >
+                aviso de privacidad
+              </Link>
+              .
+            </span>
+          </label>
+        ) : null}
+        {state.fieldErrors?.acceptLegal ? (
+          <p role="alert" className="text-sm text-destructive">
+            {state.fieldErrors.acceptLegal[0]}
+          </p>
+        ) : null}
         <Button type="button" size="lg" className="h-11 text-base" onClick={() => goToStep(1)}>
           Siguiente
         </Button>

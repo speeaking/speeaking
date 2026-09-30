@@ -66,6 +66,13 @@ export const serverEnvSchema = z
      * tarjeta. Solo https: el dinero nunca pasa por aquí.
      */
     SUPPORT_URL: optional(z.url({ protocol: /^https$/, error: "Debe ser una URL https." })),
+    /**
+     * Entrar con Google (ADR-049): credenciales del cliente OAuth de Google Cloud. Las dos o
+     * ninguna; sin ellas no hay botón ni callback. URI de redirección autorizada:
+     * `<APP_URL>/api/auth/callback/google`.
+     */
+    GOOGLE_CLIENT_ID: optional(z.string().min(20, "Debe tener al menos 20 caracteres.")),
+    GOOGLE_CLIENT_SECRET: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
     STORAGE_DRIVER: z
@@ -177,6 +184,13 @@ export const serverEnvSchema = z
         path: ["ALLOW_SIMULATED_AI"],
         message:
           "Con AI_PROVIDER=mock en producción la IA es simulada: los vendedores recibirían textos de plantilla, no de un modelo. Configura AI_PROVIDER=openai_compatible o, solo para un piloto cerrado, ALLOW_SIMULATED_AI=true.",
+      });
+    }
+    if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["GOOGLE_CLIENT_SECRET"],
+        message: "GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET van juntas: pon las dos o ninguna.",
       });
     }
     if (env.AI_PROVIDER === "openai_compatible") {

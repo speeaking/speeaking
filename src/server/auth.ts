@@ -20,6 +20,18 @@ export const auth = betterAuth({
   baseURL: env.APP_URL,
   secret: env.BETTER_AUTH_SECRET,
   database: prismaAdapter(db, { provider: "postgresql" }),
+  // Entrar con Google (ADR-049): solo con credenciales; el callback lo abre el router HTTP.
+  socialProviders:
+    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+            // Google ya verificó el correo: la cuenta nace verificada. Si el correo ya existe con
+            // contraseña, no se enlaza solo (SEC: evita tomar una cuenta con un correo ajeno).
+          },
+        }
+      : {},
   emailAndPassword: {
     enabled: true,
     minPasswordLength: MIN_PASSWORD_LENGTH,

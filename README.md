@@ -32,6 +32,8 @@ presentarlo y a encontrar compradores».
   producto; no leídos en la barra superior y reporte desde el hilo.
 - Confianza: `/seguridad` explica qué se guarda y cómo, `/apoya` qué cuesta el proyecto y cómo
   apoyarlo (liga externa opcional, `SUPPORT_URL`), y la cuenta se borra completa desde Ajustes.
+- Entrar con Google (opcional): con `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` aparece «Continuar
+  con Google»; la cuenta nueva acepta términos y aviso en la bienvenida.
 - Confianza: reportar productos; los productos de marca se revisan por riesgo de imitación (nunca se
   acusa ni se certifica) y quien vende puede enviar un comprobante.
 - Equipo (`/admin`, solo rol ADMIN): Centro de decisiones del motor de automejora, experimentos,

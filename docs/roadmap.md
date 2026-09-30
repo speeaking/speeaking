@@ -143,7 +143,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Columna izquierda plegable (escritorio)                                                                                                                       | ✅     |
 | Mensajes privados entre personas (bandeja, hilo, no leídos, reportar)                                                                                         | ✅     |
 | Apoyos voluntarios (`SUPPORT_URL`), `/apoya` con costos transparentes y `/seguridad`; borrar mi cuenta desde Ajustes; columnas pegadas a los bordes (ADR-048) | ✅     |
-| Entrar con Google o passkey para no pedir contraseña (necesita credenciales del fundador)                                                                     | ⏳     |
+| Entrar con Google (código listo; se enciende con las credenciales del fundador, ADR-049); passkeys después                                                    | ✅     |
 | Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)                                                        | ⏳     |
 | Centro de avisos (me gusta, comentarios, seguidores, mensajes), como la campana de Facebook                                                                   | ⏳     |
 

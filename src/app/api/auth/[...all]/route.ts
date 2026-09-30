@@ -1,4 +1,5 @@
 import { toNextJsHandler } from "better-auth/next-js";
+import { GOOGLE_CALLBACK_PATH, googleSignInEnabled } from "@/modules/identity/social";
 import { auth } from "@/server/auth";
 import { withClientIpRequest } from "@/server/client-ip";
 
@@ -9,10 +10,13 @@ import { withClientIpRequest } from "@/server/client-ip";
  * nombres sin límite (`/update-user`).
  *
  * Solo pasan las rutas de `ALLOWED_PATHS`, comparadas tal cual (sin decodificar ni normalizar:
- * cualquier variante rara es 404). Hoy ninguna; aquí entrarán los callbacks de verificación de correo
- * u OAuth cuando existan.
+ * cualquier variante rara es 404). Hoy, solo el callback de Google cuando está configurado
+ * (ADR-049); el inicio con Google arranca desde una Server Action (`signInWithGoogleAction`), no
+ * desde el router. Aquí entrarán también los callbacks de verificación de correo cuando existan.
  */
-const ALLOWED_PATHS: ReadonlySet<string> = new Set<string>([]);
+const ALLOWED_PATHS: ReadonlySet<string> = new Set<string>(
+  googleSignInEnabled() ? [GOOGLE_CALLBACK_PATH] : [],
+);
 const BASE_PATH = "/api/auth";
 
 const handler = toNextJsHandler(auth);

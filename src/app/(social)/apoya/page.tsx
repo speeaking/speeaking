@@ -22,7 +22,10 @@ export default function SupportPage() {
     { label: "Servidores, base de datos y fotos", value: "≈ $700 MXN al mes" },
     { label: "Cada prueba de «Ver cómo me veo»", value: "≈ $1.26 MXN" },
     { label: "Textos de la IA para tiendas (propuestas, kits, looks)", value: "≈ $900 MXN al mes" },
-    { label: "Desarrollo con IA (la persona y la IA que construyen esto)", value: "desde $360 MXN al mes" },
+    {
+      label: "Desarrollo con IA (la persona y la IA que construyen esto)",
+      value: "desde $360 MXN al mes",
+    },
   ];
   const uses = [
     "Primero, que la plataforma siga encendida: servidores, base de datos y fotos.",
@@ -60,8 +63,8 @@ export default function SupportPage() {
               de producto destacado. Quien compra no paga nunca por usar {siteConfig.name}.
             </li>
             <li>
-              De apoyos voluntarios, mientras el proyecto se formaliza. Un apoyo no compra nada ni da
-              ventajas: es eso, un apoyo.
+              De apoyos voluntarios, mientras el proyecto se formaliza. Un apoyo no compra nada ni
+              da ventajas: es eso, un apoyo.
             </li>
           </ul>
         </section>

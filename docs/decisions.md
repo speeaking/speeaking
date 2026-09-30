@@ -1309,3 +1309,28 @@ izquierdo vaya pegado al borde.
 son [estimación] con la misma fuente que el modelo de ingresos. El abogado revisa la naturaleza de
 los apoyos y el contador su tratamiento fiscal antes de activar `SUPPORT_URL` en producción.
 
+## ADR-049 · Entrar con Google
+
+**Contexto.** Quien desconfía de un proyecto sin empresa no quiere inventar una contraseña. El
+fundador aprobó «registro y login con Google» (2026-09-29).
+
+**Decisión.**
+
+- **Solo con credenciales.** `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (las dos o ninguna,
+  validado en el entorno). Sin ellas no hay botón y el callback sigue cerrado: el router HTTP de
+  Better Auth (SEC-09) solo abre `/callback/google` cuando están.
+- **Arranque desde el servidor.** «Continuar con Google» es un formulario que llama a
+  `signInWithGoogleAction`: pide a Better Auth la URL de autorización (`auth.api.signInSocial`)
+  con límite por IP y manda ahí. Una cuenta nueva cae en la bienvenida; una existente regresa a
+  `next`. Google entrega solo nombre y correo (verificado).
+- **Consentimiento explícito.** La cuenta creada por Google no aceptó términos ni aviso al
+  registrarse: la bienvenida lo pide con una casilla en el primer paso cuando la cuenta no tiene
+  consentimientos, y los guarda con la versión vigente al terminar. Sin la casilla no se completa
+  el perfil.
+- **Sin enlace automático de cuentas.** Si el correo de Google ya tiene una cuenta con contraseña,
+  Better Auth no las une solo (evita tomar una cuenta ajena con un correo que Google reporta).
+
+**Consecuencias.** Pasos del fundador en `docs/deploy.md` (cliente OAuth en Google Cloud, URI de
+redirección `<APP_URL>/api/auth/callback/google`, orígenes autorizados). La prueba E2E cubre el
+estado sin credenciales; el flujo real se prueba a mano al configurarlas. Siguiente: llaves de
+acceso (passkeys) con el plugin de Better Auth.
