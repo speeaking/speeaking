@@ -60,6 +60,12 @@ export const serverEnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APP_URL: z.url({ protocol: /^https?$/ }).default("http://localhost:3000"),
+    /**
+     * Liga externa para apoyar el proyecto (Mercado Pago, PayPal, Ko-fi…), ADR-048. Sin ella, la
+     * página /apoya explica los costos pero no ofrece botón, y la columna derecha no muestra la
+     * tarjeta. Solo https: el dinero nunca pasa por aquí.
+     */
+    SUPPORT_URL: optional(z.url({ protocol: /^https$/, error: "Debe ser una URL https." })),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
     STORAGE_DRIVER: z

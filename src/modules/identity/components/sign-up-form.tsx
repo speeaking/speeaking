@@ -68,7 +68,14 @@ export function SignUpForm({ next }: { next?: string }) {
             >
               aviso de privacidad
             </Link>
-            .
+            .{" "}
+            <Link
+              href="/seguridad"
+              className="font-medium underline underline-offset-2"
+              target="_blank"
+            >
+              Cómo cuidamos tus datos
+            </Link>
           </span>
         </label>
         {state.fieldErrors?.acceptTerms ? (

@@ -1271,3 +1271,41 @@ publicidad. Y recordó que cada beneficio debe cobrarse.
 (A11 ter); versiones 2026-09-30. Los mensajes son datos privados: ni el equipo los lee salvo por un
 reporte y con la persona reportada notificada [pendiente del abogado]. Pendiente: avisos (campana)
 para me gusta, comentarios y seguidores, propuesto como fase siguiente.
+
+## ADR-048 · Lanzar sin empresa: apoyos, fondo de desarrollo, confianza y borrar la cuenta
+
+**Contexto.** El fundador quiere lanzar ya, sin estar dado de alta todavía. Pregunta si se puede
+ganar con donaciones mientras se formaliza y después con la publicidad; si el uso de la IA que
+construye la plataforma («IA-CEO») puede pagarse con lo que genere el sistema; y qué hacer con la
+desconfianza de dar correo y contraseña a un proyecto sin empresa detrás. También pidió que el menú
+izquierdo vaya pegado al borde.
+
+**Decisión.**
+
+- **Apoyos voluntarios, fuera de la plataforma.** `SUPPORT_URL` (solo https) enciende la tarjeta
+  «Apoya a Estreno» en la columna de publicidad y el botón de `/apoya`. El dinero nunca pasa por
+  aquí: es una liga externa de pago (Mercado Pago, PayPal, Ko-fi). Un apoyo no compra nada ni da
+  ventajas. `/apoya` publica qué cuesta mantener el proyecto y en qué se usa cada peso, en orden:
+  servidores, pruebas de cortesía, desarrollo. Registrar el RFC y el régimen fiscal antes de cobrar
+  a tiendas sigue siendo obligatorio [contador]; los apoyos recibidos como persona física son
+  ingresos y se declaran [contador].
+- **Fondo de desarrollo (IA-CEO).** La plataforma no puede pagar sola una suscripción externa; lo
+  que sí hace es apartar: del reparto de ingresos (`revenueSharePercent`, ADR-020) sale un «fondo de
+  desarrollo» que cubre el uso de la IA que construye esto, del plan más chico al más grande conforme
+  los ingresos del mes lo cubran. Se documenta en `docs/modelo-de-ingresos.md` §4; el resumen del
+  equipo muestra si el mes cubre el plan. Nunca se descuenta de las pruebas de cortesía ni de los
+  servidores: primero lo que mantiene encendida la plataforma.
+- **Confianza sin empresa.** Página pública `/seguridad` que solo afirma lo que hace el código
+  (scrypt, mínimo de datos, sin tarjetas, fotos y mensajes privados, CSP, límites, auditoría),
+  enlazada desde el registro, el pie y `/apoya`; el aviso de privacidad ya nombra a la persona
+  responsable. **Borrar mi cuenta** desde Ajustes: elimina en cascada perfil, publicaciones,
+  productos, fotos, mensajes y sesiones, y borra los archivos; los pedidos se conservan sin datos
+  personales. Siguiente paso recomendado: entrar con Google o con llave de acceso (passkey) para
+  que quien desconfíe no tenga que inventar una contraseña; requiere credenciales del fundador.
+- **Columnas pegadas a los bordes.** La rejilla deja de centrarse: la izquierda va al borde
+  izquierdo, la derecha al derecho y el feed se centra en lo que queda (`shellGrid`, `shellMain`).
+
+**Consecuencias.** `/apoya` y `/seguridad` son públicas y se prueban en E2E; los textos de costos
+son [estimación] con la misma fuente que el modelo de ingresos. El abogado revisa la naturaleza de
+los apoyos y el contador su tratamiento fiscal antes de activar `SUPPORT_URL` en producción.
+

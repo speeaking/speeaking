@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
-import { shellGrid } from "@/config/navigation";
+import { shellGrid, shellMain } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { ConsentBanner } from "@/modules/identity/components/consent-banner";
 import { getPendingLegalDocuments } from "@/modules/identity/consent-refresh";
@@ -38,7 +38,7 @@ export async function AppShell({
       {viewer ? <LegalUpdateNotice /> : null}
       <div className={cn(shellGrid, "flex-1 md:items-start")}>
         <SideNav viewer={viewer} communities={communities} />
-        <main id="contenido" className="min-w-0 pb-24 md:pt-2 md:pb-12">
+        <main id="contenido" className={cn("min-w-0 pb-24 md:pt-2 md:pb-12", shellMain)}>
           {children}
         </main>
         {aside ? (

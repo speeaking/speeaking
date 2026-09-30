@@ -47,7 +47,8 @@ function FeedHeader({ subtitle }: { subtitle?: string }) {
   );
 }
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<"/">) {
+  const { cuenta } = await searchParams;
   const viewer = await getViewer();
   const viewerId = viewer?.userId ?? null;
   const profile = viewer?.profile ?? null;
@@ -102,6 +103,14 @@ export default async function HomePage() {
       // una invitación a comprar. El estilista vive en Comprar y en la ficha de las prendas.
       beforeFeed={
         <>
+          {cuenta === "eliminada" && !viewer ? (
+            <p
+              role="status"
+              className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border"
+            >
+              Tu cuenta se eliminó. Gracias por probar Estreno; aquí estaremos si vuelves.
+            </p>
+          ) : null}
           {viewer ? (
             <>
               {moment ? <WelcomeCard moment={moment} /> : null}

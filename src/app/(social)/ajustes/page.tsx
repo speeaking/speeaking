@@ -13,6 +13,7 @@ import {
   setDiscoverableAction,
 } from "@/modules/identity/privacy-actions";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { DeleteAccountForm } from "@/modules/identity/components/delete-account-form";
 import { TryOnPhotoList } from "@/modules/tryon/components/photo-list";
 import { TRY_ON_RETENTION_DAYS } from "@/modules/tryon/consent";
 import { listTryOnPhotos } from "@/modules/tryon/service";
@@ -133,14 +134,22 @@ export default async function SettingsPage() {
           <TryOnPhotoList photos={tryOnPhotos} />
         </section>
 
-        <section className="flex flex-col gap-2 rounded-3xl border bg-card p-4 text-sm">
-          <h2 className="font-heading text-lg font-bold">Tus datos</h2>
+        <section
+          aria-labelledby="borrar-cuenta"
+          className="flex flex-col gap-3 rounded-3xl border bg-card p-4 text-sm"
+        >
+          <h2 id="borrar-cuenta" className="font-heading text-lg font-bold">
+            Borrar mi cuenta
+          </h2>
           <p className="text-muted-foreground">
-            Muy pronto podrás descargar tus datos o eliminar tu cuenta desde aquí.
+            Se borra de inmediato y de verdad (ADR-048). Descargar tus datos llegará después;
+            mientras, puedes pedirlos por el correo del{" "}
+            <Link href="/privacidad" className="font-semibold underline">
+              aviso de privacidad
+            </Link>
+            .
           </p>
-          <Link href="/privacidad" className="font-semibold underline">
-            Aviso de privacidad
-          </Link>
+          <DeleteAccountForm />
         </section>
 
         <SignOutButton />

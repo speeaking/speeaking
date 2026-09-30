@@ -96,11 +96,16 @@ export const studioNav: readonly NavItem[] = [
 /**
  * Rejilla de escritorio que comparten la barra superior y el contenido, para que el logo quede
  * sobre la columna izquierda, la búsqueda sobre el feed y las acciones sobre la columna derecha.
- * md: íconos (72) + feed · lg con la columna abierta (`nav-open:`): columna izquierda (232) +
- * feed (680) · xl: + columna derecha (320). Plegada (ADR-046), en escritorio también son 72 px.
+ * Las columnas laterales van pegadas a los bordes de la ventana (ADR-048, como Facebook) y el feed
+ * se centra solo en el espacio que queda (`shellMain`): md: íconos (72) + feed · lg con la columna
+ * abierta (`nav-open:`): 232 + feed · xl: + columna derecha (320). Plegada, en escritorio también
+ * son 72 px.
  */
 export const shellGrid =
-  "mx-auto w-full max-w-[1352px] md:grid md:grid-cols-[72px_minmax(0,680px)] md:justify-center md:gap-7 md:px-6 xl:grid-cols-[72px_minmax(0,680px)_320px] nav-open:grid-cols-[232px_minmax(0,680px)] nav-open:xl:grid-cols-[232px_minmax(0,680px)_320px]";
+  "w-full md:grid md:grid-cols-[72px_minmax(0,1fr)] md:gap-7 md:px-6 xl:grid-cols-[72px_minmax(0,1fr)_320px] nav-open:grid-cols-[232px_minmax(0,1fr)] nav-open:xl:grid-cols-[232px_minmax(0,1fr)_320px]";
+
+/** El feed y la búsqueda: centrados en la columna de en medio, con el ancho de lectura de siempre. */
+export const shellMain = "md:mx-auto md:w-full md:max-w-[680px]";
 
 function matchesPrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);

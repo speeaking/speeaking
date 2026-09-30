@@ -30,6 +30,8 @@ presentarlo y a encontrar compradores».
   destacado por día, que sale como «Patrocinado» en la columna derecha, en las fichas y en Comprar.
 - Mensajes privados: escribirle a alguien desde su perfil o preguntarle a una tienda desde un
   producto; no leídos en la barra superior y reporte desde el hilo.
+- Confianza: `/seguridad` explica qué se guarda y cómo, `/apoya` qué cuesta el proyecto y cómo
+  apoyarlo (liga externa opcional, `SUPPORT_URL`), y la cuenta se borra completa desde Ajustes.
 - Confianza: reportar productos; los productos de marca se revisan por riesgo de imitación (nunca se
   acusa ni se certifica) y quien vende puede enviar un comprobante.
 - Equipo (`/admin`, solo rol ADMIN): Centro de decisiones del motor de automejora, experimentos,

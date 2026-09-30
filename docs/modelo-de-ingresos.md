@@ -35,13 +35,14 @@ cuotas. Y hay una cosa que no cuesta nada y sí se cobra: el **lugar en pantalla
 
 ## 2. Dónde cobramos sí o sí (y a quién)
 
-| Cobro                                        | Quién paga | Cuándo                                               | Por qué es obligatorio                                              |
-| -------------------------------------------- | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| **«Ver cómo me veo»** sobre sus productos    | Vendedor   | Cada prueba, después de las de cortesía de su tienda | Cada imagen cuesta dinero real y quien vende es quien gana con ella |
-| **Producto destacado**                       | Vendedor   | Por día, por adelantado                              | Es publicidad: la columna derecha y las sugerencias son ese espacio |
-| **Impulsar** (P12, publicidad por resultado) | Vendedor   | Cuando haya tráfico (umbral de P12)                  | Presupuesto, no planes: «si no vendes, no pagas»                    |
-| Imágenes y video para anuncios (fase 3)      | Vendedor   | Por generación, desde su saldo                       | Costo alto y beneficio directo para quien vende                     |
-| Comisión por venta                           | Vendedor   | Solo con pagos reales (hoy 0 %, ADR-024)             | Es la fuente principal cuando el dinero pase por la plataforma      |
+| Cobro                                        | Quién paga   | Cuándo                                               | Por qué es obligatorio                                              |
+| -------------------------------------------- | ------------ | ---------------------------------------------------- | ------------------------------------------------------------------- |
+| **«Ver cómo me veo»** sobre sus productos    | Vendedor     | Cada prueba, después de las de cortesía de su tienda | Cada imagen cuesta dinero real y quien vende es quien gana con ella |
+| **Producto destacado**                       | Vendedor     | Por día, por adelantado                              | Es publicidad: la columna derecha y las sugerencias son ese espacio |
+| **Impulsar** (P12, publicidad por resultado) | Vendedor     | Cuando haya tráfico (umbral de P12)                  | Presupuesto, no planes: «si no vendes, no pagas»                    |
+| Imágenes y video para anuncios (fase 3)      | Vendedor     | Por generación, desde su saldo                       | Costo alto y beneficio directo para quien vende                     |
+| Comisión por venta                           | Vendedor     | Solo con pagos reales (hoy 0 %, ADR-024)             | Es la fuente principal cuando el dinero pase por la plataforma      |
+| Apoyos voluntarios (ADR-048)                 | Quien quiera | Mientras el proyecto se formaliza                    | No compran nada; liga externa; cubren servidores y cortesía         |
 
 **Quien compra no paga nunca** por probarse ropa, armar looks, buscar, publicar, comentar ni
 mandar mensajes. Es una red social: la gente entra a compartir y a ver; el dinero lo ponen las
@@ -152,6 +153,13 @@ por foto y prenda siguen: evitan el abuso, no cobran.
    cortesía para tiendas nuevas, más creativos y las fases 3–5 de la IA.
 3. **Cobertura:** el resumen del equipo (`/admin/ia`) muestra ingresos por IA ÷ costo de IA, separando
    lo subsidiado (`funding = PLATFORM`) de lo pagado (`SELLER_PAID`).
+4. **Fondo de desarrollo (ADR-048):** del mismo reparto sale lo que paga la IA que construye la
+   plataforma, en escalones conforme el mes lo cubra [estimación con precios de lista de 2026-09,
+   verificar]: plan Pro ≈ US$20 al mes (≈ $360 MXN), Max 5× ≈ US$100 (≈ $1,800 MXN), Max 20× ≈
+   US$200 (≈ $3,600 MXN). Con las cifras del piloto (§5) el excedente cubre el plan Pro desde el
+   primer mes y el Max 5× cuando haya unas 60 tiendas activas. Orden de prioridad del dinero:
+   servidores → pruebas de cortesía → fondo de desarrollo → funciones nuevas. La plataforma no paga
+   la suscripción sola: aparta la cifra y el fundador la paga.
 
 ## 5. Cifras de referencia del piloto (100 tiendas, 2,000 compradores activos) [estimación]
 

@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { shellGrid } from "@/config/navigation";
+import { shellGrid, shellMain } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/modules/identity/actions";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
@@ -219,7 +219,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
         {/* En xl este contenedor desaparece y sus hijos ocupan las columnas 2 y 3 de la rejilla. */}
         <div className="flex min-w-0 items-center gap-3 xl:contents">
           <Suspense fallback={<div className="h-11 min-w-0 flex-1 rounded-full bg-secondary" />}>
-            <SearchBox className="min-w-0 flex-1" />
+            <SearchBox className={cn("min-w-0 flex-1", shellMain)} />
           </Suspense>
           <div className="flex shrink-0 items-center justify-end gap-1">
             {viewer ? (

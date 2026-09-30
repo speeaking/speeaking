@@ -8,6 +8,8 @@ import { SocialRailBlocks, SocialRailSkeleton } from "@/modules/discovery/compon
 import { WelcomeCard } from "@/modules/discovery/components/welcome-card";
 import { getViewer } from "@/modules/identity/session";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
+import { SupportCard } from "@/modules/platform/components/support-card";
+import { env } from "@/server/env";
 
 /**
  * Columna derecha de escritorio «Para ti» (F4 + F6b), solo con datos reales. Arriba, el bloque
@@ -38,6 +40,7 @@ export async function SocialAside({ viewer }: { viewer: ViewerSummary }) {
       <div className="flex flex-col gap-4 pb-8">
         {viewerId ? null : <WelcomeCard />}
         <SponsoredRail products={sponsored} isSeller={viewer?.isSeller ?? false} />
+        {env.SUPPORT_URL ? <SupportCard href={env.SUPPORT_URL} /> : null}
         <Suspense fallback={<SocialRailSkeleton />}>
           <SocialRailBlocks viewerId={viewerId} />
         </Suspense>
@@ -64,6 +67,12 @@ function LegalFooter() {
         </Link>
         <Link href="/terminos" className="hover:text-foreground hover:underline">
           Términos
+        </Link>
+        <Link href="/seguridad" className="hover:text-foreground hover:underline">
+          Seguridad
+        </Link>
+        <Link href="/apoya" className="hover:text-foreground hover:underline">
+          Apoya
         </Link>
       </p>
     </footer>
