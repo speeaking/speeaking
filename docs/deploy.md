@@ -107,6 +107,11 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
    - Copia de inmediato **Access Key ID**, **Secret Access Key** (se muestra **una sola vez**) y el
      endpoint `https://<id-de-cuenta>.r2.cloudflarestorage.com`
      ([tokens](https://developers.cloudflare.com/r2/api/tokens/)).
+   - El **Token value** (`cfat_…`) es para la API de Cloudflare: la app no lo usa; solo van las dos
+     llaves S3 y el endpoint. Si una llave se pega en un chat o en un correo, en **Manage → Roll** se
+     rota y la anterior deja de servir. Estas llaves solo van en las variables de producción (paso
+     8): en tu PC el desarrollo usa el disco (`STORAGE_DRIVER=local`) y las pruebas no deben
+     escribir en el bucket real.
 5. R2 no tiene tope de gasto: crea una alerta en Cloudflare → **Notifications** (facturación por
    uso) si tu cuenta la ofrece. Al tamaño del piloto cabe en la capa gratuita.
 
