@@ -3,7 +3,7 @@ import { createProductAction, updateProductAction } from "./actions";
 
 // La acción solo traduce: quién edita sale de la sesión (nunca del formulario) y los errores del
 // servicio se vuelven mensajes. Las reglas de propiedad e inventario se prueban en service.test.
-const { session, service, redirect, revalidatePath } = vi.hoisted(() => {
+const { session, limits, service, redirect, revalidatePath } = vi.hoisted(() => {
   class ProductEditError extends Error {
     constructor(
       readonly code: string,
@@ -14,6 +14,7 @@ const { session, service, redirect, revalidatePath } = vi.hoisted(() => {
   }
   return {
     session: { requireOnboardedViewer: vi.fn() },
+    limits: { checkCatalogLimit: vi.fn() },
     service: { ProductEditError, updateProduct: vi.fn(), setProductStatus: vi.fn() },
     redirect: vi.fn((to: string) => {
       throw new Error(`redirect:${to}`);
@@ -23,6 +24,7 @@ const { session, service, redirect, revalidatePath } = vi.hoisted(() => {
 });
 vi.mock("@/modules/identity/session", () => session);
 vi.mock("./service", () => service);
+vi.mock("./limits", () => limits);
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
@@ -87,9 +89,23 @@ function editForm(overrides: Record<string, string> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
+  limits.checkCatalogLimit.mockResolvedValue(null);
 });
 
 describe("createProductAction", () => {
+  it("con el límite de altas agotado responde el mensaje y no toca la base (SEC-15)", async () => {
+    limits.checkCatalogLimit.mockResolvedValue(
+      "Demasiados intentos. Intenta de nuevo en 12 minutos.",
+    );
+
+    await expect(createProductAction({}, editForm())).resolves.toEqual({
+      error: "Demasiados intentos. Intenta de nuevo en 12 minutos.",
+    });
+    expect(limits.checkCatalogLimit).toHaveBeenCalledWith("create", SELLER);
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(db.media.findMany).not.toHaveBeenCalled();
+  });
+
   it("revisa la autenticidad del producto nuevo antes de mostrarlo (P14)", async () => {
     session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
     db.media.findMany.mockResolvedValue([{ id: uuid }]);

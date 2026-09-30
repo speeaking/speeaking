@@ -8,6 +8,7 @@ import { z } from "zod";
 import { formatCount } from "@/lib/format";
 import { track } from "@/modules/analytics/track";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { checkCatalogLimit } from "./limits";
 import { scheduleAuthenticityAiSignal } from "@/modules/trust/background";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { evaluateProductAuthenticity } from "@/modules/trust/service";
@@ -34,6 +35,10 @@ export async function createProductAction(
 ): Promise<ProductFormState> {
   const viewer = await requireOnboardedViewer("/studio/productos/nuevo");
   if (!viewer.sellerProfileId) return { error: "Activa tu perfil de vendedor primero." };
+
+  // Cada intento cuenta, también los inválidos (SEC-15).
+  const limited = await checkCatalogLimit("create", viewer.userId);
+  if (limited) return { error: limited };
 
   const parsed = parseProductForm(formData);
   if (!parsed.success) {

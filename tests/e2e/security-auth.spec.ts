@@ -128,6 +128,20 @@ test.describe("redirección después de entrar (SEC-04)", () => {
   });
 });
 
+test.describe("guardia de Studio en el servidor", () => {
+  test("una cookie de sesión inventada pasa el proxy pero la página manda a entrar", async ({
+    page,
+    context,
+  }) => {
+    // El proxy solo revisa que exista la cookie (optimista); la barrera real es la página.
+    await context.addCookies([
+      { name: "vendeia.session_token", value: "inventada", domain: "localhost", path: "/" },
+    ]);
+    await page.goto("/studio/analitica");
+    await expect(page).toHaveURL(/\/entrar\?next=%2Fstudio%2Fanalitica/);
+  });
+});
+
 test.describe("API HTTP de Better Auth cerrada (SEC-09)", () => {
   test("no se puede crear una cuenta sin aceptar términos ni escribir el perfil por la API", async ({
     page,

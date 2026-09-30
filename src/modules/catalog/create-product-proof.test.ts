@@ -37,6 +37,8 @@ vi.mock("@/modules/identity/session", () => ({
   requireOnboardedViewer: vi.fn(async () => ({ userId: SELLER, sellerProfileId: "s-1" })),
 }));
 vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
+// El límite de altas (SEC-15) se prueba en actions.test; aquí siempre pasa.
+vi.mock("./limits", () => ({ checkCatalogLimit: vi.fn(async () => null) }));
 vi.mock("@/modules/trust/service", () => ({ evaluateProductAuthenticity: vi.fn() }));
 vi.mock("@/modules/trust/background", () => ({ scheduleAuthenticityAiSignal: vi.fn() }));
 vi.mock("./service", () => ({

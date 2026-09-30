@@ -3,6 +3,12 @@
 Productos, categorías, costo privado (`ProductCost`, nunca enviado al navegador) y datos verificables de
 entrega, garantía, devoluciones y autenticidad (P4, ADR-007). Fase: 1.6.
 
+## Límites (SEC-15)
+
+`limits.ts` (`checkCatalogLimit`): crear productos 30/h y 150/día por cuenta (60/h por IP); cada
+intento cuenta, también los inválidos. Compartir un producto (`share-actions.ts`) usa el mismo límite
+que compartir una publicación (`social/limits.ts`, 60/h por IP y por cuenta).
+
 ## Editar, pausar y reactivar (Studio)
 
 - `service.ts` (`updateProduct`, `setProductStatus`): la propiedad se comprueba en la consulta
