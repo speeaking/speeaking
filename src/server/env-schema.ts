@@ -128,9 +128,7 @@ export const serverEnvSchema = z
     // Modelo que genera imágenes desde el chat (Pruébatelo, ADR-043), en el mismo servidor y con la
     // misma llave. Sin él, las imágenes usan el simulador (en producción, «no disponible», ADR-038).
     AI_IMAGE_MODEL: optional(
-      z
-        .string()
-        .regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-3.1-flash-image-preview)."),
+      z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-3.1-flash-image)."),
     ),
     // IA simulada en producción (ADR-038): solo para un piloto cerrado, como decisión explícita. Con
     // `mock`, «Sube y vende» y el kit de anuncios entregan textos de plantilla, no de un modelo. En

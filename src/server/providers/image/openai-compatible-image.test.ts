@@ -53,10 +53,12 @@ describe("OpenAICompatibleImageProvider", () => {
       const body = JSON.parse(String(init?.body)) as {
         model: string;
         modalities: string[];
+        max_tokens: number;
         provider: { zdr: boolean; data_collection: string };
         messages: { role: string; content: { type: string; image_url?: { url: string } }[] }[];
       };
       expect(body.modalities).toEqual(["image", "text"]);
+      expect(body.max_tokens).toBe(8_192);
       expect(body.provider).toMatchObject({ zdr: true, data_collection: "deny" });
       const parts = body.messages[0]!.content;
       expect(parts[0]).toEqual({ type: "text", text: "Prueba x" });
@@ -116,6 +118,27 @@ describe("OpenAICompatibleImageProvider", () => {
     expect(error).toBeInstanceOf(AIProviderError);
     expect((error as AIProviderError).kind).toBe("no_credit");
     expect(calls).toBe(2);
+  });
+
+  it("incluye el mensaje del proveedor en el error, para saber por qué falló", async () => {
+    const fetchImpl = vi.fn(async () =>
+      reply(
+        {
+          error: {
+            message: "No endpoints found matching your data policy (Zero data retention).",
+            code: 404,
+          },
+        },
+        404,
+      ),
+    );
+    const error = await provider(fetchImpl as typeof fetch)
+      .generate(task, { note: "x" })
+      .catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(AIProviderError);
+    expect((error as AIProviderError).kind).toBe("bad_request");
+    expect((error as AIProviderError).message).toContain("HTTP 404 (No endpoints found");
+    expect((error as AIProviderError).message).toContain("Zero data retention");
   });
 
   it("no manda más de lo permitido", async () => {

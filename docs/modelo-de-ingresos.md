@@ -182,7 +182,7 @@ precio.
 
 1. OpenRouter, «Nano Banana 2 (Gemini 3.1 Flash Image Preview)»: salida de imagen a US$60 por millón
    de tokens (≈ US$0.067 por imagen de 1024×1024); Flash Lite Image ≈ US$0.034 por imagen.
-   https://openrouter.ai/google/gemini-3.1-flash-image-preview · consultado 2026-09-29.
+   https://openrouter.ai/google/gemini-3.1-flash-image · consultado 2026-09-29.
 2. fal.ai, catálogo de Virtual Try-On 2026: FASHN v1.6 US$0.075 por generación; Kling Kolors v1.5
    US$0.07; image-apps-v2 virtual try-on US$0.04; IDM-VTON solo uso no comercial.
    https://fal.ai/learn/tools/best-virtual-try-on-apis-2026 · consultado 2026-09-29.

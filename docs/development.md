@@ -84,7 +84,7 @@ Detén `pnpm dev` antes de `pnpm build`: correrlos a la vez puede tumbar la cach
 **Imágenes (Pruébatelo).** Sin `AI_IMAGE_MODEL`, el proveedor de imágenes es el simulador: compone la
 foto con las prendas al lado y una franja «Simulación de ejemplo», sin red ni costo (también en las
 pruebas E2E). Con `AI_PROVIDER=openai_compatible` y `AI_IMAGE_MODEL` (p. ej.
-`google/gemini-3.1-flash-image-preview` en OpenRouter) se generan imágenes reales y cada una cuesta lo
+`google/gemini-3.1-flash-image` en OpenRouter) se generan imágenes reales y cada una cuesta lo
 que dice la tabla `IMAGE_PRICES_USD_PER_IMAGE` de `src/modules/ai/cost.ts`; un modelo sin precio no se
 llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`). La suite E2E arranca
 el servidor con `AI_IMAGE_MODEL`, `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` vacías

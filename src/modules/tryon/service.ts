@@ -463,6 +463,9 @@ export async function generateTryOn({
     return toDTO(existing, true);
   }
   if (existing && existing.status === "PENDING") throw new TryOnError("IN_PROGRESS");
+  // Un intento fallido o un resultado vencido guarda la misma `cacheKey` (única): sin borrarlo, el
+  // `create` del reintento fallaría y la gente vería «ya se está generando» para siempre.
+  if (existing) await discardResult(existing.id);
 
   // Quién paga, en orden (ADR-046): la tienda del producto principal o su cortesía; nunca quien compra.
   const main = garments[0]!.product;
@@ -663,6 +666,29 @@ async function reserveWithFunding({
   }
   if (lastError instanceof AIError) throw lastError;
   throw new TryOnError("STORE_NOT_FUNDED");
+}
+
+/**
+ * Borra una simulación fallida o vencida (fila y archivo) para que la misma foto con las mismas
+ * prendas se pueda volver a generar. Idempotente: si ya no existe, no hace nada.
+ */
+async function discardResult(id: string) {
+  const row = await db.tryOnResult.findUnique({
+    where: { id },
+    select: { resultMedia: { select: { id: true, storageKey: true } } },
+  });
+  if (!row) return;
+  await db.$transaction([
+    db.tryOnResult.deleteMany({ where: { id } }),
+    ...(row.resultMedia ? [db.media.deleteMany({ where: { id: row.resultMedia.id } })] : []),
+  ]);
+  if (row.resultMedia) {
+    try {
+      await deleteStoredMedia(getStorage(), row.resultMedia.storageKey);
+    } catch (cause) {
+      console.error("[tryon] no se pudo borrar el archivo de una simulación vencida", cause);
+    }
+  }
 }
 
 /** El proveedor falló: la solicitud queda FAILED, el resultado FAILED y el cobro se devuelve. */

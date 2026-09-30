@@ -208,7 +208,7 @@ Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
 | `AI_BASE_URL`                  | `https://openrouter.ai/api/v1`                                     | No      | Con `openai_compatible`                                        |
 | `AI_API_KEY`                   | Paso 6 (`sk-or-…`)                                                 | Sí      | Con `openai_compatible`                                        |
 | `AI_DEFAULT_MODEL`             | `qwen/qwen3.5-9b`                                                  | No      | Con `openai_compatible`                                        |
-| `AI_IMAGE_MODEL`               | `google/gemini-3.1-flash-image-preview` (Pruébatelo, ADR-043)      | No      | No (sin él, imágenes simuladas: en producción «no disponible») |
+| `AI_IMAGE_MODEL`               | `google/gemini-3.1-flash-image` (Pruébatelo, ADR-043)              | No      | No (sin él, imágenes simuladas: en producción «no disponible») |
 | `ALLOW_SIMULATED_AI`           | `true` solo con `AI_PROVIDER=mock`                                 | No      | Sí con `mock`                                                  |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` (Vercel usa exactamente pnpm 10.33.2 de `packageManager`)      | No      | Recomendada                                                    |
 

@@ -1183,7 +1183,9 @@ explícita, consentimiento, plazo de conservación y derechos ARCO.
   se adjunta a una publicación ni a un producto (misma protección que los comprobantes).
 - **Solo lo necesario sale al proveedor:** la foto, las fotos públicas de los productos y un prompt
   sin datos personales (sin nombre, sin usuario). Con OpenRouter se exige `data_collection: "deny"` y
-  `zdr: true`, como en el texto (ADR-034).
+  `zdr: true`, como en el texto (ADR-034); por eso el modelo debe tener un endpoint con cero retención
+  (los ids finales de Gemini lo tienen; los «-preview» responden 404 «data policy», visto el
+  2026-09-30).
 - **Retención corta:** fotos y resultados se borran a los **30 días** (`expiresAt`) en la operación
   diaria, y la persona puede borrarlos antes desde `/ajustes` («Mis fotos de prueba»). Los registros
   de costo (`AIRequest`/`AIResponse`) se quedan sin la imagen.

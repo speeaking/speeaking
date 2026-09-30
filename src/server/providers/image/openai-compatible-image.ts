@@ -1,4 +1,5 @@
 import { AIProviderError } from "../ai/errors";
+import { readErrorDetail } from "../ai/error-detail";
 import {
   type ImageProvider,
   type ImageResult,
@@ -22,6 +23,12 @@ export type OpenAICompatibleImageConfig = {
 };
 
 export const IMAGE_CALL_TIMEOUT_MS = 90_000;
+/**
+ * Tope de tokens de salida por llamada: una imagen de 1K ≈ 1,100–1,300 tokens más el razonamiento y
+ * un pie de texto. Acota el peor caso de gasto (8,192 × US$60/M ≈ US$0.49) y evita que OpenRouter
+ * rechace la llamada por «no alcanza para el máximo del modelo» (32K) cuando el saldo es bajo.
+ */
+export const IMAGE_MAX_OUTPUT_TOKENS = 8_192;
 const MAX_RETRIES = 2;
 const BACKOFF_BASE_MS = 1_000;
 const MAX_RETRY_AFTER_MS = 15_000;
@@ -139,6 +146,7 @@ export class OpenAICompatibleImageProvider implements ImageProvider {
         },
       ],
       modalities: ["image", "text"],
+      max_tokens: IMAGE_MAX_OUTPUT_TOKENS,
       ...this.#extras,
     });
 
@@ -168,6 +176,7 @@ export class OpenAICompatibleImageProvider implements ImageProvider {
       const timer = setTimeout(() => controller.abort(), remaining);
       let response: Response;
       let data: unknown;
+      let detail: string | null = null;
       try {
         response = await this.#fetch(this.#endpoint, {
           method: "POST",
@@ -180,7 +189,8 @@ export class OpenAICompatibleImageProvider implements ImageProvider {
           signal: controller.signal,
           redirect: "error",
         });
-        data = response.ok ? await response.json() : await response.body?.cancel();
+        if (response.ok) data = await response.json();
+        else detail = await readErrorDetail(response);
       } catch (error) {
         if (controller.signal.aborted) throw this.#timeout(task);
         if (error instanceof SyntaxError) {
@@ -213,7 +223,7 @@ export class OpenAICompatibleImageProvider implements ImageProvider {
                 : "bad_request";
       throw new AIProviderError(
         kind,
-        `[ai] ${task} (${this.model}): HTTP ${status}`,
+        `[ai] ${task} (${this.model}): HTTP ${status}${detail ? ` (${detail})` : ""}`,
         undefined,
         status,
       );

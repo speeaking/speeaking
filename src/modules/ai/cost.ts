@@ -40,9 +40,13 @@ const MODEL_ALIASES: Record<string, string> = {
 /**
  * Precio por IMAGEN generada, en dólares (ADR-043, ADR-044). Fuente: OpenRouter, consultado el
  * 2026-09-29 (salida de imagen a US$60 por millón de tokens; una imagen de 1024×1024 ≈ 1,120
- * tokens ≈ US$0.067). La «lite» a la mitad. `docs/modelo-de-ingresos.md` §6.
+ * tokens ≈ US$0.067). La «lite» a la mitad. `docs/modelo-de-ingresos.md` §6. Los ids finales (sin
+ * «-preview», verificados el 2026-09-30 al mismo precio) son los que tienen endpoint con cero retención
+ * en OpenRouter; los «-preview» no, y con `zdr: true` responden 404 «data policy».
  */
 export const IMAGE_PRICES_USD_PER_IMAGE: Record<string, number> = {
+  "gemini-3.1-flash-image": 0.0672,
+  "gemini-3.1-flash-lite-image": 0.0336,
   "gemini-3.1-flash-image-preview": 0.0672,
   "gemini-3.1-flash-lite-image-preview": 0.0336,
   "mock-image": 0,

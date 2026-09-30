@@ -1,5 +1,6 @@
 import { AI_CALL_TIMEOUT_MS, AI_MAX_INPUT_TOKENS, AI_MAX_OUTPUT_TOKENS } from "@/modules/ai/cost";
 import { AIProviderError } from "./errors";
+import { readErrorDetail } from "./error-detail";
 import { strictJsonSchema } from "./json-schema";
 import type { AIProvider, AIResult, AITask, AIUsage } from "./types";
 
@@ -215,6 +216,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       const timer = setTimeout(() => controller.abort(), remaining);
       let response: Response;
       let data: unknown;
+      let detail: string | null = null;
       try {
         response = await this.#fetch(this.#endpoint, {
           method: "POST",
@@ -229,7 +231,8 @@ export class OpenAICompatibleProvider implements AIProvider {
           // configurado, nunca a donde este mande.
           redirect: "error",
         });
-        data = response.ok ? await response.json() : await response.body?.cancel();
+        if (response.ok) data = await response.json();
+        else detail = await readErrorDetail(response);
       } catch (error) {
         if (controller.signal.aborted) throw this.#timeout(task);
         if (error instanceof SyntaxError) {
@@ -263,7 +266,7 @@ export class OpenAICompatibleProvider implements AIProvider {
                 : "bad_request";
       throw new AIProviderError(
         kind,
-        `[ai] ${task} (${this.model}): HTTP ${status}`,
+        `[ai] ${task} (${this.model}): HTTP ${status}${detail ? ` (${detail})` : ""}`,
         undefined,
         status,
       );

@@ -72,6 +72,8 @@ describe("precios por imagen (ADR-043)", async () => {
   const { imagePriceMicrosUsd, maxCallCostMicrosUsd, recordedImageCost } = await import("./cost");
 
   it("un modelo de imagen conocido tiene precio por imagen y ese es su costo máximo por llamada", () => {
+    expect(imagePriceMicrosUsd("google/gemini-3.1-flash-image")).toBe(67_200);
+    expect(imagePriceMicrosUsd("google/gemini-3.1-flash-lite-image")).toBe(33_600);
     expect(imagePriceMicrosUsd("google/gemini-3.1-flash-image-preview")).toBe(67_200);
     expect(imagePriceMicrosUsd("GOOGLE/gemini-3.1-flash-lite-image-preview")).toBe(33_600);
     expect(maxCallCostMicrosUsd("google/gemini-3.1-flash-image-preview")).toBe(67_200);
