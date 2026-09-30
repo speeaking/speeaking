@@ -59,7 +59,8 @@ const row: FeedPostRow = {
     warrantyDays: 90,
     returnWindowDays: 7,
     authenticity: "DECLARED_ORIGINAL",
-    category: { name: "Audio y audífonos" },
+    tags: [],
+    category: { name: "Audio y audífonos", slug: "audio" },
     seller: { acceptedPaymentMethods: ["CARD"] },
     media: [media("product/1.webp")],
   },
@@ -107,6 +108,25 @@ describe("toFeedItem (el costo nunca llega al navegador)", () => {
     expect(dto.viewer).toEqual({ liked: true, saved: false, withinBudget: false });
     // Una venta muestra las fotos actuales del producto, no la copia de la publicación.
     expect(dto.media.map((item) => item.url)).toEqual(["/media/product/1.webp"]);
+  });
+
+  it("marca si la prenda se puede probar («Ver cómo me veo») por categoría, título y etiquetas", () => {
+    expect(toFeedItem(row, publicUrl)!.product!.tryOn).toBe(false);
+
+    const fashion = toFeedItem(
+      {
+        ...row,
+        product: {
+          ...row.product!,
+          title: "Camisa blanca de vestir",
+          tags: ["camisa"],
+          category: { name: "Camisas y blusas", slug: "camisas-y-blusas" },
+        },
+      },
+      publicUrl,
+    )!;
+
+    expect(fashion.product!.tryOn).toBe(true);
   });
 
   it("incluye el crédito de la foto y descarta enlaces que no son web", () => {

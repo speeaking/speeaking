@@ -40,9 +40,16 @@ test.describe("estilista", () => {
   test("la ficha de una prenda ofrece probársela y completar el look; la de otro producto, no", async ({
     page,
   }) => {
+    // Desde Comprar, cada prenda ofrece «Ver cómo me veo» sobre su foto (ADR-046).
+    await page.goto("/comprar?categoria=moda");
+    await expect(
+      page.getByRole("main").getByRole("link", { name: /^Ver cómo me veo: Camisa blanca/ }),
+    ).toHaveAttribute("href", /\/producto\/camisa-blanca-vestir-demo\?probar=1/);
+
     await page.goto("/producto/camisa-blanca-vestir-demo");
-    // Visitante: el botón lleva a crear cuenta y regresa a la ficha.
-    await expect(page.getByRole("link", { name: "Ver cómo me veo" })).toHaveAttribute(
+    // Visitante: el botón lleva a crear cuenta y regresa a la ficha (exacto: las tarjetas de
+    // relacionados también ofrecen «Ver cómo me veo: <producto>»).
+    await expect(page.getByRole("link", { name: "Ver cómo me veo", exact: true })).toHaveAttribute(
       "href",
       /\/registro\?next=/,
     );
@@ -75,8 +82,8 @@ test.describe("estilista", () => {
     // «Ver cómo me veo» desde la ficha, en un solo paso (ADR-046): la foto, el consentimiento y
     // la simulación aparecen en el mismo diálogo. La prueba la paga la tienda (semilla) o Estreno;
     // quien compra, nunca.
-    await page.goto("/producto/camisa-blanca-vestir-demo");
-    await page.getByRole("button", { name: "Ver cómo me veo" }).click();
+    // Llegar con ?probar=1 (desde una tarjeta del feed o de Comprar) abre el diálogo solo.
+    await page.goto("/producto/camisa-blanca-vestir-demo?probar=1");
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText(/Es gratis para ti/)).toBeVisible();
     await dialog

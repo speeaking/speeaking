@@ -24,6 +24,9 @@ export function TextField({
     <Field data-invalid={hasErrors || undefined}>
       <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
       <Input
+        // El valor por omisión solo cambia cuando el servidor devuelve lo escrito tras un envío: el
+        // campo se vuelve a montar con él (Base UI avisa si cambia sobre un campo ya iniciado).
+        key={String(props.defaultValue ?? "")}
         id={fieldId}
         name={name}
         aria-invalid={hasErrors || undefined}

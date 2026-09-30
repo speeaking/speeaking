@@ -12,6 +12,7 @@ export async function ProductStylistActions({
   product,
   viewerUserId,
   isOwner,
+  autoOpen = false,
 }: {
   product: {
     id: string;
@@ -24,6 +25,7 @@ export async function ProductStylistActions({
   };
   viewerUserId: string | null;
   isOwner: boolean;
+  autoOpen?: boolean;
 }) {
   const slot = slotForPublicProduct({
     categorySlug: product.categorySlug,
@@ -33,8 +35,13 @@ export async function ProductStylistActions({
   if (!slot) return null;
   const completeOn = await isFeatureOn("completeLook");
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <ProductTryOn product={product} viewerUserId={viewerUserId} isOwner={isOwner} />
+    <div className="flex flex-col gap-2 rounded-2xl bg-secondary p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <ProductTryOn
+        product={product}
+        viewerUserId={viewerUserId}
+        isOwner={isOwner}
+        autoOpen={autoOpen}
+      />
       {completeOn ? (
         <Link
           href={`/estilista/completa/${product.slug}` as Route}
@@ -43,6 +50,9 @@ export async function ProductStylistActions({
           Completa mi look
         </Link>
       ) : null}
+      <span className="text-xs text-muted-foreground sm:ml-auto">
+        Gratis, con tu foto. Solo tú ves el resultado.
+      </span>
     </div>
   );
 }

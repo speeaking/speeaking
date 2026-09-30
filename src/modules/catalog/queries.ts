@@ -3,6 +3,7 @@ import type { SearchQuery } from "@/modules/search/normalize";
 import { productSearchSql } from "@/modules/search/sql";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { rotateFeatured } from "@/modules/billing/featured";
+import { slotForPublicProduct } from "@/modules/stylist/slots";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { type MediaDTO, type PublicProductDTO, toPublicProduct } from "./dto";
@@ -142,6 +143,8 @@ export type ProductCardDTO = Pick<
   image: MediaDTO | null;
   city: string;
   inStock: boolean;
+  /** Es una prenda, calzado o accesorio: la tarjeta ofrece «Ver cómo me veo» (ADR-046). */
+  tryOn: boolean;
 };
 
 const cardSelect = {
@@ -153,6 +156,8 @@ const cardSelect = {
   city: true,
   stock: true,
   status: true,
+  tags: true,
+  category: { select: { slug: true } },
   media: {
     orderBy: { position: "asc" as const },
     take: 1,
@@ -173,6 +178,8 @@ function toCard(row: {
   city: string;
   stock: number;
   status: string;
+  tags: string[];
+  category: { slug: string };
   media: Parameters<typeof toMedia>[0];
 }): ProductCardDTO {
   return {
@@ -183,6 +190,12 @@ function toCard(row: {
     currency: row.currency,
     city: row.city,
     inStock: row.status === "ACTIVE" && row.stock > 0,
+    tryOn:
+      slotForPublicProduct({
+        categorySlug: row.category.slug,
+        title: row.title,
+        tags: row.tags,
+      }) !== null,
     image: toMedia(row.media)[0] ?? null,
   };
 }

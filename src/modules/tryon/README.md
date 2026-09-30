@@ -26,8 +26,11 @@ productos, generada por el proveedor de imágenes (`server/providers/image`). Ba
 - **Retención:** `deleteExpiredTryOnMedia` es un paso de la operación diaria (`tryon-retention`).
 - Cuotas propias: 10 por hora y 30 por día por persona, además de las generales de IA.
 
-Páginas: la ficha del producto (diálogo), `/probar?producto=…` o `/probar?look=…` (estudio para
-looks completos) y `/probar/[id]` (resultado con el aviso «Simulación generada con IA»). Ajustes →
-«Mis fotos de prueba». Studio → Saldo: pruebas por producto, demanda y el interruptor.
+Páginas: la ficha del producto (diálogo, arriba de la caja de compra; `?probar=1` lo abre solo), las
+tarjetas de Comprar, búsqueda y relacionados y las publicaciones del feed que venden una prenda
+(«Ver cómo me veo» enlaza a la ficha con `?probar=1`; `tryOn` en los DTO), `/probar?producto=…` o
+`/probar?look=…` (estudio para looks completos) y `/probar/[id]` (resultado con el aviso «Simulación
+generada con IA»). Ajustes → «Mis fotos de prueba». Studio → Saldo: pruebas por producto, demanda y el
+interruptor.
 
 Eventos: `TRY_ON_GENERATED` (`metadata.funding`, `metadata.cached`) y `TRY_ON_REQUESTED`.

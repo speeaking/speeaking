@@ -87,6 +87,7 @@ const product = (overrides: Partial<Product> = {}): Product => ({
   city: "Guadalajara",
   state: "Jalisco",
   categoryName: "Calzado",
+  tryOn: false,
   facts: facts(),
   ...overrides,
 });
@@ -338,6 +339,30 @@ describe("PostCard: producto (P4)", () => {
       "href",
       `/producto/tenis-rojos?from=${POST_ID}`,
     );
+  });
+
+  it("en una prenda disponible ofrece «Ver cómo me veo» y abre la ficha con el diálogo", () => {
+    render(<PostCard post={sale({ product: product({ tryOn: true }) })} />);
+
+    expect(screen.getByRole("link", { name: "Ver cómo me veo: Tenis rojos" })).toHaveAttribute(
+      "href",
+      `/producto/tenis-rojos?from=${POST_ID}&probar=1`,
+    );
+  });
+
+  it("no ofrece probarse lo que no es prenda ni lo agotado", () => {
+    const { unmount } = render(<PostCard post={sale()} />);
+    expect(screen.queryByRole("link", { name: /Ver cómo me veo/ })).not.toBeInTheDocument();
+    unmount();
+
+    render(
+      <PostCard
+        post={sale({
+          product: product({ tryOn: true, inStock: false, availability: "sold_out" }),
+        })}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /Ver cómo me veo/ })).not.toBeInTheDocument();
   });
 
   it("muestra envío, entrega local, devoluciones y garantía de los datos estructurados", () => {

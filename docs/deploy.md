@@ -150,13 +150,18 @@ Dos opciones para el piloto cerrado (ADR-038):
 
 ## 6 bis. Entrar con Google (opcional, ADR-049)
 
-1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «Estreno», correo de
-   contacto, dominio del sitio; alcance solo `email` y `profile`.
+1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «Estreno» (es lo que la
+   gente ve en «Ir a …» al entrar), correo de contacto, dominio del sitio; alcance solo `email` y
+   `profile`. Mientras la app esté en modo «Prueba», solo entran los correos listados en «Usuarios
+   de prueba»; para abrirla a cualquiera hay que publicarla (con esos dos alcances no pide
+   verificación).
 2. Credenciales → Crear → «ID de cliente de OAuth» → Aplicación web. Orígenes autorizados:
    `https://<tu dominio>` (y `http://localhost:3000` para probar). URI de redirección autorizada:
    `https://<tu dominio>/api/auth/callback/google` (y la de localhost).
 3. Copia el ID y el secreto a `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. Con las dos variables
-   aparece «Continuar con Google» en Entrar y Registro; sin ellas, nada cambia.
+   aparece «Continuar con Google» en Entrar y Registro; sin ellas, nada cambia. Usa un cliente para
+   desarrollo (localhost) y otro distinto para producción: si un secreto se pega en un chat o en un
+   correo, se rota desde Google Cloud → Credenciales.
 4. Prueba a mano: una cuenta nueva con Google debe caer en la bienvenida y aceptar términos y aviso
    con la casilla antes de terminar el perfil.
 

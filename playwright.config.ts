@@ -37,5 +37,9 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // La suite no depende del `.env` de quien la corre: imágenes con el simulador (sin gasto) y sin
+    // Entrar con Google. Con cadena vacía, `@next/env` no toma el valor del archivo y el esquema la
+    // trata como ausente. En modo dev, si reutiliza un servidor ya abierto, manda el entorno de este.
+    env: { AI_IMAGE_MODEL: "", GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "" },
   },
 });

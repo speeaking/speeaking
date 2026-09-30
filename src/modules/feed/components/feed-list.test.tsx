@@ -167,6 +167,7 @@ describe("FeedList: variantes y separador de la portada", () => {
         city: "Guadalajara",
         state: "Jalisco",
         categoryName: "Calzado",
+        tryOn: false,
         facts: {
           status: "ACTIVE",
           stock: 3,

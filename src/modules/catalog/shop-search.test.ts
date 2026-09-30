@@ -23,6 +23,8 @@ function row(id: string, title: string) {
     city: "Ciudad de México",
     stock: 5,
     status: "ACTIVE",
+    tags: [],
+    category: { slug: "tecnologia" },
     media: [],
   };
 }

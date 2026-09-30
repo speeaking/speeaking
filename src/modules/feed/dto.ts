@@ -7,6 +7,7 @@ import type {
   WarrantyType,
 } from "@/generated/prisma/enums";
 import type { ProductFacts } from "@/modules/catalog/quick-answers";
+import { slotForPublicProduct } from "@/modules/stylist/slots";
 import type { RankReason } from "./ranking";
 
 /** Foto lista para pintar, con el crédito de su autor si es de stock con licencia libre. */
@@ -59,6 +60,8 @@ export type FeedItemDTO = {
     city: string;
     state: string;
     categoryName: string;
+    /** Es una prenda, calzado o accesorio con foto: la tarjeta ofrece «Ver cómo me veo» (ADR-046). */
+    tryOn: boolean;
     /** Datos verificables (P4) para la fila de envío, devoluciones y garantía. */
     facts: ProductFacts;
   } | null;
@@ -166,7 +169,8 @@ export type FeedPostRow = {
     warrantyDays: number | null;
     returnWindowDays: number;
     authenticity: Authenticity;
-    category: { name: string };
+    tags: string[];
+    category: { name: string; slug: string };
     seller: { acceptedPaymentMethods: PaymentMethod[] };
     media: { media: MediaRow }[];
   } | null;
@@ -261,6 +265,12 @@ export function toFeedItem(
           city: product.city,
           state: product.state,
           categoryName: product.category.name,
+          tryOn:
+            slotForPublicProduct({
+              categorySlug: product.category.slug,
+              title: product.title,
+              tags: product.tags,
+            }) !== null,
           facts: {
             status: product.status,
             stock: product.stock,

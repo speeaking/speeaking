@@ -18,6 +18,7 @@ import {
   Sparkles,
   Truck,
   Undo2,
+  Camera,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -474,6 +475,17 @@ function ProductBlock({
           <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
         </Link>
       </div>
+      {product.tryOn && available ? (
+        // Una prenda se prueba desde el feed (ADR-046): la ficha abre con el diálogo listo.
+        <Link
+          href={`${href}${href.includes("?") ? "&" : "?"}probar=1` as Route}
+          aria-label={`Ver cómo me veo: ${product.title}`}
+          className="inline-flex h-11 items-center gap-1.5 self-start rounded-full bg-secondary px-3 text-sm font-bold text-foreground hover:bg-accent md:h-9"
+        >
+          <Camera aria-hidden="true" className="size-4" />
+          Ver cómo me veo
+        </Link>
+      ) : null}
       {withinBudget && available ? (
         <p className="inline-flex items-center gap-1 self-start rounded-full bg-success/10 px-2 py-0.5 text-xs font-bold text-success">
           <Check aria-hidden="true" className="size-3.5" />

@@ -18,6 +18,7 @@ export async function ProductTryOn({
   product,
   viewerUserId,
   isOwner,
+  autoOpen = false,
 }: {
   product: {
     id: string;
@@ -30,6 +31,8 @@ export async function ProductTryOn({
   };
   viewerUserId: string | null;
   isOwner: boolean;
+  /** Llegó desde una tarjeta con «Ver cómo me veo»: el diálogo se abre solo. */
+  autoOpen?: boolean;
 }) {
   const slot = slotForPublicProduct({
     categorySlug: product.categorySlug,
@@ -38,13 +41,16 @@ export async function ProductTryOn({
   });
   if (!slot) return null;
   if (!(await isFeatureOn("virtualTryOn")) || imageAvailability() === "unavailable") return null;
-  const returnTo = `/producto/${product.slug}`;
+  const returnTo = `/producto/${product.slug}${autoOpen ? "?probar=1" : ""}`;
 
   if (!viewerUserId) {
     return (
       <Link
         href={`/registro?next=${encodeURIComponent(returnTo)}` as Route}
-        className={cn(buttonVariants({ variant: "outline" }), "h-10 font-bold")}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "lg" }),
+          "h-12 w-full border-foreground/25 text-base font-bold sm:w-auto sm:px-5",
+        )}
       >
         <Camera data-icon="inline-start" />
         Ver cómo me veo
@@ -74,6 +80,7 @@ export async function ProductTryOn({
       status={status}
       simulated={availability.simulated}
       returnTo={returnTo}
+      defaultOpen={autoOpen}
     />
   );
 }

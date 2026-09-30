@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-// Entrar con Google (ADR-049) solo existe con credenciales. Sin ellas (como en esta suite): sin
-// botón y el callback de OAuth cerrado, igual que el resto del router HTTP de Better Auth.
+// Entrar con Google (ADR-049) solo existe con credenciales. Sin ellas (la suite arranca el servidor
+// con GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET vacías; ver playwright.config.ts): sin botón y el
+// callback de OAuth cerrado, igual que el resto del router HTTP de Better Auth.
 
 test("sin credenciales de Google no hay botón ni callback abierto", async ({ page, request }) => {
   await page.goto("/entrar");

@@ -86,7 +86,10 @@ foto con las prendas al lado y una franja «Simulación de ejemplo», sin red ni
 pruebas E2E). Con `AI_PROVIDER=openai_compatible` y `AI_IMAGE_MODEL` (p. ej.
 `google/gemini-3.1-flash-image-preview` en OpenRouter) se generan imágenes reales y cada una cuesta lo
 que dice la tabla `IMAGE_PRICES_USD_PER_IMAGE` de `src/modules/ai/cost.ts`; un modelo sin precio no se
-llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`).
+llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`). La suite E2E arranca
+el servidor con `AI_IMAGE_MODEL`, `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` vacías
+(`playwright.config.ts`): aunque tu `.env` tenga la imagen real y Google, las pruebas no gastan ni
+dependen de Google.
 
 ## Cuentas de prueba
 

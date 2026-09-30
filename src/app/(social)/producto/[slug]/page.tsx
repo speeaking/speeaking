@@ -96,7 +96,7 @@ const OWNER_AUTHENTICITY_NOTICES: Partial<
 
 export default async function ProductPage({ params, searchParams }: PageProps<"/producto/[slug]">) {
   const { slug } = await params;
-  const { from, ref, nuevo } = await searchParams;
+  const { from, ref, nuevo, probar } = await searchParams;
   const [viewer, admin] = await Promise.all([getViewer(), getAdminViewer()]);
   // Un producto oculto por moderación solo existe para su dueño y el equipo (404 para los demás).
   const result = await getPublicProduct(slug, {
@@ -259,6 +259,24 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           {product.facts.city}, {product.facts.state}
         </p>
 
+        {/* Probarse la prenda va antes de comprarla (ADR-046): a la vista, debajo del precio. */}
+        {moderation.hidden ? null : (
+          <ProductStylistActions
+            product={{
+              id: product.id,
+              slug: product.slug,
+              title: product.title,
+              priceCents: product.priceCents,
+              sellerId: product.seller.id,
+              categorySlug: product.category.slug,
+              tags: product.tags,
+            }}
+            viewerUserId={viewer?.userId ?? null}
+            isOwner={isOwner}
+            autoOpen={probar === "1"}
+          />
+        )}
+
         {ownerNotice ? (
           <div className="flex flex-col gap-2 rounded-2xl bg-secondary p-4 text-sm">
             <p className="flex items-center gap-2 font-semibold">
@@ -297,22 +315,6 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             inStock={inStock}
             unavailableLabel={product.facts.status === "PAUSED" ? "Pausado" : "Agotado"}
             sourcePostId={sourcePostId}
-          />
-        )}
-
-        {moderation.hidden ? null : (
-          <ProductStylistActions
-            product={{
-              id: product.id,
-              slug: product.slug,
-              title: product.title,
-              priceCents: product.priceCents,
-              sellerId: product.seller.id,
-              categorySlug: product.category.slug,
-              tags: product.tags,
-            }}
-            viewerUserId={viewer?.userId ?? null}
-            isOwner={isOwner}
           />
         )}
 

@@ -29,6 +29,8 @@ function productRow(id: string, extra: Record<string, unknown> = {}) {
     city: "Guadalajara",
     stock: 3,
     status: "ACTIVE",
+    tags: [],
+    category: { slug: "deportes" },
     media: [
       {
         media: {
@@ -49,6 +51,14 @@ beforeEach(() => {
 });
 
 describe("productCardsByIds", () => {
+  it("marca las prendas con «Ver cómo me veo» según su categoría, título y etiquetas", async () => {
+    db.product.findMany.mockResolvedValue([productRow(A, { category: { slug: "tenis" } })]);
+
+    const [card] = await productCardsByIds([A]);
+
+    expect(card?.tryOn).toBe(true);
+  });
+
   it("no pide el costo y, aunque la fila lo trajera, no lo devuelve", async () => {
     db.product.findMany.mockResolvedValue([
       productRow(A, { cost: { unitCostCents: 90_000 }, unitCostCents: 90_000 }),
@@ -67,6 +77,7 @@ describe("productCardsByIds", () => {
       currency: "MXN",
       city: "Guadalajara",
       inStock: true,
+      tryOn: false,
       image: {
         url: "/media/seed/tenis.webp",
         width: 800,

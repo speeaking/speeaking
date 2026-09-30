@@ -3,6 +3,7 @@ import type { ProductStatus } from "@/generated/prisma/enums";
 import type { ProductCardDTO } from "@/modules/catalog/queries";
 import type { FeedItemDTO } from "@/modules/feed/dto";
 import { hydratePosts } from "@/modules/social/post-queries";
+import { slotForPublicProduct } from "@/modules/stylist/slots";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
@@ -56,6 +57,8 @@ export async function productCardsByIds(
       city: true,
       stock: true,
       status: true,
+      tags: true,
+      category: { select: { slug: true } },
       media: {
         orderBy: { position: "asc" },
         take: 1,
@@ -84,6 +87,12 @@ export async function productCardsByIds(
       currency: row.currency,
       city: row.city,
       inStock: row.status === "ACTIVE" && row.stock > 0,
+      tryOn:
+        slotForPublicProduct({
+          categorySlug: row.category.slug,
+          title: row.title,
+          tags: row.tags,
+        }) !== null,
       image: cover
         ? {
             url: storage.publicUrl(cover.storageKey),

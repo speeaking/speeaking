@@ -41,6 +41,7 @@ export function TryOnDialog({
   status,
   simulated,
   returnTo,
+  defaultOpen = false,
 }: {
   product: DialogProduct;
   photos: DialogPhoto[];
@@ -48,9 +49,11 @@ export function TryOnDialog({
   status: FundingStatus;
   simulated: boolean;
   returnTo: string;
+  /** Abrir al cargar: la persona llegó desde «Ver cómo me veo» en una tarjeta (`?probar=1`). */
+  defaultOpen?: boolean;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [photoId, setPhotoId] = useState(photos[0]?.id ?? "");
   const [extras, setExtras] = useState<string[]>([]);
   const [state, formAction, pending] = useActionState<QuickTryOnState, FormData>(
@@ -108,7 +111,16 @@ export function TryOnDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" className="h-10 font-bold" />} nativeButton>
+      <DialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 w-full border-foreground/25 text-base font-bold sm:w-auto sm:px-5"
+          />
+        }
+        nativeButton
+      >
         <Camera data-icon="inline-start" />
         Ver cómo me veo
       </DialogTrigger>
