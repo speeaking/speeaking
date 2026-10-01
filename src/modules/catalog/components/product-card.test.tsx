@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProductCardDTO } from "../queries";
 import { ProductCard } from "./product-card";
 
@@ -39,5 +39,38 @@ describe("ProductCard", () => {
     render(<ProductCard product={product({ inStock: false })} />);
     expect(screen.queryByRole("link", { name: /Ver cómo me veo/ })).not.toBeInTheDocument();
     expect(screen.getByText("Agotado")).toBeInTheDocument();
+  });
+});
+
+describe("ProductCard: la foto que viaja (ADR-052)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("dos tarjetas del mismo producto conviven sin pelearse por el nombre de transición", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <>
+        <ProductCard
+          product={product({
+            image: { url: "/media/a.webp", width: 800, height: 1000, blurDataUrl: null, alt: null },
+          })}
+        />
+        <ProductCard
+          product={product({
+            image: { url: "/media/a.webp", width: 800, height: 1000, blurDataUrl: null, alt: null },
+          })}
+        />
+      </>,
+    );
+
+    const morphs = document.querySelectorAll('[data-slot="product-image-morph"]');
+    expect(morphs).toHaveLength(2);
+    expect(document.querySelectorAll("[data-armed]")).toHaveLength(0);
+
+    // Solo la tarjeta tocada se arma; la otra sigue sin nombre.
+    fireEvent.pointerDown(morphs[0]!);
+    expect(document.querySelectorAll("[data-armed]")).toHaveLength(1);
+    expect(error).not.toHaveBeenCalled();
   });
 });

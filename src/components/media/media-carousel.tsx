@@ -12,9 +12,9 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  ViewTransition,
 } from "react";
 import { blurPlaceholder, fitForFrame } from "@/lib/image";
+import { ViewTransition } from "@/lib/view-transition";
 import { cn } from "@/lib/utils";
 import { dotWindow, type MediaItem } from "./media-layout";
 
