@@ -13,6 +13,8 @@ export const AI_TASKS = [
   "shopping_intent",
   /** Nombre y explicación de un look armado por código. */
   "look_copy",
+  /** «Contexto»: resumen neutral de una publicación larga (ADR-060). */
+  "post_context",
 ] as const;
 export type AITaskId = (typeof AI_TASKS)[number];
 

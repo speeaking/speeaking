@@ -1638,3 +1638,30 @@ suyo, y las tiendas no sabían que tenían un pedido nuevo hasta abrir el Studio
 avisos por correo o push (necesitan proveedor y consentimiento), menciones con @ y ajustes de qué
 avisar. Pruebas: agrupación y textos, lista (unitarias), servicio contra PostgreSQL, acciones que
 avisan y la E2E con dos cuentas.
+
+## ADR-060 · «Contexto»: resumen de publicaciones largas
+
+**Contexto.** Idea del fundador (2026-09-30): «hay gente que publica con demasiado texto y algunos
+mejor entran a ver los comentarios, tergiversando la noticia; un botón «Contexto» que nos dé un
+resumen». Aprobado con lo demás de la mesa el 2026-10-01.
+
+**Decisión.**
+
+- **Cuándo:** solo en publicaciones de 500 caracteres o más (unas 90 palabras); lo corto se lee solo.
+  El botón «Contexto» va bajo el texto y despliega el resumen dentro de la misma tarjeta.
+- **Qué dice:** 2 o 3 oraciones neutrales en tercera persona, solo con lo que dice la publicación:
+  sin opinar, sin agregar datos y marcando rumores u opiniones como tales. El código limpia la salida
+  (quita oraciones con teléfonos, correos, ligas o cuentas; máximo 320 caracteres) y debajo se lee
+  «Resumen hecho con IA a partir de esta publicación. Puede omitir matices» (o «Texto de ejemplo» con
+  la IA simulada). El nombre no lleva «IA» (ADR-041); la nota sí, por honestidad.
+- **Costo (§7 del modelo de ingresos):** se genera al primer toque y se guarda para todos
+  (`PostContext`, con el sha256 del texto: si la publicación cambia, se rehace). Leer uno guardado es
+  gratis, también sin sesión; generar uno nuevo pide sesión, cuenta 30 por hora por persona y va sin
+  cuota personal de IA (es de la publicación, no de quien la abre) pero dentro del presupuesto mensual
+  y con un tope diario propio de US$0.50. Un resumen cuesta ≈ US$0.00015.
+- **Interruptor:** función `postContext` en `/admin/ia` (encendida por omisión, como las demás ya
+  construidas) y tarea `post_context` enrutable a otro modelo.
+
+**Consecuencias.** Migración `post_context` (tabla y valor `POST_CONTEXT` de `AIFeature`). Pruebas:
+reglas y limpieza, servicio (guardado, sesión, límite, generación, fallo), botón (unitarias) y E2E
+(publicación larga con resumen; corta sin botón).

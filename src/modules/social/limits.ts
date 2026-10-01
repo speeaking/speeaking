@@ -46,6 +46,11 @@ export const SOCIAL_LIMITS = {
     { scope: "follow", subject: "user", limit: 100, windowSeconds: HOUR },
   ],
   join: [{ scope: "join", subject: "user", limit: 30, windowSeconds: HOUR }],
+  // «Contexto» (ADR-060): generar un resumen nuevo (los ya guardados no cuentan).
+  context: [
+    { scope: "context", subject: "ip", limit: 60, windowSeconds: HOUR },
+    { scope: "context", subject: "user", limit: 30, windowSeconds: HOUR },
+  ],
   // Editar el perfil revalida todo el layout (la foto va en la barra): pocas veces por hora.
   profile: [{ scope: "profile", subject: "user", limit: 20, windowSeconds: HOUR }],
   // Compartir se puede sin cuenta: por IP y, con sesión, también por cuenta.

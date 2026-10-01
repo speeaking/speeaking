@@ -20,6 +20,10 @@ distintivos y la línea «en común», pestañas Publicaciones · Fotos · Tiend
 ajenos. Abrir un perfil «pasa la página»: enlaces con `transitionTypes` de `lib/page-turn.ts`, CSS en
 `globals.css`, esqueleto propio en `u/[username]/loading.tsx`.
 
+**Contexto (ADR-060).** `context-rules.ts` (desde 500 caracteres), `post-context.ts` (tarea `post_context`,
+simulador y limpieza), `post-context-service.ts` (guardado por publicación con su sha256; generar pide
+sesión, límite `context` y tope diario) y `components/context-button.tsx`.
+
 **Portada propia y seguidores (ADR-058).** `getPublicProfile` trae la portada (`Profile.coverMedia`);
 `follow-lists.ts` (`listFollowPeople`, de 30 en 30 con cursor) alimenta `/u/[usuario]/seguidores` y
 `/siguiendo` (`components/profile/follow-list.tsx`). Editar perfil vive en `identity`.

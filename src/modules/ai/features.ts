@@ -26,7 +26,8 @@ export const AI_FEATURE_KEYS = [
   "sellerContent",
   "videoGenerator",
   "sellerAgent",
-  // Fase 4: experiencia de compra.
+  // Fase 4: experiencia de compra (y de lectura).
+  "postContext",
   "imageSearch",
   "buyerAssistant",
   "giftFinder",
@@ -101,6 +102,12 @@ export const AI_FEATURES: readonly AiFeatureDefinition[] = [
   planned("sellerContent", "Contenido para vendedores", "Imágenes y banners publicitarios.", 3),
   planned("videoGenerator", "Video promocional", "Videos cortos con control de costo.", 3),
   planned("sellerAgent", "Agente comercial del vendedor", "Responde con datos P4.", 3),
+  built(
+    "postContext",
+    "Contexto",
+    "Resumen neutral de publicaciones largas, una vez por publicación y guardado para todos.",
+    4,
+  ),
   planned("imageSearch", "Búsqueda por imagen", "Encuentra productos parecidos a una foto.", 4),
   planned("buyerAssistant", "Comprador IA", "Compara productos reales sin inventar.", 4),
   planned("giftFinder", "Regalos", "Recomendaciones de regalo con presupuesto.", 4),

@@ -21,6 +21,7 @@ export const AI_TASK_INFO: Record<AITaskId, { label: string; feature: AIFeature 
   authenticity_text: { label: "Revisión de autenticidad", feature: "AUTHENTICITY_REVIEW" },
   shopping_intent: { label: "¿Qué necesitas? (interpretar)", feature: "SHOPPING_INTENT" },
   look_copy: { label: "Nombre y explicación del look", feature: "LOOK_COPY" },
+  post_context: { label: "Contexto de publicaciones largas", feature: "POST_CONTEXT" },
 };
 
 /**

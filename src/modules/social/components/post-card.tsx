@@ -53,8 +53,10 @@ import type {
   ProductAvailability,
 } from "@/modules/feed/dto";
 import { type ReactResult, reactAction, type ToggleResult, toggleSaveAction } from "../actions";
+import { canHaveContext } from "../context-rules";
 import { recordShareAction } from "../interaction-actions";
 import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
+import { ContextButton } from "./context-button";
 import { ReactionButton, reactionLabel } from "./reaction-button";
 
 type Post = FeedItemDTO;
@@ -849,6 +851,7 @@ export function PostCard({
             </h2>
           ) : null}
           <PostBody text={rest} expanded={expanded} className="text-ink-2" />
+          {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
           <PhotoCredit media={post.media} />
           <div className="mt-auto flex flex-col gap-2">
             <ActionBar
@@ -899,6 +902,7 @@ export function PostCard({
       {intent ? <IntentChip intent={intent} /> : null}
       <CardHeader post={post} />
       <PostBody text={post.body} expanded={expanded} />
+      {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
 
       {/* Varias fotos en el feed: mosaico como Facebook (ocupa poco y cada foto abre la publicación
           en ella), también en las ventas, con el precio en su bloque. Una sola foto de venta y la

@@ -47,6 +47,24 @@ test.describe("perfil (ADR-058)", () => {
     await visitor.close();
   });
 
+  test("lo que escribe la persona se muestra como texto: un intento de XSS no corre", async ({
+    page,
+  }) => {
+    await registerAndOnboard(page);
+    const attack = '<img src=x onerror="window.__xss = true"><script>window.__xss = true</script>';
+    await page.goto("/perfil/editar");
+    await page.getByLabel("Presentación").fill(attack);
+    await page.getByRole("button", { name: "Guardar" }).click();
+    await expect(page).toHaveURL(/\/u\/[a-z0-9._-]+$/);
+
+    // Se ve tal cual, como texto, y no se ejecutó nada.
+    await expect(page.getByText(attack)).toBeVisible();
+    expect(
+      await page.evaluate(() => (window as unknown as { __xss?: boolean }).__xss),
+    ).toBeUndefined();
+    await expect(page.locator("main img[src='x']")).toHaveCount(0);
+  });
+
   test("seguidores: quien te sigue aparece en tu lista y puedes seguirle de vuelta", async ({
     page,
     browser,

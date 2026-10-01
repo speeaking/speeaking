@@ -435,6 +435,7 @@ model Post {
   comments      Comment[]
   saves         SavedItem[]
   notifications Notification[]
+  context       PostContext?
 
   @@index([status, publishedAt(sort: Desc), id])
   @@index([communityId, status, publishedAt(sort: Desc)])
@@ -700,6 +701,8 @@ enum AIFeature {
   LOOK_COPY
   /// «Pruébatelo»: una imagen generada con la foto de la persona y los productos (ADR-045).
   VIRTUAL_TRY_ON
+  /// «Contexto»: resumen neutral de una publicación larga, una vez por publicación (ADR-060).
+  POST_CONTEXT
 }
 
 /// Quién financia una solicitud de IA (ADR-044). Solo PLATFORM y SYSTEM consumen el presupuesto
@@ -741,6 +744,7 @@ model AIRequest {
 
   response    AIResponse?
   tryOnResult TryOnResult?
+  postContext PostContext?
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([feature, createdAt(sort: Desc)])
@@ -1642,4 +1646,23 @@ model Notification {
   @@index([orderId])
   @@index([createdAt])
   @@map("notifications")
+}
+
+/// «Contexto» de una publicación larga (ADR-060): se genera una sola vez y lo leen todos. Si el texto
+/// de la publicación cambia (`bodyHash`), se vuelve a generar. Se borra con la publicación.
+model PostContext {
+  postId        String     @id @db.Uuid
+  post          Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  summary       String     @db.VarChar(400)
+  /// sha256 del texto resumido: si la publicación cambia, el resumen viejo ya no vale.
+  bodyHash      String     @db.Char(64)
+  /// Quién lo escribió (`mock` u `openai_compatible`): decide si se marca como ejemplo (ADR-038).
+  provider      String
+  model         String
+  promptVersion String
+  requestId     String?    @unique @db.Uuid
+  request       AIRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@map("post_contexts")
 }

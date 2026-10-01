@@ -9,6 +9,7 @@ vi.mock("@/modules/social/actions", () => ({
   toggleLikeAction: vi.fn(),
   toggleSaveAction: vi.fn(),
 }));
+vi.mock("@/modules/social/context-actions", () => ({ getPostContextAction: vi.fn() }));
 vi.mock("@/modules/social/interaction-actions", () => ({ recordShareAction: vi.fn() }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),

@@ -9,6 +9,7 @@ import { PostCard } from "./post-card";
 
 // Las acciones reales viven en el servidor (base de datos, sesión): aquí se simulan.
 vi.mock("../actions", () => ({ reactAction: vi.fn(), toggleSaveAction: vi.fn() }));
+vi.mock("../context-actions", () => ({ getPostContextAction: vi.fn() }));
 vi.mock("../interaction-actions", () => ({ recordShareAction: vi.fn() }));
 // Micro-respuestas (ADR-052): la vibración y los avisos se observan, no se ejecutan.
 vi.mock("@/lib/haptics", () => ({ tapHaptic: vi.fn() }));
