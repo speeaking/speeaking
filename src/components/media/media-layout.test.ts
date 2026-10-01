@@ -44,7 +44,8 @@ describe("collageLayout", () => {
     expect(collageLayout(2)).toEqual({ tiles: 2, overflow: 0, aspect: 4 / 3 });
     expect(collageLayout(3)).toEqual({ tiles: 3, overflow: 0, aspect: 1 });
     expect(collageLayout(4)).toEqual({ tiles: 4, overflow: 0, aspect: 1 });
-    expect(collageLayout(10)).toEqual({ tiles: 4, overflow: 6, aspect: 1 });
+    expect(collageLayout(5)).toEqual({ tiles: 5, overflow: 0, aspect: 6 / 5 });
+    expect(collageLayout(10)).toEqual({ tiles: 5, overflow: 5, aspect: 6 / 5 });
   });
 
   it("sin fotos no hay mosaicos", () => {

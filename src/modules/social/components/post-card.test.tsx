@@ -127,17 +127,29 @@ describe("PostCard: fotos", () => {
     ]);
   });
 
-  it("una venta muestra el carrusel con el nombre del producto, sin collage", () => {
+  it("una venta con varias fotos va en mosaico en el feed y cada foto abre la publicación", () => {
     render(<PostCard post={sale()} />);
+
+    expect(screen.queryByRole("region", { name: "Fotos de Tenis rojos" })).not.toBeInTheDocument();
+    const tiles = screen.getAllByRole("link", { name: /^Tenis rojos, foto \d/ });
+    expect(tiles.map((tile) => tile.getAttribute("href"))).toEqual([
+      `/p/${POST_ID}`,
+      `/p/${POST_ID}?foto=2`,
+      `/p/${POST_ID}?foto=3`,
+    ]);
+  });
+
+  it("abierta, la venta muestra el carrusel con el nombre del producto", () => {
+    render(<PostCard post={sale()} expanded />);
 
     const carousel = screen.getByRole("region", { name: "Fotos de Tenis rojos" });
     expect(within(carousel).getByRole("img", { name: "Tenis rojos, foto 2" })).toBeInTheDocument();
     expect(within(carousel).getByText("1/3")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /^Imagen/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Tenis rojos, foto/ })).not.toBeInTheDocument();
   });
 
   it("en una venta el marco es 4:5 o cuadrado aunque la portada sea horizontal", () => {
-    render(<PostCard post={sale({ media: photos(2, { width: 1600, height: 900 }) })} />);
+    render(<PostCard post={sale({ media: photos(2, { width: 1600, height: 900 }) })} expanded />);
 
     expect(parseFloat(frame().style.aspectRatio)).toBe(1);
     // La foto horizontal no se recorta ni se estira: se ve completa dentro del cuadrado.
@@ -256,11 +268,11 @@ describe("PostCard: contadores y acciones", () => {
     expect(like).not.toHaveTextContent("0");
     expect(screen.getByRole("link", { name: "Comentar" })).toHaveAttribute(
       "href",
-      `/p/${POST_ID}#comentar`,
+      `/p/${POST_ID}/comentarios`,
     );
     expect(screen.getByRole("link", { name: "Sé la primera persona en comentar" })).toHaveAttribute(
       "href",
-      `/p/${POST_ID}#comentar`,
+      `/p/${POST_ID}/comentarios`,
     );
     expect(screen.queryByText("¿Qué opinas?")).not.toBeInTheDocument();
   });
@@ -277,7 +289,7 @@ describe("PostCard: contadores y acciones", () => {
     expect(screen.getByRole("link", { name: "Comentar, 2 comentarios" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "¿Qué opinas?" })).toHaveAttribute(
       "href",
-      `/p/${POST_ID}#comentar`,
+      `/p/${POST_ID}/comentarios`,
     );
   });
 
@@ -386,13 +398,22 @@ describe("PostCard: contadores y acciones", () => {
 });
 
 describe("PostCard: producto (P4)", () => {
-  it("el precio va una sola vez, sobre la foto, y enlaza al producto", () => {
-    render(<PostCard post={sale()} />);
+  it("con una sola foto el precio va una vez, sobre la foto, y enlaza al producto", () => {
+    render(<PostCard post={sale({ media: photos(1) })} />);
 
     expect(screen.getAllByText("$899")).toHaveLength(1);
     const tag = screen.getByRole("link", { name: "$899, ver Tenis rojos" });
     expect(tag).toHaveAttribute("href", `/producto/tenis-rojos?from=${POST_ID}`);
-    expect(frame()).toContainElement(tag);
+    // Va dentro del marco de la foto (una sola foto: sin carril de carrusel).
+    const photo = screen.getByRole("img", { name: "Tenis rojos, foto 1" });
+    expect(photo.parentElement).toContainElement(tag);
+  });
+
+  it("con varias fotos (mosaico) el precio va una vez, en el bloque del producto", () => {
+    render(<PostCard post={sale()} />);
+
+    expect(screen.getAllByText("$899")).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "$899, ver Tenis rojos" })).not.toBeInTheDocument();
   });
 
   it("sin fotos el precio va en el bloque del producto, también una sola vez", () => {

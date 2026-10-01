@@ -1,17 +1,37 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { SendHorizontal } from "lucide-react";
+import { useActionState, useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { tapHaptic } from "@/lib/haptics";
+import { cn } from "@/lib/utils";
 import { type CommentFormState, createCommentAction } from "../actions";
 
-export function CommentForm({ postId, id }: { postId: string; id?: string }) {
+/**
+ * Escribir un comentario. `page`: el formulario de la página de la publicación (campo de dos líneas
+ * y botón abajo). `panel`: el del panel de comentarios (ADR-057), en una sola línea que crece con el
+ * texto y con el botón de enviar al lado, al alcance del pulgar.
+ */
+export function CommentForm({
+  postId,
+  id,
+  variant = "page",
+}: {
+  postId: string;
+  id?: string;
+  variant?: "page" | "panel";
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
+  const fieldId = useId();
   const [state, formAction, pending] = useActionState<CommentFormState, FormData>(
     async (previous, formData) => {
       const result = await createCommentAction(previous, formData);
-      if (result.ok) formRef.current?.reset();
+      if (result.ok) {
+        formRef.current?.reset();
+        tapHaptic();
+      }
       return result;
     },
     {},
@@ -29,30 +49,49 @@ export function CommentForm({ postId, id }: { postId: string; id?: string }) {
     return () => window.removeEventListener("hashchange", focusIfTarget);
   }, [id]);
 
+  const panel = variant === "panel";
   return (
     <form ref={formRef} id={id} action={formAction} className="flex scroll-mt-24 flex-col gap-2">
       <input type="hidden" name="postId" value={postId} />
-      <label htmlFor="comentario" className="sr-only">
+      <label htmlFor={fieldId} className="sr-only">
         Escribe un comentario
       </label>
-      <Textarea
-        ref={fieldRef}
-        id="comentario"
-        name="body"
-        rows={2}
-        maxLength={500}
-        placeholder="Escribe un comentario amable…"
-        className="text-base"
-        required
-      />
+      <div className={cn(panel && "flex items-end gap-2")}>
+        <Textarea
+          ref={fieldRef}
+          id={fieldId}
+          name="body"
+          rows={panel ? 1 : 2}
+          maxLength={500}
+          placeholder="Escribe un comentario amable…"
+          className={cn(
+            "text-base",
+            panel && "[field-sizing:content] max-h-32 min-h-11 flex-1 resize-none rounded-3xl",
+          )}
+          required
+        />
+        {panel ? (
+          <Button
+            type="submit"
+            size="icon-lg"
+            aria-label="Comentar"
+            disabled={pending}
+            className="size-11 shrink-0 rounded-full"
+          >
+            <SendHorizontal />
+          </Button>
+        ) : null}
+      </div>
       {state.error ? (
         <p role="alert" className="text-sm text-destructive">
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" className="self-end" disabled={pending}>
-        {pending ? "Publicando…" : "Comentar"}
-      </Button>
+      {panel ? null : (
+        <Button type="submit" className="self-end" disabled={pending}>
+          {pending ? "Publicando…" : "Comentar"}
+        </Button>
+      )}
     </form>
   );
 }

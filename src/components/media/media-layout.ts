@@ -35,18 +35,19 @@ export function dotWindow(count: number, active: number, max = MAX_DOTS): Dot[] 
 }
 
 /** Mosaicos que muestra el collage del feed; el resto se resume con "+N" sobre el último. */
-export const MAX_COLLAGE_TILES = 4;
+export const MAX_COLLAGE_TILES = 5;
 
 /**
- * Forma del collage según cuántas fotos hay. La proporción es fija por forma para que el feed no
- * salte mientras cargan las imágenes: 2 lado a lado (4:3), 3 una grande y dos apiladas (1:1),
- * 4 o más en 2×2 (1:1). Una sola foto usa su propio marco (ver `frameAspect`).
+ * Forma del collage según cuántas fotos hay, como Facebook. La proporción es fija por forma para
+ * que el feed no salte mientras cargan las imágenes: 2 lado a lado (4:3), 3 una grande y dos
+ * apiladas (1:1), 4 en 2×2 (1:1) y 5 o más con dos arriba y tres abajo (6:5, cuadros completos).
+ * Una sola foto usa su propio marco (ver `frameAspect`).
  */
 export function collageLayout(count: number) {
   const tiles = Math.min(Math.max(count, 0), MAX_COLLAGE_TILES);
   return {
     tiles,
     overflow: Math.max(count - tiles, 0),
-    aspect: tiles === 2 ? 4 / 3 : 1,
+    aspect: tiles === 2 ? 4 / 3 : tiles === 5 ? 6 / 5 : 1,
   };
 }

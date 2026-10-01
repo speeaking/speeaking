@@ -3,15 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { z } from "zod";
-import { UserAvatar } from "@/components/brand/user-avatar";
-import { formatRelativeTime } from "@/lib/format";
-import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { track } from "@/modules/analytics/track";
-import { JoinPrompt, joinHref } from "@/modules/feed/components/join-prompt";
+import { JoinPrompt } from "@/modules/feed/components/join-prompt";
 import { getMoreFromCommunity } from "@/modules/feed/home";
 import { getViewer } from "@/modules/identity/session";
 import { listComments } from "../comment-queries";
-import { CommentForm } from "./comment-form";
+import { CommentComposer } from "./comment-composer";
+import { CommentList } from "./comment-list";
 import { JoinButton } from "./join-button";
 import { PostCard } from "./post-card";
 import { hydratePosts } from "../post-queries";
@@ -23,9 +21,6 @@ export async function loadPost(id: string, viewerId: string | null) {
   const [post] = await hydratePosts([id], viewerId);
   return post ?? null;
 }
-
-/** Enlace de texto con 44 px al tacto sin mover la línea. */
-const inlineLink = "-my-3 inline-block py-3 font-semibold text-foreground underline";
 
 /**
  * Página de una publicación: también es la puerta de entrada de los enlaces compartidos (P1). La
@@ -65,10 +60,6 @@ export async function PostDetail({
     surface: "POST_PAGE",
   });
 
-  // Terminar el perfil y volver aquí, con la comunidad de la publicación ya marcada.
-  const finishProfileParams = new URLSearchParams({ next: postPath });
-  if (community) finishProfileParams.set("unirse", community.slug);
-
   return (
     <div className="flex flex-col gap-4 pb-4 md:pt-2">
       <PostCard
@@ -95,60 +86,12 @@ export async function PostDetail({
               corta en 100. Sin comentarios no se muestra un cero (principio 5). */}
           Comentarios{post.stats.comments > 0 ? ` (${post.stats.comments})` : ""}
         </h2>
-        {/* `#comentar`: destino de «¿Qué opinas?» y del ícono de comentar en las tarjetas. */}
-        {viewer?.profile?.onboarded ? (
-          <CommentForm postId={post.id} id="comentar" />
-        ) : viewer ? (
-          // Con sesión pero sin perfil: «Entra» sería falso, ya entró; le falta terminar su perfil.
-          <p id="comentar" className="scroll-mt-24 text-sm text-muted-foreground">
-            <Link href={`/bienvenida?${finishProfileParams}` as Route} className={inlineLink}>
-              Termina tu perfil para comentar
-            </Link>
-          </p>
-        ) : (
-          <p id="comentar" className="scroll-mt-24 text-sm text-muted-foreground">
-            <Link href={joinHref(postPath, community)} className={inlineLink}>
-              Crea tu cuenta gratis
-            </Link>{" "}
-            para comentar. ¿Ya tienes cuenta?{" "}
-            <Link
-              href={`/entrar?next=${encodeURIComponent(postPath)}` as Route}
-              // Palabra corta: también 44 px de ancho al tacto.
-              className={`${inlineLink} -mx-1.5 px-1.5`}
-            >
-              Entra
-            </Link>
-          </p>
-        )}
-        {comments.length > 0 ? (
-          <ul className="flex flex-col gap-4">
-            {comments.map((comment) => (
-              <li key={comment.id} className="flex gap-3">
-                <UserAvatar
-                  name={comment.author.displayName}
-                  seed={comment.author.username}
-                  src={comment.author.avatarUrl}
-                  className="size-8"
-                />
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-sm">
-                    <Link
-                      href={`/u/${comment.author.username}` as Route}
-                      transitionTypes={PROFILE_TRANSITION}
-                      className="font-semibold"
-                    >
-                      {comment.author.displayName}
-                    </Link>{" "}
-                    <span className="text-xs text-muted-foreground">
-                      {formatRelativeTime(new Date(comment.createdAt))}
-                    </span>
-                  </p>
-                  <p className="text-[15px] whitespace-pre-line">{comment.body}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <CommentComposer
+          post={post}
+          viewer={viewer ? { onboarded: Boolean(viewer.profile?.onboarded) } : null}
+          anchorId="comentar"
+        />
+        {comments.length > 0 ? <CommentList comments={comments} /> : null}
       </section>
 
       {community && more && more.posts.length > 0 ? (

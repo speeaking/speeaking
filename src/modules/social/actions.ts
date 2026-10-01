@@ -255,6 +255,8 @@ export async function createCommentAction(
     surface: "POST_PAGE",
   });
   revalidatePath(`/p/${parsed.data.postId}`);
+  // El panel de comentarios (ADR-057) vive en su propia ruta: también se refresca.
+  revalidatePath(`/p/${parsed.data.postId}/comentarios`);
   return { ok: true };
 }
 

@@ -20,6 +20,10 @@ distintivos y la línea «en común», pestañas Publicaciones · Fotos · Tiend
 ajenos. Abrir un perfil «pasa la página»: enlaces con `transitionTypes` de `lib/page-turn.ts`, CSS en
 `globals.css`, esqueleto propio en `u/[username]/loading.tsx`.
 
+**Comentarios en panel (ADR-057).** `@modal/(.)p/[id]/comentarios` pinta `RouteDrawer`
+(`components/layout/route-drawer.tsx`) con `CommentList` y `CommentComposer` (los mismos de la página
+de la publicación). `/p/[id]/comentarios` sin interceptar redirige a `/p/[id]#comentar`.
+
 **Abrir en capa (ADR-052).** `components/post-detail.tsx` es el cuerpo de una publicación; lo pintan
 `/p/[id]` (página completa) y `@modal/(.)p/[id]` (capa sobre el feed, `RouteModal`). «Me gusta» vive en
 `PostCard` y lo disparan la barra y el doble toque sobre la foto (`MediaCarousel.onDoubleTap`); al

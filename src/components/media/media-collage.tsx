@@ -5,21 +5,36 @@ import { blurPlaceholder, frameAspect } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { collageLayout, type MediaItem } from "./media-layout";
 
-/** Rejilla y `sizes` de cada mosaico según cuántos se muestran (1 a 4). */
+/** Rejilla, `sizes` y clase de cada mosaico según cuántos se muestran (1 a 5). */
 const GRID = {
-  1: { grid: "grid-cols-1 grid-rows-1", sizes: ["(max-width: 768px) 100vw, 576px"] },
-  2: { grid: "grid-cols-2 grid-rows-1", sizes: ["(max-width: 768px) 50vw, 288px"] },
+  1: { grid: "grid-cols-1 grid-rows-1", sizes: ["(max-width: 768px) 100vw, 576px"], tiles: [] },
+  2: { grid: "grid-cols-2 grid-rows-1", sizes: ["(max-width: 768px) 50vw, 288px"], tiles: [] },
   3: {
     grid: "grid-cols-[2fr_1fr] grid-rows-2",
     sizes: ["(max-width: 768px) 67vw, 384px", "(max-width: 768px) 33vw, 192px"],
+    tiles: ["row-span-2"],
   },
-  4: { grid: "grid-cols-2 grid-rows-2", sizes: ["(max-width: 768px) 50vw, 288px"] },
-} as const;
+  4: { grid: "grid-cols-2 grid-rows-2", sizes: ["(max-width: 768px) 50vw, 288px"], tiles: [] },
+  // Dos arriba y tres abajo, todos cuadrados: 6 columnas y filas de 3:2.
+  5: {
+    grid: "grid-cols-6 grid-rows-[3fr_2fr]",
+    sizes: [
+      "(max-width: 768px) 50vw, 288px",
+      "(max-width: 768px) 50vw, 288px",
+      "(max-width: 768px) 33vw, 192px",
+    ],
+    tiles: ["col-span-3", "col-span-3", "col-span-2", "col-span-2", "col-span-2"],
+  },
+} as const satisfies Record<
+  number,
+  { grid: string; sizes: readonly string[]; tiles: readonly string[] }
+>;
 
 /**
- * Collage estilo Facebook para publicaciones normales: 1 foto en su marco, 2 lado a lado, 3 con una
- * grande y dos apiladas, 4 o más en 2×2 con "+N" sobre la última. Cada mosaico abre la publicación
- * en esa foto (`?foto=`), donde se ven todas en el carrusel.
+ * Collage estilo Facebook para varias fotos: 1 en su marco, 2 lado a lado, 3 con una grande y dos
+ * apiladas, 4 en 2×2 y 5 o más con dos arriba y tres abajo, con "+N" sobre la última. Ocupa poco
+ * espacio en el feed; cada mosaico abre la publicación en esa foto (`?foto=`), donde se ven todas
+ * en el carrusel.
  */
 export function MediaCollage({
   items,
@@ -53,7 +68,7 @@ export function MediaCollage({
             // Sin `outline-none`: en Tailwind 4 anula el `outline-3` del foco (queda sin anillo).
             className={cn(
               "relative block overflow-hidden bg-muted focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ring",
-              tiles === 3 && index === 0 && "row-span-2",
+              (layout.tiles as readonly string[])[index],
             )}
           >
             <Image

@@ -23,7 +23,8 @@ describe("MediaCollage", () => {
     [2, "2", 2],
     [3, "3", 3],
     [4, "4", 4],
-    [7, "4", 4],
+    [5, "5", 5],
+    [7, "5", 5],
   ])("con %i fotos usa la forma %s y muestra %i mosaicos", (count, layout, tiles) => {
     const collage = renderCollage(count);
 
@@ -53,17 +54,25 @@ describe("MediaCollage", () => {
     expect(parseFloat(collage.style.aspectRatio)).toBeCloseTo(4 / 5);
   });
 
-  it("con más de 4 fotos resume el resto con +N sobre el último mosaico", () => {
+  it("con 5 fotos van dos arriba y tres abajo, como en Facebook", () => {
+    renderCollage(5);
+
+    const links = screen.getAllByRole("link");
+    expect(links.slice(0, 2).every((link) => link.classList.contains("col-span-3"))).toBe(true);
+    expect(links.slice(2).every((link) => link.classList.contains("col-span-2"))).toBe(true);
+  });
+
+  it("con más de 5 fotos resume el resto con +N sobre el último mosaico", () => {
     renderCollage(10);
 
     const links = screen.getAllByRole("link");
-    expect(screen.getByText("+6")).toBeInTheDocument();
-    expect(links[3]).toHaveTextContent("+6");
-    expect(links[3]).toHaveAccessibleName(/y 6 fotos más/);
+    expect(screen.getByText("+5")).toBeInTheDocument();
+    expect(links[4]).toHaveTextContent("+5");
+    expect(links[4]).toHaveAccessibleName(/y 5 fotos más/);
   });
 
   it("sin fotos de más no hay +N", () => {
-    renderCollage(4);
+    renderCollage(5);
 
     expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
   });

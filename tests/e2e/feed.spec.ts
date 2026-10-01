@@ -79,6 +79,45 @@ test.describe("feed", () => {
     await expect(page.getByRole("heading", { name: "Comentarios (1)" })).toBeVisible();
   });
 
+  test("varias fotos van en mosaico y «Comentar» abre el panel que sube desde abajo (ADR-057)", async ({
+    page,
+  }) => {
+    test.slow();
+    await registerAndOnboard(page);
+    await page.goto("/crear/publicacion");
+    await page.getByLabel("¿Qué quieres compartir?").fill("Cinco fotos de mi cocina nueva");
+    await page.getByLabel("Elegir imágenes").setInputFiles(
+      Array.from({ length: 5 }, (_, index) => ({
+        name: `foto-${index + 1}.png`,
+        mimeType: "image/png",
+        buffer: TINY_PNG,
+      })),
+    );
+    await expect(page.locator('input[name="mediaIds"]')).toHaveCount(5);
+    await page.getByRole("button", { name: "Publicar" }).click();
+    await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
+    const postPath = new URL(page.url()).pathname;
+
+    // En su perfil la tarjeta va en mosaico: dos fotos arriba y tres abajo.
+    await page.goto("/perfil");
+    const card = page.locator("article").filter({ has: page.locator(`a[href="${postPath}"]`) });
+    await expect(card.locator('[data-layout="5"]')).toBeVisible();
+
+    // «Comentar» abre el panel sin salir del perfil; se comenta ahí mismo y «atrás» lo cierra.
+    await card.getByRole("link", { name: "Comentar", exact: true }).click();
+    await expect(page).toHaveURL(`${postPath}/comentarios`);
+    const panel = page.getByRole("dialog", { name: /^Comentarios/ });
+    await expect(panel.getByText("Todavía no hay comentarios")).toBeVisible();
+    await panel.getByLabel("Escribe un comentario").fill("¡Quedó increíble!");
+    await panel.getByRole("button", { name: "Comentar" }).click();
+    await expect(panel.getByText("¡Quedó increíble!")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Comentarios (1)" })).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/u\/[a-z0-9._-]+$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
   test("las comunidades se pueden explorar y unirse pide sesión", async ({ page }) => {
     await page.goto("/descubrir");
     // En escritorio Gaming también aparece en las columnas laterales: se elige la del contenido.

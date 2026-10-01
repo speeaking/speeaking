@@ -1552,3 +1552,31 @@ contra la semana pasada. Aprobado el 2026-10-01 («haz los pasos que están en l
 (`seller-panel-queries.ts`); sin migración. Pruebas: unitarias de los cálculos y las piezas, de
 integración contra PostgreSQL (`seller-panel-queries.db.test.ts`) y la E2E de venta completa. Para
 después: una insignia de «tienda confiable» con los mismos datos de desempeño cuando haya volumen.
+
+## ADR-057 · Comentarios en un panel que sube desde abajo y mosaico de varias fotos
+
+**Contexto.** El fundador (2026-10-01): «en Facebook al oprimir comentar se abre la pantalla de abajo
+para arriba; hagamos lo mismo o mejóralo», y «si alguien sube varias imágenes deben verse así, para no
+abarcar mucho espacio» (captura de un mosaico de 5 fotos). Comentar llevaba a la publicación completa
+y las ventas mostraban un carrusel aun con varias fotos.
+
+**Decisión.**
+
+- **Comentarios en panel** (`RouteDrawer`, sobre el cajón de Base UI): «Comentar» y «¿Qué opinas?»
+  abren `/p/[id]/comentarios` interceptada en el slot `@modal`. En teléfono el panel sube desde abajo
+  (85 % de la pantalla, con su asa) y se cierra deslizándolo hacia abajo, con la X o con «atrás»; en
+  escritorio entra por la derecha. Arriba, el total y el resumen de reacciones; en medio, la
+  conversación; abajo, fijo y por encima del teclado, el campo de una línea que crece con el texto y
+  un botón de enviar al alcance del pulgar (vibra al enviar). La publicación sigue detrás y el scroll
+  no se pierde. Recargar la URL abre la publicación completa en sus comentarios (`#comentar`).
+- No se usó el «pasar la página» del perfil: abrir a una persona es ir a otro lugar; comentar es
+  quedarse en la publicación. El panel comunica eso.
+- **Mosaico como Facebook** para varias fotos, también en ventas: 2 lado a lado, 3 con una grande, 4
+  en 2×2 y **5 o más con dos arriba y tres abajo** y «+N» en la última. La venta con una sola foto y la
+  publicación abierta siguen en carrusel con el precio encima; en el mosaico el precio va en el
+  bloque del producto (una sola vez).
+
+**Consecuencias.** `CommentList` y `CommentComposer` se comparten entre la página y el panel;
+`createCommentAction` revalida también la ruta del panel. Pruebas unitarias (panel, formulario,
+mosaico, tarjeta) y E2E (publicar 5 fotos, mosaico en el perfil, comentar desde el panel y cerrarlo
+con «atrás»).

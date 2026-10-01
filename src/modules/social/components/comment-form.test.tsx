@@ -34,3 +34,13 @@ describe("CommentForm", () => {
     expect(screen.getByLabelText("Escribe un comentario")).not.toHaveFocus();
   });
 });
+
+describe("CommentForm en el panel (ADR-057)", () => {
+  it("una sola línea con el botón de enviar al lado, con el mismo nombre «Comentar»", () => {
+    render(<CommentForm postId={POST_ID} variant="panel" />);
+
+    const field = screen.getByLabelText("Escribe un comentario");
+    expect(field).toHaveAttribute("rows", "1");
+    expect(screen.getByRole("button", { name: "Comentar" })).toHaveAttribute("type", "submit");
+  });
+});

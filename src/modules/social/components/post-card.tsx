@@ -695,7 +695,7 @@ function ActionBar({
         </a>
       ) : (
         <Link
-          href={`/p/${post.id}#comentar` as Route}
+          href={`/p/${post.id}/comentarios` as Route}
           aria-label={commentLabel}
           className={control}
         >
@@ -726,14 +726,14 @@ function ActionBar({
 }
 
 /**
- * Fila de respuesta: lleva al formulario de la publicación. Sin comentarios, en lugar de un cero
+ * Fila de respuesta: abre el panel de comentarios (ADR-057). Sin comentarios, en lugar de un cero
  * invita con honestidad a abrir la conversación.
  */
 function ReplyRow({ post, isSignedIn }: { post: Post; isSignedIn: boolean }) {
   const postPath = `/p/${post.id}`;
   return (
     <Link
-      href={isSignedIn ? (`${postPath}#comentar` as Route) : signUpHref(postPath)}
+      href={isSignedIn ? (`${postPath}/comentarios` as Route) : signUpHref(postPath)}
       className="flex h-11 items-center gap-2 rounded-full bg-secondary pr-3 pl-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground motion-reduce:transition-none"
     >
       <span className="min-w-0 flex-1 truncate">
@@ -812,6 +812,8 @@ export function PostCard({
     ...(community ? { "--hue": community.hue } : {}),
   } as CSSProperties;
   const showReply = !expanded && product === null;
+  // Carrusel en la publicación abierta y en una venta de una sola foto; mosaico en lo demás.
+  const useCarousel = expanded || (isSale && images.length === 1);
   const shell =
     "flex flex-col gap-3 border-b bg-card px-4 py-4 motion-safe:animate-rise md:rounded-3xl md:border";
 
@@ -898,11 +900,12 @@ export function PostCard({
       <CardHeader post={post} />
       <PostBody text={post.body} expanded={expanded} />
 
-      {/* Venta: carrusel de marco fijo (4:5 o cuadrado) para ver cada foto del producto completa,
-          con el precio encima. Publicación normal: collage que abre la publicación. */}
+      {/* Varias fotos en el feed: mosaico como Facebook (ocupa poco y cada foto abre la publicación
+          en ella), también en las ventas, con el precio en su bloque. Una sola foto de venta y la
+          publicación abierta: carrusel de marco fijo (4:5 o cuadrado) con el precio encima. */}
       {cover ? (
         <div className="flex flex-col gap-1.5">
-          {isSale || expanded ? (
+          {useCarousel ? (
             <MediaCarousel
               items={images}
               label={
@@ -931,7 +934,7 @@ export function PostCard({
           product={product}
           href={productHref}
           withinBudget={post.viewer.withinBudget}
-          showPrice={!cover}
+          showPrice={!cover || !useCarousel}
         />
       ) : null}
 
