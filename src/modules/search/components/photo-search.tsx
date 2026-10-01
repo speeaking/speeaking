@@ -5,6 +5,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { shrinkImage } from "@/lib/upload-image";
 import { cn } from "@/lib/utils";
 import { SIMULATED_OUTPUT_LABEL } from "@/modules/ai/tasks/simulation";
 import { ProductCard } from "@/modules/catalog/components/product-card";
@@ -26,21 +27,7 @@ const FAILURES: Record<string, string> = {
  * navegador no puede (formato que no decodifica), se manda tal cual y el servidor decide.
  */
 async function shrink(file: File): Promise<Blob> {
-  try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const scale = Math.min(1, PHOTO_SEND_DIMENSION / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85),
-    );
-    return blob ?? file;
-  } catch {
-    return file;
-  }
+  return (await shrinkImage(file, { maxDimension: PHOTO_SEND_DIMENSION, quality: 0.85 })) ?? file;
 }
 
 /**

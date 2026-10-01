@@ -86,18 +86,35 @@ describe("ImageUploader", () => {
     expect(container.querySelector("[data-uploading]")).toBeNull();
   });
 
-  it("una imagen de más de 10 MB ni se manda: el servidor cortaría la conexión (SEC-03)", async () => {
+  it("una imagen de más de 40 MB ni se intenta leer ni se manda", async () => {
     const fetch = vi.spyOn(globalThis, "fetch");
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
     const { container } = render(<ImageUploader name="mediaIds" max={10} initial={[]} />);
     const heavy = new File(["x"], "pesada.jpg", { type: "image/jpeg" });
-    Object.defineProperty(heavy, "size", { value: 10 * 1024 * 1024 + 1 });
+    Object.defineProperty(heavy, "size", { value: 40 * 1024 * 1024 + 1 });
 
     await userEvent.upload(screen.getByLabelText("Elegir imágenes"), heavy);
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith("La imagen pesa más de 10 MB.");
+    expect(toast.error).toHaveBeenCalledWith("La imagen pesa más de 40 MB.");
     expect(container.querySelectorAll("img")).toHaveLength(0);
+  });
+
+  it("una foto de más de 4 MB que el navegador no puede reducir no se manda (Vercel la cortaría)", async () => {
+    const fetch = vi.spyOn(globalThis, "fetch");
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
+    render(<ImageUploader name="mediaIds" max={10} initial={[]} />);
+    // jsdom no decodifica imágenes: como un HEIC en Chrome, no se puede reducir.
+    const heavy = new File(["x"], "pesada.jpg", { type: "image/jpeg" });
+    Object.defineProperty(heavy, "size", { value: 6 * 1024 * 1024 });
+
+    await userEvent.upload(screen.getByLabelText("Elegir imágenes"), heavy);
+
+    await waitFor(() => expect(screen.getByText("Error")).toBeInTheDocument());
+    expect(fetch).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(
+      "No pudimos reducir la imagen a menos de 4 MB. Prueba con otra.",
+    );
   });
 
   it("una respuesta de error sin JSON (413 del proxy, 503) muestra un mensaje útil", async () => {
@@ -113,7 +130,7 @@ describe("ImageUploader", () => {
     ]);
 
     await waitFor(() => expect(screen.getAllByText("Error")).toHaveLength(2));
-    expect(toast.error).toHaveBeenCalledWith("La imagen pesa más de 10 MB.");
+    expect(toast.error).toHaveBeenCalledWith("La imagen es demasiado pesada. Prueba con otra.");
     expect(toast.error).toHaveBeenCalledWith(
       "Hay muchas subidas en este momento. Intenta en unos segundos.",
     );

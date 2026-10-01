@@ -3,24 +3,15 @@
 import { ChevronLeft, ChevronRight, ImagePlus, Loader, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  IMAGE_TOO_HEAVY,
+  MAX_ORIGINAL_BYTES,
+  prepareImageUpload,
+  uploadErrorMessage,
+} from "@/lib/upload-image";
 
 type Uploaded = { id: string; url: string; width: number; height: number };
 type Slot = { key: string; preview: string; uploaded?: Uploaded; failed?: boolean };
-
-/** Igual que `MAX_UPLOAD_BYTES` del servidor: un archivo más pesado ni se manda. */
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const TOO_LARGE = "La imagen pesa más de 10 MB.";
-
-/**
- * Mensaje cuando la respuesta no trae el suyo: un 413 que corta la conexión (SEC-03) o que manda el
- * proxy puede llegar sin cuerpo JSON.
- */
-function uploadErrorMessage(status: number) {
-  if (status === 413) return TOO_LARGE;
-  if (status === 429) return "Subiste muchas imágenes seguidas. Intenta en unos minutos.";
-  if (status === 503) return "Hay muchas subidas en este momento. Intenta en unos segundos.";
-  return "No pudimos subir la imagen.";
-}
 
 /** Botón sobre la miniatura: se ve de 32 px y su área táctil llega a 44 px. */
 const tileButton =
@@ -68,9 +59,12 @@ export function ImageUploader({
   }, [slots]);
 
   const upload = async (slot: Slot, file: File) => {
-    const body = new FormData();
-    body.append("file", file);
     try {
+      // Vercel corta en 4.5 MB: una foto pesada se reduce aquí antes de mandarla.
+      const prepared = await prepareImageUpload(file);
+      if (!prepared.ok) throw new Error(prepared.error);
+      const body = new FormData();
+      body.append("file", prepared.file, file.name);
       const response = await fetch("/api/uploads", { method: "POST", body });
       const data = (await response.json().catch(() => null)) as
         (Uploaded & { error?: string }) | null;
@@ -91,10 +85,10 @@ export function ImageUploader({
   const onFiles = (files: FileList | null) => {
     if (!files) return;
     const room = max - slots.length;
-    // Una imagen de más de 10 MB se rechaza aquí: el servidor corta la conexión sin leerla.
-    const light = [...files].filter((file) => file.size <= MAX_FILE_BYTES);
+    // Una imagen enorme ni se intenta leer; las pesadas se reducen antes de subirlas (`upload`).
+    const light = [...files].filter((file) => file.size <= MAX_ORIGINAL_BYTES);
     if (light.length < files.length) {
-      toast.error(files.length === 1 ? TOO_LARGE : "Algunas imágenes pesan más de 10 MB.");
+      toast.error(files.length === 1 ? IMAGE_TOO_HEAVY : "Algunas imágenes pesan más de 40 MB.");
     }
     const accepted = light.slice(0, room);
     if (light.length > room) toast(`Puedes agregar hasta ${max} imágenes.`);

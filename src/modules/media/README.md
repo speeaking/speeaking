@@ -78,5 +78,9 @@ Subida, validación por firma de bytes y re-codificación de imágenes (sin EXIF
   en todo). El navegador pide `/media?w=` desde el mismo origen con la sesión: su dueño y el equipo
   ven la foto de un producto oculto en el Studio y en su página (con el optimizador se veía rota). No
   uses `unoptimized` con `/media`: en Vercel agrega `?dpl=` y la ruta responde 400.
-- El selector (`components/image-uploader.tsx`) no manda archivos de más de 10 MB y entiende los
+- **Vercel corta toda petición de más de 4.5 MB** (413 `FUNCTION_PAYLOAD_TOO_LARGE`), aunque el
+  servidor acepte 10 MB: el selector y la foto de perfil reducen en el navegador lo que pase de 3 MB
+  (2560 px en JPEG y, si no alcanza, 1600 px; `src/lib/upload-image.ts`) y no mandan nada de más de
+  4 MB. Una foto que el navegador no puede leer (HEIC en Chrome) se manda tal cual solo si cabe.
+- El selector (`components/image-uploader.tsx`) no manda archivos de más de 40 MB y entiende los
   errores sin cuerpo JSON (un 413 que cierra la conexión, un 503 del proxy).

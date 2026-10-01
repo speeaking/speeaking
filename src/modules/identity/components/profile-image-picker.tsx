@@ -4,17 +4,8 @@ import { Camera, Loader, Trash2 } from "lucide-react";
 import { type CSSProperties, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { prepareImageUpload, uploadErrorMessage } from "@/lib/upload-image";
 import { cn } from "@/lib/utils";
-
-/** Igual que `MAX_UPLOAD_BYTES` del servidor: un archivo más pesado ni se manda. */
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-
-function uploadErrorMessage(status: number) {
-  if (status === 413) return "La imagen pesa más de 10 MB.";
-  if (status === 429) return "Subiste muchas imágenes seguidas. Intenta en unos minutos.";
-  if (status === 503) return "Hay muchas subidas en este momento. Intenta en unos segundos.";
-  return "No pudimos subir la imagen.";
-}
 
 /**
  * Foto de perfil o portada (ADR-058): muestra la actual, sube la nueva a /api/uploads (el servidor la
@@ -50,15 +41,18 @@ export function ProfileImagePicker({
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
-    if (file.size > MAX_FILE_BYTES) {
-      toast.error("La imagen pesa más de 10 MB.");
+    // Vercel corta en 4.5 MB: una foto pesada se reduce aquí antes de mandarla.
+    const prepared = await prepareImageUpload(file);
+    if (!prepared.ok) {
+      toast.error(prepared.error);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
     const local = URL.createObjectURL(file);
     setPreview(local);
     setBusy(true);
     const body = new FormData();
-    body.append("file", file);
+    body.append("file", prepared.file, file.name);
     try {
       const response = await fetch("/api/uploads", { method: "POST", body });
       const data = (await response.json().catch(() => null)) as {
