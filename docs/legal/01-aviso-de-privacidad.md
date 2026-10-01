@@ -540,6 +540,42 @@ cifrados en reposo por el proveedor de base de datos). Regla: los pagos van dent
 un mensaje parece contener datos bancarios, la plataforma muestra un recordatorio automático (sin
 bloquear ni leerlo una persona).
 
+### 7 quater. «Contexto», buscar con una foto, videos y colaboraciones (agregado 2026-10-01, ADR-060 a ADR-063)
+
+**«Contexto» (ADR-060).** Finalidad: un resumen neutral de dos o tres oraciones de una publicación
+larga, a petición de quien la lee. Al proveedor de IA (encargado) va solo el texto de la publicación,
+que ya es público, sin correos, teléfonos, ligas ni cuentas, y sin la identidad de quien lo pidió.
+El resumen se marca como hecho con IA, se guarda una vez y se muestra a todos; si el texto cambia,
+se hace otro. Plazo: mientras exista la publicación. **[VERIFICAR CON ABOGADO]:** si resumir con IA
+la publicación de una persona (pública) necesita mencionarse como finalidad aparte o basta este
+apartado.
+
+**Buscar con una foto (ADR-061).** Finalidad: describir la ropa y los objetos que se pueden comprar
+en una foto que la persona elige, para buscar productos parecidos. El navegador reduce la foto y el
+servidor la vuelve a reducir y le quita los metadatos (incluida la ubicación) antes de enviarla al
+proveedor de IA (encargado), con la petición de no conservarla ni entrenar, y la instrucción de no
+describir ni reconocer personas. La foto **no se guarda**: ni en el almacenamiento ni en
+`AIRequest` (solo que hubo una búsqueda con foto, con modelo y costo). Lo que el modelo describió se
+guarda como una búsqueda más (§4 y §11). Solo con sesión y con límites por hora y por día.
+**[VERIFICAR CON ABOGADO]:** si una foto que puede incluir personas, aunque no se guarde ni se
+analicen las personas, pide consentimiento expreso o basta este aviso.
+
+**Videos (ADR-062).** Se guardan en el mismo almacenamiento que las fotos (encargado, §8.1), privados
+hasta publicarse y entregados solo a quien puede verlos. Los teléfonos guardan dentro del video el
+lugar donde se grabó (en `udta` o `meta`), la marca y el modelo: el navegador cambia esas cajas por
+relleno vacío del mismo tamaño antes de subirlo y el servidor rechaza un video que todavía las traiga
+(`media/video-metadata.ts`). La portada es un cuadro que se re-codifica como foto, sin metadatos.
+
+**Colaboraciones con tiendas (ADR-063).** Cuando alguien etiqueta un producto de otra tienda (solo
+si la tienda lo acepta), la tienda recibe un aviso con el nombre visible de quien publicó y la liga a
+la publicación (ya pública); quien publicó recibe un aviso si la tienda quita la etiqueta. Quien
+publica y la tienda ven, por publicación, conteos agregados de visitas al producto, pruebas con
+«Pruébatelo», productos agregados al carrito y compras pagadas que salieron de ella; nunca quién.
+Para contarlo se guarda de qué publicación llegó la persona al producto (`sourcePostId` en la
+actividad, el carrito y los pedidos), con las mismas reglas que el resto de la actividad (§4 y §6).
+**[VERIFICAR CON ABOGADO]:** con muy pocas compras («1 compra»), quien publica podría adivinar quién
+compró si conoce a sus seguidores: ¿hace falta un mínimo antes de mostrar el número?
+
 ### 8. Con quién compartimos tus datos
 
 #### 8.1 Proveedores que tratan datos por nuestra cuenta (encargados)
@@ -1231,6 +1267,12 @@ Primero lo que bloquea la publicación. No son parte de esta fase (no se tocó c
     salud).
 18. ¿Mencionar el Registro Público para Evitar Publicidad (REPEP) aunque hoy no hacemos
     mercadotecnia?
+19. «Contexto»: ¿resumir con IA una publicación pública de otra persona es una finalidad aparte? (7
+    quater)
+20. Buscar con una foto: ¿consentimiento expreso para una foto que puede incluir personas, aunque no
+    se guarde ni se analicen las personas? (7 quater)
+21. Colaboraciones: ¿un mínimo de casos antes de mostrar conteos por publicación, para que nadie
+    adivine quién compró? (7 quater)
 
 ---
 

@@ -746,6 +746,7 @@ describe("operación diaria", { timeout: 90_000 }, () => {
       const cleanup = vi.fn(async () => ({ deleted: 0, failedFiles: [] }));
       const redact = vi.fn(async () => 0);
       const oldNotifications = vi.fn(async () => 3);
+      const editorial = vi.fn(async () => ({ created: 2 }));
       const summary = await runDailyPipeline({
         client: tx,
         now: NOW,
@@ -753,6 +754,7 @@ describe("operación diaria", { timeout: 90_000 }, () => {
         deleteOrphanMedia: cleanup,
         redactExpiredAiInputs: redact,
         deleteOldNotifications: oldNotifications,
+        draftEditorialPosts: editorial,
       });
       expect(summary.skipped).toBe(false);
       expect(summary.day).toBe(DAY);
@@ -765,6 +767,7 @@ describe("operación diaria", { timeout: 90_000 }, () => {
         "orphan-media",
         "ai-input-redaction",
         "notifications-retention",
+        "editorial-drafts",
       ] as const) {
         expect(summary.steps[step]?.ok).toBe(true);
       }
@@ -783,6 +786,10 @@ describe("operación diaria", { timeout: 90_000 }, () => {
         ok: true,
         summary: { deleted: 3 },
       });
+
+      // Borradores de la redacción (ADR-066): al final y con el resumen del servicio.
+      expect(editorial).toHaveBeenCalledWith(NOW);
+      expect(summary.steps["editorial-drafts"]).toEqual({ ok: true, summary: { created: 2 } });
 
       // Otra ejecución mientras una sigue RUNNING se registra como omitida.
       await tx.jobRun.create({ data: { job: "ops-daily", startedAt: NOW } });

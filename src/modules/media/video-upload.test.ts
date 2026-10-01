@@ -27,11 +27,15 @@ vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("@/server/client-ip", () => ({ clientIp: () => "203.0.113.7" }));
 
 const { finishVideoUpload, startVideoUpload, videoUploadsEnabled } = await import("./video-upload");
+const { withoutMetadata } = await import("./video-metadata");
 
 const USER = "0199a000-0000-7000-8000-00000000000a";
 const POSTER = "0199a000-0000-7000-8000-00000000000b";
 const KEY = "videos/2026/10/video.mp4";
-const video = readFileSync("tests/fixtures/video/video-corto.mp4");
+/** Con los metadatos del programa que lo hizo, como llega del disco. */
+const original = readFileSync("tests/fixtures/video/video-corto.mp4");
+/** Como lo sube el navegador: sin metadatos (`video-metadata.ts`) y del mismo tamaño. */
+const video = Buffer.from(await (await withoutMetadata(new Blob([original]))).arrayBuffer());
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -169,6 +173,24 @@ describe("finishVideoUpload", () => {
     await expect(finishVideoUpload(USER, "video-1")).resolves.toEqual({
       ok: false,
       error: "El video no llegó completo. Intenta de nuevo.",
+    });
+    expect(db.media.update).toHaveBeenCalledWith({
+      where: { id: "video-1" },
+      data: { status: "FAILED" },
+    });
+    expect(storage.delete).toHaveBeenCalledWith(KEY);
+  });
+
+  it("un video que todavía trae la ubicación o los datos del teléfono se borra", async () => {
+    db.media.findFirst.mockResolvedValue(row);
+    videoStore.reader.mockReturnValue(async (start: number, length: number) =>
+      original.subarray(start, start + length),
+    );
+
+    await expect(finishVideoUpload(USER, "video-1")).resolves.toEqual({
+      ok: false,
+      error:
+        "No pudimos quitar la ubicación y los datos del teléfono de ese video. Vuelve a elegirlo.",
     });
     expect(db.media.update).toHaveBeenCalledWith({
       where: { id: "video-1" },

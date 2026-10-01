@@ -302,6 +302,41 @@ describe("PostCard: producto de otra tienda (ADR-063)", () => {
     expect(screen.getAllByText(/\$899/)).toHaveLength(1);
   });
 
+  it("en un video de colaboración, la etiqueta también va encima del video", () => {
+    const { unmount } = render(
+      <PostCard post={post({ media: [], video, product: theirs(), collaboration: true })} />,
+    );
+    const frame = document.querySelector("[data-video]") as HTMLElement;
+    const label = frame.querySelector('[data-slot="video-collaboration"]');
+    expect(label).toHaveTextContent("Colaboración");
+    // Visual: el nombre de la tienda y el texto accesible ya están arriba de la tarjeta.
+    expect(label).toHaveAttribute("aria-hidden", "true");
+    expect(document.querySelector('[data-slot="collaboration-chip"]')).toHaveTextContent(
+      "Colaboración con Ropero Demo",
+    );
+    unmount();
+
+    // Aunque el producto se agote, la publicación sigue identificada como publicidad.
+    const { unmount: unmountSoldOut } = render(
+      <PostCard
+        post={post({
+          media: [],
+          video,
+          collaboration: true,
+          product: theirs({ availability: "sold_out", inStock: false }),
+        })}
+      />,
+    );
+    const soldOut = document.querySelector("[data-video]") as HTMLElement;
+    expect(soldOut.querySelector('[data-slot="video-collaboration"]')).not.toBeNull();
+    expect(within(soldOut).queryByRole("link")).toBeNull();
+    unmountSoldOut();
+
+    // Sin acuerdo declarado, no.
+    render(<PostCard post={post({ media: [], video, product: theirs() })} />);
+    expect(document.querySelector('[data-slot="video-collaboration"]')).toBeNull();
+  });
+
   it("un video de un producto agotado no lleva etiquetas encima: el bloque dice por qué", () => {
     render(
       <PostCard

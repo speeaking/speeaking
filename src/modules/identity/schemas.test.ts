@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountNameSchema,
+  isReservedEmail,
   normalizeUsername,
   RESERVED_NAME_MESSAGE,
   signInSchema,
@@ -40,6 +41,24 @@ describe("signUpSchema", () => {
 
   it("rechaza nombres de más de 60 caracteres", () => {
     expect(signUpSchema.safeParse({ ...validSignUp, name: "a".repeat(61) }).success).toBe(false);
+  });
+
+  // Los correos `.invalid` son de las cuentas de la plataforma (ADR-066): registrarse con uno
+  // ocuparía la cuenta editorial de una comunidad antes de que exista.
+  it.each(["editorial.comida@vendeia.invalid", "Eliminada-1@ESTRENO.INVALID ", "x@invalid"])(
+    "rechaza el correo reservado %s",
+    (email) => {
+      const result = signUpSchema.safeParse({ ...validSignUp, email });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toBe("Escribe un correo válido.");
+    },
+  );
+
+  it("isReservedEmail solo marca el dominio .invalid", () => {
+    expect(isReservedEmail("a@vendeia.invalid")).toBe(true);
+    expect(isReservedEmail("a@invalid.mx")).toBe(false);
+    expect(isReservedEmail("prueba@estreno.test")).toBe(false);
+    expect(isReservedEmail("ana@example.com")).toBe(false);
   });
 
   // Validar antes de contar intentos (SEC-02) deja pasar sin límite los formularios inválidos: un

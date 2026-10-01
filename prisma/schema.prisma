@@ -50,6 +50,7 @@ model User {
   reportsResolved      Report[]              @relation("reportsResolved")
   authenticityReviews  AuthenticityCheck[]   @relation("authenticityReviewer")
   decisionsApproved    PlatformDecision[]    @relation("decisionApprover")
+  editorialReviews     EditorialDraft[]      @relation("editorialReviewer")
   // Saldo, Pruébatelo y looks (ADR-043, ADR-044, ADR-045).
   wallet               Wallet?
   tryOnPhotos          TryOnPhoto[]
@@ -316,9 +317,10 @@ model Community {
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
-  memberships CommunityMembership[]
-  categories  CommunityCategory[]
-  posts       Post[]
+  memberships     CommunityMembership[]
+  categories      CommunityCategory[]
+  posts           Post[]
+  editorialDrafts EditorialDraft[]
 
   @@map("communities")
 }
@@ -445,12 +447,13 @@ model Post {
   createdAt     DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
 
-  media         PostMedia[]
-  likes         Like[]
-  comments      Comment[]
-  saves         SavedItem[]
-  notifications Notification[]
-  context       PostContext?
+  media          PostMedia[]
+  likes          Like[]
+  comments       Comment[]
+  saves          SavedItem[]
+  notifications  Notification[]
+  context        PostContext?
+  editorialDraft EditorialDraft?
 
   @@index([status, publishedAt(sort: Desc), id])
   @@index([communityId, status, publishedAt(sort: Desc)])
@@ -720,6 +723,8 @@ enum AIFeature {
   POST_CONTEXT
   /// Búsqueda por foto: describir lo que se puede comprar en una foto; la foto no se guarda (ADR-061).
   IMAGE_SEARCH
+  /// Redacción diaria: borradores para las cuentas editoriales; los publica el equipo (ADR-066).
+  EDITORIAL_DRAFT
 }
 
 /// Quién financia una solicitud de IA (ADR-044). Solo PLATFORM y SYSTEM consumen el presupuesto
@@ -759,9 +764,10 @@ model AIRequest {
   latencyMs     Int?
   createdAt     DateTime        @default(now()) @db.Timestamptz(3)
 
-  response    AIResponse?
-  tryOnResult TryOnResult?
-  postContext PostContext?
+  response       AIResponse?
+  tryOnResult    TryOnResult?
+  postContext    PostContext?
+  editorialDraft EditorialDraft?
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([feature, createdAt(sort: Desc)])
@@ -1686,4 +1692,63 @@ model PostContext {
   createdAt     DateTime   @default(now()) @db.Timestamptz(3)
 
   @@map("post_contexts")
+}
+
+enum EditorialDraftKind {
+  /// Pregunta o debate para conversar.
+  QUESTION
+  /// Consejo práctico del tema de la comunidad.
+  TIP
+  /// Una fecha cercana del calendario: la fecha la pone el código, no la IA.
+  DATE
+  /// Un tema que escribió una persona del equipo.
+  TOPIC
+}
+
+enum EditorialDraftStatus {
+  PENDING
+  PUBLISHED
+  /// Lo descartó el equipo o venció sin revisarse.
+  DISCARDED
+}
+
+/// Borrador de la redacción diaria (ADR-066): la IA lo redacta para la cuenta editorial de una
+/// comunidad y solo se publica cuando una persona del equipo lo aprueba. Nunca crea usuarios,
+/// comentarios ni reacciones.
+model EditorialDraft {
+  id            String               @id @default(uuid(7)) @db.Uuid
+  communityId   String               @db.Uuid
+  community     Community            @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  kind          EditorialDraftKind
+  /// Día de México para el que se redactó.
+  day           DateTime             @db.Date
+  /// `<communityId>:<día>` en el borrador automático del día (a lo más uno por comunidad); vacío en
+  /// los que pide el equipo a mano.
+  autoKey       String?              @unique
+  /// Texto ya limpiado por código. Lo que se publica es lo que el equipo deja al aprobar.
+  body          String
+  /// Fecha del calendario (p. ej. `dia-de-muertos-2026`): no se repite en la misma comunidad.
+  occasion      String?
+  /// Tema que escribió el equipo (solo en TOPIC).
+  topic         String?
+  status        EditorialDraftStatus @default(PENDING)
+  /// Quién lo redactó (`mock` u `openai_compatible`), con qué modelo y qué versión del prompt.
+  provider      String
+  model         String
+  promptVersion String
+  requestId     String?              @unique @db.Uuid
+  request       AIRequest?           @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  /// La publicación que salió de este borrador.
+  postId        String?              @unique @db.Uuid
+  post          Post?                @relation(fields: [postId], references: [id], onDelete: SetNull)
+  /// Persona del equipo que lo publicó o lo descartó (vacío si venció solo).
+  reviewedById  String?              @db.Uuid
+  reviewedBy    User?                @relation("editorialReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?            @db.Timestamptz(3)
+  createdAt     DateTime             @default(now()) @db.Timestamptz(3)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([communityId, status, createdAt(sort: Desc)])
+  @@index([reviewedById])
+  @@map("editorial_drafts")
 }

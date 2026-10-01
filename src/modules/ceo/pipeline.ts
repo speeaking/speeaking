@@ -18,7 +18,8 @@ import type { Narrator } from "./narrative";
 /**
  * Operación diaria (`pnpm ops:daily` y `/api/cron/daily`), en este orden:
  *   métricas → experimentos → salvaguardas → analista → checkouts vencidos → imágenes huérfanas →
- *   retención de entradas de IA → retención de Pruébatelo.
+ *   retención de entradas de IA → retención de Pruébatelo → retención de avisos → borradores de la
+ *   redacción (al final: es lo único que llama a un modelo y no debe retrasar el mantenimiento).
  * Cada paso deja su `JobRun`; todos son idempotentes y se pueden volver a correr. Si las métricas
  * fallan, salvaguardas y analista no corren (no se decide con datos incompletos); el mantenimiento
  * sí. Dos ejecuciones simultáneas no se enciman: la segunda se registra como omitida.
@@ -54,6 +55,8 @@ export type PipelineDeps = {
   ) => Promise<{ photos: number; results: number; failedFiles: string[] }>;
   /** `deleteOldNotifications` de avisos (ADR-059): los de más de 90 días. */
   deleteOldNotifications?: (now: Date) => Promise<number>;
+  /** `runDailyDrafts` de la redacción (ADR-066): un borrador por comunidad; nada se publica solo. */
+  draftEditorialPosts?: (now: Date) => Promise<unknown>;
 };
 
 export type StepResult = { ok: true; summary: unknown } | { ok: false; error: string };
@@ -246,6 +249,11 @@ export async function runDailyPipeline(deps: PipelineDeps): Promise<PipelineSumm
       ? await runJob(client, "notifications-retention", async () => ({
           deleted: await notifications(now),
         }))
+      : skip(NOT_IN_RUN);
+
+    const editorial = deps.draftEditorialPosts;
+    summary.steps["editorial-drafts"] = editorial
+      ? await runJob(client, "editorial-drafts", () => editorial(now))
       : skip(NOT_IN_RUN);
 
     const failed = Object.entries(summary.steps).filter(([, step]) => !step.ok);

@@ -306,9 +306,11 @@ Remove-Item Env:DATABASE_URL, Env:NODE_ENV
 - La salida debe incluir `Producción: se omite el contenido editorial y de demostración`. Si no la
   ves, avisa al equipo.
 
-**Contenido editorial** (ADR-033 #11: piezas curadas con fecha real, ≈ 20 por nicho, solo fotos con
-licencia): se publica a mano desde la app con una cuenta editorial. **Nunca** se corre
-`pnpm seed:photos` ni el seed de desarrollo contra producción, y nada de esto se automatiza.
+**Contenido editorial** (ADR-033 #11 y ADR-066): con IA real, la operación diaria deja cada mañana un
+borrador por comunidad en `/admin/redaccion`; tú lo ajustas y lo publicas (sale como «Equipo
+Estreno», marcado «Editorial» y «Con ayuda de IA») o lo descartas. Nada se publica solo. La cuenta
+editorial de cada comunidad se crea al publicar su primer borrador. Fotos, solo con licencia.
+**Nunca** se corre `pnpm seed:photos` ni el seed de desarrollo contra producción.
 
 **Desde tu PC, contra producción, solo** `pnpm db:seed` (este paso), `pnpm make-admin` (paso 12) y,
 si el equipo lo pide, `pnpm db:deploy`. **Nunca** `pnpm ops:daily`, `pnpm db:clean-e2e`,
@@ -354,6 +356,8 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
 - [ ] Vercel → Logs sin el aviso de «sin IP confiable» (`TRUSTED_PROXY_HOPS=1`).
 - [ ] Con IA real: genera una propuesta en «Sube y vende» y revisa el gasto en `/admin/ia` y en
       OpenRouter.
+- [ ] Redacción: en `/admin/redaccion` toca «Pedir borrador» para una comunidad, ajústalo y
+      publícalo; en la comunidad debe salir de «Equipo Estreno» con «Editorial» y «Con ayuda de IA».
 
 ## 14. Respaldos
 

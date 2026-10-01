@@ -195,6 +195,17 @@ El trigger `reject_proof_media_link` (`post_media`, `product_media`) también re
 `try_on_photos` y los resultados de `try_on_results` (`private_media_link`); el recolector de
 huérfanas las excluye y la operación diaria (`tryon-retention`) borra las vencidas.
 
+## Redacción diaria (2026-10-01, ADR-066)
+
+| Entidad          | Campos clave                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EditorialDraft` | communityId (cascada), kind (QUESTION, TIP, DATE, TOPIC), day (`@db.Date`, día de México), autoKey (único: `<comunidad>:<día>` en el automático), body (ya limpio), occasion (fecha del calendario), topic (el del equipo), status (PENDING, PUBLISHED, DISCARDED), provider, model, promptVersion, requestId (único), postId (único), reviewedById, reviewedAt |
+| Enums            | `AIFeature` + EDITORIAL_DRAFT                                                                                                                                                                                                                                                                                                                                   |
+
+Publicar crea un `Post` de la cuenta editorial de la comunidad con `isAiGenerated: true` y guarda en
+el borrador el texto final y `postId`. Si se borra la publicación, el borrador queda (`postId`
+vacío) como registro de lo que se revisó.
+
 ## Índices principales
 
 | Consulta                       | Índice                                                                                                                                                               |

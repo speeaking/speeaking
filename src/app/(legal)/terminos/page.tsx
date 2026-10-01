@@ -18,14 +18,24 @@ export default function TermsPage() {
         </h2>
         <ul className="mt-2 flex flex-col gap-1">
           <li>
-            La revisión de autenticidad puede usar, si la activamos, una señal de inteligencia
-            artificial que nunca decide sola.
+            Puedes recomendar productos de tiendas que aceptan colaboraciones; si recibiste algo a
+            cambio, tu publicación lleva la etiqueta «Colaboración» (ver{" "}
+            <a
+              className="font-semibold text-primary-text underline underline-offset-4"
+              href="#colaboraciones"
+            >
+              «Colaboraciones con tiendas»
+            </a>
+            ).
           </li>
           <li>
-            El equipo puede ocultar publicaciones, no solo productos, y restaurar lo que haya
-            ocultado por error; reporta de buena fe.
+            Cada tienda decide si acepta colaboraciones y puede quitar la etiqueta de su producto
+            cuando quiera.
           </li>
-          <li>«Comprobante revisado» también se quita si sube el riesgo del producto.</li>
+          <li>
+            Las cuentas «Equipo {siteConfig.name}» publican textos redactados con ayuda de IA que
+            una persona del equipo revisa antes de publicar.
+          </li>
         </ul>
       </section>
       <p>
@@ -38,6 +48,12 @@ export default function TermsPage() {
         <li>Publica solo contenido propio o que tengas derecho a compartir.</li>
         <li>No se permite contenido engañoso, discriminatorio, violento o ilegal.</li>
         <li>El contenido generado con IA se identifica como tal.</li>
+        <li>
+          Las cuentas «Equipo {siteConfig.name}» de cada comunidad son del equipo y se identifican
+          como «Editorial». Publican textos redactados con ayuda de inteligencia artificial que una
+          persona del equipo revisa y aprueba antes de publicar; no son personas reales ni simulan
+          serlo.
+        </li>
       </ul>
 
       <h2>Compra y venta</h2>
@@ -52,6 +68,59 @@ export default function TermsPage() {
         <li>
           Las estimaciones de la IA (precios sugeridos, presupuestos, resultados) son orientativas y
           no garantizan ventas.
+        </li>
+      </ul>
+
+      <h2 id="colaboraciones">Colaboraciones con tiendas</h2>
+      <p>
+        Puedes recomendar en tus fotos y videos productos de otras tiendas para que quien te ve se
+        los pruebe y los compre. Estas son las reglas:
+      </p>
+      <ul>
+        <li>
+          <strong>La tienda decide.</strong> Solo se pueden etiquetar productos de las tiendas que
+          activaron «Aceptar colaboraciones» en su Studio (viene apagado) y solo mientras estén a la
+          venta. Al activarlo, la tienda nos autoriza a mostrar el nombre, la foto, el precio y la
+          liga de sus productos junto al contenido de quien los etiqueta. Si una tienda lo apaga,
+          nadie puede etiquetar sus productos en publicaciones nuevas; las que ya los tenían siguen
+          igual hasta que la tienda quite cada etiqueta.
+        </li>
+        <li>
+          <strong>Quién vende.</strong> Tu publicación dice «Vendido por» la tienda: la compra es
+          entre quien compra y esa tienda, con el precio y las condiciones de su ficha. Tu opinión
+          es tuya; los datos del producto (precio, existencias, envío, garantía) los pone la tienda.
+          No digas del producto lo que no es verdad.
+        </li>
+        <li>
+          <strong>Si recibiste algo, dilo.</strong> Si la tienda o la marca te dio dinero, el
+          producto, una comisión, un descuento o cualquier otro beneficio por publicar, márcalo al
+          publicar. Tu publicación llevará la etiqueta «Colaboración», visible durante todo el
+          contenido (en un video, también encima del video). Promocionar algo que te dieron sin
+          decirlo es publicidad escondida y va contra estas reglas.
+        </li>
+        <li>
+          <strong>Lo que puede hacer la tienda.</strong> Recibe un aviso cuando alguien etiqueta su
+          producto. Puede marcar la publicación como «Colaboración» si tienen un acuerdo (esa
+          etiqueta ya no se quita mientras el producto siga etiquetado) o quitar la etiqueta de su
+          producto cuando quiera: la publicación sigue, ya sin el producto ni la etiqueta, y quien
+          la publicó recibe un aviso. Si hubo un acuerdo, quien publicó debe seguir diciéndolo en su
+          contenido.
+        </li>
+        <li>
+          <strong>Resultados sin datos personales.</strong> Quien publica y la tienda ven, por
+          publicación, cuántas visitas al producto, pruebas con «Pruébatelo», productos en el
+          carrito y compras pagadas salieron de ella. Son números agregados: nunca ven quién visitó,
+          se probó o compró.
+        </li>
+        <li>
+          <strong>{siteConfig.name} no es parte de sus acuerdos.</strong> No negociamos los acuerdos
+          entre quien publica y las tiendas, no cobramos ni pagamos comisiones por ellos y no
+          intervenimos en sus pagos. Cada quien responde por lo que acuerda, por sus impuestos y por
+          la publicidad que publica, que debe ser verdadera.
+        </li>
+        <li>
+          Podemos quitar una etiqueta u ocultar una publicación que incumpla estas reglas, como
+          cualquier otra.
         </li>
       </ul>
 

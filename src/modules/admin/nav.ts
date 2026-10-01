@@ -1,4 +1,11 @@
-import { FlaskConical, LayoutDashboard, Scale, ShieldAlert, Sparkles } from "lucide-react";
+import {
+  FlaskConical,
+  LayoutDashboard,
+  Newspaper,
+  Scale,
+  ShieldAlert,
+  Sparkles,
+} from "lucide-react";
 import type { Route } from "next";
 import type { NavItem } from "@/config/navigation";
 
@@ -14,6 +21,7 @@ export const adminNav: readonly NavItem[] = [
   { href: adminRoute("/admin/decisiones"), label: "Decisiones", icon: Scale },
   { href: adminRoute("/admin/experimentos"), label: "Experimentos", icon: FlaskConical },
   { href: adminRoute("/admin/moderacion"), label: "Moderación", icon: ShieldAlert },
+  { href: adminRoute("/admin/redaccion"), label: "Redacción", icon: Newspaper },
   { href: adminRoute("/admin/ia"), label: "IA", icon: Sparkles },
 ];
 

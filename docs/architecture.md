@@ -474,6 +474,10 @@ Tienda  ──▶ /studio/saldo (saldo, «Ver cómo me veo» activo, recargas) �
 - **Mensajes privados (`modules/messages`, ADR-047):** una conversación por par de personas,
   texto plano, gratis, con no leídos en la barra superior, reporte de la cuenta desde el hilo y
   antispam por persona. Sin sockets: el hilo se refresca cada 10 s mientras está visible.
+- **Redacción diaria (`modules/editorial`, ADR-066):** el código arma el encargo (tipo, enfoque y
+  fecha del calendario), la IA redacta un borrador por comunidad en la operación diaria, el código lo
+  limpia y el equipo lo publica desde `/admin/redaccion` como la cuenta editorial. Nada se publica
+  sin aprobación.
 
 ## Seguridad
 

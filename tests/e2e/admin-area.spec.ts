@@ -54,6 +54,7 @@ test("una persona sin el rol ADMIN recibe 404; con el rol ve el área; al quitar
     ["Decisiones", "/admin/decisiones"],
     ["Experimentos", "/admin/experimentos"],
     ["Moderación", "/admin/moderacion"],
+    ["Redacción", "/admin/redaccion"],
     ["IA", "/admin/ia"],
   ] as const) {
     await expect(main.locator(`a[href="${href}"]`)).toContainText(label);

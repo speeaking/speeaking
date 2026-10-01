@@ -39,8 +39,13 @@ async function cleanOrphanTrail() {
   // Las métricas diarias son derivadas: con los eventos de prueba borrados quedarían infladas. La
   // siguiente `pnpm ops:daily` las vuelve a calcular.
   const metrics = await db.dailyMetric.deleteMany({});
+  // Borradores de la redacción que crean las pruebas («E2E …», ADR-066) y lo que se publicó con
+  // ellos: lo publica la cuenta editorial de la comunidad, que no es una cuenta de prueba.
+  const editorial = await db.$executeRaw`
+    WITH gone AS (DELETE FROM editorial_drafts WHERE body LIKE 'E2E %' RETURNING "postId")
+    DELETE FROM posts WHERE id IN (SELECT "postId" FROM gone WHERE "postId" IS NOT NULL)`;
 
-  return { reports, decisions, metrics: metrics.count };
+  return { reports, decisions, metrics: metrics.count, editorial };
 }
 
 async function main() {
@@ -52,7 +57,7 @@ async function main() {
   if (userIds.length === 0) {
     const trail = await cleanOrphanTrail();
     console.warn(
-      `✓ No hay cuentas de prueba; rastro limpio: ${trail.reports} reportes y ${trail.decisions} decisiones.`,
+      `✓ No hay cuentas de prueba; rastro limpio: ${trail.reports} reportes, ${trail.decisions} decisiones y ${trail.editorial} publicaciones de la redacción.`,
     );
     return;
   }
@@ -125,7 +130,7 @@ async function main() {
   );
   console.warn(`✓ Contadores corregidos en ${posts} publicaciones y ${products} productos.`);
   console.warn(
-    `✓ Rastro de prueba: ${trail.reports} reportes, ${trail.decisions + routing.count} decisiones y ${trail.metrics} métricas diarias.`,
+    `✓ Rastro de prueba: ${trail.reports} reportes, ${trail.decisions + routing.count} decisiones, ${trail.metrics} métricas diarias y ${trail.editorial} publicaciones de la redacción.`,
   );
 }
 

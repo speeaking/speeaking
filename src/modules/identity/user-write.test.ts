@@ -11,6 +11,18 @@ describe("sanitizeUserWrite", () => {
     ).toEqual({ name: "Ana López", email: "ana@example.com", image: null });
   });
 
+  it("no deja entrar un correo `.invalid` (cuentas de la plataforma, ADR-066)", () => {
+    let thrown: unknown;
+    try {
+      sanitizeUserWrite({ name: "Ana", email: "editorial.comida@vendeia.invalid" });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(isAPIError(thrown)).toBe(true);
+    expect((thrown as { body?: { code?: string } }).body?.code).toBe("INVALID_EMAIL");
+  });
+
   it("descarta un `image` con `javascript:` aunque no cambie el nombre", () => {
     expect(sanitizeUserWrite({ image: "javascript:alert(document.domain)" })).toEqual({
       image: null,

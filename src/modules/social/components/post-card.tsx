@@ -43,6 +43,7 @@ import { formatCompactNumber, formatCount, formatMoney, formatRelativeTime } fro
 import { FEED_FRAME, frameAspect, PRODUCT_FRAME } from "@/lib/image";
 import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { cn } from "@/lib/utils";
+import { COLLABORATION_LABEL } from "@/modules/creators/rules";
 import {
   localDeliveryLine,
   nationalShippingLine,
@@ -513,6 +514,23 @@ function VideoProductTags({ product, href }: { product: Product; href: Route }) 
   );
 }
 
+/**
+ * «Colaboración» encima del video (ADR-063): visual, sin acción (los toques llegan al video); el
+ * nombre de la tienda y el texto para lectores de pantalla ya están en `CollaborationChip`.
+ */
+function VideoCollaborationLabel() {
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="video-collaboration"
+      className="pointer-events-none! inline-flex h-7 items-center gap-1 rounded-full bg-black/60 px-2.5 text-xs font-semibold text-white backdrop-blur-sm"
+    >
+      <Handshake className="size-3.5" />
+      {COLLABORATION_LABEL}
+    </span>
+  );
+}
+
 /** «Colaboración con <tienda>» (ADR-063): la publicidad se identifica, arriba de la tarjeta. */
 function CollaborationChip({ store }: { store: string }) {
   return (
@@ -883,10 +901,18 @@ export function PostCard({
     ...(community ? { "--hue": community.hue } : {}),
   } as CSSProperties;
   const showReply = !expanded && product === null;
-  // Video con producto disponible: el precio y «Ver cómo me veo» van sobre el video (ADR-063).
+  // Video con producto disponible: el precio y «Ver cómo me veo» van sobre el video (ADR-063). Si
+  // es una colaboración, la etiqueta también va encima: se ve durante todo el video aunque la
+  // tarjeta ya no se vea completa (guía de publicidad de la PROFECO).
+  const collaborationStore = post.collaboration ? (product?.thirdPartyStore ?? null) : null;
+  const productOnVideo =
+    product !== null && productHref !== null && product.availability === "available";
   const videoTags =
-    post.video && product && productHref && product.availability === "available" ? (
-      <VideoProductTags product={product} href={productHref} />
+    post.video && (collaborationStore || productOnVideo) ? (
+      <>
+        {collaborationStore ? <VideoCollaborationLabel /> : null}
+        {productOnVideo ? <VideoProductTags product={product} href={productHref} /> : null}
+      </>
     ) : null;
   // Carrusel en la publicación abierta y en una venta de una sola foto; mosaico en lo demás.
   const useCarousel = expanded || (isSale && images.length === 1);
@@ -983,9 +1009,7 @@ export function PostCard({
       aria-labelledby={labelledBy}
     >
       {intent ? <IntentChip intent={intent} /> : null}
-      {post.collaboration && product?.thirdPartyStore ? (
-        <CollaborationChip store={product.thirdPartyStore} />
-      ) : null}
+      {collaborationStore ? <CollaborationChip store={collaborationStore} /> : null}
       <CardHeader post={post} />
       <PostBody text={post.body} expanded={expanded} />
       {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}

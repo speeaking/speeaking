@@ -3,10 +3,13 @@ import { maxCallCostMicrosUsd } from "./cost";
 import {
   aiRoutingSchema,
   DEFAULT_AI_ROUTING,
+  isRoutable,
   proposalIsStale,
   proposedRoutes,
   resolveRoute,
   ROUTABLE_MODELS,
+  routePrice,
+  TASK_DEFAULT_MODELS,
   withRoute,
   type AIRouting,
 } from "./routing";
@@ -64,6 +67,27 @@ describe("resolveRoute", () => {
       model: "qwen/qwen3.5-9b",
       source: "default",
     });
+  });
+
+  it("una tarea con modelo de arranque lo usa en lugar del de las variables de entorno", () => {
+    expect(resolveRoute(DEFAULT_AI_ROUTING, "editorial_draft", openai)).toEqual({
+      provider: "openai_compatible",
+      model: "google/gemini-2.5-flash-lite",
+      source: "default",
+    });
+    // Sin servidor de IA no hay modelo de arranque que valga: el simulador.
+    expect(resolveRoute(DEFAULT_AI_ROUTING, "editorial_draft", { provider: "mock" })).toEqual({
+      provider: "mock",
+      model: "mock",
+      source: "default",
+    });
+  });
+
+  it("los modelos de arranque están en la lista permitida y tienen precio", () => {
+    for (const model of Object.values(TASK_DEFAULT_MODELS)) {
+      expect(isRoutable({ provider: "openai_compatible", model })).toBe(true);
+      expect(routePrice({ provider: "openai_compatible", model })).not.toBeNull();
+    }
   });
 
   it("con ruta usa el modelo de la tarea", () => {

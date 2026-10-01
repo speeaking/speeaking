@@ -12,6 +12,17 @@ export const RESERVED_NAME_MESSAGE = "Ese nombre está reservado. Elige otro.";
 const email = z.string().trim().toLowerCase().pipe(z.email("Escribe un correo válido."));
 
 /**
+ * Correos del dominio reservado `.invalid` (RFC 6761: ningún buzón real puede existir ahí). La
+ * plataforma los usa para sus propias cuentas sin inicio de sesión: las editoriales
+ * (`editorial.<comunidad>@vendeia.invalid`, ADR-066) y las eliminadas (`eliminada-…@estreno.invalid`).
+ * Nadie puede registrarse con uno: ocuparía la cuenta editorial de una comunidad antes de que exista.
+ */
+export function isReservedEmail(value: string): boolean {
+  const domain = value.trim().toLowerCase().split("@").pop() ?? "";
+  return domain === "invalid" || domain.endsWith(".invalid");
+}
+
+/**
  * Nombre de la cuenta (`users.name`). Lo usan el registro y los hooks de Better Auth (`auth.ts`), así
  * que ningún camino guarda un nombre sin validar (SEC-09).
  */
@@ -29,7 +40,7 @@ export const accountNameSchema = z
 export const signUpSchema = z
   .object({
     name: accountNameSchema,
-    email,
+    email: email.refine((value) => !isReservedEmail(value), "Escribe un correo válido."),
     password: z
       .string()
       .min(MIN_PASSWORD_LENGTH, `Usa al menos ${MIN_PASSWORD_LENGTH} caracteres.`)

@@ -16,6 +16,7 @@ import {
   resolveRoute,
   ROUTABLE_MODELS,
   routeLabel,
+  TASK_DEFAULT_MODELS,
 } from "./routing";
 import { approvedEvidence, EVALUATED_TASKS, routeEligibility } from "./routing-decisions";
 import { getAiRouting } from "./routing-store";
@@ -205,7 +206,11 @@ export async function getAdminAiOverview(
         ),
       ]);
       const defaultLabel =
-        config.provider === "mock" ? "simulado" : `${config.model}, de las variables de entorno`;
+        config.provider === "mock"
+          ? "simulado"
+          : TASK_DEFAULT_MODELS[task]
+            ? `${TASK_DEFAULT_MODELS[task]}, el modelo de arranque de esta tarea`
+            : `${config.model}, de las variables de entorno`;
       return {
         task,
         label: AI_TASK_INFO[task].label,

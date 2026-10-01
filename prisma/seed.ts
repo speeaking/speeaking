@@ -11,10 +11,10 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { hashPassword } from "better-auth/crypto";
 import sharp from "sharp";
-import { siteConfig } from "../src/config/site";
 import { isProductionTarget } from "../src/modules/admin/grant";
 import { AI_BUDGET_KEY, DEFAULT_AI_BUDGET } from "../src/modules/ai/budget";
 import { COMMERCE_FEES_KEY, DEFAULT_COMMERCE_FEES } from "../src/modules/commerce/fees";
+import { editorialAccount } from "../src/modules/editorial/account";
 import { LEGAL_VERSIONS } from "../src/modules/identity/constants";
 import { DEFAULT_FEED_POLICY, FEED_POLICY_KEY } from "../src/modules/feed/policy";
 import { parseEnv } from "../src/lib/env/parse-env";
@@ -179,7 +179,7 @@ async function refreshSeedPhotos() {
   let replaced = 0;
   for (const community of communities) {
     const editor = await db.user.findUnique({
-      where: { email: `editorial.${community.slug}@vendeia.invalid` },
+      where: { email: editorialAccount(community).email },
       select: { id: true },
     });
     if (!editor) continue;
@@ -236,15 +236,10 @@ async function seedEditorialContent(communityIds: Map<string, string>) {
   let created = 0;
   for (const [communityIndex, community] of communities.entries()) {
     const communityId = communityIds.get(community.slug)!;
-    // La comunidad ya se muestra junto al autor, así que la cuenta se llama solo «Equipo Estreno».
-    const editorName = `Equipo ${siteConfig.name}`;
-    const editor = await upsertUser(db, {
-      email: `editorial.${community.slug}@vendeia.invalid`,
-      name: editorName,
-      username: `equipo.${community.slug}`,
-      bio: `Cuenta editorial de la comunidad ${community.name}. Contenido creado por el equipo con ayuda de IA.`,
-      isEditorial: true,
-    });
+    // La misma cuenta que usa la redacción diaria (`editorial/account.ts`).
+    const account = editorialAccount(community);
+    const editorName = account.name;
+    const editor = await upsertUser(db, { ...account, isEditorial: true });
     await db.user.update({
       where: { id: editor.id },
       data: { name: editorName, profile: { update: { displayName: editorName } } },

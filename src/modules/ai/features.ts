@@ -29,6 +29,7 @@ export const AI_FEATURE_KEYS = [
   // Fase 4: experiencia de compra (y de lectura).
   "postContext",
   "imageSearch",
+  "editorialDesk",
   "buyerAssistant",
   "giftFinder",
   "shoppingAssistant",
@@ -112,6 +113,12 @@ export const AI_FEATURES: readonly AiFeatureDefinition[] = [
     "imageSearch",
     "Búsqueda por foto",
     "Describe la ropa y los objetos de una foto (nunca a las personas) y busca parecidos reales. La foto no se guarda.",
+    4,
+  ),
+  built(
+    "editorialDesk",
+    "Redacción diaria",
+    "Borradores para las cuentas editoriales de cada comunidad. Nada se publica sin que el equipo lo apruebe.",
     4,
   ),
   planned("buyerAssistant", "Comprador IA", "Compara productos reales sin inventar.", 4),

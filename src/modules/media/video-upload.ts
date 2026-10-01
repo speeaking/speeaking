@@ -8,6 +8,7 @@ import { getStorage, getVideoStore } from "@/server/providers/storage";
 import { mediaUrl } from "@/server/providers/storage/types";
 import { limitOrError, rateLimitKey, rateLimitMany } from "@/server/rate-limit";
 import { inspectVideo, type VideoValidationCode, VideoValidationError } from "./video-container";
+import { assertNoMetadata } from "./video-metadata";
 import {
   MAX_VIDEO_BYTES,
   MAX_VIDEO_DIMENSION,
@@ -20,7 +21,9 @@ import {
  * 1. `startVideoUpload`: revisa cuota, tamaño y portada; crea la fila en PROCESSING y devuelve a
  *    dónde subir el archivo (URL firmada del bucket o, en desarrollo, la ruta local).
  * 2. `finishVideoUpload`: con el archivo ya guardado, lee su estructura por rangos
- *    (`video-container.ts`) y lo deja READY con su duración y medidas, o lo borra con el motivo.
+ *    (`video-container.ts`), revisa que ya no traiga la ubicación ni los datos del teléfono (el
+ *    navegador los quita antes de subirlo, `video-metadata.ts`) y lo deja READY con su duración y
+ *    medidas, o lo borra con el motivo.
  * Hasta adjuntarse a una publicación, el video es privado y el recolector lo borra a las 24 h, como
  * las fotos (SEC-14).
  */
@@ -49,6 +52,8 @@ export const VIDEO_MESSAGES: Record<VideoValidationCode, string> = {
   TOO_LONG: "El video dura más de 60 segundos.",
   BAD_DIMENSIONS: "El video es demasiado grande (más de 4K).",
   CORRUPT: "No pudimos leer el video. Prueba con otro.",
+  HAS_METADATA:
+    "No pudimos quitar la ubicación y los datos del teléfono de ese video. Vuelve a elegirlo.",
 };
 
 /**
@@ -187,10 +192,13 @@ export async function finishVideoUpload(
 
   let facts;
   try {
-    facts = await inspectVideo(store.reader(media.storageKey), size, {
+    const read = store.reader(media.storageKey);
+    facts = await inspectVideo(read, size, {
       maxDurationMs: MAX_VIDEO_DURATION_MS,
       maxDimension: MAX_VIDEO_DIMENSION,
     });
+    // Ni la ubicación ni la marca o el modelo del teléfono llegan a un video público.
+    await assertNoMetadata(read, size);
   } catch (error) {
     if (error instanceof VideoValidationError) return fail(VIDEO_MESSAGES[error.code]);
     throw error;

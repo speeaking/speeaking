@@ -5,6 +5,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { prepareImageUpload, shrinkImage } from "@/lib/upload-image";
 import { finishVideoUploadAction, startVideoUploadAction } from "../video-actions";
+import { VideoValidationError } from "../video-container";
+import { withoutMetadata } from "../video-metadata";
 import {
   formatDuration,
   MAX_VIDEO_BYTES,
@@ -109,8 +111,9 @@ function videoType(file: File) {
 
 /**
  * Elegir un video corto para una publicación (ADR-062): revisa duración y peso en el navegador, toma
- * una portada, sube el archivo directo al almacenamiento (con progreso) y el servidor revisa su
- * estructura antes de dejarlo listo. Agrega el campo oculto `videoId` cuando está listo.
+ * una portada, le quita la ubicación y los datos del teléfono, sube el archivo directo al
+ * almacenamiento (con progreso) y el servidor revisa su estructura antes de dejarlo listo. Agrega el
+ * campo oculto `videoId` cuando está listo.
  */
 export function VideoPicker({ name }: { name: string }) {
   const inputId = useId();
@@ -162,10 +165,18 @@ export function VideoPicker({ name }: { name: string }) {
     const poster = posterUrl.current;
     setPhase({ step: "working", label: "Preparando el video…", progress: null, poster });
 
+    // Sin la ubicación ni los datos del teléfono, del mismo tamaño (ADR-062): solo sube lo que se ve.
+    const cleaned = await withoutMetadata(file).catch((error: unknown) =>
+      error instanceof VideoValidationError && error.code === "NOT_VIDEO" ? "not_video" : null,
+    );
+    if (stale()) return;
+    if (cleaned === "not_video") return fail("Ese archivo no es un video MP4 o MOV.");
+    if (!cleaned) return fail("No pudimos leer el video. Prueba con otro.");
+
     const posterId = await uploadPoster(local.poster);
     if (stale()) return;
     const started = await startVideoUploadAction({
-      sizeBytes: file.size,
+      sizeBytes: cleaned.size,
       contentType: videoType(file),
       posterId,
     }).catch(() => ({
@@ -195,7 +206,7 @@ export function VideoPicker({ name }: { name: string }) {
       xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
       xhr.onerror = () => resolve(false);
       xhr.onabort = () => resolve(false);
-      xhr.send(file);
+      xhr.send(cleaned);
     });
     if (stale()) return; // Se canceló.
     request.current = null;

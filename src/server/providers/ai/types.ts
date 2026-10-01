@@ -17,6 +17,8 @@ export const AI_TASKS = [
   "post_context",
   /** Búsqueda por foto: describir la ropa y los objetos de una foto (ADR-061). */
   "image_search",
+  /** Redacción diaria: borrador de una publicación editorial que el equipo aprueba (ADR-066). */
+  "editorial_draft",
 ] as const;
 export type AITaskId = (typeof AI_TASKS)[number];
 

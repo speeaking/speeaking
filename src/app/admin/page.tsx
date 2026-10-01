@@ -20,6 +20,8 @@ const SECTION_SUMMARY: Record<string, (overview: AdminOverview) => string> = {
       "prueba de autenticidad por revisar",
       "pruebas de autenticidad por revisar",
     )}`,
+  "/admin/redaccion": (o) =>
+    formatCount(o.editorialDrafts, "borrador por revisar", "borradores por revisar"),
   "/admin/ia": (o) =>
     formatCount(
       o.evalRuns,

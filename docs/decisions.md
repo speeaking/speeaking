@@ -1801,6 +1801,13 @@ tienda la quita; los reportes y la moderación siguen igual). Pendiente del abog
 colaboraciones en los términos. Pruebas: reglas, métricas, servicio contra PostgreSQL (quién ve
 qué, quién marca y quién quita), acción de publicar, tarjeta, avisos y E2E del flujo completo.
 
+**Adenda (2026-10-01).** La cláusula ya está escrita para que el abogado solo la revise: términos
+versión 2026-10-01 (`/terminos#colaboraciones`; borrador con fundamento en
+`docs/legal/02-terminos-y-reglas.md`, A11 quater y C16) y aviso de privacidad (qué ven la tienda y
+quien publica, §7 quater). Al escribirla: en un video, la etiqueta «Colaboración» también va encima
+del video, para que se vea durante todo el contenido aunque la tarjeta ya no se vea completa (guía
+de publicidad de la PROFECO).
+
 ## ADR-064 · Visor de fotos y video al abrir una publicación
 
 **Contexto.** Observación del fundador (2026-10-01): «cuando voy a ver las fotos donde son más de 5
@@ -1858,3 +1865,85 @@ diseñó para teléfono; en escritorio vivía en la columna de 680 px entre las 
 **Consecuencias.** `AppShell` y `SideNav` marcan las columnas con `data-rail`. Pruebas: cabecera
 (botones propios, sin tienda y «Ver tienda») y E2E (en escritorio no hay columnas laterales y la
 portada pasa de 900 px; al ir a «Mis compras» vuelven).
+
+## ADR-066 · Redacción diaria: la IA redacta y el equipo publica
+
+**Contexto.** El fundador (2026-10-01): «cuando lancemos va a estar literalmente vacía; ¿la IA puede
+ir subiendo información para enganchar a la gente?». Copiar de Facebook se descartó (derechos de
+autor, términos de Meta, datos personales; ADR-018 ya lo prohíbe). Se propuso una redacción diaria
+con aprobación y el fundador la pidió («agrega ambas»).
+
+**Decisión.**
+
+- **Qué:** cada mañana (paso `editorial-drafts` de la operación diaria, el último porque es el único
+  que llama a un modelo) la IA deja un borrador por comunidad oficial para su cuenta editorial
+  («Equipo Estreno»). En `/admin/redaccion` el equipo lo ajusta y lo publica con un toque, o lo
+  descarta; también puede pedir uno más, con un tema propio (algo que pasa hoy). **Nada se publica
+  sin aprobación.** Lo que nadie revisa en 3 días se descarta solo; con 3 borradores sin revisar, la
+  comunidad deja de recibir automáticos.
+- **El código decide el encargo (P2):** el tipo (dos preguntas por cada consejo; Humor, solo
+  preguntas), un enfoque que rota por día y por comunidad, y las fechas del calendario mexicano
+  (`editorial/calendar.ts`: fijas o con regla, como el Día del Padre y el Buen Fin), escalonadas entre
+  comunidades y una sola vez por comunidad. La fecha y lo que falta los escribe el código; la IA solo
+  redacta.
+- **Honestidad (ADR-018, P4):** la cuenta se marca «Editorial» y cada publicación «Con ayuda de IA»,
+  aunque el equipo reescriba el texto. El prompt prohíbe noticias, cifras, nombres reales, marcas,
+  anécdotas propias, política, religión y consejos médicos, legales o financieros; el código además
+  quita ligas, datos de contacto, montos y porcentajes, hashtags y Markdown, y rechaza lo que choque
+  con la política de contenido de la IA o repita una publicación reciente. Nunca crea usuarios,
+  comentarios, reacciones ni seguidores. El tema que escribe el equipo se limpia de datos de contacto
+  y pasa por la misma política; si es una noticia, la debe haber comprobado el equipo (lo dice el
+  formulario).
+- **Privacidad:** el modelo solo recibe el nombre y la descripción de la comunidad, el encargo y el
+  inicio de los textos recientes de la propia cuenta editorial; ningún dato de personas.
+- **Modelo y costo:** nueva tabla `TASK_DEFAULT_MODELS` (modelo de arranque de una tarea sin ruta en
+  `ai.routing`): la redacción usa Gemini 2.5 Flash Lite en lugar del modelo de texto del entorno. Con
+  los mismos 5 encargos (preguntas, consejo, fecha y tema), Qwen3.5-9B escribió frases sin sentido
+  («una cara rara cuando salimos de la olla») y Gemini un español de México natural, a un costo
+  parecido: ≈ US$0.00007 por borrador, ≈ US$0.03 al mes con 12 comunidades. Tope diario de US$0.25,
+  dentro del presupuesto mensual de IA; tarea del sistema, sin cuota personal. En producción con la
+  IA simulada no redacta (las plantillas no se publican como contenido del equipo). Interruptor
+  `editorialDesk` en `/admin/ia`.
+- **Cuenta editorial:** `editorial/account.ts`, la misma que usa el seed. En producción el seed no la
+  crea: se crea al publicar el primer borrador de la comunidad, sin contraseña (nadie puede entrar con
+  ella), con correo `.invalid` y el usuario reservado `equipo.<comunidad>`. Como se crea tarde y el
+  registro no verifica correos, alguien podría registrarse antes con ese correo: el registro y los
+  hooks de Better Auth rechazan cualquier correo `.invalid` (`isReservedEmail`), y la redacción solo
+  publica con una cuenta de perfil editorial y sin forma de iniciar sesión (si no, «la ocupa otra
+  cuenta» y no publica).
+
+**Consecuencias.** Migración `editorial_desk` (`EditorialDraft`, `EditorialDraftKind`,
+`EditorialDraftStatus` y `AIFeature.EDITORIAL_DRAFT`). Módulo `src/modules/editorial`; «Redacción»
+en el menú de `/admin` y su conteo en el Resumen. `pnpm db:clean-e2e` borra los borradores «E2E …» y
+lo que se publicó con ellos. Términos versión 2026-10-01 (A11 quinquies del borrador). Pruebas:
+calendario, encargo, limpieza del texto, prompt y simulador; servicio contra PostgreSQL (solo ADMIN,
+uno por comunidad y día, cola llena, fechas, rechazos, doble toque y vencimiento); E2E
+`editorial.spec.ts` (ajustar y publicar como la cuenta editorial, descartar y 404 sin el rol).
+**Después:** fotos con licencia para los borradores, hora de publicación y medir qué tipo de
+publicación genera conversación para que el código ajuste la mezcla.
+
+## ADR-067 · Videos sin ubicación ni datos del teléfono
+
+**Contexto.** Al escribir el aviso de privacidad de los videos (2026-10-01) vimos que ADR-062 guarda
+el archivo tal como llega: los teléfonos guardan dentro del video el lugar donde se grabó (Android en
+`udta/©xyz`; iPhone en `meta`, con `com.apple.quicktime.location.ISO6709`), la marca, el modelo y el
+programa. Una tienda que graba en su casa publicaría dónde vive. Las fotos ya se re-codifican sin
+metadatos (A5 de los términos).
+
+**Decisión.**
+
+- **El navegador los quita antes de subir:** cada caja de metadatos (`udta`, `meta` y `uuid` de
+  primer nivel y de `moov`; `udta` y `meta` de cada pista) se vuelve una caja `free` del mismo tamaño
+  llena de ceros. Sin transcodificar ni copiar el archivo (un `Blob` hecho de pedazos del original),
+  del mismo tamaño (la URL firmada sigue valiendo) y con los cuadros en su lugar. El dato deja de
+  estar en el archivo, no solo se esconde.
+- **El servidor lo exige:** `assertNoMetadata` después de revisar la estructura; un video que todavía
+  los traiga se borra con el motivo («Vuelve a elegirlo»).
+- **Lo que no cubre:** la ubicación que algunas cámaras de acción guardan como pista de telemetría
+  dentro de `mdat` (hasta donde sabemos, la cámara de los teléfonos no lo hace). Si llega a importar,
+  se rechazan las pistas de metadatos con tiempo.
+
+**Consecuencias.** `media/video-metadata.ts`, sin dependencias (navegador, servidor y pruebas);
+`video-container.ts` expone su recorrido de cajas. Pruebas con los videos reales y con uno armado con
+la ubicación de Android, de iPhone, de una pista y un XMP de 64 bits: después no queda rastro y se
+reproduce igual; el servidor rechaza el original. Aviso de privacidad versión 2026-10-01 («Videos»).

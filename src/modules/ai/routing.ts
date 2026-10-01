@@ -23,6 +23,7 @@ export const AI_TASK_INFO: Record<AITaskId, { label: string; feature: AIFeature 
   look_copy: { label: "Nombre y explicación del look", feature: "LOOK_COPY" },
   post_context: { label: "Contexto de publicaciones largas", feature: "POST_CONTEXT" },
   image_search: { label: "Búsqueda por foto (ve imágenes)", feature: "IMAGE_SEARCH" },
+  editorial_draft: { label: "Redacción diaria (borradores)", feature: "EDITORIAL_DRAFT" },
 };
 
 /**
@@ -48,6 +49,17 @@ export const ROUTABLE_MODELS = [
     label: "Gemini 2.5 Flash Lite · ve imágenes, pago por uso",
   },
 ] as const satisfies readonly { provider: AIProviderId; model: string; label: string }[];
+
+/**
+ * Modelo de arranque de una tarea cuando no tiene ruta en `ai.routing`, en lugar del modelo de texto
+ * de las variables de entorno. Es una decisión de código revisada, con su evidencia en el ADR de la
+ * tarea, y debe estar en `ROUTABLE_MODELS` (una prueba lo exige).
+ */
+export const TASK_DEFAULT_MODELS: Partial<Record<AITaskId, string>> = {
+  // ADR-066: redacta en español de México con más naturalidad que el modelo de texto por omisión,
+  // al mismo costo por borrador.
+  editorial_draft: "google/gemini-2.5-flash-lite",
+};
 
 export type AIRoute = { provider: AIProviderId; model: string };
 
@@ -91,10 +103,16 @@ export type ResolvedRoute = AIRoute & {
   reason?: string;
 };
 
+/** Modelo que usa una tarea sin ruta: el de arranque de la tarea o el de las variables de entorno. */
+export function defaultModel(task: AITaskId, envModel: string): string {
+  return TASK_DEFAULT_MODELS[task] ?? envModel;
+}
+
 /**
- * Proveedor y modelo de una tarea. Sin ruta, el de las variables de entorno. Una ruta a
- * `openai_compatible` sin servidor configurado (AI_PROVIDER=mock, sin llave) cae al simulador y lo
- * dice: nunca se llama a un servidor sin llave ni se inventa una configuración.
+ * Proveedor y modelo de una tarea. Sin ruta, el de las variables de entorno (o el de arranque de la
+ * tarea, `TASK_DEFAULT_MODELS`). Una ruta a `openai_compatible` sin servidor configurado
+ * (AI_PROVIDER=mock, sin llave) cae al simulador y lo dice: nunca se llama a un servidor sin llave ni
+ * se inventa una configuración.
  */
 export function resolveRoute(
   routing: AIRouting,
@@ -104,7 +122,7 @@ export function resolveRoute(
   const fromEnv: AIRoute =
     config.provider === "mock"
       ? { provider: "mock", model: "mock" }
-      : { provider: "openai_compatible", model: config.model };
+      : { provider: "openai_compatible", model: defaultModel(task, config.model) };
   const route = routing.tasks[task];
   if (!route) return { ...fromEnv, source: "default" };
   if (route.provider === "openai_compatible" && config.provider !== "openai_compatible") {

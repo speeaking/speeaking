@@ -380,6 +380,80 @@ Reglas:
   pagos hechos a cuentas escritas en una conversación.
 - Límites contra el spam: cantidad de mensajes por periodo y de conversaciones nuevas por día.
 
+### A11 quater. Colaboraciones con tiendas (agregado 2026-10-01, ADR-063)
+
+Puedes recomendar en tus fotos y videos productos de otras tiendas para que quien te ve se los pruebe
+y los compre. Estas son las reglas:
+
+1. **La tienda decide.** Solo se pueden etiquetar productos de las tiendas que activaron «Aceptar
+   colaboraciones» en su Studio (viene apagado) y solo mientras estén a la venta. Si una tienda lo
+   apaga, nadie puede etiquetar sus productos en publicaciones nuevas; las que ya los tenían siguen
+   igual hasta que la tienda quite cada etiqueta.
+2. **Quién vende.** Tu publicación dice «Vendido por» la tienda: la compra es entre quien compra y
+   esa tienda, con el precio y las condiciones de su ficha (A6 y A7). Tu opinión es tuya; los datos
+   del producto (precio, existencias, envío, garantía) los pone la tienda (C3). No digas del producto
+   lo que no es verdad.
+3. **Si recibiste algo, dilo.** Si la tienda o la marca te dio dinero, el producto, una comisión, un
+   descuento o cualquier otro beneficio por publicar, márcalo al publicar. Tu publicación llevará la
+   etiqueta «Colaboración», visible durante todo el contenido (en un video, también encima del
+   video). Promocionar algo que te dieron sin decirlo es publicidad escondida (B2) y va contra estas
+   reglas.
+4. **Lo que puede hacer la tienda.** Recibe un aviso cuando alguien etiqueta su producto. Puede
+   marcar la publicación como «Colaboración» si tienen un acuerdo (esa etiqueta ya no se quita
+   mientras el producto siga etiquetado) o quitar la etiqueta de su producto cuando quiera: la
+   publicación sigue, ya sin el producto ni la etiqueta, y quien la publicó recibe un aviso. Si hubo
+   un acuerdo, quien publicó debe seguir diciéndolo en su contenido (B3).
+5. **Resultados sin datos personales.** Quien publica y la tienda ven, por publicación, cuántas
+   visitas al producto, pruebas con «Pruébatelo», productos en el carrito y compras pagadas salieron
+   de ella. Son números agregados: nunca ven quién visitó, se probó o compró.
+6. **Estreno no es parte de sus acuerdos.** No negociamos los acuerdos entre quien publica y las
+   tiendas, no cobramos ni pagamos comisiones por ellos y no intervenimos en sus pagos. Cada quien
+   responde por lo que acuerda, por sus impuestos y por la publicidad que publica, que debe ser
+   verdadera.
+7. Podemos quitar una etiqueta u ocultar una publicación que incumpla estas reglas, como cualquier
+   otra (A14).
+
+> **Fundamento y notas.** Publicidad veraz y que no induzca a error [11, art. 32]; identificar el
+> contenido pagado de forma visible durante todo el contenido (guía para influencers de la PROFECO
+> [14]). Hechos del código (ADR-063): la tienda activa `SellerProfile.acceptsCollaborations` (apagado
+> por omisión, `studio/colaboraciones`); `creators/rules.ts` solo deja etiquetar productos de tiendas
+> activas que lo aceptan, a la venta y visibles; la casilla «Recibí algo de esta tienda por
+> publicarlo (pago, producto o comisión)» pone `Post.collaboration`; la tarjeta muestra «Vendido por
+> <tienda>» siempre y «Colaboración con <tienda>» con acuerdo, arriba de la tarjeta y, en un video,
+> encima del video; la tienda puede marcar la colaboración (no se desmarca) o quitar la etiqueta
+> (`removeProductTag` quita el producto y la marca y avisa a quien publicó); apagar el ajuste no toca
+> las publicaciones existentes. Las métricas son conteos por publicación (`creators/metrics.ts`), sin
+> datos de quién. Etapa 1 sin dinero: las comisiones por venta (etapa 2) solo llegan con pagos reales
+> a través de la plataforma y con revisión del abogado y del contador. **[VERIFICAR CON ABOGADO]:**
+> (a) si Estreno, como intermediario que ofrece la herramienta de etiquetado, responde por publicidad
+> engañosa de terceros y si basta esta regla más la moderación (A14); (b) si la etiqueta debe decir
+> algo más explícito que «Colaboración» (p. ej. «Publicidad» o «Colaboración pagada»); (c) si conviene
+> conservar la etiqueta aunque la tienda quite el producto (hoy se quita con él; queda la obligación
+> de quien publicó de decirlo en su contenido); (d) en pantalla completa del navegador las etiquetas
+> de la plataforma no se ven: ¿basta la obligación de quien publica de decirlo dentro del video
+> (B3)?; (e) uso de la marca y las fotos del producto de la tienda en el contenido de un tercero
+> cuando la tienda aceptó colaboraciones (licencia revocable, C16).
+
+### A11 quinquies. Cuentas editoriales y redacción con IA (agregado 2026-10-01, ADR-066)
+
+- Las cuentas «Equipo Estreno» de cada comunidad son del equipo y se identifican como «Editorial».
+  No son personas reales ni simulan serlo, no reciben mensajes y no se sugieren para seguir.
+- Publican textos redactados con ayuda de inteligencia artificial (preguntas, consejos y fechas del
+  calendario) que una persona del equipo revisa, puede corregir y aprueba antes de publicar. Cada
+  publicación lleva la marca «Con ayuda de IA».
+- No inventan noticias, cifras ni opiniones de personas; no venden ni promocionan productos; y nunca
+  crean usuarios, comentarios, reacciones ni seguidores.
+
+> **Fundamento y notas.** Contenido honesto: cuentas editoriales identificadas, IA etiquetada, sin
+> usuarios falsos ni interacciones infladas (principio 5, ADR-018). Publicidad veraz [11, art. 32].
+> Hechos del código (ADR-066): la IA deja un borrador por comunidad al día en `/admin/redaccion`;
+> nada se publica sin que una persona ADMIN toque «Publicar»; el texto se limpia por código (sin
+> ligas, datos de contacto, montos ni porcentajes) y pasa la política de contenido de la IA; la
+> publicación queda marcada como hecha con IA aunque el equipo reescriba el texto. El modelo solo
+> recibe el nombre y la descripción de la comunidad y los textos de la propia cuenta editorial, nunca
+> datos de personas. **[VERIFICAR CON ABOGADO]:** si «Editorial» más «Con ayuda de IA» bastan para
+> que nadie confunda estas cuentas con personas.
+
 ### A12. Personalización, sugerencias y mejoras del producto
 
 - Si **aceptas la personalización** (es opcional), ordenamos tu feed con lo que haces dentro de
@@ -676,9 +750,13 @@ los términos.
 
 Si una marca o una tienda te pagó, te regaló el producto o te da una comisión por promocionarlo,
 dilo de forma visible en la publicación, por ejemplo con «#Publicidad», durante todo el contenido.
+Si el producto está en Estreno y lo etiquetas, marca también la casilla «Recibí algo de esta tienda
+por publicarlo»: tu publicación llevará la etiqueta «Colaboración» (A11 quater).
 
-> **Fundamento y notas.** Guía de publicidad para influencers de la PROFECO [14]. Base para la
-> etiqueta «Patrocinado» de P12 cuando exista.
+> **Fundamento y notas.** Guía de publicidad para influencers de la PROFECO [14]. La etiqueta
+> «Patrocinado» de P12 ya existe para los productos destacados (ADR-046) y «Colaboración» para el
+> contenido de terceros con acuerdo (ADR-063). La obligación de decirlo dentro del contenido sigue
+> aunque la plataforma ponga su etiqueta.
 
 ### B4. Cómo reportar
 
@@ -996,6 +1074,28 @@ Siempre te decimos qué hicimos y por qué, y puedes pedir revisión (A14).
 Puedes pausar tus productos o dejar de vender cuando quieras. Antes, termina los pedidos pendientes y
 respeta las garantías y devoluciones de lo que ya vendiste.
 
+### C16. Aceptar colaboraciones (agregado 2026-10-01, ADR-063)
+
+- «Aceptar colaboraciones» viene apagado. Si lo activas, cualquier persona con cuenta puede etiquetar
+  tus productos a la venta en sus fotos y videos; ahí se muestran el nombre, la foto, el precio y la
+  liga de cada producto, como en tu tienda. Con eso nos autorizas a mostrarlos junto al contenido de
+  esas personas mientras el ajuste esté activo y la etiqueta siga puesta.
+- Recibes un aviso por cada etiqueta. Puedes quitar la etiqueta de tu producto de cualquier
+  publicación cuando quieras, sin dar razones, y marcar como «Colaboración» la que tenga un acuerdo
+  contigo. Apagar el ajuste solo impide etiquetas nuevas.
+- Si das algo a cambio de una publicación (dinero, producto, comisión o descuento), el acuerdo es
+  entre tú y quien publica: Estreno no es parte, no cobra ni paga comisiones y no interviene en los
+  pagos. Asegúrate de que la publicación lleve «Colaboración» (A11 quater): la publicidad que
+  encargas también es tu responsabilidad.
+- Lo que se vende desde una publicación es una venta tuya, con tus condiciones (C2 a C6).
+
+> **Fundamento y notas.** El anunciante también responde por la publicidad que encarga [11, art. 32]
+> **[VERIFICAR CON ABOGADO]**. Autorización del uso del nombre, las fotos y la marca del producto en
+> contenido de terceros: licencia no exclusiva, gratuita y revocable por publicación (quitar la
+> etiqueta) o hacia adelante (apagar el ajuste) **[VERIFICAR CON ABOGADO: redacción de la licencia y
+> si alcanza para las fotos que la tienda subió de una marca ajena]**. Fiscal: los pagos entre tiendas
+> y creadores quedan fuera de la plataforma en la etapa 1 **[VERIFICAR CON CONTADOR]** (00 §5.2).
+
 ---
 
 ## Anexo 1. Aviso para titulares de marcas y derechos de autor
@@ -1087,6 +1187,12 @@ o un mecanismo alterno de solución dentro de 15 días hábiles.
 26. **Datos de quien manda un aviso de derechos:** compartirlos con quien publicó. (Anexo 1)
 27. **Calificaciones y opiniones** (NMX 5.3.3): ¿son exigibles antes de abrir? (§0 #17)
 28. **Teléfonos de la PROFECO y 911:** confirmar que siguen vigentes al publicar. (A23, B4)
+29. **Colaboraciones:** responsabilidad de Estreno por la publicidad de terceros que se etiqueta en
+    la plataforma; texto de la etiqueta («Colaboración» o algo más explícito); si se conserva cuando
+    la tienda quita el producto; pantalla completa; uso de la marca y las fotos de la tienda.
+    (A11 quater, C16)
+30. **Cuentas editoriales:** ¿bastan «Editorial» y «Con ayuda de IA» para que nadie confunda estas
+    cuentas con personas? (A11 quinquies)
 
 **Contador ([VERIFICAR CON CONTADOR]):** con comisión 0 % y pago directo, ¿aplican la informativa
 del art. 18-J fr. III de la LIVA y el art. 30-B del CFF? ¿Qué cambia al cobrar cualquier cosa? (A20,

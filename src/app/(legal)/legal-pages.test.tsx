@@ -15,13 +15,28 @@ describe("Aviso de privacidad", () => {
       screen.getByText(`Borrador para revisión legal · versión ${LEGAL_VERSIONS.privacyNotice}`),
     ).toBeInTheDocument();
     for (const [name, id] of [
-      ["«Publicaciones que ves en pantalla»", "publicaciones-en-pantalla"],
-      ["«Autenticidad de los productos»", "autenticidad"],
-      ["«Reportes y moderación»", "reportes-y-moderacion"],
+      ["«Buscar con una foto»", "buscar-con-una-foto"],
+      ["«Contexto»", "contexto"],
+      ["«Colaboraciones con tiendas»", "colaboraciones"],
+      ["«Videos»", "videos"],
     ] as const) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", `#${id}`);
       expect(document.getElementById(id)).toHaveRole("heading");
     }
+  });
+
+  it("promete solo lo que hacen la búsqueda por foto, los videos y las colaboraciones", () => {
+    render(<PrivacyNoticePage />);
+
+    const page = document.body;
+    // La foto no se guarda (`search/photo-search-service.ts`: ni almacenamiento ni `AIRequest`).
+    expect(page).toHaveTextContent("La foto no se guarda en ningún lado");
+    // El navegador quita la ubicación y el servidor rechaza lo que la traiga (`video-metadata.ts`).
+    expect(page).toHaveTextContent(
+      "tu navegador los quita antes de subirlo y nuestro servidor no publica un video que todavía los traiga",
+    );
+    // Conteos por publicación sin quién (`creators/metrics.ts`).
+    expect(page).toHaveTextContent("Nunca ven quién visitó, se probó o compró.");
   });
 
   it("explica las impresiones visibles, su anonimización y el plazo del código de deduplicación", () => {
@@ -64,6 +79,26 @@ describe("Términos y condiciones", () => {
     expect(screen.getByRole("heading", { name: "Qué cambió en esta versión" })).toBeInTheDocument();
     expect(screen.getByText(/nunca decide sola\. Si declaraste/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Cambios" })).toBeInTheDocument();
+  });
+
+  it("explica las colaboraciones y las cuentas editoriales como funcionan", () => {
+    render(<TermsPage />);
+
+    expect(screen.getByRole("link", { name: "«Colaboraciones con tiendas»" })).toHaveAttribute(
+      "href",
+      "#colaboraciones",
+    );
+    expect(document.getElementById("colaboraciones")).toHaveRole("heading");
+    const page = document.body;
+    // Apagado por omisión y solo productos a la venta (`creators/rules.ts`).
+    expect(page).toHaveTextContent(
+      "activaron «Aceptar colaboraciones» en su Studio (viene apagado)",
+    );
+    // Quitar la etiqueta quita también la marca (`removeProductTag`): no se promete otra cosa.
+    expect(page).toHaveTextContent("la publicación sigue, ya sin el producto ni la etiqueta");
+    expect(page).toHaveTextContent("no cobramos ni pagamos comisiones por ellos");
+    // Redacción diaria (ADR-066): nada se publica sin aprobación.
+    expect(page).toHaveTextContent("una persona del equipo revisa y aprueba antes de publicar");
   });
 
   it("solo promete bitácora para las acciones que el equipo tiene y registra", () => {

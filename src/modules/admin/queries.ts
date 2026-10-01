@@ -12,17 +12,25 @@ export async function findUserRole(userId: string): Promise<UserRole | null> {
 
 /** Conteos de las colas del equipo para el resumen de /admin (solo números, sin datos personales). */
 export async function countAdminQueues(now: Date = new Date()) {
-  const [openReports, proofsToReview, proposedDecisions, runningExperiments, failedJobs, evalRuns] =
-    await Promise.all([
-      db.report.count({ where: { status: "OPEN" } }),
-      db.authenticityCheck.count({ where: { status: "PROOF_SUBMITTED" } }),
-      db.platformDecision.count({ where: { status: "PROPOSED" } }),
-      db.experiment.count({ where: { status: "RUNNING" } }),
-      db.jobRun.count({
-        where: { status: "FAILED", startedAt: { gte: new Date(now.getTime() - DAY_MS) } },
-      }),
-      db.aIEvalRun.count(),
-    ]);
+  const [
+    openReports,
+    proofsToReview,
+    proposedDecisions,
+    runningExperiments,
+    failedJobs,
+    evalRuns,
+    editorialDrafts,
+  ] = await Promise.all([
+    db.report.count({ where: { status: "OPEN" } }),
+    db.authenticityCheck.count({ where: { status: "PROOF_SUBMITTED" } }),
+    db.platformDecision.count({ where: { status: "PROPOSED" } }),
+    db.experiment.count({ where: { status: "RUNNING" } }),
+    db.jobRun.count({
+      where: { status: "FAILED", startedAt: { gte: new Date(now.getTime() - DAY_MS) } },
+    }),
+    db.aIEvalRun.count(),
+    db.editorialDraft.count({ where: { status: "PENDING" } }),
+  ]);
   return {
     openReports,
     proofsToReview,
@@ -30,5 +38,6 @@ export async function countAdminQueues(now: Date = new Date()) {
     runningExperiments,
     failedJobsLast24h: failedJobs,
     evalRuns,
+    editorialDrafts,
   };
 }

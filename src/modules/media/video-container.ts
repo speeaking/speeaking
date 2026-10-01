@@ -35,7 +35,9 @@ export type VideoValidationCode =
   | "NO_DURATION"
   | "TOO_LONG"
   | "BAD_DIMENSIONS"
-  | "CORRUPT";
+  | "CORRUPT"
+  /** Todavía trae metadatos del teléfono o del lugar (`video-metadata.ts`). */
+  | "HAS_METADATA";
 
 export class VideoValidationError extends Error {
   override name = "VideoValidationError";
@@ -45,14 +47,15 @@ export class VideoValidationError extends Error {
 }
 
 /** Cajas de primer nivel que se revisan como máximo (un MP4 normal tiene de 3 a 6). */
-const MAX_TOP_LEVEL_BOXES = 32;
+export const MAX_TOP_LEVEL_BOXES = 32;
 /** `moov` de un video de 60 s pesa de 20 KB a ~2 MB; más que esto no es un video corto normal. */
 export const MAX_MOOV_BYTES = 8 * 1024 * 1024;
 /** Profundidad y cajas por nivel dentro de `moov` (un archivo hecho a mano no las agota). */
 const MAX_DEPTH = 8;
 const MAX_CHILDREN = 512;
 
-type Box = { type: string; start: number; end: number };
+/** Una caja: `at` es donde empieza su encabezado; `start` y `end`, su contenido. */
+export type Box = { type: string; at: number; start: number; end: number };
 
 function fourcc(bytes: Uint8Array, at: number) {
   return String.fromCharCode(bytes[at]!, bytes[at + 1]!, bytes[at + 2]!, bytes[at + 3]!);
@@ -69,7 +72,7 @@ function u64(data: DataView, at: number) {
 }
 
 /** Cajas hijas de `bytes[start, end)`: tamaño de 32 bits, de 64 (`size = 1`) o hasta el final (`0`). */
-function children(bytes: Uint8Array, start: number, end: number): Box[] {
+export function children(bytes: Uint8Array, start: number, end: number): Box[] {
   const data = view(bytes);
   const boxes: Box[] = [];
   let at = start;
@@ -86,7 +89,7 @@ function children(bytes: Uint8Array, start: number, end: number): Box[] {
       size = end - at;
     }
     if (size < header || at + size > end) throw new VideoValidationError("CORRUPT");
-    boxes.push({ type, start: at + header, end: at + size });
+    boxes.push({ type, at, start: at + header, end: at + size });
     at += size;
   }
   return boxes;
@@ -187,6 +190,46 @@ function readTrack(bytes: Uint8Array, trak: Box): Track | null {
 }
 
 /**
+ * Encabezado de la caja de primer nivel que empieza en `offset` (una lectura de 16 bytes). Con
+ * `requireType`, otro tipo es NOT_VIDEO antes de mirar el tamaño (lo primero de un MP4 es `ftyp`).
+ */
+export async function topLevelBox(
+  read: RangeReader,
+  fileSize: number,
+  offset: number,
+  requireType?: string,
+): Promise<{ type: string; size: number; headerSize: number }> {
+  const header = await read(offset, Math.min(16, fileSize - offset));
+  if (header.byteLength < 8) throw new VideoValidationError("CORRUPT");
+  const data = view(header);
+  let size = data.getUint32(0);
+  const type = fourcc(header, 4);
+  if (requireType && type !== requireType) throw new VideoValidationError("NOT_VIDEO");
+  let headerSize = 8;
+  if (size === 1) {
+    if (header.byteLength < 16) throw new VideoValidationError("CORRUPT");
+    size = u64(data, 8);
+    headerSize = 16;
+  } else if (size === 0) {
+    size = fileSize - offset;
+  }
+  if (size < headerSize || offset + size > fileSize) throw new VideoValidationError("CORRUPT");
+  return { type, size, headerSize };
+}
+
+/** Contenido de `moov` (con tope: uno más grande no es de un video corto normal). */
+export async function readMovieBox(
+  read: RangeReader,
+  offset: number,
+  { size, headerSize }: { size: number; headerSize: number },
+): Promise<Uint8Array> {
+  if (size - headerSize > MAX_MOOV_BYTES) throw new VideoValidationError("CORRUPT");
+  const moov = await read(offset + headerSize, size - headerSize);
+  if (moov.byteLength !== size - headerSize) throw new VideoValidationError("CORRUPT");
+  return moov;
+}
+
+/**
  * Recorre el archivo y valida que sea un video corto que los navegadores reproducen. `maxDurationMs`
  * y `maxDimension` vienen de las reglas de video (`video-rules.ts`).
  */
@@ -199,30 +242,15 @@ export async function inspectVideo(
   let brand: string | null = null;
   let moov: Uint8Array | null = null;
   for (let index = 0; offset < fileSize && index < MAX_TOP_LEVEL_BOXES; index += 1) {
-    const header = await read(offset, Math.min(16, fileSize - offset));
-    if (header.byteLength < 8) throw new VideoValidationError("CORRUPT");
-    const data = view(header);
-    let size = data.getUint32(0);
-    const type = fourcc(header, 4);
     // Un MP4 o MOV de cualquier teléfono empieza con `ftyp`; sin ella no es un video (una foto, un
     // documento). Otro formato con la misma estructura, como HEIC, sí la trae pero no trae `moov`.
-    if (index === 0 && type !== "ftyp") throw new VideoValidationError("NOT_VIDEO");
-    let headerSize = 8;
-    if (size === 1) {
-      if (header.byteLength < 16) throw new VideoValidationError("CORRUPT");
-      size = u64(data, 8);
-      headerSize = 16;
-    } else if (size === 0) {
-      size = fileSize - offset;
-    }
-    if (size < headerSize || offset + size > fileSize) throw new VideoValidationError("CORRUPT");
+    const box = await topLevelBox(read, fileSize, offset, index === 0 ? "ftyp" : undefined);
+    const { type, size, headerSize } = box;
     if (type === "ftyp") {
       if (size - headerSize < 4) throw new VideoValidationError("CORRUPT");
       brand = fourcc(await read(offset + headerSize, 4), 0);
     } else if (type === "moov") {
-      if (size - headerSize > MAX_MOOV_BYTES) throw new VideoValidationError("CORRUPT");
-      moov = await read(offset + headerSize, size - headerSize);
-      if (moov.byteLength !== size - headerSize) throw new VideoValidationError("CORRUPT");
+      moov = await readMovieBox(read, offset, box);
       break;
     }
     offset += size;

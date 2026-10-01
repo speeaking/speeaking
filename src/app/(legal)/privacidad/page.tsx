@@ -41,24 +41,31 @@ export default function PrivacyNoticePage() {
         </h2>
         <ul className="mt-2 flex flex-col gap-1">
           <li>
-            Registramos qué publicaciones del feed y de las comunidades aparecen en tu pantalla (ver{" "}
-            <a className={SECTION_LINK} href="#publicaciones-en-pantalla">
-              «Publicaciones que ves en pantalla»
+            Qué enviamos al buscar con una foto y que la foto no se guarda (ver{" "}
+            <a className={SECTION_LINK} href="#buscar-con-una-foto">
+              «Buscar con una foto»
             </a>
             ).
           </li>
           <li>
-            Explicamos la revisión de autenticidad de los productos, las fotos de comprobante y la
-            señal opcional de inteligencia artificial (ver{" "}
-            <a className={SECTION_LINK} href="#autenticidad">
-              «Autenticidad de los productos»
+            El resumen de las publicaciones largas (ver{" "}
+            <a className={SECTION_LINK} href="#contexto">
+              «Contexto»
             </a>
             ).
           </li>
           <li>
-            Qué guardan los reportes y qué acciones de moderación toma el equipo (ver{" "}
-            <a className={SECTION_LINK} href="#reportes-y-moderacion">
-              «Reportes y moderación»
+            Qué ven la tienda y quien publica cuando se recomienda un producto (ver{" "}
+            <a className={SECTION_LINK} href="#colaboraciones">
+              «Colaboraciones con tiendas»
+            </a>
+            ).
+          </li>
+          <li>
+            A los videos, como a las fotos, les quitamos la ubicación y los datos del teléfono antes
+            de publicarlos (ver{" "}
+            <a className={SECTION_LINK} href="#videos">
+              «Videos»
             </a>
             ).
           </li>
@@ -81,9 +88,9 @@ export default function PrivacyNoticePage() {
           y frenar abusos.
         </li>
         <li>
-          Actividad dentro de la plataforma: publicaciones, comentarios, a quién sigues, me gusta,
-          guardados, búsquedas, productos vistos, qué publicaciones aparecieron en tu pantalla,
-          carrito y compras.
+          Actividad dentro de la plataforma: publicaciones (con sus fotos y videos), comentarios, a
+          quién sigues, me gusta, guardados, búsquedas, productos vistos, qué publicaciones
+          aparecieron en tu pantalla, de qué publicación llegaste a un producto, carrito y compras.
         </li>
         <li>Gustos que tú declaras: comunidades, marcas y lo que estás buscando.</li>
         <li>
@@ -256,6 +263,54 @@ export default function PrivacyNoticePage() {
         calcula nuestro código, no el modelo.
       </p>
 
+      <h2 id="buscar-con-una-foto">Buscar con una foto</h2>
+      <p>
+        Si buscas con una foto, tu navegador la reduce y nuestro servidor la vuelve a reducir y le
+        quita los metadatos (incluida la ubicación) antes de enviarla al proveedor de inteligencia
+        artificial descrito arriba, solo para que describa la ropa y los objetos que se pueden
+        comprar. Le pedimos no conservarla ni usarla para entrenar sus modelos, y no describir ni
+        reconocer a las personas que aparezcan. La foto no se guarda en ningún lado: ni en nuestro
+        almacenamiento ni en el registro de la solicitud, donde solo queda que hubo una búsqueda con
+        foto (fecha, modelo y costo).
+      </p>
+      <p>
+        Lo que el modelo describió (por ejemplo, «camisa de lino blanca») se guarda como una
+        búsqueda más, con las mismas reglas que tus búsquedas escritas. Solo funciona con sesión y
+        con un límite de búsquedas por hora y por día. No uses fotos de otras personas sin su
+        permiso.
+      </p>
+
+      <h2 id="contexto">«Contexto» de publicaciones largas</h2>
+      <p>
+        En una publicación larga puedes tocar «Contexto» para leer un resumen neutral de dos o tres
+        oraciones. Para escribirlo enviamos al proveedor de inteligencia artificial solo el texto de
+        la publicación, que ya es público, sin correos, teléfonos, ligas ni cuentas, y sin decirle
+        quién lo pidió. El resumen se marca como hecho con IA, se guarda y se muestra a todos; si el
+        texto de la publicación cambia, se hace otro.
+      </p>
+
+      <h2 id="colaboraciones">Colaboraciones con tiendas</h2>
+      <p>
+        Si etiquetas en tu publicación un producto de otra tienda (solo se puede si esa tienda
+        acepta colaboraciones), la tienda recibe un aviso con tu nombre visible y la liga a tu
+        publicación, que ya es pública. Si la tienda quita la etiqueta de su producto, te avisamos.
+      </p>
+      <p>
+        Quien publica y la tienda ven, por publicación, números agregados de lo que salió de ella:
+        visitas al producto, pruebas con «Pruébatelo», productos agregados al carrito y compras
+        pagadas. Nunca ven quién visitó, se probó o compró. Para contarlo guardamos, en tu
+        actividad, en tu carrito y en tus pedidos, de qué publicación llegaste al producto.
+      </p>
+
+      <h2 id="videos">Videos</h2>
+      <p>
+        Los videos se guardan y se entregan como las fotos: son privados hasta que los publicas y
+        solo salen por nuestro sitio, que revisa quién puede verlos. Los teléfonos suelen guardar
+        dentro del video el lugar donde se grabó, la marca y el modelo: tu navegador los quita antes
+        de subirlo y nuestro servidor no publica un video que todavía los traiga. La portada es un
+        cuadro del video que se guarda como una foto nueva, sin metadatos.
+      </p>
+
       <h2 id="pruebatelo">«Pruébatelo»: tu foto</h2>
       <p>
         Para simular cómo podría verse una prenda en ti, subes una foto tuya (debe ser tuya y ser
@@ -340,6 +395,10 @@ export default function PrivacyNoticePage() {
         </li>
         <li>El texto de «Sube y vende» y el de «¿Qué necesitas?»: 90 días.</li>
         <li>Tu foto de «Pruébatelo» y cada simulación: 30 días, o antes si las borras.</li>
+        <li>La foto de «Buscar con una foto»: no se guarda.</li>
+        <li>
+          El resumen de «Contexto»: mientras exista la publicación (o hasta que cambie su texto).
+        </li>
         <li>Los movimientos de tu saldo: mientras tengas la cuenta (registro contable).</li>
         <li>
           Tu actividad, incluidas las publicaciones que viste en pantalla: ligada a tu cuenta
@@ -386,7 +445,7 @@ export default function PrivacyNoticePage() {
       <ul>
         <li>
           Alojamiento y base de datos: los servidores donde corre la plataforma y se guardan tus
-          datos, fotos incluidas.
+          datos, fotos y videos incluidos.
         </li>
         <li>
           Pagos: hoy los pagos son simulados y no se comparte ningún dato de pago. Cuando conectemos
@@ -402,7 +461,9 @@ export default function PrivacyNoticePage() {
           uso (<PendingData>{AI_PROCESSOR}</PendingData>). Recibe tu texto sin datos de contacto y
           los datos del producto, nunca su costo (ver «Inteligencia artificial»). Si activamos la
           señal de autenticidad, también el texto público de los productos con alguna señal de
-          riesgo (ver «Autenticidad de los productos»).
+          riesgo (ver «Autenticidad de los productos»). Si buscas con una foto, la foto reducida y
+          sin metadatos, que no se guarda (ver «Buscar con una foto»); y el texto público de las
+          publicaciones largas que alguien resume (ver «Contexto»).
         </li>
       </ul>
       <p>

@@ -29,6 +29,8 @@ export type AdminOverview = {
   runningExperiments: number;
   failedJobsLast24h: number;
   evalRuns: number;
+  /** Borradores de la redacción diaria que esperan revisión (ADR-066). */
+  editorialDrafts: number;
 };
 
 export async function getAdminOverview(actorUserId: string): Promise<AdminOverview> {

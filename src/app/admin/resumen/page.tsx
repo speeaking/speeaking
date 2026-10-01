@@ -28,6 +28,9 @@ const JOB_LABELS: Record<string, string> = {
   "expire-checkouts": "Checkouts vencidos",
   "orphan-media": "Imágenes huérfanas",
   "ai-input-redaction": "Retención de entradas de IA",
+  "tryon-retention": "Retención de Pruébatelo",
+  "notifications-retention": "Retención de avisos",
+  "editorial-drafts": "Redacción diaria",
 };
 
 const JOB_STATUS: Record<string, string> = {
