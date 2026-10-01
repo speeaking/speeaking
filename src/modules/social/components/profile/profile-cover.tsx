@@ -15,7 +15,8 @@ const cameraShortcut =
  * Portada del perfil. Con portada propia (ADR-058) se ve nítida; sin ella, su última foto
  * desenfocada y más saturada, como la cabecera de un artista en Spotify, o un tinte suave con «su»
  * tono (ADR-055). El avatar se encima a la portada; una tienda lleva el anillo rosa. En el perfil
- * propio, dos atajos de cámara llevan a Editar perfil.
+ * propio, dos atajos de cámara llevan a Editar perfil. En escritorio (ADR-065) la portada va ancha,
+ * pegada a la barra de arriba y con las esquinas de abajo redondeadas, y el avatar crece.
  */
 export function ProfileCover({
   name,
@@ -40,8 +41,10 @@ export function ProfileCover({
       <div
         aria-hidden="true"
         className={cn(
-          "relative overflow-hidden md:rounded-3xl",
-          customCover ? "aspect-[3/1] max-h-56 min-h-36 w-full" : "h-36 md:h-44",
+          "relative overflow-hidden md:rounded-b-3xl",
+          customCover
+            ? "aspect-[3/1] max-h-56 min-h-36 w-full lg:max-h-[22rem]"
+            : "h-36 md:h-44 lg:h-60",
         )}
         style={{ "--hue": hueFromText(username) } as CSSProperties}
       >
@@ -51,7 +54,7 @@ export function ProfileCover({
             alt=""
             fill
             priority
-            sizes="(max-width: 768px) 100vw, 680px"
+            sizes="(max-width: 768px) 100vw, 992px"
             {...blurPlaceholder(cover)}
             style={{ objectFit: "cover" }}
             className={customCover ? undefined : "scale-125 blur-2xl saturate-150"}
@@ -72,23 +75,35 @@ export function ProfileCover({
         <Link
           href="/perfil/editar"
           aria-label="Cambiar portada"
-          className={cn(cameraShortcut, "right-3 bottom-3")}
+          className={cn(
+            cameraShortcut,
+            "right-3 bottom-3 lg:right-5 lg:bottom-5 lg:flex lg:w-auto lg:items-center lg:gap-2 lg:rounded-lg lg:px-3 lg:text-sm lg:font-semibold",
+          )}
         >
           <Camera aria-hidden="true" className="size-4" />
+          <span aria-hidden="true" className="hidden lg:inline">
+            Editar portada
+          </span>
         </Link>
       ) : null}
-      <div className="absolute -bottom-10 left-4 md:left-6">
+      <div className="absolute -bottom-10 left-4 md:left-6 lg:-bottom-24 lg:left-8">
         <UserAvatar
           name={name}
           seed={username}
           src={avatarUrl}
-          className={cn("size-22 text-2xl ring-4 ring-background", isSeller && "ring-primary")}
+          className={cn(
+            "size-22 text-2xl ring-4 ring-background lg:size-40 lg:text-5xl",
+            isSeller && "ring-primary",
+          )}
         />
         {isOwn ? (
           <Link
             href="/perfil/editar"
             aria-label="Cambiar foto de perfil"
-            className={cn(cameraShortcut, "-right-1 bottom-0 size-8")}
+            className={cn(
+              cameraShortcut,
+              "-right-1 bottom-0 size-8 lg:right-2 lg:bottom-2 lg:size-9",
+            )}
           >
             <Camera aria-hidden="true" className="size-4" />
           </Link>

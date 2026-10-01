@@ -19,6 +19,9 @@ import { TopBar } from "./top-bar";
  * - Escritorio: barra superior y rejilla 232 / 680 / 320 alineadas. Menos de 1280 px oculta la
  *   columna derecha; menos de 1024 px reduce la izquierda a íconos, y en escritorio la persona la
  *   pliega con el botón de arriba (ADR-046; cookie `estreno-nav`).
+ * - Página ancha (ADR-065): si el contenido trae `data-page-wide` (el perfil), las dos columnas
+ *   laterales se ocultan y el contenido se centra a 992 px, como un perfil de Facebook. Es CSS
+ *   (`:has`): la página lo pide con el atributo, sin otro layout ni otra ruta.
  */
 export async function AppShell({
   children,
@@ -36,15 +39,32 @@ export async function AppShell({
     <ShellFrame initialOpen={navOpen}>
       <TopBar viewer={viewer} />
       {viewer ? <LegalUpdateNotice /> : null}
-      <div className={cn(shellGrid, "flex-1 md:items-start")}>
+      <div
+        className={cn(
+          shellGrid,
+          "flex-1 md:items-start",
+          "md:has-[[data-page-wide]]:grid-cols-[minmax(0,1fr)]! md:has-[[data-page-wide]]:[&>[data-rail]]:hidden!",
+        )}
+      >
         <SideNav viewer={viewer} communities={communities} />
-        <main id="contenido" className={cn("min-w-0 pb-24 md:pt-2 md:pb-12", shellMain)}>
+        <main
+          id="contenido"
+          className={cn(
+            "min-w-0 pb-24 md:pt-2 md:pb-12",
+            shellMain,
+            "md:has-[[data-page-wide]]:max-w-[62rem] md:has-[[data-page-wide]]:pt-0",
+          )}
+        >
           {children}
         </main>
         {aside ? (
           // Ocupa todo el alto de la fila para que su contenido pueda quedarse fijo (sticky) al
           // bajar; el scroll propio y el desvanecido los pone la columna misma (SocialAside).
-          <aside aria-label="Más para ti" className="hidden self-stretch pt-4 xl:block">
+          <aside
+            data-rail=""
+            aria-label="Más para ti"
+            className="hidden self-stretch pt-4 xl:block"
+          >
             {aside}
           </aside>
         ) : null}

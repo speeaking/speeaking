@@ -103,3 +103,35 @@ test.describe("perfil (ADR-058)", () => {
     await fan.context.close();
   });
 });
+
+// Perfil ancho (ADR-065): en escritorio el perfil ocupa el ancho de la página, sin las columnas
+// laterales, y los botones del perfil propio llevan a vender y a comprar.
+test("en escritorio el perfil se abre sin columnas laterales y con accesos a vender y comprar", async ({
+  page,
+  isMobile,
+}) => {
+  await registerAndOnboard(page);
+  await page.goto("/perfil");
+  await expect(page).toHaveURL(/\/u\//);
+  await expect(page.getByRole("heading", { level: 1, name: "Prueba Automática" })).toBeVisible();
+  const header = page.getByRole("main").locator("header").first();
+  // Quien aún no tiene tienda ve la invitación a vender; sus compras y editar, siempre.
+  await expect(header.getByRole("link", { name: "Vender" })).toHaveAttribute("href", "/studio");
+  await expect(header.getByRole("link", { name: "Editar perfil" })).toBeVisible();
+
+  const sideNav = page.getByRole("navigation", { name: "Navegación principal" });
+  const rail = page.getByRole("complementary", { name: "Más para ti" });
+  if (!isMobile) {
+    await expect(sideNav).toBeHidden();
+    await expect(rail).toBeHidden();
+    const cover = (await page.locator('[data-slot="profile-cover"]').boundingBox())!;
+    expect(cover.width).toBeGreaterThan(900);
+  }
+
+  // Al salir del perfil, la página vuelve a su forma de siempre.
+  await header.getByRole("link", { name: "Mis compras" }).click();
+  await expect(page).toHaveURL("/pedidos");
+  if (!isMobile) {
+    await expect(sideNav).toBeVisible();
+  }
+});

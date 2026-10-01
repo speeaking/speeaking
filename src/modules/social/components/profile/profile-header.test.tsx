@@ -68,15 +68,34 @@ describe("ProfileHeader", () => {
     expect(screen.getByRole("link", { name: "Mensaje" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Compartir perfil" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
+    // Sin productos a la venta no se ofrece su tienda.
+    expect(screen.queryByRole("link", { name: "Ver tienda" })).not.toBeInTheDocument();
   });
 
-  it("propio: Publicar, Editar perfil, Studio y Cerrar sesión; sin Seguir ni Mensaje", () => {
+  it("ajeno con productos a la venta: «Ver tienda» abre su pestaña de Tienda (ADR-065)", () => {
+    render(
+      <ProfileHeader
+        profile={base}
+        inCommon={nobody}
+        cover={null}
+        hasShop
+        isOwn={false}
+        isSignedIn
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Ver tienda" })).toHaveAttribute(
+      "href",
+      "/u/ana?ver=tienda",
+    );
+  });
+
+  it("propio: Panel, Mis compras, Editar perfil y Cerrar sesión; sin Seguir ni Mensaje", () => {
     render(<ProfileHeader profile={base} inCommon={nobody} cover={null} isOwn isSignedIn />);
 
-    expect(screen.getByRole("link", { name: "Publicar" })).toHaveAttribute(
-      "href",
-      "/crear/publicacion",
-    );
+    // Vender y comprar (ADR-065): el panel de la tienda y los pedidos propios.
+    expect(screen.getByRole("link", { name: "Panel" })).toHaveAttribute("href", "/studio");
+    expect(screen.getByRole("link", { name: "Mis compras" })).toHaveAttribute("href", "/pedidos");
     expect(screen.getByRole("link", { name: "Editar perfil" })).toHaveAttribute(
       "href",
       "/perfil/editar",
@@ -87,10 +106,27 @@ describe("ProfileHeader", () => {
       "/perfil/editar",
     );
     expect(screen.getByRole("link", { name: "Cambiar foto de perfil" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Studio" })).toHaveAttribute("href", "/studio");
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Seguir/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Mensaje" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ver tienda" })).not.toBeInTheDocument();
+  });
+
+  it("propio sin tienda: el panel se ofrece como «Vender», sin el color primario", () => {
+    render(
+      <ProfileHeader
+        profile={{ ...base, isSeller: false }}
+        inCommon={nobody}
+        cover={null}
+        isOwn
+        isSignedIn
+      />,
+    );
+
+    const sell = screen.getByRole("link", { name: "Vender" });
+    expect(sell).toHaveAttribute("href", "/studio");
+    expect(sell).not.toHaveClass("bg-primary");
+    expect(screen.queryByRole("link", { name: "Panel" })).not.toBeInTheDocument();
   });
 
   it("una cuenta editorial lleva su distintivo y no recibe mensajes (ADR-047)", () => {

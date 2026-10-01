@@ -200,6 +200,21 @@ test.describe("navegación", () => {
     const author = page.locator("article").first().locator('a[href^="/u/"]').first();
     const href = await author.getAttribute("href");
     expect(href).toMatch(/^\/u\/[a-z0-9._-]+$/);
+    // La animación es una mejora: un toque en el primer segundo, mientras React todavía termina de
+    // tomar la página, abre el perfil igual pero sin el tipo de transición (otro trabajo de React se
+    // lleva los tipos pendientes). Aquí se prueba la animación, así que se espera a que la página
+    // esté quieta: el enlace ya hidratado y la red en calma.
+    await author.evaluate(
+      (element) =>
+        new Promise<void>((resolve) => {
+          const check = () =>
+            Object.keys(element).some((key) => key.startsWith("__reactProps"))
+              ? resolve()
+              : requestAnimationFrame(check);
+          check();
+        }),
+    );
+    await page.waitForLoadState("networkidle");
     await author.click();
 
     await expect(page).toHaveURL(new RegExp(`${href}$`));

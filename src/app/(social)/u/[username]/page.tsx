@@ -69,7 +69,11 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
             />
           </div>
         ) : (
-          <section aria-label="Publicaciones" className="flex flex-col md:gap-4">
+          // En el perfil ancho de escritorio las publicaciones conservan su ancho de lectura.
+          <section
+            aria-label="Publicaciones"
+            className="flex flex-col md:gap-4 lg:mx-auto lg:w-full lg:max-w-[680px]"
+          >
             {posts.map((post, index) => (
               <PostCard key={post.id} post={post} index={index} />
             ))}
@@ -96,7 +100,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
 
   return (
     <ViewTransition enter="page-ink" default="none">
-      <div className="flex flex-col gap-4">
+      {/* `data-page-wide` (ADR-065): en escritorio el perfil ocupa el ancho, sin columnas laterales. */}
+      <div data-page-wide="" className="flex flex-col gap-4">
         <ProfileHeader
           profile={profile}
           inCommon={{
@@ -107,10 +112,16 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
           // Portada propia (ADR-058) o, sin ella, su última foto desenfocada (ADR-055).
           cover={profile.cover ?? profileCover(posts)}
           customCover={profile.cover !== null}
+          hasShop={products.length > 0}
           isOwn={isOwn}
           isSignedIn={viewer !== null}
         />
-        <ProfileTabs initial={resolveProfileTab(ver, products.length > 0)} items={tabs} />
+        {/* `key`: «Ver tienda» (`?ver=tienda`) cambia de pestaña aunque la página ya esté abierta. */}
+        <ProfileTabs
+          key={resolveProfileTab(ver, products.length > 0)}
+          initial={resolveProfileTab(ver, products.length > 0)}
+          items={tabs}
+        />
       </div>
     </ViewTransition>
   );

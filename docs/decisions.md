@@ -1828,3 +1828,33 @@ había que desplazarse, y debajo seguía un feed dentro de la capa.
 la publicación en el visor); `PostDetail` recibe `layer`. Pruebas: tarjeta (visor con fotos, sin
 fotos y sin abrir) y E2E `viewer.spec.ts` (lado a lado y dentro de la ventana en escritorio, apilado
 en teléfono, una sola publicación en la capa y comentar desde el visor).
+
+## ADR-065 · Perfil ancho en escritorio, con accesos a vender y comprar
+
+**Contexto.** Petición del fundador (2026-10-01) con una captura de un perfil de Facebook en
+escritorio: «al abrir el perfil debe verse así; que desaparezcan las secciones de los costados y que
+los botones sean los del panel para vender o comprar, o a tu criterio». El perfil de ADR-055 se
+diseñó para teléfono; en escritorio vivía en la columna de 680 px entre las dos columnas laterales.
+
+**Decisión.**
+
+- **Página ancha.** Una página pide el ancho con el atributo `data-page-wide` en su contenido; el
+  marco (`AppShell`) oculta entonces las dos columnas laterales y centra el contenido a 992 px. Es
+  CSS (`:has`), sin otro layout ni otra ruta: la barra de arriba y la capa de publicaciones siguen
+  igual. Hoy solo la usa el perfil (y su esqueleto de carga, para que la página no cambie de forma al
+  llegar). Al salir del perfil las columnas vuelven.
+- **Cabecera como Facebook en escritorio.** Portada ancha pegada a la barra de arriba con las
+  esquinas de abajo redondeadas, avatar grande encimado, el nombre con sus contadores al lado y las
+  acciones a la derecha. Las publicaciones conservan su ancho de lectura (680 px), centradas.
+- **Botones (criterio del IA-CEO).** Perfil propio: «Panel» (el Studio; es la acción primaria de
+  quien vende, y dice «Vender», sin color primario, para quien aún no tiene tienda), «Mis compras»
+  (pedidos) y «Editar perfil». «Publicar» ya vive en «Crear» (barra de arriba y botón central), así
+  que sale del perfil: menos botones. «Cerrar sesión» queda en ícono en escritorio (el menú del
+  avatar ya lo ofrece). Perfil ajeno: «Seguir», «Mensaje» y, si tiene productos a la venta, «Ver
+  tienda» (abre su pestaña Tienda).
+- **Teléfono:** igual que ADR-055, salvo que los contadores van bajo el nombre y los botones son los
+  mismos de arriba.
+
+**Consecuencias.** `AppShell` y `SideNav` marcan las columnas con `data-rail`. Pruebas: cabecera
+(botones propios, sin tienda y «Ver tienda») y E2E (en escritorio no hay columnas laterales y la
+portada pasa de 900 px; al ir a «Mis compras» vuelven).

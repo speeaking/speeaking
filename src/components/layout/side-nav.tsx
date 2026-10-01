@@ -361,7 +361,7 @@ export function SideNav({
   const nav = useNav();
 
   return (
-    <div className={cn(railScroll, "hidden md:block")}>
+    <div data-rail="" className={cn(railScroll, "hidden md:block")}>
       {/* Plegar o expandir (ADR-046): solo en escritorio; en tabletas la columna ya es de íconos. */}
       <button
         type="button"

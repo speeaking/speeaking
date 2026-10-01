@@ -1,4 +1,11 @@
-import { BadgeCheck, ImagePlus, LayoutDashboard, PenLine, ShoppingBag } from "lucide-react";
+import {
+  BadgeCheck,
+  LayoutDashboard,
+  PenLine,
+  ReceiptText,
+  ShoppingBag,
+  Store,
+} from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
@@ -35,6 +42,8 @@ export type ProfileHeaderProps = {
   cover: FeedMediaDTO | null;
   /** La portada la subió la persona (ADR-058): se ve nítida. */
   customCover?: boolean;
+  /** La tienda tiene productos a la venta: el perfil ajeno ofrece «Ver tienda». */
+  hasShop?: boolean;
   isOwn: boolean;
   isSignedIn: boolean;
 };
@@ -46,12 +55,18 @@ function Dot() {
 /**
  * Cabecera del perfil (ADR-055): portada, nombre con sus distintivos, bio, contadores honestos (los
  * ceros se ocultan), una sola acción primaria y la línea «en común» con quien mira.
+ *
+ * En escritorio (ADR-065) se acomoda como un perfil de Facebook: el avatar grande a la izquierda,
+ * el nombre con sus contadores al lado y las acciones a la derecha. En el perfil propio las acciones
+ * llevan a vender y a comprar: «Panel» (el Studio; «Vender» si aún no hay tienda), «Mis compras» y
+ * «Editar perfil». En el ajeno: «Seguir», «Mensaje» y, si vende, «Ver tienda».
  */
 export function ProfileHeader({
   profile,
   inCommon,
   cover,
   customCover = false,
+  hasShop = false,
   isOwn,
   isSignedIn,
 }: ProfileHeaderProps) {
@@ -94,11 +109,43 @@ export function ProfileHeader({
         isSeller={profile.isSeller}
         isOwn={isOwn}
       />
-      <div className="flex flex-col gap-3 px-4 pt-10 md:px-6">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-heading text-2xl leading-tight font-extrabold tracking-heading text-balance md:text-3xl">
+      <div className="flex flex-col gap-3 px-4 pt-10 md:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-6 lg:px-8 lg:pt-4">
+        {/* Junto al avatar grande: 160 px de avatar + 16 de aire, y al menos su alto bajo la portada. */}
+        <div className="flex flex-col gap-1 lg:col-start-1 lg:row-start-1 lg:min-h-24 lg:pl-44">
+          <h1 className="font-heading text-2xl leading-tight font-extrabold tracking-heading text-balance md:text-3xl lg:text-[2rem]">
             {profile.displayName}
           </h1>
+          {stats.length > 0 ? (
+            <dl className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              {stats.map((stat, index) => (
+                <div key={stat.label} className="flex items-baseline gap-1">
+                  {index > 0 ? (
+                    <span aria-hidden="true" className="pr-1">
+                      ·
+                    </span>
+                  ) : null}
+                  <dt className="sr-only">{stat.label}</dt>
+                  <dd className="flex items-baseline gap-1">
+                    {stat.href ? (
+                      <Link href={stat.href} className="flex items-baseline gap-1 hover:underline">
+                        <span className="font-heading text-base font-bold text-foreground tabular-nums">
+                          {formatCompactNumber(stat.value)}
+                        </span>{" "}
+                        <span>{stat.label}</span>
+                      </Link>
+                    ) : (
+                      <>
+                        <span className="font-heading text-base font-bold text-foreground tabular-nums">
+                          {formatCompactNumber(stat.value)}
+                        </span>
+                        <span aria-hidden="true">{stat.label}</span>
+                      </>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
             <span>@{profile.username}</span>
             {profile.city ? (
@@ -128,59 +175,40 @@ export function ProfileHeader({
           ) : null}
         </div>
 
-        {profile.bio ? <p className="text-[15px] leading-relaxed">{profile.bio}</p> : null}
-
-        {stats.length > 0 ? (
-          <dl className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            {stats.map((stat, index) => (
-              <div key={stat.label} className="flex items-baseline gap-1">
-                {index > 0 ? (
-                  <span aria-hidden="true" className="pr-1">
-                    ·
-                  </span>
-                ) : null}
-                <dt className="sr-only">{stat.label}</dt>
-                <dd className="flex items-baseline gap-1">
-                  {stat.href ? (
-                    <Link href={stat.href} className="flex items-baseline gap-1 hover:underline">
-                      <span className="font-heading text-base font-bold text-foreground tabular-nums">
-                        {formatCompactNumber(stat.value)}
-                      </span>{" "}
-                      <span>{stat.label}</span>
-                    </Link>
-                  ) : (
-                    <>
-                      <span className="font-heading text-base font-bold text-foreground tabular-nums">
-                        {formatCompactNumber(stat.value)}
-                      </span>
-                      <span aria-hidden="true">{stat.label}</span>
-                    </>
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
+        {profile.bio ? (
+          <p className="text-[15px] leading-relaxed lg:col-span-2 lg:max-w-3xl">{profile.bio}</p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:col-start-2 lg:row-start-1 lg:justify-end lg:self-end">
           {isOwn ? (
             <>
-              <Link href="/crear/publicacion" className={buttonVariants({ size: "lg" })}>
-                <ImagePlus data-icon="inline-start" />
-                Publicar
+              {/* Vender y comprar (ADR-065): el panel de la tienda es la acción primaria de quien
+                  vende; quien aún no vende ve la invitación sin el color primario. */}
+              <Link
+                href="/studio"
+                className={buttonVariants({
+                  variant: profile.isSeller ? "default" : "secondary",
+                  size: "lg",
+                })}
+              >
+                <LayoutDashboard data-icon="inline-start" />
+                {profile.isSeller ? "Panel" : "Vender"}
+              </Link>
+              <Link
+                href="/pedidos"
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
+              >
+                <ReceiptText data-icon="inline-start" />
+                Mis compras
               </Link>
               <Link
                 href="/perfil/editar"
-                className={buttonVariants({ variant: "outline", size: "lg" })}
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
               >
                 <PenLine data-icon="inline-start" />
                 Editar perfil
               </Link>
-              <Link href="/studio" className={buttonVariants({ variant: "outline", size: "lg" })}>
-                <LayoutDashboard data-icon="inline-start" />
-                Studio
-              </Link>
-              <SignOutButton />
+              <SignOutButton collapseOnDesktop />
             </>
           ) : (
             <>
@@ -199,6 +227,15 @@ export function ProfileHeader({
                   className="h-9"
                 />
               ) : null}
+              {hasShop ? (
+                <Link
+                  href={`${base}?ver=tienda` as Route}
+                  className={buttonVariants({ variant: "secondary", size: "lg" })}
+                >
+                  <Store data-icon="inline-start" />
+                  Ver tienda
+                </Link>
+              ) : null}
               <ShareButton
                 path={path}
                 title={profile.displayName}
@@ -211,7 +248,7 @@ export function ProfileHeader({
         </div>
 
         {people || communities ? (
-          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground lg:col-span-2">
             {inCommon.people.length > 0 ? (
               <span aria-hidden="true" className="flex shrink-0 -space-x-2">
                 {inCommon.people.slice(0, 3).map((person) => (
