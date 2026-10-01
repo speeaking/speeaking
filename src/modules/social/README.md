@@ -8,6 +8,12 @@ por IP a publicar, comentar, like, guardar, seguir, unirse, compartir y a las p�
 Comentar el mismo texto dos veces seguidas en la misma publicación se rechaza. Seguir y unirse solo
 revalidan el layout social cuando la relación cambió de verdad.
 
+**Reacciones (ADR-054).** `reactions.ts` (las seis, su orden, `topReactions`, `applyReaction`
+optimista), `reaction-summary.ts` (`reactionTops`: un `groupBy` por lote de publicaciones) y
+`components/reaction-button.tsx` (la tira: presión larga, cursor, flecha arriba o «Elegir reacción»).
+`reactAction(postId, kind | null)` sustituye a `toggleLikeAction`; `Like.kind` guarda el tipo y
+`Post.likeCount` cuenta todas.
+
 **Abrir en capa (ADR-052).** `components/post-detail.tsx` es el cuerpo de una publicación; lo pintan
 `/p/[id]` (página completa) y `@modal/(.)p/[id]` (capa sobre el feed, `RouteModal`). «Me gusta» vive en
 `PostCard` y lo disparan la barra y el doble toque sobre la foto (`MediaCarousel.onDoubleTap`); al

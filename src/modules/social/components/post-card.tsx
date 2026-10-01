@@ -51,8 +51,10 @@ import type {
   FeedMediaDTO,
   ProductAvailability,
 } from "@/modules/feed/dto";
-import { type ToggleResult, toggleLikeAction, toggleSaveAction } from "../actions";
+import { type ReactResult, reactAction, type ToggleResult, toggleSaveAction } from "../actions";
 import { recordShareAction } from "../interaction-actions";
+import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
+import { ReactionButton, reactionLabel } from "./reaction-button";
 
 type Post = FeedItemDTO;
 type Product = NonNullable<Post["product"]>;
@@ -116,6 +118,50 @@ function useToggle(
       }
     });
   return [optimistic, toggle] as const;
+}
+
+/**
+ * Reacciones (ADR-054) con estado optimista: `react(kind)` pone esa reacción (repetir la que ya
+ * está la quita), `toggle()` es el toque simple (❤️ o quitar la puesta). El servidor devuelve el
+ * estado real (reacción, total y resumen); con `count` negativo (carrera entre dos toques) se
+ * conserva lo que ya había.
+ */
+function useReaction(
+  initial: ReactionState,
+  action: (kind: ReactionKind | null) => Promise<ReactResult>,
+) {
+  const router = useRouter();
+  const [confirmed, setConfirmed] = useState(initial);
+  const [optimistic, setOptimistic] = useOptimistic(confirmed);
+  const [, startTransition] = useTransition();
+
+  const react = (kind: ReactionKind | null) =>
+    startTransition(async () => {
+      const next = kind === optimistic.kind ? null : kind;
+      setOptimistic(applyReaction(optimistic, next));
+      // Micro-respuesta (ADR-052): un «clic» en el pulgar al reaccionar; nunca al quitar.
+      if (next !== null) tapHaptic();
+      const result = await action(next);
+      if (result.ok) {
+        setConfirmed(
+          result.count >= 0
+            ? { kind: result.kind, count: result.count, top: result.top }
+            : { ...confirmed, kind: result.kind },
+        );
+      } else if (result.needsAuth) {
+        toast(result.error, {
+          action: {
+            label: "Entrar",
+            onClick: () =>
+              router.push(`/entrar?next=${encodeURIComponent(window.location.pathname)}` as Route),
+          },
+        });
+      } else {
+        toast.error(result.error);
+      }
+    });
+  const toggle = () => react(optimistic.kind ?? "LIKE");
+  return [optimistic, react, toggle] as const;
 }
 
 // ─────────────────────────────── Piezas pequeñas ───────────────────────────────
@@ -527,11 +573,6 @@ function ProductBlock({
 const actionClass =
   "inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground motion-reduce:transition-none md:h-9 md:min-w-0";
 
-/** "Me gusta" o "Me gusta, 3": el nombre no cambia al presionar (eso lo dice aria-pressed). */
-function withCount(label: string, count: number) {
-  return count > 0 ? `${label}, ${formatCompactNumber(count)}` : label;
-}
-
 /**
  * Acciones. En escritorio llevan texto; en móvil solo el ícono (y el número si no es cero). Una
  * persona visitante no tiene toggles: «Me gusta» y «Guardar» la llevan a crear su cuenta.
@@ -539,16 +580,21 @@ function withCount(label: string, count: number) {
 function ActionBar({
   post,
   isSignedIn,
-  like,
-  toggleLike,
+  reaction,
+  onReact,
+  toggleReaction,
   compact = false,
   onPostPage = false,
 }: {
   post: Post;
   isSignedIn: boolean;
-  /** Estado y acción de «Me gusta»: viven en la tarjeta porque el doble toque en la foto también lo da. */
-  like: Toggle;
-  toggleLike: () => void;
+  /**
+   * Estado y acciones de reaccionar (ADR-054): viven en la tarjeta porque el doble toque en la
+   * foto también da ❤️.
+   */
+  reaction: ReactionState;
+  onReact: (kind: ReactionKind) => void;
+  toggleReaction: () => void;
   /**
    * En la página de la publicación «Comentar» es un ancla nativa (`#comentar`): dispara
    * `hashchange` y el formulario toma el foco (Link cambia la URL sin ese evento).
@@ -598,28 +644,6 @@ function ActionBar({
     }
   };
 
-  const likeContent = (
-    <>
-      {/* La `key` lo vuelve a montar al activarse: la animación corre cada vez, no solo la primera. */}
-      <Heart
-        key={like.active ? "on" : "off"}
-        aria-hidden="true"
-        className={cn(
-          "size-5 motion-safe:transition-transform motion-safe:active:scale-125",
-          like.active && "fill-current motion-safe:animate-pop",
-        )}
-      />
-      <span className={primaryLabel}>Me gusta</span>
-      {like.count > 0 ? (
-        <span
-          key={like.count}
-          className="tabular-nums motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in motion-safe:slide-in-from-bottom-1"
-        >
-          {formatCompactNumber(like.count)}
-        </span>
-      ) : null}
-    </>
-  );
   const commentLabel =
     comments > 0 ? `Comentar, ${formatCount(comments, "comentario", "comentarios")}` : "Comentar";
   const commentContent = (
@@ -639,18 +663,20 @@ function ActionBar({
   return (
     <footer className="-mx-2 flex items-center gap-0.5">
       {isSignedIn ? (
-        <button
-          type="button"
-          onClick={toggleLike}
-          aria-pressed={like.active}
-          aria-label={withCount("Me gusta", like.count)}
-          className={cn(control, like.active && "text-primary-text hover:text-primary-text")}
-        >
-          {likeContent}
-        </button>
+        <ReactionButton
+          state={reaction}
+          onReact={onReact}
+          onToggle={toggleReaction}
+          className={control}
+          labelClassName={primaryLabel}
+        />
       ) : (
-        <Link href={signUp} aria-label={withCount("Me gusta", like.count)} className={control}>
-          {likeContent}
+        <Link href={signUp} aria-label={reactionLabel(reaction)} className={control}>
+          <Heart aria-hidden="true" className="size-5" />
+          <span className={primaryLabel}>Me gusta</span>
+          {reaction.count > 0 ? (
+            <span className="tabular-nums">{formatCompactNumber(reaction.count)}</span>
+          ) : null}
         </Link>
       )}
       {onPostPage ? (
@@ -745,13 +771,14 @@ export function PostCard({
   const community = post.community;
   const product = post.product;
   const isSale = post.type === "PRODUCT" || product !== null;
-  const [like, toggleLike] = useToggle({ active: post.viewer.liked, count: post.stats.likes }, () =>
-    toggleLikeAction(post.id),
+  const [reaction, react, toggleReaction] = useReaction(
+    { kind: post.viewer.reaction, count: post.stats.likes, top: post.stats.reactions },
+    (kind) => reactAction(post.id, kind),
   );
-  // Doble toque sobre la foto (vista abierta): da «me gusta», nunca lo quita (ADR-052).
+  // Doble toque sobre la foto (vista abierta): da ❤️ si no hay reacción, nunca la quita (ADR-052).
   const likeByDoubleTap = isSignedIn
     ? () => {
-        if (!like.active) toggleLike();
+        if (reaction.kind === null) react("LIKE");
       }
     : undefined;
   const images = post.media.map((media, mediaIndex) => ({
@@ -816,8 +843,9 @@ export function PostCard({
               post={post}
               isSignedIn={isSignedIn}
               compact
-              like={like}
-              toggleLike={toggleLike}
+              reaction={reaction}
+              onReact={react}
+              toggleReaction={toggleReaction}
             />
             {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
           </div>
@@ -841,7 +869,13 @@ export function PostCard({
           {post.body}
         </p>
         <div className="flex flex-col gap-2">
-          <ActionBar post={post} isSignedIn={isSignedIn} like={like} toggleLike={toggleLike} />
+          <ActionBar
+            post={post}
+            isSignedIn={isSignedIn}
+            reaction={reaction}
+            onReact={react}
+            toggleReaction={toggleReaction}
+          />
           {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
         </div>
       </article>
@@ -895,8 +929,9 @@ export function PostCard({
         post={post}
         isSignedIn={isSignedIn}
         onPostPage={expanded}
-        like={like}
-        toggleLike={toggleLike}
+        reaction={reaction}
+        onReact={react}
+        toggleReaction={toggleReaction}
       />
       {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
     </article>

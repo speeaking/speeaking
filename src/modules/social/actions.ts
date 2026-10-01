@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
-import { Surface } from "@/generated/prisma/enums";
+import { ReactionKind, Surface } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
+import { reactionTops } from "./reaction-summary";
 import { createPostSchema } from "./schemas";
 
 export type ToggleResult =
@@ -34,41 +35,96 @@ function isNotFound(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
 }
 
-/** Like / quitar like (idempotente; el contador se ajusta en la misma transacción). */
-export async function toggleLikeAction(
+export type ReactResult =
+  | { ok: true; kind: ReactionKind | null; count: number; top: ReactionKind[] }
+  | { ok: false; error: string; needsAuth?: boolean };
+
+const reactionSchema = z.enum(ReactionKind).nullable();
+
+/**
+ * Reaccionar a una publicación (ADR-054): una reacción por persona. Repetir la misma la quita (y
+ * `null` también); otra distinta la cambia sin mover el total. El contador y el resumen se calculan
+ * en la misma transacción. Quitar funciona aunque la publicación ya no esté visible.
+ */
+export async function reactAction(
   postId: string,
+  kind: ReactionKind | null,
   surface: Surface = "FEED",
-): Promise<ToggleResult> {
+): Promise<ReactResult> {
   const viewer = await getViewer();
   if (!viewer) return AUTH_REQUIRED;
   if (!id.safeParse(postId).success) return { ok: false, error: "Publicación inválida." };
+  const parsed = reactionSchema.safeParse(kind);
+  if (!parsed.success) return { ok: false, error: "Reacción inválida." };
+  const next = parsed.data;
   const limited = await checkSocialLimit("like", viewer.userId);
   if (!limited.ok) return { ok: false, error: limited.error };
 
   const key = { userId: viewer.userId, postId };
+  const likeCount = { select: { likeCount: true } } as const;
   try {
     const result = await db.$transaction(async (tx) => {
-      const removed = await tx.like.deleteMany({ where: key });
-      const post = await tx.post.update({
-        where: { id: postId, status: "PUBLISHED" },
-        data: { likeCount: removed.count > 0 ? { decrement: 1 } : { increment: 1 } },
-        select: { likeCount: true },
+      const existing = await tx.like.findUnique({
+        where: { userId_postId: key },
+        select: { kind: true },
       });
-      if (removed.count === 0) await tx.like.create({ data: key });
-      return { active: removed.count === 0, count: post.likeCount };
+      const previous = existing?.kind ?? null;
+      let count: number;
+      let active: ReactionKind | null;
+      if (previous !== null && (next === null || next === previous)) {
+        await tx.like.delete({ where: { userId_postId: key } });
+        const post = await tx.post.update({
+          where: { id: postId },
+          data: { likeCount: { decrement: 1 } },
+          ...likeCount,
+        });
+        count = post.likeCount;
+        active = null;
+      } else if (previous !== null && next !== null) {
+        await tx.like.update({ where: { userId_postId: key }, data: { kind: next } });
+        const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
+        count = post.likeCount;
+        active = next;
+      } else if (next !== null) {
+        const post = await tx.post.update({
+          where: { id: postId, status: "PUBLISHED" },
+          data: { likeCount: { increment: 1 } },
+          ...likeCount,
+        });
+        await tx.like.create({ data: { ...key, kind: next } });
+        count = post.likeCount;
+        active = next;
+      } else {
+        const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
+        count = post.likeCount;
+        active = null;
+      }
+      const top = (await reactionTops(tx, [postId])).get(postId) ?? [];
+      return { previous, kind: active, count, top };
     });
-    track({
-      type: result.active ? "LIKE" : "UNLIKE",
-      userId: viewer.userId,
-      entityType: "POST",
-      entityId: postId,
-      sourcePostId: postId,
-      surface: surfaceSchema.parse(surface),
-    });
-    return { ok: true, ...result };
+    if (result.kind !== result.previous) {
+      const reaction = result.kind ?? result.previous;
+      track({
+        type: result.kind ? "LIKE" : "UNLIKE",
+        userId: viewer.userId,
+        entityType: "POST",
+        entityId: postId,
+        sourcePostId: postId,
+        surface: surfaceSchema.parse(surface),
+        metadata: {
+          ...(reaction ? { reaction } : {}),
+          ...(result.kind && result.previous && result.previous !== result.kind
+            ? { replaced: result.previous }
+            : {}),
+        },
+      });
+    }
+    return { ok: true, kind: result.kind, count: result.count, top: result.top };
   } catch (error) {
-    if (isUniqueViolation(error)) return { ok: true, active: true, count: -1 };
-    return { ok: false, error: "No pudimos registrar tu like. Intenta de nuevo." };
+    // Dos toques a la vez: el segundo pierde la carrera y la interfaz conserva lo que ya tenía.
+    if (isUniqueViolation(error)) return { ok: true, kind: next, count: -1, top: [] };
+    if (isNotFound(error)) return { ok: false, error: "Esta publicación ya no está disponible." };
+    return { ok: false, error: "No pudimos registrar tu reacción. Intenta de nuevo." };
   }
 }
 

@@ -64,8 +64,9 @@ const row: FeedPostRow = {
     seller: { acceptedPaymentMethods: ["CARD"] },
     media: [media("product/1.webp")],
   },
-  likes: [{ userId: "yo" }],
+  likes: [{ kind: "LIKE" }],
   saves: [],
+  reactions: ["LIKE"],
 };
 
 const publicUrl = (key: string) => `/media/${key}`;
@@ -105,7 +106,8 @@ describe("toFeedItem (el costo nunca llega al navegador)", () => {
       facts: { shippingPriceCents: 9_900, returnWindowDays: 7, warrantyDays: 90 },
     });
     expect(dto.author.isSeller).toBe(true);
-    expect(dto.viewer).toEqual({ liked: true, saved: false, withinBudget: false });
+    expect(dto.viewer).toEqual({ reaction: "LIKE", saved: false, withinBudget: false });
+    expect(dto.stats.reactions).toEqual(["LIKE"]);
     // Una venta muestra las fotos actuales del producto, no la copia de la publicación.
     expect(dto.media.map((item) => item.url)).toEqual(["/media/product/1.webp"]);
   });

@@ -4,11 +4,11 @@ import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FeedItemDTO } from "@/modules/feed/dto";
 import { tapHaptic } from "@/lib/haptics";
-import { toggleLikeAction, toggleSaveAction } from "../actions";
+import { reactAction, toggleSaveAction } from "../actions";
 import { PostCard } from "./post-card";
 
 // Las acciones reales viven en el servidor (base de datos, sesión): aquí se simulan.
-vi.mock("../actions", () => ({ toggleLikeAction: vi.fn(), toggleSaveAction: vi.fn() }));
+vi.mock("../actions", () => ({ reactAction: vi.fn(), toggleSaveAction: vi.fn() }));
 vi.mock("../interaction-actions", () => ({ recordShareAction: vi.fn() }));
 // Micro-respuestas (ADR-052): la vibración y los avisos se observan, no se ejecutan.
 vi.mock("@/lib/haptics", () => ({ tapHaptic: vi.fn() }));
@@ -54,8 +54,8 @@ function post(overrides: Partial<FeedItemDTO> = {}): FeedItemDTO {
     community: null,
     media: photos(3),
     product: null,
-    stats: { likes: 0, comments: 0, saves: 0 },
-    viewer: { liked: false, saved: false, withinBudget: false },
+    stats: { likes: 0, comments: 0, saves: 0, reactions: [] },
+    viewer: { reaction: null, saved: false, withinBudget: false },
     ranking: null,
     ...overrides,
   };
@@ -266,7 +266,12 @@ describe("PostCard: contadores y acciones", () => {
   });
 
   it("con números los incluye en el nombre y muestra «¿Qué opinas?»", () => {
-    render(<PostCard post={post({ stats: { likes: 3, comments: 2, saves: 0 } })} isSignedIn />);
+    render(
+      <PostCard
+        post={post({ stats: { likes: 3, comments: 2, saves: 0, reactions: [] } })}
+        isSignedIn
+      />,
+    );
 
     expect(screen.getByRole("button", { name: "Me gusta, 3" })).toHaveTextContent("3");
     expect(screen.getByRole("link", { name: "Comentar, 2 comentarios" })).toBeInTheDocument();
@@ -276,20 +281,69 @@ describe("PostCard: contadores y acciones", () => {
     );
   });
 
-  it("dar like cambia aria-pressed y el número sin cambiar el nombre del botón", async () => {
-    vi.mocked(toggleLikeAction).mockResolvedValue({ ok: true, active: true, count: 4 });
-    render(<PostCard post={post({ stats: { likes: 3, comments: 0, saves: 0 } })} isSignedIn />);
+  it("un toque da ❤️: cambia aria-pressed y el número sin cambiar el nombre del botón", async () => {
+    vi.mocked(reactAction).mockResolvedValue({ ok: true, kind: "LIKE", count: 4, top: ["LIKE"] });
+    render(
+      <PostCard
+        post={post({ stats: { likes: 3, comments: 0, saves: 0, reactions: [] } })}
+        isSignedIn
+      />,
+    );
 
     await userEvent.click(screen.getByRole("button", { name: "Me gusta, 3" }));
 
     const like = await screen.findByRole("button", { name: "Me gusta, 4" });
     expect(like).toHaveAttribute("aria-pressed", "true");
-    expect(toggleLikeAction).toHaveBeenCalledWith(POST_ID);
+    expect(reactAction).toHaveBeenCalledWith(POST_ID, "LIKE");
+  });
+
+  it("elegir otra reacción de la tira la manda al servidor y el botón la muestra (ADR-054)", async () => {
+    vi.mocked(reactAction).mockResolvedValue({
+      ok: true,
+      kind: "HAHA",
+      count: 4,
+      top: ["LIKE", "HAHA"],
+    });
+    render(
+      <PostCard
+        post={post({ stats: { likes: 3, comments: 0, saves: 0, reactions: ["LIKE"] } })}
+        isSignedIn
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Elegir reacción" }));
+    await userEvent.click(screen.getByRole("button", { name: "Me divierte" }));
+
+    const button = await screen.findByRole("button", { name: "Me divierte, 4" });
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).toHaveTextContent("😂");
+    expect(reactAction).toHaveBeenCalledWith(POST_ID, "HAHA");
+  });
+
+  it("tocar el botón con una reacción puesta la quita", async () => {
+    vi.mocked(reactAction).mockResolvedValue({ ok: true, kind: null, count: 2, top: ["LIKE"] });
+    render(
+      <PostCard
+        post={post({
+          stats: { likes: 3, comments: 0, saves: 0, reactions: ["LIKE", "WOW"] },
+          viewer: { reaction: "WOW", saved: false, withinBudget: false },
+        })}
+        isSignedIn
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Me asombra, 3" }));
+
+    expect(await screen.findByRole("button", { name: "Me gusta, 2" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(reactAction).toHaveBeenCalledWith(POST_ID, null);
   });
 
   it("guardar y compartir tienen nombres fijos; guardar indica su estado", () => {
     render(
-      <PostCard post={post({ viewer: { liked: false, saved: true, withinBudget: false } })} />,
+      <PostCard post={post({ viewer: { reaction: null, saved: true, withinBudget: false } })} />,
     );
 
     expect(screen.getByRole("button", { name: "Guardar" })).toHaveAttribute("aria-pressed", "true");
@@ -298,7 +352,10 @@ describe("PostCard: contadores y acciones", () => {
 
   it("una visitante va directo a crear su cuenta, sin toggles", () => {
     render(
-      <PostCard post={post({ stats: { likes: 3, comments: 1, saves: 0 } })} isSignedIn={false} />,
+      <PostCard
+        post={post({ stats: { likes: 3, comments: 1, saves: 0, reactions: [] } })}
+        isSignedIn={false}
+      />,
     );
 
     const like = screen.getByRole("link", { name: "Me gusta, 3" });
@@ -315,7 +372,7 @@ describe("PostCard: contadores y acciones", () => {
     );
     // Son enlaces, no toggles: no hay estado optimista que revertir.
     expect(screen.queryByRole("button", { name: /Me gusta|Guardar/ })).not.toBeInTheDocument();
-    expect(toggleLikeAction).not.toHaveBeenCalled();
+    expect(reactAction).not.toHaveBeenCalled();
     expect(toggleSaveAction).not.toHaveBeenCalled();
   });
 
@@ -412,7 +469,7 @@ describe("PostCard: producto (P4)", () => {
     expect(screen.queryByText("En tu presupuesto")).not.toBeInTheDocument();
 
     rerender(
-      <PostCard post={sale({ viewer: { liked: false, saved: false, withinBudget: true } })} />,
+      <PostCard post={sale({ viewer: { reaction: null, saved: false, withinBudget: true } })} />,
     );
     expect(screen.getByText("En tu presupuesto")).toBeInTheDocument();
   });
@@ -527,7 +584,10 @@ describe("PostCard: variantes", () => {
       <PostCard
         variant="cover"
         isSignedIn
-        post={post({ community: gaming, stats: { likes: 3, comments: 2, saves: 0 } })}
+        post={post({
+          community: gaming,
+          stats: { likes: 3, comments: 2, saves: 0, reactions: [] },
+        })}
       />,
     );
 
@@ -581,7 +641,7 @@ describe("PostCard: variantes", () => {
 
 describe("PostCard: micro-respuestas (ADR-052)", () => {
   it("al dar «me gusta» el corazón salta, vibra una vez y el número entra animado", async () => {
-    vi.mocked(toggleLikeAction).mockResolvedValue({ ok: true, active: true, count: 1 });
+    vi.mocked(reactAction).mockResolvedValue({ ok: true, kind: "LIKE", count: 1, top: ["LIKE"] });
     render(<PostCard post={post()} />);
     const like = screen.getByRole("button", { name: "Me gusta" });
     expect(like.querySelector("svg")).not.toHaveClass("motion-safe:animate-pop");
@@ -595,12 +655,12 @@ describe("PostCard: micro-respuestas (ADR-052)", () => {
   });
 
   it("quitar el «me gusta» no vibra ni anima el corazón", async () => {
-    vi.mocked(toggleLikeAction).mockResolvedValue({ ok: true, active: false, count: 2 });
+    vi.mocked(reactAction).mockResolvedValue({ ok: true, kind: null, count: 2, top: ["LIKE"] });
     render(
       <PostCard
         post={post({
-          stats: { likes: 3, comments: 0, saves: 0 },
-          viewer: { liked: true, saved: false, withinBudget: false },
+          stats: { likes: 3, comments: 0, saves: 0, reactions: [] },
+          viewer: { reaction: "LIKE", saved: false, withinBudget: false },
         })}
       />,
     );

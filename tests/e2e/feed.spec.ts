@@ -33,6 +33,24 @@ test.describe("feed", () => {
     await like.click();
     await expect(like).toHaveAttribute("aria-pressed", "true");
 
+    // Reacciones (ADR-054): la tira también se abre desde el teclado con «Elegir reacción»; la
+    // elegida se queda en el botón y sobrevive a la recarga.
+    await page.getByRole("button", { name: "Elegir reacción" }).first().focus();
+    await page.keyboard.press("Enter");
+    await page
+      .getByRole("group", { name: "Reacciones" })
+      .getByRole("button", { name: "Me divierte" })
+      .click();
+    await expect(page.getByRole("button", { name: /^Me divierte/ }).first()).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await page.reload();
+    await expect(page.getByRole("button", { name: /^Me divierte/ }).first()).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
     // Red social primero: en Crear, compartir va antes que vender.
     await page.goto("/crear");
     const createOptions = page

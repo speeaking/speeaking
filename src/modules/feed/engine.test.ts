@@ -58,7 +58,7 @@ beforeEach(() => {
       ids.map((id) => ({
         id,
         product: null,
-        viewer: { liked: false, saved: false, withinBudget: false },
+        viewer: { reaction: null, saved: false, withinBudget: false },
       })) as never,
   );
 });

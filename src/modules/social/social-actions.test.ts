@@ -6,9 +6,15 @@ const db = vi.hoisted(() => {
     communityMembership: { findUnique: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
     community: { update: vi.fn(), findUniqueOrThrow: vi.fn() },
     savedItem: { deleteMany: vi.fn(), create: vi.fn() },
-    post: { update: vi.fn() },
+    post: { update: vi.fn(), findUniqueOrThrow: vi.fn() },
     product: { update: vi.fn() },
-    like: { deleteMany: vi.fn(), create: vi.fn() },
+    like: {
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      update: vi.fn(),
+      create: vi.fn(),
+      groupBy: vi.fn(),
+    },
   };
   return {
     tx,
@@ -33,7 +39,7 @@ vi.mock("./limits", () => ({ checkSocialLimit }));
 
 const { toggleFollowAction } = await import("./follow-actions");
 const { toggleMembershipAction } = await import("./community-actions");
-const { createCommentAction, createPostAction, toggleLikeAction, toggleSaveAction } =
+const { createCommentAction, createPostAction, reactAction, toggleSaveAction } =
   await import("./actions");
 const { recordShareAction } = await import("./interaction-actions");
 
@@ -54,6 +60,7 @@ beforeEach(() => {
   db.follow.createMany.mockResolvedValue({ count: 1 });
   db.tx.communityMembership.createMany.mockResolvedValue({ count: 1 });
   checkSocialLimit.mockResolvedValue({ ok: true });
+  db.tx.like.groupBy.mockResolvedValue([]);
 });
 
 const LIMITED = {
@@ -254,11 +261,116 @@ describe("toggleSaveAction", () => {
   });
 });
 
+describe("reactAction (ADR-054)", () => {
+  const where = { userId_postId: { userId: VIEWER, postId: TARGET } };
+
+  it("reaccionar por primera vez crea la reacción, suma uno y registra LIKE con el tipo", async () => {
+    db.tx.like.findUnique.mockResolvedValue(null);
+    db.tx.post.update.mockResolvedValue({ likeCount: 4 });
+    db.tx.like.groupBy.mockResolvedValue([
+      { postId: TARGET, kind: "LIKE", _count: { _all: 3 } },
+      { postId: TARGET, kind: "HAHA", _count: { _all: 1 } },
+    ]);
+
+    await expect(reactAction(TARGET, "HAHA")).resolves.toEqual({
+      ok: true,
+      kind: "HAHA",
+      count: 4,
+      top: ["LIKE", "HAHA"],
+    });
+    expect(db.tx.post.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: TARGET, status: "PUBLISHED" },
+        data: { likeCount: { increment: 1 } },
+      }),
+    );
+    expect(db.tx.like.create).toHaveBeenCalledWith({
+      data: { userId: VIEWER, postId: TARGET, kind: "HAHA" },
+    });
+    expect(track).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "LIKE", metadata: { reaction: "HAHA" } }),
+    );
+  });
+
+  it("repetir la misma reacción la quita, resta uno y registra UNLIKE", async () => {
+    db.tx.like.findUnique.mockResolvedValue({ kind: "HAHA" });
+    db.tx.post.update.mockResolvedValue({ likeCount: 3 });
+
+    await expect(reactAction(TARGET, "HAHA")).resolves.toEqual({
+      ok: true,
+      kind: null,
+      count: 3,
+      top: [],
+    });
+    expect(db.tx.like.delete).toHaveBeenCalledWith({ where });
+    // Quitar funciona aunque la publicación ya no esté visible (como en guardados).
+    expect(db.tx.post.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: TARGET }, data: { likeCount: { decrement: 1 } } }),
+    );
+    expect(track).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "UNLIKE", metadata: { reaction: "HAHA" } }),
+    );
+  });
+
+  it("cambiar de reacción actualiza el tipo sin mover el contador y lo dice en el evento", async () => {
+    db.tx.like.findUnique.mockResolvedValue({ kind: "LIKE" });
+    db.tx.post.findUniqueOrThrow.mockResolvedValue({ likeCount: 5 });
+
+    await expect(reactAction(TARGET, "WOW")).resolves.toMatchObject({
+      ok: true,
+      kind: "WOW",
+      count: 5,
+    });
+    expect(db.tx.like.update).toHaveBeenCalledWith({ where, data: { kind: "WOW" } });
+    expect(db.tx.post.update).not.toHaveBeenCalled();
+    expect(track).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "LIKE", metadata: { reaction: "WOW", replaced: "LIKE" } }),
+    );
+  });
+
+  it("quitar (null) sin reacción previa no toca el contador ni registra nada", async () => {
+    db.tx.like.findUnique.mockResolvedValue(null);
+    db.tx.post.findUniqueOrThrow.mockResolvedValue({ likeCount: 2 });
+
+    await expect(reactAction(TARGET, null)).resolves.toEqual({
+      ok: true,
+      kind: null,
+      count: 2,
+      top: [],
+    });
+    expect(db.tx.post.update).not.toHaveBeenCalled();
+    expect(db.tx.like.delete).not.toHaveBeenCalled();
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("solo se reacciona a publicaciones PUBLISHED", async () => {
+    db.tx.like.findUnique.mockResolvedValue(null);
+    db.tx.post.update.mockRejectedValue(prismaError("P2025"));
+
+    await expect(reactAction(TARGET, "LIKE")).resolves.toEqual({
+      ok: false,
+      error: "Esta publicación ya no está disponible.",
+    });
+    expect(db.tx.like.create).not.toHaveBeenCalled();
+  });
+
+  it("un tipo de reacción desconocido (llega del cliente) se rechaza sin tocar la base", async () => {
+    await expect(reactAction(TARGET, "PULGAR" as unknown as "LIKE")).resolves.toEqual({
+      ok: false,
+      error: "Reacción inválida.",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+});
+
 describe("límites de frecuencia (SEC-15)", () => {
   it("like, guardar, seguir y unirse: con el límite agotado no tocan la base", async () => {
     checkSocialLimit.mockResolvedValue(LIMITED);
 
-    await expect(toggleLikeAction(TARGET)).resolves.toEqual({ ok: false, error: LIMITED.error });
+    await expect(reactAction(TARGET, "LIKE")).resolves.toEqual({
+      ok: false,
+      error: LIMITED.error,
+    });
     await expect(toggleSaveAction({ postId: TARGET })).resolves.toEqual({
       ok: false,
       error: LIMITED.error,
@@ -327,12 +439,12 @@ describe("límites de frecuencia (SEC-15)", () => {
 
 describe("argumentos que llegan del cliente (SEC-38)", () => {
   it("una superficie desconocida se registra como FEED en lugar de romper el evento", async () => {
+    db.tx.like.findUnique.mockResolvedValue(null);
     db.tx.post.update.mockResolvedValue({ likeCount: 1 });
-    db.tx.like.deleteMany.mockResolvedValue({ count: 0 });
 
     await expect(
-      toggleLikeAction(TARGET, "'; DROP TABLE" as unknown as "FEED"),
-    ).resolves.toMatchObject({ ok: true, active: true });
+      reactAction(TARGET, "LIKE", "'; DROP TABLE" as unknown as "FEED"),
+    ).resolves.toMatchObject({ ok: true, kind: "LIKE" });
     expect(track).toHaveBeenCalledWith(expect.objectContaining({ type: "LIKE", surface: "FEED" }));
   });
 });

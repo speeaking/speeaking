@@ -441,12 +441,23 @@ model PostMedia {
   @@map("post_media")
 }
 
+/// Reacciones (ADR-054): una por persona y publicación; `Post.likeCount` las cuenta todas.
+enum ReactionKind {
+  LIKE
+  CARE
+  HAHA
+  WOW
+  SAD
+  ANGRY
+}
+
 model Like {
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postId    String   @db.Uuid
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String       @db.Uuid
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  kind      ReactionKind @default(LIKE)
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
 
   @@id([userId, postId])
   @@index([postId])

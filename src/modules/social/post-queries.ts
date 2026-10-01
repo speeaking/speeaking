@@ -1,4 +1,5 @@
 import "server-only";
+import { reactionTops } from "./reaction-summary";
 import { type FeedItemDTO, toFeedItem } from "@/modules/feed/dto";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
@@ -87,16 +88,21 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
           media: mediaLinks,
         },
       },
-      likes: { where: { userId: viewer }, select: { userId: true } },
+      likes: { where: { userId: viewer }, select: { kind: true } },
       saves: { where: { userId: viewer }, select: { id: true } },
     },
   });
+  // Resumen de reacciones de toda la página en una consulta (ADR-054).
+  const reactions = await reactionTops(
+    db,
+    rows.map((row) => row.id),
+  );
 
   const storage = getStorage();
   const publicUrl = (storageKey: string) => storage.publicUrl(storageKey);
   const byId = new Map(
     rows.flatMap((row): [string, FeedItemDTO][] => {
-      const item = toFeedItem(row, publicUrl);
+      const item = toFeedItem({ ...row, reactions: reactions.get(row.id) ?? [] }, publicUrl);
       return item ? [[row.id, item]] : [];
     }),
   );

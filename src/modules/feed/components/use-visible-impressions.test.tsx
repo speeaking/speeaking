@@ -199,8 +199,8 @@ describe("FeedList mide lo servido por el ranking", () => {
       community: null,
       media: [],
       product: null,
-      stats: { likes: 0, comments: 0, saves: 0 },
-      viewer: { liked: false, saved: false, withinBudget: false },
+      stats: { likes: 0, comments: 0, saves: 0, reactions: [] },
+      viewer: { reaction: null, saved: false, withinBudget: false },
       ranking:
         position === null
           ? null

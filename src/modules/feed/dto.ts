@@ -3,6 +3,7 @@ import type {
   PaymentMethod,
   PostType,
   ProductStatus,
+  ReactionKind,
   SellerStatus,
   WarrantyType,
 } from "@/generated/prisma/enums";
@@ -66,9 +67,17 @@ export type FeedItemDTO = {
     /** Datos verificables (P4) para la fila de envío, devoluciones y garantía. */
     facts: ProductFacts;
   } | null;
-  stats: { likes: number; comments: number; saves: number };
+  stats: {
+    /** Total de reacciones de todos los tipos (ADR-054). */
+    likes: number;
+    comments: number;
+    saves: number;
+    /** Resumen: los tipos de reacción más usados, de mayor a menor (hasta 3). */
+    reactions: ReactionKind[];
+  };
   viewer: {
-    liked: boolean;
+    /** La reacción de quien mira; `null` si no ha reaccionado. */
+    reaction: ReactionKind | null;
     saved: boolean;
     /**
      * El precio cabe en el presupuesto que la persona declaró para este tipo de producto.
@@ -172,8 +181,11 @@ export type FeedPostRow = {
     seller: { acceptedPaymentMethods: PaymentMethod[] };
     media: { media: MediaRow }[];
   } | null;
-  likes: readonly unknown[];
+  /** Reacción de quien mira (filtrada por su id en la consulta): a lo más una fila. */
+  likes: readonly { kind: ReactionKind }[];
   saves: readonly unknown[];
+  /** Resumen de reacciones de la publicación (`reactionTops`), ya ordenado. */
+  reactions: readonly ReactionKind[];
 };
 
 export function productAvailability(status: ProductStatus, stock: number): ProductAvailability {
@@ -290,8 +302,17 @@ export function toFeedItem(
           },
         }
       : null,
-    stats: { likes: row.likeCount, comments: row.commentCount, saves: row.saveCount },
-    viewer: { liked: row.likes.length > 0, saved: row.saves.length > 0, withinBudget: false },
+    stats: {
+      likes: row.likeCount,
+      comments: row.commentCount,
+      saves: row.saveCount,
+      reactions: [...row.reactions],
+    },
+    viewer: {
+      reaction: row.likes[0]?.kind ?? null,
+      saved: row.saves.length > 0,
+      withinBudget: false,
+    },
     ranking: null,
   };
 }

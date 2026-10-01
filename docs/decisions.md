@@ -1450,3 +1450,34 @@ columna derecha, que en teléfono no existe; de cookies solo había una frase en
 
 **Consecuencias.** Pruebas unitarias de la página y E2E del pie. Pendiente legal: la revisión del
 abogado de los tres textos antes del lanzamiento (siguen marcados como borrador).
+
+## ADR-054 · Reacciones además de «me gusta»
+
+**Contexto.** El fundador pidió (2026-09-30) reaccionar con más que un corazón: una noticia triste,
+un chisme que da risa o algo que indigna no se expresan con «me gusta», y Facebook, la referencia de
+la gente, lleva años con reacciones.
+
+**Decisión.**
+
+- Seis reacciones en orden fijo: ❤️ Me gusta · 🤗 Me importa · 😂 Me divierte · 😮 Me asombra ·
+  😢 Me entristece · 😡 Me enoja. Emojis del sistema (gratis y se ven como el teclado de cada quien);
+  una por persona y publicación.
+- Datos: `Like.kind` (`ReactionKind`, por omisión LIKE: los «me gusta» existentes no cambian).
+  `Post.likeCount` sigue contando todas las reacciones y el ranking del feed las pesa igual
+  (Facebook puso en cero el peso de «me enoja» en 2021 para no premiar la indignación; queda como
+  perilla futura en `ranking.ts`). El resumen (hasta tres tipos más usados) sale de un `groupBy` por
+  lote (`reactionTops`), no se denormaliza.
+- Una sola acción, `reactAction(postId, kind | null)`: repetir la misma la quita, otra la cambia sin
+  mover el total; quitar funciona aunque la publicación ya no esté visible. Evento `LIKE`/`UNLIKE`
+  con `metadata.reaction` (y `replaced` al cambiar); mismo límite de frecuencia que «like».
+- Interfaz: un toque da ❤️ (o quita la puesta); dejar presionado (teléfono) o pasar el cursor
+  (escritorio) abre la tira; con teclado, flecha arriba o el botón «Elegir reacción»
+  (`aria-expanded`). El botón muestra la reacción elegida y, junto al número, el resumen de la
+  publicación cuando hay reacciones distintas del corazón. El doble toque sobre la foto sigue dando
+  ❤️ y nunca quita.
+- Fuera por ahora: reacciones en comentarios, lista de «quién reaccionó» y emoji libre (fragmenta el
+  resumen y lo vuelve ruido).
+
+**Consecuencias.** Migración `post_reactions`; `FeedItemDTO.viewer.reaction` sustituye a `liked` y
+`stats.reactions` trae el resumen (también en `/api/feed`, sin datos personales). Pruebas unitarias
+(módulo puro, acción, botón y tarjeta) y E2E del feed.
