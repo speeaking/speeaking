@@ -44,12 +44,6 @@ async function publishIn(page: Page, community: Community, body: string) {
   await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/, { timeout: 45_000 });
 }
 
-/** Burbuja de filtro de la comunidad (móvil y escritorio): el conteo va en su nombre. */
-const bubble = (page: Page, community: Community) =>
-  page
-    .getByRole("group", { name: "Filtra tu feed" })
-    .getByRole("button", { name: new RegExp(`^${community.name}\\b`) });
-
 /** Fila de «Tus comunidades» en la columna izquierda (solo escritorio). */
 const railRow = (page: Page, community: Community) =>
   page
@@ -57,25 +51,15 @@ const railRow = (page: Page, community: Community) =>
     .getByRole("link", { name: new RegExp(`^${community.name}\\b`) });
 
 /**
- * Lo que la persona ve y oye con una publicación nueva (o ninguna, con `null`): «1 nueva» en la
- * burbuja y, en escritorio, también en la columna, cuyo nombre accesible lo dice sin abreviar.
+ * Lo que la persona ve y oye con una publicación nueva (o ninguna, con `null`): «1 nueva» en la fila
+ * de la columna izquierda, cuyo nombre accesible lo dice sin abreviar. Sin la fila de burbujas
+ * (ADR-050) el conteo solo existe en escritorio.
  */
-async function expectNews(
-  page: Page,
-  community: Community,
-  desktop: boolean,
-  label: "1 nueva" | null,
-) {
-  // La burbuja lleva el conteo en texto solo para lectores, con la misma frase que la columna.
-  await expect(bubble(page, community)).toHaveAccessibleName(
+async function expectNews(page: Page, community: Community, label: "1 nueva" | null) {
+  await expect(railRow(page, community)).toHaveAccessibleName(
     label ? `${community.name}, 1 publicación nueva` : community.name,
   );
-  if (desktop) {
-    await expect(railRow(page, community)).toHaveAccessibleName(
-      label ? `${community.name}, 1 publicación nueva` : community.name,
-    );
-    if (label) await expect(railRow(page, community)).toContainText(label);
-  }
+  if (label) await expect(railRow(page, community)).toContainText(label);
 }
 
 test.describe("novedades por comunidad", () => {
@@ -85,13 +69,15 @@ test.describe("novedades por comunidad", () => {
   }, testInfo) => {
     test.setTimeout(180_000);
     const desktop = testInfo.project.name === "desktop";
+    // Sin fila de burbujas (ADR-050), en móvil el conteo no tiene dónde verse en el inicio.
+    test.skip(!desktop, "el conteo «N nuevas» solo se ve en la columna de escritorio");
     const community = COMMUNITY[desktop ? "desktop" : "mobile"];
 
     // Quien lee: miembro de la comunidad desde el onboarding; todavía no hay nada nuevo.
     const reader = uniqueUser();
     await register(page, reader);
     await onboardInto(page, reader, community);
-    await expectNews(page, community, desktop, null);
+    await expectNews(page, community, null);
 
     // Otra cuenta publica ahí. Lo propio nunca es «nuevo» para quien lo publicó.
     const author = await newAuthor(browser, community);
@@ -101,10 +87,10 @@ test.describe("novedades por comunidad", () => {
       "Novedad de prueba (F7): ¿quién más viene al encuentro del sábado?",
     );
     await author.page.goto("/");
-    await expectNews(author.page, community, desktop, null);
+    await expectNews(author.page, community, null);
 
     await page.reload();
-    await expectNews(page, community, desktop, "1 nueva");
+    await expectNews(page, community, "1 nueva");
 
     // Abrir la comunidad la marca como vista.
     if (desktop) {
@@ -128,7 +114,7 @@ test.describe("novedades por comunidad", () => {
     // Y el servidor lo recuerda: con la página recién cargada ya no aparece.
     await expect(async () => {
       await page.goto("/");
-      await expectNews(page, community, desktop, null);
+      await expectNews(page, community, null);
     }).toPass({ timeout: 20_000 });
 
     // Lo que llega después de la visita vuelve a ser nuevo.
@@ -138,7 +124,7 @@ test.describe("novedades por comunidad", () => {
       "Otra novedad de prueba (F7): ya hay fecha para el siguiente.",
     );
     await page.reload();
-    await expectNews(page, community, desktop, "1 nueva");
+    await expectNews(page, community, "1 nueva");
 
     await author.context.close();
   });

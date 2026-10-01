@@ -1336,3 +1336,23 @@ fundador aprobó «registro y login con Google» (2026-09-29).
 redirección `<APP_URL>/api/auth/callback/google`, orígenes autorizados). La prueba E2E cubre el
 estado sin credenciales; el flujo real se prueba a mano al configurarlas. Siguiente: llaves de
 acceso (passkeys) con el plugin de Better Auth.
+
+## ADR-050 · Inicio sin la fila de burbujas
+
+**Contexto.** La fila de burbujas (F5) arriba del feed («Para ti», «Siguiendo» y una por comunidad,
+con sugerencias «+» y el conteo «N nuevas» de F7) era el filtro del inicio. El fundador pidió quitarla
+(2026-09-30): el inicio debe abrir directo en lo que la gente comparte, sin una franja de navegación
+encima.
+
+**Decisión.**
+
+- El inicio pinta el encabezado «Para ti», el compositor (o la bienvenida) y el feed. Se retiran
+  `CommunityBubbles`, `HomeFeed`, `feed-filter.ts` y `getHomeBubbles`.
+- Las comunidades se abren desde la columna izquierda (escritorio), Descubrir (móvil) y los chips de
+  cada publicación: `/c/[slug]` tiene su propio feed, y la columna conserva el conteo «N nuevas».
+- «Siguiendo» queda sin entrada en la interfaz por ahora; `/api/feed?following=1` sigue existiendo
+  para cuando tenga un lugar (p. ej., la columna izquierda).
+
+**Consecuencias.** En móvil, «N nuevas» por comunidad deja de verse en el inicio (la columna izquierda
+es de escritorio). El inicio hace menos consultas por visita. Pruebas: `home.spec` sin burbujas y
+`novedades.spec` verifica el conteo solo en la columna de escritorio.

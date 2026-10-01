@@ -1,27 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { hydratePosts } from "@/modules/social/post-queries";
-import type { FeedItemDTO, HomeBubblesDTO, HomeCommunityDTO, WelcomeMomentDTO } from "./dto";
+import type { FeedItemDTO, HomeCommunityDTO, WelcomeMomentDTO } from "./dto";
 import * as queries from "./queries";
-
-/** Sugerencias con «+» en la fila de burbujas (F5). */
-export const MAX_SUGGESTED_BUBBLES = 4;
 
 const allCommunities = cache(() => queries.listCommunitiesInOrder());
 const joinedCommunities = cache((userId: string) => queries.listJoinedCommunities(userId));
-
-/** Burbujas del inicio: filtros (tus comunidades o todas) y sugerencias en el orden curado. */
-export async function getHomeBubbles(viewerId: string | null): Promise<HomeBubblesDTO> {
-  if (!viewerId) return { filters: await allCommunities(), suggested: [] };
-  const [all, joined] = await Promise.all([allCommunities(), joinedCommunities(viewerId)]);
-  const joinedIds = new Set(joined.map((community) => community.id));
-  return {
-    filters: joined,
-    suggested: all
-      .filter((community) => !joinedIds.has(community.id))
-      .slice(0, MAX_SUGGESTED_BUBBLES),
-  };
-}
 
 /** Todas las comunidades: los chips de «Arma tu feed» para visitantes. */
 export function getJoinableCommunities(): Promise<HomeCommunityDTO[]> {

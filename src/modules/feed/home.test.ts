@@ -10,8 +10,7 @@ vi.mock("./queries", () => ({
 vi.mock("@/modules/social/post-queries", () => ({ hydratePosts: vi.fn(async () => []) }));
 
 const queries = await import("./queries");
-const { firstNameOf, getHomeBubbles, getMoreFromCommunity, getWelcomeMoment } =
-  await import("./home");
+const { firstNameOf, getMoreFromCommunity, getWelcomeMoment } = await import("./home");
 
 const community = (slug: string) => ({
   id: `id-${slug}`,
@@ -27,33 +26,6 @@ const all = ["humor", "gaming", "tecnologia", "comida", "musica", "deportes", "m
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(queries.listCommunitiesInOrder).mockResolvedValue(all);
-});
-
-describe("getHomeBubbles", () => {
-  it("con sesión: sus comunidades filtran y hasta 4 sugeridas (sin las suyas)", async () => {
-    vi.mocked(queries.listJoinedCommunities).mockResolvedValue([
-      community("gaming"),
-      community("comida"),
-    ]);
-
-    const bubbles = await getHomeBubbles("viewer-1");
-
-    expect(bubbles.filters.map((c) => c.slug)).toEqual(["gaming", "comida"]);
-    expect(bubbles.suggested.map((c) => c.slug)).toEqual([
-      "humor",
-      "tecnologia",
-      "musica",
-      "deportes",
-    ]);
-  });
-
-  it("sin sesión: todas las comunidades filtran y no hay sugeridas", async () => {
-    const bubbles = await getHomeBubbles(null);
-
-    expect(bubbles.filters).toHaveLength(all.length);
-    expect(bubbles.suggested).toEqual([]);
-    expect(queries.listJoinedCommunities).not.toHaveBeenCalled();
-  });
 });
 
 describe("getWelcomeMoment", () => {

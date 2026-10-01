@@ -98,14 +98,6 @@ export type HomeCommunityDTO = {
   hue: number;
 };
 
-/** Burbujas del inicio (F5). */
-export type HomeBubblesDTO = {
-  /** Burbujas que filtran el feed. Con sesión: sus comunidades. Sin sesión: todas. */
-  filters: HomeCommunityDTO[];
-  /** Con sesión: hasta 4 comunidades a las que aún no se une, con «+» (abren la comunidad). */
-  suggested: HomeCommunityDTO[];
-};
-
 /** «¡Listo, Sofía!» después del onboarding. */
 export type WelcomeMomentDTO = {
   firstName: string;

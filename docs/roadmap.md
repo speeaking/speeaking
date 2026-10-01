@@ -62,7 +62,7 @@ Detalle en [`design/rediseno-revista.md`](design/rediseno-revista.md).
 | F2 · PostCard v2 con contadores honestos y tarjeta de producto P4                                     | ✅     |
 | F3 · Variantes al pintar (portada, tipográfica, estándar)                                             | ✅     |
 | F4 · Columna derecha con datos reales (debates, comunidades en movimiento, lo que buscas)             | ✅     |
-| F5 · Burbujas de comunidades y compositor                                                             | ✅     |
+| F5 · Compositor (la fila de burbujas se retiró el 2026-09-30, ADR-050)                                | ✅     |
 | F6 · Visitantes: bienvenida, invitaciones en contexto y `?unirse=`                                    | ✅     |
 | F6b · «Gente de tus comunidades»: datos, ajuste de privacidad, columna y carrusel en el feed          | ✅     |
 | F7 · Novedades por comunidad («N nuevas»)                                                             | ✅     |

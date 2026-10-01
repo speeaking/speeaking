@@ -1,16 +1,8 @@
-import { expect, type Page, test } from "@playwright/test";
-import { completeOnboarding, register, registerAndOnboard, uniqueUser } from "./helpers";
-
-/** Filtro de burbujas: botón con aria-pressed dentro del grupo «Filtra tu feed». */
-/** Burbuja de filtro por nombre; tolera «, 1 publicación nueva» si otra prueba publicó ahí. */
-function bubble(page: Page, name: string) {
-  return page
-    .getByRole("group", { name: "Filtra tu feed" })
-    .getByRole("button", { name: new RegExp(`^${name}(,|$)`) });
-}
+import { expect, test } from "@playwright/test";
+import { completeOnboarding, register, uniqueUser } from "./helpers";
 
 test.describe("inicio: visitante", () => {
-  test("sin banner rosa: el feed empieza arriba con su subtítulo y burbujas", async ({ page }) => {
+  test("sin banner rosa: el feed empieza arriba con su subtítulo", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
@@ -18,9 +10,6 @@ test.describe("inicio: visitante", () => {
     await expect(
       page.getByText("Descubre contenido, productos y personas de tu comunidad."),
     ).toHaveCount(0);
-    await expect(bubble(page, "Para ti")).toHaveAttribute("aria-pressed", "true");
-    // El visitante no sigue a nadie: no hay «Siguiendo».
-    await expect(bubble(page, "Siguiendo")).toHaveCount(0);
   });
 
   test("«Arma tu feed» aparece después de la 2.ª publicación solo sin columna derecha", async ({
@@ -52,24 +41,6 @@ test.describe("inicio: visitante", () => {
     );
   });
 
-  test("con mouse, la flecha de las burbujas llega a las que no caben", async ({
-    page,
-    isMobile,
-  }) => {
-    test.skip(isMobile, "En táctil la fila se desliza con el dedo: no hay flechas.");
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-    const group = page.getByRole("group", { name: "Filtra tu feed" });
-    const row = group.locator("ul");
-    // Las 12 comunidades del visitante no caben en la columna de 680 px.
-    const arrow = group.locator("button[aria-hidden='true']");
-    await expect(arrow).toHaveCount(1);
-    await arrow.click();
-    await expect.poll(() => row.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
-    // Ya hay algo a la izquierda: aparece la flecha de regreso.
-    await expect(group.locator("button[data-side='before']")).toBeVisible();
-  });
-
   test("una publicación compartida invita a unirse a su comunidad", async ({ page }) => {
     await page.goto("/");
     await page.locator('main article a[href^="/p/"]').first().click();
@@ -89,33 +60,6 @@ test.describe("inicio: visitante", () => {
 });
 
 test.describe("inicio: con sesión", () => {
-  test("las burbujas filtran el feed por comunidad y regresan a «Para ti»", async ({ page }) => {
-    // El onboarding del helper elige Gaming, Tecnología y Comida.
-    await registerAndOnboard(page);
-    await page.waitForLoadState("networkidle");
-
-    await expect(bubble(page, "Para ti")).toHaveAttribute("aria-pressed", "true");
-    await expect(bubble(page, "Siguiendo")).toBeVisible();
-    await expect(page.getByRole("region", { name: "Crear publicación" })).toBeVisible();
-
-    await bubble(page, "Comida").click();
-    await expect(bubble(page, "Comida")).toHaveAttribute("aria-pressed", "true");
-    await expect(bubble(page, "Para ti")).toHaveAttribute("aria-pressed", "false");
-
-    // Todas las piezas son de Comida (su chip o su cabecera enlazan a la comunidad).
-    const articles = page.locator("main article");
-    await expect(articles.first()).toBeVisible();
-    const fromComida = await articles.evaluateAll((nodes) =>
-      nodes.slice(0, 5).map((node) => node.querySelector('a[href="/c/comida"]') !== null),
-    );
-    expect(fromComida.length).toBeGreaterThan(0);
-    expect(fromComida.every(Boolean)).toBe(true);
-
-    await bubble(page, "Para ti").click();
-    await expect(bubble(page, "Para ti")).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("region", { name: "Crear publicación" })).toBeVisible();
-  });
-
   test("/registro?unirse=gaming llega al onboarding con Gaming ya marcada", async ({ page }) => {
     const user = uniqueUser();
     await page.goto("/registro?unirse=gaming");

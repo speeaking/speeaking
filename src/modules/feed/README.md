@@ -31,18 +31,18 @@ comercial configurable (ADR-008). Registra impresiones con posición, puntuació
 
 **Inicio (F5–F6b, ola C).**
 
-- `HomeFeed` junta las burbujas (`CommunityBubbles`) y el feed. Tocar una burbuja filtra con
-  `/api/feed?community=` o `?following=1` sin salir de la página. «Siguiendo» (`FeedRequest.following`)
-  reutiliza a quién sigue la persona desde su contexto; sin sesión, o si no sigue a nadie, la página
-  viene vacía (nunca se rellena).
-- Las burbujas aceptan `unread` (communityId → nuevas), que pintan solo si es > 0. Los datos llegan
-  con F7.
+- El inicio pinta el encabezado «Para ti», lo que va antes del feed (compositor, bienvenida) y
+  `FeedList` con la primera página del servidor. La fila de burbujas se retiró (ADR-050): las
+  comunidades se abren desde la columna izquierda, Descubrir y los chips de cada publicación
+  (`/c/[slug]`). «Siguiendo» (`/api/feed?following=1`, `FeedRequest.following`) sigue en la API sin
+  entrada en la interfaz; sin sesión, o si no sigue a nadie, la página viene vacía (nunca se rellena).
 - `getHomeFirstPage` (`first-page.ts`) guarda la primera página de «Para ti» con `cache()` por
   request. La columna derecha la usa para no repetir en «Lo que buscas» un producto que ya está en
   el feed (`dedupe.ts`).
 - `FeedList` intercala bloques (`slots`) sin tocar las posiciones del ranking:
   - «Arma tu feed» del visitante, después de la 2.ª pieza (`xl:hidden`);
   - «Gente de tus comunidades», después de la 6.ª.
-- El compositor, la bienvenida («¡Listo, …!», marcada con una cookie breve que se borra al cerrarla; antes era `/?bienvenida=1`, que se quitaba de la URL al
-  mostrarse) y los bloques intercalados solo acompañan a «Para ti».
-- `home.ts` arma las burbujas, el momento de bienvenida y «Más de {comunidad}» para `/p/[id]`.
+- La bienvenida («¡Listo, …!») se marca con una cookie breve que se borra al cerrarla (antes era
+  `/?bienvenida=1`, que se quitaba de la URL al mostrarse).
+- `home.ts` arma el momento de bienvenida, «Más de {comunidad}» para `/p/[id]` y los chips de «Arma tu
+  feed».

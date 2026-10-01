@@ -6,22 +6,15 @@ import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { PeopleSuggestions } from "@/modules/discovery/components/people-suggestions";
 import { Composer } from "@/modules/feed/components/composer";
-import type { FeedSlot } from "@/modules/feed/components/feed-list";
-import { HomeFeed } from "@/modules/feed/components/home-feed";
+import { type FeedSlot, FeedList } from "@/modules/feed/components/feed-list";
 import { VisitorJoinCard } from "@/modules/feed/components/visitor-join-card";
 import { WelcomeCard } from "@/modules/feed/components/welcome-card";
 import { feedDateLabel, localDay } from "@/modules/feed/feed-date";
 import { getHomeFirstPage } from "@/modules/feed/first-page";
-import {
-  firstNameOf,
-  getHomeBubbles,
-  getJoinableCommunities,
-  getWelcomeMoment,
-} from "@/modules/feed/home";
+import { firstNameOf, getJoinableCommunities, getWelcomeMoment } from "@/modules/feed/home";
 import { trackImpressions } from "@/modules/feed/impressions";
 import { WELCOME_COOKIE } from "@/modules/feed/welcome";
 import { getViewer } from "@/modules/identity/session";
-import { getUnreadCounts } from "@/modules/social/unread";
 
 /** «Gente de tus comunidades» entra una vez, después de la 6.ª pieza de la primera página (F6b). */
 const PEOPLE_AFTER = 5;
@@ -57,11 +50,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   // La primera página está en caché por request: la columna derecha la usa para no repetir en
   // «Lo que buscas» un producto que ya está aquí.
-  // `unread` («N nuevas», F7) es la misma consulta que usa la columna izquierda (caché por request).
-  const [page, bubbles, unread, joinable, moment] = await Promise.all([
+  const [page, joinable, moment] = await Promise.all([
     getHomeFirstPage(viewerId),
-    getHomeBubbles(viewerId),
-    viewerId ? getUnreadCounts(viewerId) : undefined,
     viewer ? Promise.resolve([]) : getJoinableCommunities(),
     welcome && viewerId && profile ? getWelcomeMoment(viewerId, profile.displayName) : null,
   ]);
@@ -92,68 +82,63 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       ];
 
   return (
-    <HomeFeed
-      header={<FeedHeader subtitle={viewer ? undefined : "Lo más nuevo de las comunidades"} />}
-      bubbles={bubbles}
-      unread={unread}
-      isSignedIn={viewer !== null}
-      initialPage={page}
-      slots={slots}
-      // Red social primero (principios 1 y 2): arriba del feed va lo que la persona comparte, nunca
-      // una invitación a comprar. El estilista vive en Comprar y en la ficha de las prendas.
-      beforeFeed={
-        <>
-          {cuenta === "eliminada" && !viewer ? (
-            <p
-              role="status"
-              className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border"
-            >
-              Tu cuenta se eliminó. Gracias por probar Estreno; aquí estaremos si vuelves.
-            </p>
-          ) : null}
-          {viewer ? (
-            <>
-              {moment ? <WelcomeCard moment={moment} /> : null}
-              {onboarded && profile ? (
-                <Composer
-                  firstName={firstNameOf(profile.displayName)}
-                  displayName={profile.displayName}
-                  username={profile.username}
-                  avatarUrl={profile.avatarUrl}
-                />
-              ) : (
-                <Link
-                  href="/bienvenida"
-                  className="flex items-center gap-3 border-b bg-card p-4 md:rounded-3xl md:border"
-                >
-                  <CircleUserRound
-                    aria-hidden="true"
-                    className="size-5 shrink-0 text-primary-text"
-                  />
-                  <span className="text-sm">
-                    <span className="font-semibold">Termina tu perfil</span> para que tu feed hable
-                    de lo que te gusta.
-                  </span>
-                </Link>
-              )}
-            </>
-          ) : null}
-        </>
-      }
-      empty={
-        <div className="px-4 pt-4 md:p-0">
-          <EmptyState
-            icon={Compass}
-            title="Aún no hay publicaciones"
-            description="Sé la primera persona en compartir algo con la comunidad."
-            action={
-              <Link href="/crear/publicacion" className={buttonVariants()}>
-                Crear publicación
+    // Sin fila de burbujas (ADR-050): encabezado, lo que la persona comparte y el feed. Red social
+    // primero (principios 1 y 2): arriba del feed nunca va una invitación a comprar; el estilista vive
+    // en Comprar y en la ficha de las prendas.
+    <div className="flex flex-col md:gap-4">
+      <FeedHeader subtitle={viewer ? undefined : "Lo más nuevo de las comunidades"} />
+      <>
+        {cuenta === "eliminada" && !viewer ? (
+          <p role="status" className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border">
+            Tu cuenta se eliminó. Gracias por probar Estreno; aquí estaremos si vuelves.
+          </p>
+        ) : null}
+        {viewer ? (
+          <>
+            {moment ? <WelcomeCard moment={moment} /> : null}
+            {onboarded && profile ? (
+              <Composer
+                firstName={firstNameOf(profile.displayName)}
+                displayName={profile.displayName}
+                username={profile.username}
+                avatarUrl={profile.avatarUrl}
+              />
+            ) : (
+              <Link
+                href="/bienvenida"
+                className="flex items-center gap-3 border-b bg-card p-4 md:rounded-3xl md:border"
+              >
+                <CircleUserRound aria-hidden="true" className="size-5 shrink-0 text-primary-text" />
+                <span className="text-sm">
+                  <span className="font-semibold">Termina tu perfil</span> para que tu feed hable de
+                  lo que te gusta.
+                </span>
               </Link>
-            }
-          />
-        </div>
-      }
-    />
+            )}
+          </>
+        ) : null}
+      </>
+      <div>
+        <FeedList
+          initialPage={page}
+          isSignedIn={viewer !== null}
+          slots={slots}
+          empty={
+            <div className="px-4 pt-4 md:p-0">
+              <EmptyState
+                icon={Compass}
+                title="Aún no hay publicaciones"
+                description="Sé la primera persona en compartir algo con la comunidad."
+                action={
+                  <Link href="/crear/publicacion" className={buttonVariants()}>
+                    Crear publicación
+                  </Link>
+                }
+              />
+            </div>
+          }
+        />
+      </div>
+    </div>
   );
 }
