@@ -105,8 +105,10 @@ export function PostVideo({
 
   return (
     <div
-      className={cn("relative overflow-hidden rounded-2xl bg-foreground", className)}
-      style={{ aspectRatio: aspect }}
+      className={cn("relative mx-auto overflow-hidden rounded-2xl bg-foreground", className)}
+      // Nunca más alto que el 75 % de la pantalla: un video vertical en un teléfono deja ver sus
+      // controles y el texto; se angosta conservando su proporción.
+      style={{ aspectRatio: aspect, width: `min(100%, calc(75dvh * ${aspect}))` }}
       data-video=""
     >
       <video
