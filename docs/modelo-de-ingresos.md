@@ -193,3 +193,69 @@ precio.
    en 2025–2026 (entre $30 y $80 MXN según formato y público) [estimación; confirmar con la primera
    campaña propia].
 5. Infraestructura: `docs/plan-90-dias.md` §6.1 y ADR-040.
+
+## 7. Regla del fundador: ninguna función pierde dinero (2026-10-01)
+
+> «No importa si ganamos poco al principio, pero perder: jamás.» Esta sección revisa cada función,
+> las de hoy y las que se están construyendo, y dice qué cuesta cada uso, quién lo paga y qué tope
+> del código impide que cueste más de lo que entra. Cifras **[estimación]** con los precios de la
+> tabla de costos del código (`src/modules/ai/cost.ts`) y precios de lista de 2026.
+
+### 7.1 Las cuatro clases de función
+
+1. **Costo cero por uso** (solo base de datos): se pagan con el costo fijo de la infraestructura.
+2. **Costo de centavos por uso** (IA de texto y visión, guardar fotos y videos): gratis para la
+   gente, pero con cuotas por persona, caché y un **presupuesto mensual que sale de los ingresos**
+   (semilla + porcentaje de lo que entró el mes anterior, con tope duro: `ai.budget`). Si el
+   presupuesto se acaba, la función se apaga sola y queda su versión sin IA. El código **nunca**
+   llama a la IA si el costo máximo de la llamada no cabe (`reserveAiRequest`).
+3. **Costo alto por uso** (imágenes generadas): las paga la tienda **antes** de generarse, a un precio
+   que nunca baja de 1.5 veces el costo (`PRICE_FLOOR_MULTIPLIER`).
+4. **Margen puro** (lugar en pantalla): el destacado no le cuesta nada a la plataforma.
+
+### 7.2 Función por función
+
+| Función                                                                                   | Costo por uso [estimación]                     | Quién paga                        | Qué impide perder                                                                         |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| Publicar, comentar, reaccionar, guardar, seguir, compartir, mensajes, avisos, comunidades | ≈ $0 (filas en la base)                        | Costo fijo                        | Límites de frecuencia por cuenta e IP en cada acción                                      |
+| Fotos de publicaciones, foto de perfil y portada                                          | ≈ US$0.000003 al mes por foto (≈ 0.2 MB en R2) | Costo fijo                        | 10 MB por subida, límites por hora y día, borrado de fotos huérfanas a las 24 h           |
+| Feed, carruseles, perfil, seguidores, panel del vendedor y analítica                      | ≈ $0 (consultas)                               | Costo fijo                        | Consultas agrupadas y paginadas                                                           |
+| «Crea mi look» y «Completa mi look»                                                       | $0 (lo calcula el código)                      | Nadie                             | No usa IA                                                                                 |
+| «¿Qué necesitas?», nombre de los looks, Sube y vende, kit de anuncios                     | US$0.0002 a 0.01 por llamada                   | Presupuesto de IA                 | Cuotas por persona (hora, día, mes), presupuesto mensual, caché de looks por 1 h          |
+| **«Contexto»** (resumen de publicaciones largas, en construcción)                         | ≈ US$0.00015 por publicación, **una sola vez** | Presupuesto de IA                 | Se guarda y se reusa para todos; solo textos largos; límite por persona y tope diario     |
+| **Búsqueda por foto** (en construcción)                                                   | ≈ US$0.0003 por búsqueda                       | Presupuesto de IA                 | Cuota por persona; la foto no se guarda; presupuesto mensual                              |
+| **Videos cortos** (en construcción)                                                       | ≈ US$0.0005 al mes por video de 30 MB en R2    | Costo fijo                        | 60 s y 50 MB máximo, videos por día por cuenta, servidos directo de R2 (salida sin costo) |
+| «Ver cómo me veo»                                                                         | ≈ US$0.07 (≈ $1.26) por imagen                 | **La tienda**, antes de generarse | Precio ≥ 1.5 × costo; cortesía de 10 por tienda con tope diario de US$5                   |
+| Producto destacado                                                                        | $0                                             | La tienda ($15 al día)            | Es margen                                                                                 |
+| Recargas de saldo                                                                         | ≈ 4 % + IVA del procesador                     | Sale del margen                   | Recarga mínima de $99                                                                     |
+
+Conclusión: **ninguna función con costo variable corre sin quién la pague o sin un tope que salga de
+lo que ya entró.** Las nuevas (Contexto, búsqueda por foto y videos) entran con sus topes desde el
+primer día, como las de la tabla.
+
+### 7.3 Lo único que sale antes de la primera venta: el costo fijo
+
+| Servicio                                             | Al mes [estimación; confirmar al contratar] |
+| ---------------------------------------------------- | ------------------------------------------- |
+| Vercel Pro (el plan gratis no permite uso comercial) | ≈ US$20                                     |
+| Neon (base de datos)                                 | $0 hasta 0.5 GB; después, desde ≈ US$19     |
+| Cloudflare R2 (fotos y videos)                       | $0 hasta 10 GB; después, US$0.015 por GB    |
+| Correo transaccional                                 | $0 hasta 3,000 correos al mes               |
+| Dominio estreno.mx                                   | ≈ $40 MXN (≈ $500 MXN al año)               |
+| **Total al arrancar**                                | **≈ $400 MXN al mes**                       |
+
+**Punto de equilibrio:** unos 27 días de destacado al mes, o unas 180 pruebas pagadas de «Ver cómo me
+veo» (margen de ≈ $2.24 cada una en el nivel 1), o una mezcla. Con 10 tiendas que destaquen un
+producto 3 días al mes, el costo fijo queda cubierto.
+
+### 7.4 Decisiones del fundador (dinero, riesgo ALTO)
+
+1. **Semilla del presupuesto de IA.** Hoy es de US$50 al mes (`ai.budget.seedMonthlyUsd`).
+   Recomendación: **US$10** mientras no haya ingresos, y que el resto salga del porcentaje de lo
+   cobrado. Con semilla en **0** no se arriesga nada, pero hasta el primer ingreso las funciones con
+   IA gratis usan su versión sin IA y no hay pruebas de cortesía.
+2. **Porcentaje de ingresos para la IA:** subir de 20 % a 50 % en cuanto haya cobros reales (§4).
+3. **Devolución de saldo no usado:** devolver neto de la comisión del procesador, para que una
+   devolución no cueste dinero (texto para el abogado).
+4. **Tipo de cambio:** revisar `ai.budget.mxnPerUsd` cada mes; el piso de 1.5 × protege aunque el peso
+   se debilite.
