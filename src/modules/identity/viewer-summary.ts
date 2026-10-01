@@ -13,6 +13,8 @@ export type ViewerSummary = {
   cartCount: number;
   /** Conversaciones con mensajes sin leer (ADR-047). */
   unreadMessages: number;
+  /** Avisos sin leer de la campana (ADR-059). */
+  unreadNotifications: number;
   /**
    * Sus comunidades, las más recientes primero (máximo 8). `unread`: publicaciones nuevas desde
    * su última visita («N nuevas», F7), topado en 100 («99+»); se omite cuando no hay.

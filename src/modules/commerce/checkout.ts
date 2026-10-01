@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { DeliveryMethod, PaymentMethod } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
+import { notifyOrders } from "@/modules/notifications/notify";
 import { getCommerceFees } from "@/modules/platform/settings";
 import { db } from "@/server/db";
 import {
@@ -460,6 +461,11 @@ export async function applyPaymentEvent(event: PaymentEventInput): Promise<Apply
   }
 
   if (event.status === "APPROVED") {
+    // Aviso a cada tienda de su pedido nuevo (ADR-059).
+    await notifyOrders(
+      "ORDER_PAID",
+      result.orders.map((order) => order.id),
+    );
     const checkout = await db.checkout.findUnique({
       where: { id: payment.checkoutId },
       select: { buyerId: true },
@@ -661,7 +667,10 @@ export async function advanceOrder(
         ? { status: "SHIPPED", shippedAt: new Date() }
         : { status: "DELIVERED", deliveredAt: new Date() },
   });
-  return updated.count > 0;
+  if (updated.count === 0) return false;
+  // Aviso a quien compró: su pedido salió o se entregó (ADR-059).
+  await notifyOrders(to === "SHIPPED" ? "ORDER_SHIPPED" : "ORDER_DELIVERED", [orderId]);
+  return true;
 }
 
 export type CancelOrderResult = "CANCELLED" | "NOT_ALLOWED" | "REFUND_REQUIRED";
@@ -675,7 +684,7 @@ export async function cancelOrderBySeller(
   sellerUserId: string,
   orderId: string,
 ): Promise<CancelOrderResult> {
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx): Promise<CancelOrderResult> => {
     const order = await tx.order.findFirst({
       where: {
         id: orderId,
@@ -702,4 +711,7 @@ export async function cancelOrderBySeller(
     await restoreStock(tx, order.items);
     return "CANCELLED";
   });
+  // Aviso a quien compró: la tienda canceló su pedido (ADR-059).
+  if (result === "CANCELLED") await notifyOrders("ORDER_CANCELLED", [orderId]);
+  return result;
 }

@@ -49,6 +49,7 @@ const viewer: NonNullable<ViewerSummary> = {
   onboarded: true,
   cartCount: 2,
   unreadMessages: 0,
+  unreadNotifications: 0,
   communities: [
     { slug: "gaming", name: "Gaming", emoji: "🎮", hue: 285 },
     { slug: "deportes", name: "Deportes", emoji: "⚽", hue: 145 },
@@ -176,8 +177,8 @@ describe("SideNav", () => {
 });
 
 describe("TopBar", () => {
-  it("con sesión: búsqueda, Crear, carrito con su número y menú de la cuenta; sin campana", () => {
-    render(<TopBar viewer={viewer} />);
+  it("con sesión: búsqueda, Crear, campana, carrito con su número y menú de la cuenta", () => {
+    render(<TopBar viewer={{ ...viewer!, unreadNotifications: 3 }} />);
 
     expect(screen.getByRole("searchbox", { name: /Buscar comunidades/ })).toHaveAttribute(
       "name",
@@ -188,7 +189,11 @@ describe("TopBar", () => {
       expect(cart).toHaveAccessibleName("Carrito (2)");
     }
     expect(screen.getByRole("button", { name: "Tu cuenta: Sofía Ramos" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Notificaciones|Avisos/ })).toBeNull();
+    // La campana (ADR-059): en móvil y en escritorio, con su número en el nombre.
+    for (const bell of screen.getAllByRole("link", { name: /^Avisos/ })) {
+      expect(bell).toHaveAccessibleName("Avisos (3 sin leer)");
+      expect(bell).toHaveAttribute("href", "/avisos");
+    }
     expect(screen.queryByRole("link", { name: "Únete" })).toBeNull();
   });
 

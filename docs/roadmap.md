@@ -134,18 +134,18 @@ precio comunitario (ADR-044) y Pruébatelo con privacidad de fotos (ADR-045). De
 Corrección de rumbo del fundador (ADR-046): red social primero, quien compra no paga por verse con
 una prenda, la columna derecha es publicidad y cada beneficio para tiendas se cobra desde un saldo.
 
-| Entregable                                                                                                                                                    | Estado |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| «Ver cómo me veo» en un paso desde la ficha: foto, simulación, comprar y «Agrégale…» en un diálogo                                                            | ✅     |
-| Quien vende paga: tienda → cortesía de Estreno (10 por tienda) → demanda registrada; saldo solo de tiendas                                                    | ✅     |
-| Recargas Arranque / Impulso / Tienda pro; `/studio/saldo` con pruebas, demanda y movimientos                                                                  | ✅     |
-| Producto destacado: días desde el saldo, bloque «Patrocinado» en la columna derecha, ficha y Comprar                                                          | ✅     |
-| Columna izquierda plegable (escritorio)                                                                                                                       | ✅     |
-| Mensajes privados entre personas (bandeja, hilo, no leídos, reportar)                                                                                         | ✅     |
-| Apoyos voluntarios (`SUPPORT_URL`), `/apoya` con costos transparentes y `/seguridad`; borrar mi cuenta desde Ajustes; columnas pegadas a los bordes (ADR-048) | ✅     |
-| Entrar con Google (código listo; se enciende con las credenciales del fundador, ADR-049); passkeys después                                                    | ✅     |
-| Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)                                                        | ⏳     |
-| Centro de avisos (me gusta, comentarios, seguidores, mensajes), como la campana de Facebook                                                                   | ⏳     |
+| Entregable                                                                                                                                                    | Estado     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| «Ver cómo me veo» en un paso desde la ficha: foto, simulación, comprar y «Agrégale…» en un diálogo                                                            | ✅         |
+| Quien vende paga: tienda → cortesía de Estreno (10 por tienda) → demanda registrada; saldo solo de tiendas                                                    | ✅         |
+| Recargas Arranque / Impulso / Tienda pro; `/studio/saldo` con pruebas, demanda y movimientos                                                                  | ✅         |
+| Producto destacado: días desde el saldo, bloque «Patrocinado» en la columna derecha, ficha y Comprar                                                          | ✅         |
+| Columna izquierda plegable (escritorio)                                                                                                                       | ✅         |
+| Mensajes privados entre personas (bandeja, hilo, no leídos, reportar)                                                                                         | ✅         |
+| Apoyos voluntarios (`SUPPORT_URL`), `/apoya` con costos transparentes y `/seguridad`; borrar mi cuenta desde Ajustes; columnas pegadas a los bordes (ADR-048) | ✅         |
+| Entrar con Google (código listo; se enciende con las credenciales del fundador, ADR-049); passkeys después                                                    | ✅         |
+| Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)                                                        | ⏳         |
+| Centro de avisos (me gusta, comentarios, seguidores, mensajes), como la campana de Facebook                                                                   | ✅ ADR-059 |
 
 ### Ecosistema de IA por fases (plan del fundador, 2026-09-29)
 
@@ -159,6 +159,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Carrusel de productos en el feed: patrocinados, búsqueda declarada o comunidades, más vendidos, populares, novedades (ADR-051)                                 | ✅                                                                                               |
 | Detalles que se sienten: publicación en capa sobre el feed, foto que viaja a la ficha, «me gusta» que salta y vibra, doble toque, carrito como panel (ADR-052) | ✅                                                                                               |
 | Página de cookies y pie legal también en teléfono (ADR-053)                                                                                                    | ✅                                                                                               |
+| Campana de avisos: reacciones, comentarios, seguidores y pedidos, agrupados como Facebook (ADR-059)                                                            | ✅                                                                                               |
 | Editar perfil con portada propia y foto; listas de seguidores y seguidos (ADR-058)                                                                             | ✅                                                                                               |
 | Comentarios en panel que sube desde abajo y mosaico de varias fotos como Facebook (ADR-057)                                                                    | ✅                                                                                               |
 | Panel del vendedor: semana con tendencia, pendientes, desempeño, embudo y actividad por producto (ADR-056)                                                     | ✅                                                                                               |

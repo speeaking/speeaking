@@ -52,6 +52,8 @@ export type PipelineDeps = {
   deleteExpiredTryOnMedia?: (
     now: Date,
   ) => Promise<{ photos: number; results: number; failedFiles: string[] }>;
+  /** `deleteOldNotifications` de avisos (ADR-059): los de más de 90 días. */
+  deleteOldNotifications?: (now: Date) => Promise<number>;
 };
 
 export type StepResult = { ok: true; summary: unknown } | { ok: false; error: string };
@@ -237,6 +239,13 @@ export async function runDailyPipeline(deps: PipelineDeps): Promise<PipelineSumm
           }
           return { photos, results, failedFiles };
         })
+      : skip(NOT_IN_RUN);
+
+    const notifications = deps.deleteOldNotifications;
+    summary.steps["notifications-retention"] = notifications
+      ? await runJob(client, "notifications-retention", async () => ({
+          deleted: await notifications(now),
+        }))
       : skip(NOT_IN_RUN);
 
     const failed = Object.entries(summary.steps).filter(([, step]) => !step.ok);

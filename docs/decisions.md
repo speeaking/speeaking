@@ -1609,3 +1609,32 @@ presentación ni la foto; en ningún lugar se podía subir una foto de perfil.
 cuenta. Pruebas: esquema y acción (dueño de la foto, fotos privadas, quitar), cabecera, lista
 (unitarias), ruta de medios (foto de perfil pública) y E2E (editar con portada y foto públicas;
 seguir y verlo en la lista).
+
+## ADR-059 · La campana de avisos
+
+**Contexto.** En la mesa desde el 2026-09-30 («centro de avisos, como la campana de Facebook»). Con
+reacciones, comentarios en panel y seguidores, la gente no sabía cuándo alguien interactuaba con lo
+suyo, y las tiendas no sabían que tenían un pedido nuevo hasta abrir el Studio.
+
+**Decisión.**
+
+- **Qué avisa:** alguien reaccionó a tu publicación (con su emoji), la comentó o empezó a seguirte;
+  a quien vende, un pedido pagado; a quien compra, que su pedido salió, se entregó o la tienda lo
+  canceló. Los mensajes privados conservan su propio globo (ADR-047).
+- **Sin ruido:** una reacción por persona y publicación (cambiarla no avisa otra vez; quitarla
+  quita el aviso), un aviso de seguimiento por persona, nada de lo que hace uno mismo, y lo retirado
+  por moderación deja de avisar. Se agrupan como en Facebook: «Ana, Luis y 3 personas más
+  reaccionaron a tu publicación», los comentarios por publicación (citando el más reciente) y los
+  seguidores nuevos del mismo día.
+- **Dónde:** una campana en la barra superior (teléfono y escritorio) con el número de avisos sin
+  leer, que se mece una vez cuando hay nuevos. `/avisos` muestra «Nuevos» y «Anteriores»; cada aviso
+  lleva a donde pasó (la publicación, el panel de comentarios, el perfil o el pedido) y abrir la
+  página los marca leídos.
+- **Datos:** `Notification` (quién recibe, quién causó, tipo, publicación, comentario, pedido,
+  reacción, `dedupeKey`, leído). Se borra con cualquiera de ellos y a los 90 días (operación diaria).
+  Crear un aviso nunca rompe la acción que lo causó.
+
+**Consecuencias.** Migración `notifications`; un conteo más en el resumen de la barra. Para después:
+avisos por correo o push (necesitan proveedor y consentimiento), menciones con @ y ajustes de qué
+avisar. Pruebas: agrupación y textos, lista (unitarias), servicio contra PostgreSQL, acciones que
+avisan y la E2E con dos cuentas.

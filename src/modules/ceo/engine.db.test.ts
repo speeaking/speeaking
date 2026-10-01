@@ -745,12 +745,14 @@ describe("operación diaria", { timeout: 90_000 }, () => {
       const expire = vi.fn(async () => undefined);
       const cleanup = vi.fn(async () => ({ deleted: 0, failedFiles: [] }));
       const redact = vi.fn(async () => 0);
+      const oldNotifications = vi.fn(async () => 3);
       const summary = await runDailyPipeline({
         client: tx,
         now: NOW,
         expireStaleCheckouts: expire,
         deleteOrphanMedia: cleanup,
         redactExpiredAiInputs: redact,
+        deleteOldNotifications: oldNotifications,
       });
       expect(summary.skipped).toBe(false);
       expect(summary.day).toBe(DAY);
@@ -762,6 +764,7 @@ describe("operación diaria", { timeout: 90_000 }, () => {
         "expire-checkouts",
         "orphan-media",
         "ai-input-redaction",
+        "notifications-retention",
       ] as const) {
         expect(summary.steps[step]?.ok).toBe(true);
       }
@@ -774,6 +777,12 @@ describe("operación diaria", { timeout: 90_000 }, () => {
       ).not.toHaveLength(0);
       expect(runs.find((run) => run.job === "ops-daily")?.status).toBe("SUCCEEDED");
       expect(redact).toHaveBeenCalledWith(NOW, 500);
+      // Avisos de más de 90 días (ADR-059).
+      expect(oldNotifications).toHaveBeenCalledWith(NOW);
+      expect(summary.steps["notifications-retention"]).toEqual({
+        ok: true,
+        summary: { deleted: 3 },
+      });
 
       // Otra ejecución mientras una sigue RUNNING se registra como omitida.
       await tx.jobRun.create({ data: { job: "ops-daily", startedAt: NOW } });

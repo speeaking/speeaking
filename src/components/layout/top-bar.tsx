@@ -2,6 +2,7 @@
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import {
+  Bell,
   CircleUser,
   LogOut,
   type LucideIcon,
@@ -56,6 +57,34 @@ function CartLink({ count, className }: { count: number; className?: string }) {
           className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
         >
           {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+/** La campana: avisos sin leer (ADR-059), con el mismo globo que mensajes. */
+function NotificationsLink({ unread, className }: { unread: number; className?: string }) {
+  const label = unread > 0 ? `Avisos (${unread} sin leer)` : "Avisos";
+  return (
+    <Link
+      href="/avisos"
+      aria-label={label}
+      title={label}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" }),
+        className,
+      )}
+    >
+      <Bell
+        className={cn("size-5", unread > 0 && "motion-safe:animate-[bell-ring_1s_ease-in-out_1]")}
+      />
+      {unread > 0 ? (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
+        >
+          {unread > 99 ? "99+" : unread}
         </span>
       ) : null}
     </Link>
@@ -175,9 +204,9 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
 }
 
 /**
- * Barra superior. Móvil: logo, lupa (→ /buscar), tema y carrito (o «Únete»). Escritorio: sobre la
- * misma rejilla que el contenido, logo · búsqueda · «Crear», carrito y avatar (o «Entrar» y
- * «Crear cuenta»). Sin campana: todavía no hay avisos (docs/design/rediseno-revista.md).
+ * Barra superior. Móvil: logo, lupa (→ /buscar), tema, campana, mensajes y carrito (o «Únete»).
+ * Escritorio: sobre la misma rejilla que el contenido, logo · búsqueda · «Crear», campana, mensajes,
+ * carrito y avatar (o «Entrar» y «Crear cuenta»). La campana de avisos llegó con ADR-059.
  */
 export function TopBar({ viewer }: { viewer: ViewerSummary }) {
   return (
@@ -196,6 +225,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
           </span>
           {viewer ? (
             <>
+              <NotificationsLink unread={viewer.unreadNotifications} className="size-11" />
               <MessagesLink unread={viewer.unreadMessages} className="size-11" />
               <CartLink count={viewer.cartCount} className="size-11" />
             </>
@@ -233,6 +263,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
                   <Plus className="size-[18px]" strokeWidth={2.6} />
                   Crear
                 </Link>
+                <NotificationsLink unread={viewer.unreadNotifications} />
                 <MessagesLink unread={viewer.unreadMessages} />
                 <CartLink count={viewer.cartCount} />
                 <AccountMenu viewer={viewer} />

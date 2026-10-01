@@ -41,6 +41,7 @@ const person: NonNullable<ViewerSummary> = {
   onboarded: true,
   cartCount: 0,
   unreadMessages: 0,
+  unreadNotifications: 0,
   communities: [],
 };
 const admin: NonNullable<ViewerSummary> = { ...person, isAdmin: true };

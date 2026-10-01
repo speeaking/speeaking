@@ -8,6 +8,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { ReactionKind, Surface } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
+import {
+  notifyComment,
+  notifyReaction,
+  removeReactionNotification,
+} from "@/modules/notifications/notify";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
@@ -61,7 +66,7 @@ export async function reactAction(
   if (!limited.ok) return { ok: false, error: limited.error };
 
   const key = { userId: viewer.userId, postId };
-  const likeCount = { select: { likeCount: true } } as const;
+  const likeCount = { select: { likeCount: true, authorId: true } } as const;
   try {
     const result = await db.$transaction(async (tx) => {
       const existing = await tx.like.findUnique({
@@ -71,6 +76,7 @@ export async function reactAction(
       const previous = existing?.kind ?? null;
       let count: number;
       let active: ReactionKind | null;
+      let authorId: string;
       if (previous !== null && (next === null || next === previous)) {
         await tx.like.delete({ where: { userId_postId: key } });
         const post = await tx.post.update({
@@ -79,11 +85,13 @@ export async function reactAction(
           ...likeCount,
         });
         count = post.likeCount;
+        authorId = post.authorId;
         active = null;
       } else if (previous !== null && next !== null) {
         await tx.like.update({ where: { userId_postId: key }, data: { kind: next } });
         const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
         count = post.likeCount;
+        authorId = post.authorId;
         active = next;
       } else if (next !== null) {
         const post = await tx.post.update({
@@ -93,14 +101,16 @@ export async function reactAction(
         });
         await tx.like.create({ data: { ...key, kind: next } });
         count = post.likeCount;
+        authorId = post.authorId;
         active = next;
       } else {
         const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
         count = post.likeCount;
+        authorId = post.authorId;
         active = null;
       }
       const top = (await reactionTops(tx, [postId])).get(postId) ?? [];
-      return { previous, kind: active, count, top };
+      return { previous, kind: active, count, top, authorId };
     });
     if (result.kind !== result.previous) {
       const reaction = result.kind ?? result.previous;
@@ -118,6 +128,17 @@ export async function reactAction(
             : {}),
         },
       });
+    }
+    // Aviso a quien publicó (ADR-059): uno por persona; quitar la reacción lo quita.
+    if (result.kind) {
+      await notifyReaction({
+        recipientId: result.authorId,
+        actorId: viewer.userId,
+        postId,
+        reaction: result.kind,
+      });
+    } else if (result.previous) {
+      await removeReactionNotification({ actorId: viewer.userId, postId });
     }
     return { ok: true, kind: result.kind, count: result.count, top: result.top };
   } catch (error) {
@@ -233,19 +254,30 @@ export async function createCommentAction(
   });
   if (last?.body === parsed.data.body) return { error: "Ya publicaste ese comentario." };
 
+  let created: { commentId: string; authorId: string };
   try {
-    await db.$transaction([
+    const [comment, post] = await db.$transaction([
       db.comment.create({
         data: { postId: parsed.data.postId, authorId: viewer.userId, body: parsed.data.body },
+        select: { id: true },
       }),
       db.post.update({
         where: { id: parsed.data.postId, status: "PUBLISHED" },
         data: { commentCount: { increment: 1 } },
+        select: { authorId: true },
       }),
     ]);
+    created = { commentId: comment.id, authorId: post.authorId };
   } catch {
     return { error: "No pudimos publicar tu comentario." };
   }
+  // Aviso a quien publicó (ADR-059).
+  await notifyComment({
+    recipientId: created.authorId,
+    actorId: viewer.userId,
+    postId: parsed.data.postId,
+    commentId: created.commentId,
+  });
   track({
     type: "COMMENT",
     userId: viewer.userId,

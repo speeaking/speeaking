@@ -58,6 +58,9 @@ model User {
   conversationsAsA     Conversation[]        @relation("conversationsAsA")
   conversationsAsB     Conversation[]        @relation("conversationsAsB")
   messagesSent         Message[]             @relation("messagesSent")
+  // Avisos (ADR-059): los que recibe y los que causó.
+  notifications        Notification[]        @relation("notificationsReceived")
+  notificationsCaused  Notification[]        @relation("notificationsCaused")
 
   @@map("users")
 }
@@ -427,10 +430,11 @@ model Post {
   createdAt     DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
 
-  media    PostMedia[]
-  likes    Like[]
-  comments Comment[]
-  saves    SavedItem[]
+  media         PostMedia[]
+  likes         Like[]
+  comments      Comment[]
+  saves         SavedItem[]
+  notifications Notification[]
 
   @@index([status, publishedAt(sort: Desc), id])
   @@index([communityId, status, publishedAt(sort: Desc)])
@@ -491,6 +495,8 @@ model Comment {
   status    CommentStatus @default(PUBLISHED)
   createdAt DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+
+  notifications Notification[]
 
   @@index([postId, createdAt])
   @@map("comments")
@@ -1281,7 +1287,8 @@ model Order {
   createdAt        DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
 
-  items OrderItem[]
+  items         OrderItem[]
+  notifications Notification[]
 
   @@index([sellerId, createdAt(sort: Desc)])
   @@index([buyerId, createdAt(sort: Desc)])
@@ -1587,4 +1594,52 @@ model StyleLook {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("style_looks")
+}
+
+// ─────────────────────────────── Avisos (ADR-059) ───────────────────────────────
+
+enum NotificationType {
+  /// Alguien reaccionó a tu publicación (una por persona y publicación: `dedupeKey`).
+  REACTION
+  /// Alguien comentó tu publicación (uno por comentario).
+  COMMENT
+  /// Alguien empezó a seguirte (uno por persona: `dedupeKey`).
+  FOLLOW
+  /// A quien vende: un pedido pagado (con cobro real o simulado).
+  ORDER_PAID
+  /// A quien compra: su pedido salió, se entregó o la tienda lo canceló.
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+}
+
+/// Un aviso de la campana. Se borra con quien lo recibe, con quien lo causó y con lo que lo causó
+/// (publicación, comentario o pedido); a los 90 días lo borra la operación diaria.
+model Notification {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  recipientId String           @db.Uuid
+  recipient   User             @relation("notificationsReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  actorId     String?          @db.Uuid
+  actor       User?            @relation("notificationsCaused", fields: [actorId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  postId      String?          @db.Uuid
+  post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId   String?          @db.Uuid
+  comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  orderId     String?          @db.Uuid
+  order       Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reaction    ReactionKind?
+  /// Reacción o seguimiento repetido: se renueva el mismo aviso en lugar de duplicarlo.
+  dedupeKey   String?          @unique
+  readAt      DateTime?        @db.Timestamptz(3)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([recipientId, readAt])
+  @@index([actorId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("notifications")
 }

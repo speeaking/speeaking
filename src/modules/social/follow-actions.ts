@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { track } from "@/modules/analytics/track";
 import { getViewer } from "@/modules/identity/session";
+import { notifyFollow, removeFollowNotification } from "@/modules/notifications/notify";
 import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
 
@@ -76,6 +77,11 @@ export async function toggleFollowAction(
   // Seguir cambia el perfil (seguidores), «Siguiendo» del feed y «Gente de tus comunidades» en la
   // columna derecha: se revalida todo el layout social. Solo si algo cambió: repetir el mismo estado
   // en bucle no obliga a volver a renderizar todo (SEC-15).
-  if (changed) revalidatePath("/(social)", "layout");
+  if (changed) {
+    // Aviso a quien ahora te sigue; dejar de seguir lo quita (ADR-059).
+    const notice = { recipientId: parsed.data, actorId: viewer.userId };
+    await (following ? notifyFollow(notice) : removeFollowNotification(notice));
+    revalidatePath("/(social)", "layout");
+  }
   return { ok: true, following };
 }

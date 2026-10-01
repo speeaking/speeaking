@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { completeOnboarding, register, uniqueUser } from "./helpers";
 
+/** Enlaces que abren una publicación: /p/<id> o /p/<id>?foto=N, sin el panel de comentarios. */
+const OPEN_POST = 'main article a[href^="/p/"]:not([href*="/comentarios"])';
+
 test.describe("inicio: visitante", () => {
   test("sin banner rosa: el feed empieza arriba con su subtítulo", async ({ page }) => {
     await page.goto("/");
@@ -58,9 +61,10 @@ test.describe("inicio: visitante", () => {
     page,
   }) => {
     await page.goto("/");
-    const first = page.locator("main article").first();
-    await expect(first).toBeVisible();
-    await first.locator(`a[href^="/p/"]`).first().click();
+    // El enlace que abre la publicación (no «Comentar», que abre el panel de comentarios, ADR-057).
+    const open = page.locator(OPEN_POST).first();
+    await expect(open).toBeVisible();
+    await open.click();
 
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
     const layer = page.getByRole("dialog", { name: "Publicación" });
@@ -105,7 +109,7 @@ test.describe("inicio: visitante", () => {
 
   test("una publicación compartida invita a unirse a su comunidad", async ({ page }) => {
     await page.goto("/");
-    await page.locator('main article a[href^="/p/"]').first().click();
+    await page.locator(OPEN_POST).first().click();
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
 
     const prompt = page.getByRole("region", { name: /^Únete a .+ en Estreno$/ });

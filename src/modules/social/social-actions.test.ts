@@ -22,7 +22,10 @@ const db = vi.hoisted(() => {
     follow: { findUnique: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
     comment: { findFirst: vi.fn(), create: vi.fn() },
     post: { update: vi.fn() },
-    $transaction: vi.fn(async (run: (client: typeof tx) => unknown) => run(tx)),
+    // Función (transacción interactiva) o arreglo de operaciones (transacción por lotes).
+    $transaction: vi.fn(async (run: unknown) =>
+      Array.isArray(run) ? Promise.all(run) : (run as (client: typeof tx) => unknown)(tx),
+    ),
   };
 });
 const revalidatePath = vi.hoisted(() => vi.fn());
@@ -30,12 +33,21 @@ const getViewer = vi.hoisted(() => vi.fn());
 const requireOnboardedViewer = vi.hoisted(() => vi.fn());
 const checkSocialLimit = vi.hoisted(() => vi.fn());
 const track = vi.hoisted(() => vi.fn());
+/** Avisos (ADR-059): se prueban por separado; aquí, que cada acción avise a quien corresponde. */
+const notify = vi.hoisted(() => ({
+  notifyReaction: vi.fn(),
+  removeReactionNotification: vi.fn(),
+  notifyComment: vi.fn(),
+  notifyFollow: vi.fn(),
+  removeFollowNotification: vi.fn(),
+}));
 
 vi.mock("@/server/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath, refresh: vi.fn() }));
 vi.mock("@/modules/identity/session", () => ({ getViewer, requireOnboardedViewer }));
 vi.mock("@/modules/analytics/track", () => ({ track }));
 vi.mock("./limits", () => ({ checkSocialLimit }));
+vi.mock("@/modules/notifications/notify", () => notify);
 
 const { toggleFollowAction } = await import("./follow-actions");
 const { toggleMembershipAction } = await import("./community-actions");
@@ -116,6 +128,12 @@ describe("toggleFollowAction", () => {
     expect(revalidatePath).toHaveBeenCalledTimes(1);
     await expect(toggleFollowAction(OTHER, false)).resolves.toEqual({ ok: true, following: false });
     expect(revalidatePath).toHaveBeenCalledTimes(1);
+    // Dejar de seguir quita el aviso de «empezó a seguirte», una sola vez (ADR-059).
+    expect(notify.removeFollowNotification).toHaveBeenCalledTimes(1);
+    expect(notify.removeFollowNotification).toHaveBeenCalledWith({
+      recipientId: OTHER,
+      actorId: VIEWER,
+    });
   });
 
   it("revalida todo el layout social (perfil, feed y «Gente de tus comunidades»)", async () => {
@@ -124,6 +142,7 @@ describe("toggleFollowAction", () => {
 
     await expect(toggleFollowAction(OTHER)).resolves.toEqual({ ok: true, following: true });
     expect(revalidatePath).toHaveBeenCalledWith("/(social)", "layout");
+    expect(notify.notifyFollow).toHaveBeenCalledWith({ recipientId: OTHER, actorId: VIEWER });
   });
 
   it("un estado que no es booleano (llega del cliente) se rechaza sin tocar la base", async () => {
@@ -266,7 +285,7 @@ describe("reactAction (ADR-054)", () => {
 
   it("reaccionar por primera vez crea la reacción, suma uno y registra LIKE con el tipo", async () => {
     db.tx.like.findUnique.mockResolvedValue(null);
-    db.tx.post.update.mockResolvedValue({ likeCount: 4 });
+    db.tx.post.update.mockResolvedValue({ likeCount: 4, authorId: OTHER });
     db.tx.like.groupBy.mockResolvedValue([
       { postId: TARGET, kind: "LIKE", _count: { _all: 3 } },
       { postId: TARGET, kind: "HAHA", _count: { _all: 1 } },
@@ -290,11 +309,18 @@ describe("reactAction (ADR-054)", () => {
     expect(track).toHaveBeenCalledWith(
       expect.objectContaining({ type: "LIKE", metadata: { reaction: "HAHA" } }),
     );
+    // Aviso a quien publicó (ADR-059).
+    expect(notify.notifyReaction).toHaveBeenCalledWith({
+      recipientId: OTHER,
+      actorId: VIEWER,
+      postId: TARGET,
+      reaction: "HAHA",
+    });
   });
 
   it("repetir la misma reacción la quita, resta uno y registra UNLIKE", async () => {
     db.tx.like.findUnique.mockResolvedValue({ kind: "HAHA" });
-    db.tx.post.update.mockResolvedValue({ likeCount: 3 });
+    db.tx.post.update.mockResolvedValue({ likeCount: 3, authorId: OTHER });
 
     await expect(reactAction(TARGET, "HAHA")).resolves.toEqual({
       ok: true,
@@ -310,6 +336,11 @@ describe("reactAction (ADR-054)", () => {
     expect(track).toHaveBeenCalledWith(
       expect.objectContaining({ type: "UNLIKE", metadata: { reaction: "HAHA" } }),
     );
+    expect(notify.removeReactionNotification).toHaveBeenCalledWith({
+      actorId: VIEWER,
+      postId: TARGET,
+    });
+    expect(notify.notifyReaction).not.toHaveBeenCalled();
   });
 
   it("cambiar de reacción actualiza el tipo sin mover el contador y lo dice en el evento", async () => {
@@ -401,6 +432,23 @@ describe("límites de frecuencia (SEC-15)", () => {
     });
     expect(checkSocialLimit).toHaveBeenCalledWith("comment", VIEWER);
     expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("comentar avisa a quien publicó (ADR-059)", async () => {
+    getViewer.mockResolvedValue({ userId: VIEWER, profile: { onboarded: true } });
+    db.comment.findFirst.mockResolvedValue(null);
+    db.comment.create.mockResolvedValue({ id: "comentario-1" });
+    db.post.update.mockResolvedValue({ authorId: OTHER });
+
+    await expect(createCommentAction({}, commentForm("¡Felicidades!"))).resolves.toEqual({
+      ok: true,
+    });
+    expect(notify.notifyComment).toHaveBeenCalledWith({
+      recipientId: OTHER,
+      actorId: VIEWER,
+      postId: TARGET,
+      commentId: "comentario-1",
+    });
   });
 
   it("comentar dos veces seguidas el mismo texto en la misma publicación se rechaza", async () => {
