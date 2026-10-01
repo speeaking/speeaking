@@ -40,6 +40,14 @@ export default defineConfig({
     // La suite no depende del `.env` de quien la corre: imágenes con el simulador (sin gasto) y sin
     // Entrar con Google. Con cadena vacía, `@next/env` no toma el valor del archivo y el esquema la
     // trata como ausente. En modo dev, si reutiliza un servidor ya abierto, manda el entorno de este.
-    env: { AI_IMAGE_MODEL: "", GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "" },
+    // Y la IA de texto simulada: determinista, sin costo y sin depender del saldo ni de la velocidad
+    // de un proveedor externo (con el saldo agotado, «Sube y vende» fallaba en la suite).
+    env: {
+      AI_PROVIDER: "mock",
+      ALLOW_SIMULATED_AI: "true",
+      AI_IMAGE_MODEL: "",
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
+    },
   },
 });
