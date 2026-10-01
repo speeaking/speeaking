@@ -43,11 +43,18 @@ function inOrder<T extends { id: string }>(ids: string[], rows: T[]) {
 export async function productCardsByIds(
   ids: string[],
   statuses: readonly ProductStatus[] = ["ACTIVE"],
+  options: { excludeUserId?: string | null } = {},
 ): Promise<ProductCardDTO[]> {
   if (ids.length === 0) return [];
   const rows = await db.product.findMany({
     // Nunca los ocultos por moderación (búsqueda y Guardados usan esta misma función).
-    where: { id: { in: ids }, status: { in: [...statuses] }, ...VISIBLE_PRODUCT },
+    where: {
+      id: { in: ids },
+      status: { in: [...statuses] },
+      ...VISIBLE_PRODUCT,
+      // El carrusel del feed no sugiere a nadie lo que esa misma persona vende.
+      ...(options.excludeUserId ? { seller: { userId: { not: options.excludeUserId } } } : {}),
+    },
     select: {
       id: true,
       slug: true,

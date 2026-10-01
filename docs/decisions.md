@@ -1356,3 +1356,38 @@ encima.
 **Consecuencias.** En móvil, «N nuevas» por comunidad deja de verse en el inicio (la columna izquierda
 es de escritorio). El inicio hace menos consultas por visita. Pruebas: `home.spec` sin burbujas y
 `novedades.spec` verifica el conteo solo en la columna de escritorio.
+
+## ADR-051 · Carrusel de productos en el feed
+
+**Contexto.** El fundador pidió (2026-09-30) que, conforme la persona baja por el inicio, aparezcan
+productos en carrusel «según sus búsquedas o preferencias» y que, sin información de la persona, se
+llene con «los más destacados, los más vendidos, los más populares». El inicio es red social
+primero (principios 1 y 2): el comercio entra intercalado, honesto y sin desplazar lo que la gente
+comparte.
+
+**Decisión.**
+
+- **Un carrusel por página del feed**, después de la 4.ª pieza (`PRODUCTS_AFTER`), con 8 productos
+  (`FEED_PRODUCTS_SIZE`); con menos de 3 no se pinta. La primera página lo trae del servidor
+  (`getHomeFirstPage`); las siguientes, en `/api/feed` (`FeedPageDTO.products`). Solo en el inicio:
+  ni en comunidades ni en «Siguiendo».
+- **Orden de llenado** (`composeFeedProducts`, puro y probado): primero hasta 2 patrocinados
+  (`listFeaturedProducts`, siempre con la etiqueta «Patrocinado» y `ref=destacado`), en la 1.ª
+  página y cada tres; luego lo personal: la búsqueda declarada vigente (`findActiveIntent` +
+  `scoreIntentMatch`, misma regla que «Lo que buscas») o, si no hay, productos publicados en sus
+  comunidades; al final los respaldos para quien aún no nos dijo nada: lo más vendido (pedidos
+  pagados, 30 días), populares (vistas de ficha, 7 días) y lo recién publicado. Los respaldos rotan
+  por página y se desplazan para no repetirse al seguir bajando.
+- **Razón escrita, siempre.** El título lo da el tramo que aportó primero («Según tu búsqueda»,
+  «De tus comunidades», «Lo más vendido», «Populares», «Nuevo en Estreno») y debajo va la razón («“lentes
+  de sol” hasta $800», «En los últimos 30 días»…). Nada de «para ti» sin decir por qué (P4, honestidad).
+- **Sin repetidos ni lo propio.** Nunca un producto que ya está en esa página del feed (`dedupe.ts`),
+  ni dos veces en el carrusel, ni productos de la propia persona (`productCardsByIds` con
+  `excludeUserId`). Solo activos, con existencia y visibles (moderación).
+- **El carrusel nunca tumba el feed.** Si su consulta falla, la página va sin él (registro en el
+  servidor).
+
+**Consecuencias.** Las tiendas que pagan «Destacar producto» ganan un lugar más (el carrusel del
+feed) al mismo precio: el precio no cambia (decisión humana). Costo: una consulta de tarjetas y dos o
+tres agregados ligeros por página. Pendiente: medir clics del carrusel por tramo (hoy solo los
+patrocinados llevan `ref`) y la búsqueda por foto como nuevo tramo personal.

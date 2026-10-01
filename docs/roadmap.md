@@ -149,13 +149,14 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 
 ### Ecosistema de IA por fases (plan del fundador, 2026-09-29)
 
-| Fase | Funciones                                                                                        | Estado                     |
-| ---- | ------------------------------------------------------------------------------------------------ | -------------------------- |
-| 1    | Núcleo: proveedores por interfaz, banderas, prompts versionados, costo, caché, cuotas, auditoría | ✅                         |
-| 2    | ¿Qué necesitas?, Crea mi look, Pruébatelo, Completa mi look, coincidencias comprador–producto    | ✅ (matching en Studio ⏳) |
-| 3    | Sube y vende con foto, creativos con imagen, video, agente comercial                             | Banderas apagadas          |
-| 4    | Búsqueda por imagen, comprador IA, regalos, asistente general, feed personalizado                | Banderas apagadas          |
-| 5    | Negociación, tendencias, insights, antifraude, visualizadores de espacios y autos                | Banderas apagadas          |
+| Fase                                                                                                                                                           | Funciones                                                                                        | Estado                     |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------- |
+| 1                                                                                                                                                              | Núcleo: proveedores por interfaz, banderas, prompts versionados, costo, caché, cuotas, auditoría | ✅                         |
+| 2                                                                                                                                                              | ¿Qué necesitas?, Crea mi look, Pruébatelo, Completa mi look, coincidencias comprador–producto    | ✅ (matching en Studio ⏳) |
+| 3                                                                                                                                                              | Sube y vende con foto, creativos con imagen, video, agente comercial                             | Banderas apagadas          |
+| 4                                                                                                                                                              | Búsqueda por imagen, comprador IA, regalos, asistente general, feed personalizado                | Banderas apagadas          |
+| 5                                                                                                                                                              | Negociación, tendencias, insights, antifraude, visualizadores de espacios y autos                | Banderas apagadas          |
+| Carrusel de productos en el feed: patrocinados, búsqueda declarada o comunidades, más vendidos, populares, novedades (ADR-051)                                 | ✅                                                                                               |
 
 ## Sprint 4 — Crecer (fases 13–14) ⏳
 

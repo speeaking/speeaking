@@ -35,6 +35,9 @@ export type FeedRequest = {
   following?: boolean;
 };
 
+/** Piezas por página del feed (el cursor avanza de tanto en tanto). */
+export const FEED_PAGE_LIMIT = 10;
+
 const EMPTY_PAGE: FeedPageDTO = { items: [], nextCursor: null };
 
 /**
@@ -52,7 +55,7 @@ class ExplainableRecommendationEngine implements RecommendationEngine {
   async getFeed({
     viewerId,
     cursor,
-    limit = 10,
+    limit = FEED_PAGE_LIMIT,
     communityId,
     following = false,
   }: FeedRequest): Promise<FeedPageDTO> {

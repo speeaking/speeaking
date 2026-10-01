@@ -5,8 +5,6 @@ import type { Route } from "next";
 import Link from "next/link";
 import {
   type ReactNode,
-  type RefObject,
-  useEffect,
   useId,
   useOptimistic,
   useRef,
@@ -21,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { toggleFollowAction } from "@/modules/social/follow-actions";
 import { dismissSuggestionAction } from "../actions";
 import type { PersonSuggestionDTO } from "../dto";
+import { scrollRow, useScrollEdges } from "@/lib/use-scroll-edges";
 import { RailSection } from "./rail-section";
 
 export type PeopleSuggestionsVariant = "rail" | "feed";
@@ -119,15 +118,7 @@ function FeedCarousel({
   const listId = useId();
   const listRef = useRef<HTMLUListElement>(null);
   const edges = useScrollEdges(listRef, count);
-  const scroll = (direction: -1 | 1) => {
-    const list = listRef.current;
-    if (!list) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    list.scrollBy({
-      left: direction * list.clientWidth * 0.8,
-      behavior: reduceMotion ? "auto" : "smooth",
-    });
-  };
+  const scroll = (direction: -1 | 1) => scrollRow(listRef.current, direction);
   // Flechas solo con puntero fino (en táctil se desliza): 28 px, más que los 24 px de WCAG 2.5.8.
   const arrow =
     "hidden text-muted-foreground pointer-fine:inline-flex disabled:pointer-events-none disabled:opacity-40";
@@ -335,29 +326,6 @@ function SuggestedPerson({
  * Si la lista está al principio o al final (para desactivar las flechas). Se mide al montar, al
  * cambiar de tamaño y al quitar tarjetas; mientras no se mide, ambas flechas quedan desactivadas.
  */
-function useScrollEdges(ref: RefObject<HTMLElement | null>, count: number) {
-  const [edges, setEdges] = useState({ atStart: true, atEnd: true });
-  const update = () => {
-    const element = ref.current;
-    if (!element) return;
-    const atStart = element.scrollLeft <= 1;
-    const atEnd = element.scrollLeft + element.clientWidth >= element.scrollWidth - 1;
-    setEdges((current) =>
-      current.atStart === atStart && current.atEnd === atEnd ? current : { atStart, atEnd },
-    );
-  };
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => update());
-    observer.observe(element);
-    return () => observer.disconnect();
-    // `count`: al quitar una tarjeta cambia el ancho del contenido, no el de la lista.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, count]);
-  return { ...edges, update };
-}
-
 /** Bandera en sessionStorage (si no está disponible, p. ej. en modo privado, vale solo en esta vista). */
 function useSessionFlag(key: string) {
   const [closedHere, setClosedHere] = useState(false);

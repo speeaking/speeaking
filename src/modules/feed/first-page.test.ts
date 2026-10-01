@@ -21,6 +21,8 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 vi.mock("./engine", () => ({ recommendationEngine: { getFeed: vi.fn() } }));
+// El carrusel de productos (ADR-051) se prueba aparte; aquí la página va sin él.
+vi.mock("./product-carousel", () => ({ pickFeedProducts: vi.fn(async () => null) }));
 
 const { recommendationEngine } = await import("./engine");
 const { getHomeFirstPage } = await import("./first-page");

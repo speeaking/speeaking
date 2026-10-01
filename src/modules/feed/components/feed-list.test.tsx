@@ -300,3 +300,64 @@ describe("FeedList: páginas siguientes", () => {
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
   });
 });
+
+describe("FeedList: carrusel de productos (ADR-051)", () => {
+  const card = (n: number) => ({
+    id: `0199a000-0000-7000-8000-0000000000c${n}`,
+    slug: `producto-${n}`,
+    title: `Producto ${n}`,
+    priceCents: 10_000 * n,
+    currency: "MXN",
+    city: "Guadalajara",
+    inStock: true,
+    tryOn: false,
+    image: null,
+  });
+  const products = {
+    title: "Populares",
+    reason: "Lo más visto esta semana",
+    href: "/comprar",
+    items: [1, 2, 3].map((n) => ({ product: card(n), sponsored: n === 1 })),
+  };
+  const pieces = (count: number) =>
+    Array.from({ length: count }, (_, i) =>
+      item({
+        id: `0199a000-0000-7000-8000-0000000000a${i}`,
+        publishedAt: new Date(2026, 8, 20 - i).toISOString(),
+      }),
+    );
+
+  it("pinta el carrusel de la página después de su 4.ª pieza, con su razón y la etiqueta", () => {
+    render(
+      <FeedList initialPage={{ items: pieces(6), nextCursor: null, products }} empty={null} />,
+    );
+
+    const region = screen.getByRole("region", { name: "Populares" });
+    expect(region).toHaveTextContent("Lo más visto esta semana");
+    expect(region).toHaveTextContent("Patrocinado");
+    const articles = screen.getAllByRole("article");
+    expect(articles).toHaveLength(6);
+    // Después de la 4.ª y antes de la 5.ª.
+    expect(
+      articles[3]!.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      region.compareDocumentPosition(articles[4]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("con menos piezas va después de la última; sin carrusel no pinta nada", () => {
+    const { unmount } = render(
+      <FeedList initialPage={{ items: pieces(2), nextCursor: null, products }} empty={null} />,
+    );
+    const region = screen.getByRole("region", { name: "Populares" });
+    const articles = screen.getAllByRole("article");
+    expect(
+      articles[1]!.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    unmount();
+
+    render(<FeedList initialPage={{ items: pieces(6), nextCursor: null }} empty={null} />);
+    expect(screen.queryByRole("region", { name: "Populares" })).not.toBeInTheDocument();
+  });
+});

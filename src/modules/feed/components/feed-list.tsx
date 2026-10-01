@@ -12,6 +12,8 @@ import type { FeedItemDTO, FeedPageDTO } from "../dto";
 import { isSameLocalDay } from "../feed-date";
 import { useVisibleImpressions } from "./use-visible-impressions";
 import { IMPRESSION_POSITION_ATTRIBUTE, IMPRESSION_POST_ATTRIBUTE } from "./visible-impressions";
+import type { FeedProductsDTO } from "../product-carousel-compose";
+import { ProductCarousel } from "./product-carousel";
 
 /**
  * Separador antes de la portada: «Hoy en Gaming · Ir a la comunidad». Solo dice «Hoy» si la
@@ -66,6 +68,19 @@ function CoverRule({
  */
 export type FeedSlot = { key: string; after: number; node: ReactNode };
 
+/** El carrusel de productos de cada página va después de su 4.ª pieza (ADR-051). */
+export const PRODUCTS_AFTER = 3;
+
+type ProductBlock = { after: number; block: FeedProductsDTO };
+
+/** Dónde cae el carrusel de una página cuyas piezas empiezan en `offset` (ninguno si no trae). */
+function productBlocksFor(page: FeedPageDTO, offset: number): ProductBlock[] {
+  if (!page.products || page.items.length === 0) return [];
+  return [
+    { after: offset + Math.min(PRODUCTS_AFTER, page.items.length - 1), block: page.products },
+  ];
+}
+
 /**
  * Feed con scroll infinito (cursor estable del servidor). Sigue siendo una lista plana: cada pieza
  * solo elige cómo pintarse (portada, tipográfica o estándar) y las posiciones no cambian. Cada pieza
@@ -90,6 +105,7 @@ export function FeedList({
 }) {
   const [items, setItems] = useState<FeedItemDTO[]>(initialPage.items);
   const [cursor, setCursor] = useState(initialPage.nextCursor);
+  const [blocks, setBlocks] = useState<ProductBlock[]>(() => productBlocksFor(initialPage, 0));
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const sentinel = useRef<HTMLDivElement>(null);
   // Antes del observador del scroll infinito: sus efectos no se pisan.
@@ -104,6 +120,7 @@ export function FeedList({
     if (cursor === served.nextCursor) {
       setItems(initialPage.items);
       setCursor(initialPage.nextCursor);
+      setBlocks(productBlocksFor(initialPage, 0));
       setStatus("idle");
     }
   }
@@ -125,10 +142,14 @@ export function FeedList({
       }
       if (!response.ok) throw new Error(String(response.status));
       const page = (await response.json()) as FeedPageDTO;
-      setItems((current) => {
-        const seen = new Set(current.map((item) => item.id));
-        return [...current, ...page.items.filter((item) => !seen.has(item.id))];
-      });
+      // Solo una carga a la vez (`status`): la lista del cierre es la actual.
+      const seen = new Set(items.map((item) => item.id));
+      const fresh = page.items.filter((item) => !seen.has(item.id));
+      setItems([...items, ...fresh]);
+      setBlocks((current) => [
+        ...current,
+        ...productBlocksFor({ ...page, items: fresh }, items.length),
+      ]);
       setCursor(page.nextCursor);
       setStatus("idle");
     } catch {
@@ -178,6 +199,11 @@ export function FeedList({
             >
               <PostCard post={item} index={index} variant={variant} isSignedIn={isSignedIn} />
             </div>
+            {blocks
+              .filter((entry) => entry.after === index)
+              .map((entry) => (
+                <ProductCarousel key={`productos-${entry.after}`} block={entry.block} />
+              ))}
             {slots
               .filter((slot) => slotAt(slot) === index)
               .map((slot) => (

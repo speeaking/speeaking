@@ -9,6 +9,7 @@ import type {
 import type { ProductFacts } from "@/modules/catalog/quick-answers";
 import { slotForPublicProduct } from "@/modules/stylist/slots";
 import type { RankReason } from "./ranking";
+import type { FeedProductsDTO } from "./product-carousel-compose";
 
 /** Foto lista para pintar, con el crédito de su autor si es de stock con licencia libre. */
 export type FeedMediaDTO = {
@@ -87,7 +88,12 @@ export type FeedItemDTO = {
   } | null;
 };
 
-export type FeedPageDTO = { items: FeedItemDTO[]; nextCursor: string | null };
+export type FeedPageDTO = {
+  items: FeedItemDTO[];
+  nextCursor: string | null;
+  /** Carrusel de productos de esta página (ADR-051); solo en el inicio. */
+  products?: FeedProductsDTO | null;
+};
 
 /** Comunidad tal como la pintan las burbujas y los chips del inicio (solo datos públicos). */
 export type HomeCommunityDTO = {

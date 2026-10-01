@@ -12,6 +12,48 @@ test.describe("inicio: visitante", () => {
     ).toHaveCount(0);
   });
 
+  test("el carrusel de productos va después de la 4.ª publicación con su razón escrita (ADR-051)", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto("/");
+    // Dentro de <main>: la columna derecha también tiene un bloque «Patrocinado».
+    const carousel = page.getByRole("main").getByRole("region", {
+      name: /^(Lo más vendido|Populares|Nuevo en Estreno|De tus comunidades|Según tu búsqueda)$/,
+    });
+    await expect(carousel).toBeVisible();
+    await expect(carousel.getByRole("link", { name: "Ver todo" })).toHaveAttribute(
+      "href",
+      "/comprar",
+    );
+    expect(await carousel.locator('a[href^="/producto/"]').count()).toBeGreaterThanOrEqual(3);
+    // Antes del carrusel hay exactamente cuatro publicaciones.
+    const handle = await carousel.elementHandle();
+    const before = await page
+      .locator("main article")
+      .evaluateAll(
+        (nodes, region) =>
+          nodes.filter(
+            (node) =>
+              region && node.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ).length,
+        handle,
+      );
+    expect(before).toBe(4);
+
+    // Con mouse hay flechas (en táctil se desliza): la de «más» avanza la fila.
+    if (!isMobile) {
+      const list = carousel.getByRole("list");
+      const next = carousel.getByRole("button", { name: "Ver más productos" });
+      await expect(next).toBeVisible();
+      await expect(
+        carousel.getByRole("button", { name: "Ver productos anteriores" }),
+      ).toBeDisabled();
+      await next.click();
+      await expect.poll(() => list.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+    }
+  });
+
   test("«Arma tu feed» aparece después de la 2.ª publicación solo sin columna derecha", async ({
     page,
     isMobile,

@@ -121,7 +121,8 @@ por foto y prenda siguen: evitan el abuso, no cobran.
 ### 3.4 Producto destacado (la columna de publicidad)
 
 - **Dónde aparece:** la columna derecha de escritorio (bloque «Patrocinado»), el primer lugar de
-  «También te puede gustar» en las fichas de productos y una fila «Destacados» arriba de Comprar.
+  «También te puede gustar» en las fichas de productos, una fila «Destacados» arriba de Comprar y
+  hasta dos lugares en el carrusel de productos del feed (ADR-051), al mismo precio.
   Siempre con la etiqueta **Patrocinado** (Ley Federal de Protección al Consumidor, P12).
 - **Precio:** **$15 MXN por día** por producto, de 3 a 30 días, por adelantado desde el saldo.
   Costo para nosotros: cero. Es el ingreso de margen puro que financia lo demás.

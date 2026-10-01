@@ -1,7 +1,9 @@
 import { after } from "next/server";
 import { z } from "zod";
-import { recommendationEngine } from "@/modules/feed/engine";
+import { productSlugsIn } from "@/modules/feed/dedupe";
+import { FEED_PAGE_LIMIT, recommendationEngine } from "@/modules/feed/engine";
 import { trackImpressions } from "@/modules/feed/impressions";
+import { pickFeedProducts } from "@/modules/feed/product-carousel";
 import { decodeCursor } from "@/modules/feed/ranking";
 import { getViewer } from "@/modules/identity/session";
 import { checkSocialLimit } from "@/modules/social/limits";
@@ -58,11 +60,27 @@ export async function GET(request: Request) {
     following,
   });
   trackImpressions(page.items, viewer?.userId ?? null, community ? "COMMUNITY" : "FEED");
+  // Carrusel de productos (ADR-051): solo en el inicio, uno por página; nunca tumba el feed.
+  const decoded = parsed.data.cursor ? decodeCursor(parsed.data.cursor) : null;
+  const products =
+    community || following
+      ? null
+      : await pickFeedProducts({
+          viewerId: viewer?.userId ?? null,
+          pageIndex: decoded ? Math.floor(decoded.offset / FEED_PAGE_LIMIT) : 0,
+          exclude: productSlugsIn(page.items),
+        }).catch((error: unknown) => {
+          console.error("[feed] carrusel de productos", error);
+          return null;
+        });
   // Filtrar por una comunidad (burbuja del inicio) cuenta como verla: «N nuevas» se reinicia. Solo la
   // primera página y solo la membresía propia (markCommunitySeen no toca otras).
   if (viewer && community && !parsed.data.cursor) {
     const viewerId = viewer.userId;
     after(() => markCommunitySeen(viewerId, community.id));
   }
-  return Response.json(page, { headers: { "Cache-Control": "private, no-store" } });
+  return Response.json(
+    { ...page, products },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }

@@ -36,6 +36,10 @@ comercial configurable (ADR-008). Registra impresiones con posición, puntuació
   comunidades se abren desde la columna izquierda, Descubrir y los chips de cada publicación
   (`/c/[slug]`). «Siguiendo» (`/api/feed?following=1`, `FeedRequest.following`) sigue en la API sin
   entrada en la interfaz; sin sesión, o si no sigue a nadie, la página viene vacía (nunca se rellena).
+- Carrusel de productos (ADR-051): cada página del inicio trae `products` (`pickFeedProducts` en
+  `product-carousel.ts`: patrocinados → búsqueda declarada o comunidades → más vendidos, populares,
+  novedades; `composeFeedProducts` lo arma sin repetir ni lo propio) y `FeedList` lo pinta después de
+  la 4.ª pieza (`ProductCarousel`). Nunca tumba el feed: si falla, la página va sin él.
 - `getHomeFirstPage` (`first-page.ts`) guarda la primera página de «Para ti» con `cache()` por
   request. La columna derecha la usa para no repetir en «Lo que buscas» un producto que ya está en
   el feed (`dedupe.ts`).

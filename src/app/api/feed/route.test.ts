@@ -4,10 +4,12 @@ const getFeed = vi.fn();
 const getViewer = vi.fn();
 const findCommunity = vi.fn();
 const trackImpressions = vi.fn();
+const pickFeedProducts = vi.fn(async () => null);
 const checkSocialLimit = vi.fn();
 
 vi.mock("@/modules/feed/engine", () => ({ recommendationEngine: { getFeed } }));
 vi.mock("@/modules/feed/impressions", () => ({ trackImpressions }));
+vi.mock("@/modules/feed/product-carousel", () => ({ pickFeedProducts }));
 vi.mock("@/modules/identity/session", () => ({ getViewer }));
 vi.mock("@/modules/social/limits", () => ({ checkSocialLimit }));
 vi.mock("@/server/db", () => ({ db: { community: { findUnique: findCommunity } } }));
