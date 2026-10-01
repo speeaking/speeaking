@@ -1,7 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ReactionButton, reactionLabel } from "./reaction-button";
+import {
+  PICKER_HEIGHT,
+  PICKER_WIDTH,
+  pickerAnchor,
+  ReactionButton,
+  reactionLabel,
+} from "./reaction-button";
 
 function setup(state: Parameters<typeof ReactionButton>[0]["state"]) {
   const onReact = vi.fn();
@@ -15,6 +21,31 @@ describe("reactionLabel", () => {
     expect(reactionLabel({ kind: null, count: 0, top: [] })).toBe("Me gusta");
     expect(reactionLabel({ kind: null, count: 3, top: ["LIKE"] })).toBe("Me gusta, 3");
     expect(reactionLabel({ kind: "HAHA", count: 1200, top: ["HAHA"] })).toBe("Me divierte, 1.2 k");
+  });
+});
+
+describe("pickerAnchor", () => {
+  const button = { left: 100, top: 300, bottom: 344 };
+
+  it("abre encima del botón cuando cabe debajo de la barra superior", () => {
+    expect(pickerAnchor(button, 56, 1280)).toEqual({
+      left: 100,
+      top: 300 - 8 - PICKER_HEIGHT,
+      placement: "up",
+    });
+  });
+
+  it("si arriba choca con la barra fija, abre debajo del botón", () => {
+    expect(pickerAnchor({ ...button, top: 80, bottom: 124 }, 56, 1280)).toEqual({
+      left: 100,
+      top: 124 + 8,
+      placement: "down",
+    });
+  });
+
+  it("a los lados nunca se sale de la pantalla", () => {
+    expect(pickerAnchor({ ...button, left: 300 }, 0, 375).left).toBe(375 - PICKER_WIDTH - 8);
+    expect(pickerAnchor({ ...button, left: 2 }, 0, 375).left).toBe(8);
   });
 });
 

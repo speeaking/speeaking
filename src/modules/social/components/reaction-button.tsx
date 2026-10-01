@@ -2,6 +2,7 @@
 
 import { Heart } from "lucide-react";
 import { type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatCompactNumber } from "@/lib/format";
 import { tapHaptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,30 @@ export const HOVER_OPEN_MS = 400;
 export const PRESS_OPEN_MS = 450;
 const HOVER_CLOSE_MS = 300;
 const PRESS_MOVE_PX = 10;
+
+/** Medidas de la tira (6 botones de 40 px, borde y separación) para decidir dónde cabe. */
+export const PICKER_WIDTH = 6 * 40 + 5 * 2 + 2 * 4 + 2;
+export const PICKER_HEIGHT = 40 + 2 * 4 + 2;
+const GAP = 8;
+const EDGE = 8;
+
+export type PickerAnchor = { left: number; top: number; placement: "up" | "down" };
+
+/**
+ * Dónde abrir la tira: encima del botón si cabe debajo de la barra superior fija; si no, debajo.
+ * A los lados nunca se sale de la pantalla. Va en una capa fija (portal), por encima de todo.
+ */
+export function pickerAnchor(
+  button: Pick<DOMRect, "left" | "top" | "bottom">,
+  topBarBottom: number,
+  viewportWidth: number,
+): PickerAnchor {
+  const left = Math.max(EDGE, Math.min(button.left, viewportWidth - PICKER_WIDTH - EDGE));
+  const above = button.top - GAP - PICKER_HEIGHT;
+  return above >= topBarBottom
+    ? { left, top: above, placement: "up" }
+    : { left, top: button.bottom + GAP, placement: "down" };
+}
 
 /** «Me gusta» o «Me divierte, 3»: el nombre lleva la reacción puesta; el estado va en aria-pressed. */
 export function reactionLabel(state: ReactionState) {
@@ -42,9 +67,11 @@ export function ReactionButton({
   /** Clase del texto («Me gusta»): oculto en teléfono o solo para lectores de pantalla. */
   labelClassName?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<PickerAnchor | null>(null);
+  const open = anchor !== null;
   const pickerId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const timer = useRef<number | null>(null);
   const press = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
@@ -57,27 +84,40 @@ export function ReactionButton({
   };
   const openPicker = () => {
     clearTimer();
-    setOpen(true);
+    const button = wrapperRef.current?.querySelector("button")?.getBoundingClientRect();
+    if (!button) return;
+    const topBar = document.querySelector("header.sticky")?.getBoundingClientRect().bottom ?? 0;
+    setAnchor(pickerAnchor(button, topBar, window.innerWidth));
   };
   const closePicker = () => {
     clearTimer();
-    setOpen(false);
+    setAnchor(null);
+  };
+  const closeLater = () => {
+    clearTimer();
+    timer.current = window.setTimeout(() => setAnchor(null), HOVER_CLOSE_MS);
   };
 
-  // Tocar afuera o Escape cierran la tira.
+  // Tocar afuera, Escape o desplazar la página cierran la tira.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: Event) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!wrapperRef.current?.contains(target) && !pickerRef.current?.contains(target)) {
+        setAnchor(null);
+      }
     };
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setAnchor(null);
     };
+    const onScroll = () => setAnchor(null);
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("scroll", onScroll);
     };
   }, [open]);
   useEffect(() => clearTimer, []);
@@ -85,12 +125,12 @@ export function ReactionButton({
   const onPointerEnter = (event: PointerEvent) => {
     if (event.pointerType !== "mouse") return;
     clearTimer();
-    timer.current = window.setTimeout(openPicker, HOVER_OPEN_MS);
+    if (!open) timer.current = window.setTimeout(openPicker, HOVER_OPEN_MS);
   };
   const onPointerLeave = (event: PointerEvent) => {
     if (event.pointerType !== "mouse") return;
     clearTimer();
-    if (open) timer.current = window.setTimeout(() => setOpen(false), HOVER_CLOSE_MS);
+    if (open) closeLater();
   };
   const onPointerDown = (event: PointerEvent) => {
     if (event.pointerType === "mouse") return;
@@ -120,7 +160,7 @@ export function ReactionButton({
       suppressClick.current = false;
       return;
     }
-    if (open) setOpen(false);
+    if (open) closePicker();
     onToggle();
   };
   const onKeyDown = (event: KeyboardEvent) => {
@@ -202,27 +242,60 @@ export function ReactionButton({
       >
         Elegir reacción
       </button>
-      {open ? <ReactionPicker id={pickerId} current={state.kind} onChoose={choose} /> : null}
+      {anchor
+        ? createPortal(
+            <ReactionPicker
+              ref={pickerRef}
+              id={pickerId}
+              anchor={anchor}
+              current={state.kind}
+              onChoose={choose}
+              onPointerEnter={clearTimer}
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse") closeLater();
+              }}
+            />,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
 
 /** La tira: seis emojis grandes que entran escalonados y crecen bajo el cursor o el foco. */
 function ReactionPicker({
+  ref,
   id,
+  anchor,
   current,
   onChoose,
+  onPointerEnter,
+  onPointerLeave,
 }: {
+  ref: React.Ref<HTMLDivElement>;
   id: string;
+  anchor: PickerAnchor;
   current: ReactionKind | null;
   onChoose: (kind: ReactionKind) => void;
+  onPointerEnter: () => void;
+  onPointerLeave: (event: PointerEvent) => void;
 }) {
   return (
     <div
+      ref={ref}
       id={id}
       role="group"
       aria-label="Reacciones"
-      className="absolute bottom-full left-0 z-20 mb-1.5 flex gap-0.5 rounded-full border bg-card p-1 shadow-lg motion-safe:animate-in motion-safe:duration-150 motion-safe:zoom-in-95 motion-safe:fade-in motion-safe:slide-in-from-bottom-1"
+      data-placement={anchor.placement}
+      style={{ position: "fixed", left: anchor.left, top: anchor.top }}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      className={cn(
+        "z-50 flex gap-0.5 rounded-full border bg-card p-1 shadow-lg motion-safe:animate-in motion-safe:duration-150 motion-safe:zoom-in-95 motion-safe:fade-in",
+        anchor.placement === "up"
+          ? "motion-safe:slide-in-from-bottom-1"
+          : "motion-safe:slide-in-from-top-1",
+      )}
     >
       {REACTIONS.map((reaction, index) => (
         <button
