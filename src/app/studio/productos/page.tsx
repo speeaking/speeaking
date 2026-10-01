@@ -25,6 +25,11 @@ import { toggleTargetFor } from "@/modules/catalog/status";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { isFeatureOn } from "@/modules/ai/features-store";
+import {
+  isProductPending,
+  PRODUCT_PENDINGS,
+  productPendingFromSlug,
+} from "@/modules/analytics/seller-panel";
 import { countMatchingIntents, matchingLabel } from "@/modules/stylist/matching";
 import { countTryOnsByProduct } from "@/modules/tryon/service";
 import { SELLER_AUTHENTICITY_LABELS, SELLER_NOT_DECLARED_LABEL } from "@/modules/trust/labels";
@@ -42,12 +47,28 @@ const STATUS_BADGES: Record<ProductStatus, "secondary" | "outline" | "destructiv
 export default async function StudioProductsPage({ searchParams }: PageProps<"/studio/productos">) {
   const viewer = await requireOnboardedViewer("/studio/productos");
   if (!viewer.sellerProfileId) return <SellerActivation defaultName={viewer.profile.displayName} />;
-  const [products, { guardado }, matchingOn, tryOns] = await Promise.all([
+  const [allProducts, { guardado, filtro }, matchingOn, tryOns] = await Promise.all([
     listSellerProducts(viewer.sellerProfileId),
     searchParams,
     isFeatureOn("buyerMatching"),
     countTryOnsByProduct(viewer.sellerProfileId),
   ]);
+  // `?filtro=` llega desde los pendientes del Resumen (ADR-056): la misma regla que su número.
+  const pending = productPendingFromSlug(filtro);
+  const products = pending
+    ? allProducts.filter((product) =>
+        isProductPending(
+          {
+            status: product.status,
+            stock: product.stock,
+            hidden: product.hidden,
+            hasImage: product.image !== null,
+            authenticityStatus: product.authenticityStatus,
+          },
+          pending,
+        ),
+      )
+    : allProducts;
   // «N personas buscan algo así» (ADR-043): solo un número agregado, nunca quiénes.
   const matches = matchingOn
     ? await countMatchingIntents(products.filter((product) => product.status === "ACTIVE"))
@@ -74,7 +95,29 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
           Guardamos tus cambios.
         </p>
       ) : null}
-      {products.length === 0 ? (
+      {pending ? (
+        <p
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-secondary px-3 py-2.5 text-sm"
+        >
+          <span>
+            Mostrando: <strong>{PRODUCT_PENDINGS[pending].label}</strong> ({products.length})
+          </span>
+          <Link
+            href="/studio/productos"
+            className="font-semibold text-primary-text hover:underline"
+          >
+            Ver todos
+          </Link>
+        </p>
+      ) : null}
+      {pending && products.length === 0 ? (
+        <EmptyState
+          icon={CheckCircle2}
+          title="Nada por aquí"
+          description="Ya no hay productos en esta lista."
+        />
+      ) : products.length === 0 ? (
         <EmptyState
           icon={Package}
           title="Aún no tienes productos"

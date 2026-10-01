@@ -136,6 +136,13 @@ test.describe("comercio", () => {
     await expect(
       page.getByText("Incluye 1 venta con pago simulado: no se cobró dinero."),
     ).toBeVisible();
+    // Panel (ADR-056): la venta entra en la semana y el pago simulado aparece como pendiente.
+    await expect(page.getByRole("region", { name: "Tu semana" })).toContainText("$3,499");
+    await expect(
+      page
+        .getByRole("region", { name: "Pendientes en tus ventas" })
+        .getByRole("link", { name: /Pagos simulados por cancelar/ }),
+    ).toContainText("1");
 
     // El pedido aparece pagado y marcado como simulado, sin "Marcar enviado" y sin el domicilio del
     // comprador: no se cobró dinero, así que no hay nada que enviar (SEC-01, SEC-08).
@@ -152,6 +159,13 @@ test.describe("comercio", () => {
     await sale.getByText("Cancelar pedido", { exact: true }).click();
     await sale.getByRole("button", { name: "Sí, cancelar pedido" }).click();
     await expect(sale.getByText("Cancelado", { exact: true })).toBeVisible();
+    // Cancelar un pago simulado era lo correcto: ya no queda nada pendiente en ventas.
+    await page.goto("/studio");
+    await expect(
+      page
+        .getByRole("region", { name: "Pendientes en tus ventas" })
+        .getByText("Todo en orden: ninguna venta está esperando."),
+    ).toBeVisible();
 
     // El comprador ve la cancelación y la pieza volvió a estar disponible.
     await buyer.goto(orderUrl);

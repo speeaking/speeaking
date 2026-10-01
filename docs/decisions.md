@@ -1517,3 +1517,38 @@ de publicaciones.
 más, solo con sesión); `listSellerShowcase` alimenta la pestaña Tienda. Pruebas unitarias (textos,
 cabecera, pestañas) y E2E (abrir un perfil desde el feed registra el tipo «perfil»; seguir, mensaje y
 cerrar sesión siguen igual). Para después: portada propia, lista de seguidores, vista rápida del perfil.
+
+## ADR-056 · Panel del vendedor con las métricas que importan
+
+**Contexto.** El fundador mandó (2026-09-30) una captura del panel de vendedores de Mercado Libre: «a
+los vendedores les gustan las métricas, usa las más importantes». El Resumen del Studio tenía seis
+cifras sueltas de 30 días y Analítica estaba vacía: quien vende no sabía qué le urgía ni cómo iba
+contra la semana pasada. Aprobado el 2026-10-01 («haz los pasos que están en la mesa»).
+
+**Decisión.**
+
+- **Arriba, la semana** (7 días contra los 7 anteriores): Ventas con su tendencia y una línea de
+  ventas por día (SVG propio, en hora de México), Por despachar, Mensajes sin leer y Visitas con su
+  tendencia. Cada mosaico lleva a su lista.
+- **Pendientes**, como las tarjetas de Mercado Libre: en ventas, por despachar (con la antigüedad
+  del más viejo), en camino, pagos simulados por cancelar y mensajes; en productos, ocultos por
+  moderación, agotados, comprobante de autenticidad pendiente, sin foto y borradores. Cada uno
+  abre Productos filtrado (`?filtro=`) con la misma regla que su número (`PRODUCT_PENDINGS`). Sin
+  pendientes: «Todo en orden». Los reportes abiertos no se muestran a la tienda (solo lo que el
+  equipo ya resolvió: «oculto»).
+- **Desempeño** en lugar de la reputación pública: tiempo para despachar (mediana entre pago y
+  salida; excelente ≤ 24 h, bien ≤ 72 h) y cancelaciones (excelente < 2 %, bien < 5 %), en 30 días,
+  solo con cobros reales y a partir de 5 pedidos; antes dice «aún sin datos suficientes». Un pago
+  simulado se cancela por regla (SEC-01) y no cuenta en contra.
+- **Embudo de 30 días** (visitas, guardados, al carrito, pedidos, con «X % de las visitas») y
+  **actividad por producto** (visitas, guardados, al carrito, pruebas de «Ver cómo me veo»,
+  vendidos y conversión): los 5 más vistos en el Resumen y todos en Analítica.
+- Se queda el **beneficio estimado** (la métrica norte, que Mercado Libre no tiene), el camino a la
+  primera venta y de dónde llegan las visitas.
+- Fuera, porque no aplica o no hay datos: niveles de reputación pública, reclamos y mediaciones,
+  créditos, dinero por adelantar, espacios de bodega y colecta.
+
+**Consecuencias.** Todo lo calcula código probado (`seller-panel.ts`, P2) con consultas agrupadas
+(`seller-panel-queries.ts`); sin migración. Pruebas: unitarias de los cálculos y las piezas, de
+integración contra PostgreSQL (`seller-panel-queries.db.test.ts`) y la E2E de venta completa. Para
+después: una insignia de «tienda confiable» con los mismos datos de desempeño cuando haya volumen.

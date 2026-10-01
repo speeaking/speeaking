@@ -29,3 +29,9 @@ alimenta el umbral de tráfico, las salvaguardas, la exposición mínima del mon
 experimentos. Lo anónimo queda en métricas descriptivas (`feed.impressions.visible.anonymous`,
 `feed.impressions.served`, `product.visits`): un robot sin cuenta puede inflarlas, pero no forzar ni
 esconder una reversión.
+
+**Panel del vendedor (ADR-056).** `seller-panel.ts` (puro: tendencias, ventas por día en hora de
+México, desempeño con sus umbrales, embudo, pendientes de ventas y de catálogo con sus filtros
+`PRODUCT_PENDINGS`, actividad por producto) y `seller-panel-queries.ts` (`getSellerPanel` para el
+Resumen, `getProductAnalytics` para Analítica: una consulta agrupada por tipo de señal). Las piezas
+de la interfaz viven en `components/`.
