@@ -1,6 +1,7 @@
 import "server-only";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
+import { getStorage } from "@/server/providers/storage";
 
 export type ProfilePersonDTO = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -16,6 +17,15 @@ export type PublicProfile = {
   isSeller: boolean;
   /** Id de la tienda, para la pestaña Tienda (ADR-055); `null` si no vende. */
   sellerId: string | null;
+  /** Portada propia (ADR-058); sin ella el perfil arma una con su última foto. */
+  cover: {
+    url: string;
+    width: number;
+    height: number;
+    blurDataUrl: string | null;
+    alt: string | null;
+    credit: null;
+  } | null;
   followerCount: number;
   followingCount: number;
   postCount: number;
@@ -44,6 +54,9 @@ export async function getPublicProfile(
       city: true,
       createdAt: true,
       isEditorial: true,
+      coverMedia: {
+        select: { storageKey: true, width: true, height: true, blurDataUrl: true, altText: true },
+      },
       user: {
         select: {
           sellerProfile: { select: { id: true } },
@@ -107,6 +120,16 @@ export async function getPublicProfile(
     isEditorial: profile.isEditorial,
     isSeller: profile.user.sellerProfile !== null,
     sellerId: profile.user.sellerProfile?.id ?? null,
+    cover: profile.coverMedia
+      ? {
+          url: getStorage().publicUrl(profile.coverMedia.storageKey),
+          width: profile.coverMedia.width,
+          height: profile.coverMedia.height,
+          blurDataUrl: profile.coverMedia.blurDataUrl,
+          alt: profile.coverMedia.altText,
+          credit: null,
+        }
+      : null,
     followerCount: profile.user._count.followers,
     followingCount: profile.user._count.following,
     postCount: profile.user._count.posts,

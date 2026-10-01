@@ -1580,3 +1580,32 @@ y las ventas mostraban un carrusel aun con varias fotos.
 `createCommentAction` revalida también la ruta del panel. Pruebas unitarias (panel, formulario,
 mosaico, tarjeta) y E2E (publicar 5 fotos, mosaico en el perfil, comentar desde el panel y cerrarlo
 con «atrás»).
+
+## ADR-058 · Editar perfil con portada propia, y listas de seguidores
+
+**Contexto.** En la mesa estaban «portada propia» y «lista de seguidores». Al revisarlo apareció un
+hueco: el botón «Editar perfil» (ADR-055) llevaba a Ajustes, donde no se podía cambiar el nombre, la
+presentación ni la foto; en ningún lugar se podía subir una foto de perfil.
+
+**Decisión.**
+
+- **Editar perfil** (`/perfil/editar`): portada, foto de perfil, nombre visible, ciudad y presentación
+  (160 caracteres con contador). El usuario (@nombre) no cambia: es la dirección del perfil y de los
+  enlaces compartidos. Las imágenes se suben con el mismo `/api/uploads` (validación, re-codificación,
+  sin metadatos) y solo se aplican al guardar; nunca una foto de otra persona, un comprobante de
+  autenticidad o una foto de Pruébatelo (lo revisa la acción y, además, un trigger en `profiles`).
+- **Datos:** `Profile.avatarMediaId` y `Profile.coverMediaId` (únicos, `SET NULL`); `avatarUrl` guarda
+  la URL de la foto para no tocar a quienes ya la leen. Una foto de perfil o portada es pública en
+  `/media` mientras lo sea, y el recolector de huérfanas no la borra; la que se reemplaza queda sin
+  usar y se borra a las 24 h.
+- **Perfil:** con portada propia se ve nítida (proporción 3:1); sin ella sigue la automática
+  (ADR-055). En el perfil propio, dos atajos de cámara (portada y foto) llevan a Editar perfil, como
+  en Facebook.
+- **Seguidores y seguidos** (`/u/[usuario]/seguidores` y `/siguiendo`): los contadores del perfil
+  abren la lista; pestañas entre las dos, cada persona con su foto, sus distintivos y «Seguir» de
+  vuelta, de 30 en 30 con «Ver más». Las listas son públicas, como el perfil.
+
+**Consecuencias.** Migración `profile_photos` con el trigger. Límite de 20 ediciones por hora por
+cuenta. Pruebas: esquema y acción (dueño de la foto, fotos privadas, quitar), cabecera, lista
+(unitarias), ruta de medios (foto de perfil pública) y E2E (editar con portada y foto públicas;
+seguir y verlo en la lista).

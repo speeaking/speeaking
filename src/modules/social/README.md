@@ -20,6 +20,10 @@ distintivos y la línea «en común», pestañas Publicaciones · Fotos · Tiend
 ajenos. Abrir un perfil «pasa la página»: enlaces con `transitionTypes` de `lib/page-turn.ts`, CSS en
 `globals.css`, esqueleto propio en `u/[username]/loading.tsx`.
 
+**Portada propia y seguidores (ADR-058).** `getPublicProfile` trae la portada (`Profile.coverMedia`);
+`follow-lists.ts` (`listFollowPeople`, de 30 en 30 con cursor) alimenta `/u/[usuario]/seguidores` y
+`/siguiendo` (`components/profile/follow-list.tsx`). Editar perfil vive en `identity`.
+
 **Comentarios en panel (ADR-057).** `@modal/(.)p/[id]/comentarios` pinta `RouteDrawer`
 (`components/layout/route-drawer.tsx`) con `CommentList` y `CommentComposer` (los mismos de la página
 de la publicación). `/p/[id]/comentarios` sin interceptar redirige a `/p/[id]#comentar`.

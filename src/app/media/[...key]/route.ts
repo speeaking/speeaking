@@ -126,7 +126,7 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
  * unirlo a la foto, y eso crece con cada adjunto en cada petición de imagen.
  */
 async function isPubliclyAttached(mediaId: string) {
-  const [post, product] = await Promise.all([
+  const [post, product, profile] = await Promise.all([
     db.postMedia.findFirst({
       where: { mediaId, post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } },
       select: { mediaId: true },
@@ -135,8 +135,13 @@ async function isPubliclyAttached(mediaId: string) {
       where: { mediaId, product: VISIBLE_PRODUCT },
       select: { mediaId: true },
     }),
+    // Foto de perfil o portada de alguien (ADR-058): llaves únicas, una consulta con índice.
+    db.profile.findFirst({
+      where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId }] },
+      select: { userId: true },
+    }),
   ]);
-  return post !== null || product !== null;
+  return post !== null || product !== null || profile !== null;
 }
 
 /**

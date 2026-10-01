@@ -46,6 +46,17 @@ describe("ProfileHeader", () => {
     expect(stats).toHaveTextContent("siguiendo");
     // El cero se oculta (principio 5): nada de «0 publicaciones».
     expect(stats).not.toHaveTextContent("publicaci");
+    // Seguidores y seguidos abren su lista (ADR-058).
+    expect(screen.getByRole("link", { name: "778 seguidores" })).toHaveAttribute(
+      "href",
+      "/u/ana/seguidores",
+    );
+    expect(screen.getByRole("link", { name: "1 siguiendo" })).toHaveAttribute(
+      "href",
+      "/u/ana/siguiendo",
+    );
+    // En un perfil ajeno no hay atajos de cámara.
+    expect(screen.queryByRole("link", { name: "Cambiar portada" })).not.toBeInTheDocument();
   });
 
   it("ajeno: Seguir es la acción primaria, con Mensaje y Compartir; sin Cerrar sesión", () => {
@@ -66,7 +77,16 @@ describe("ProfileHeader", () => {
       "href",
       "/crear/publicacion",
     );
-    expect(screen.getByRole("link", { name: "Editar perfil" })).toHaveAttribute("href", "/ajustes");
+    expect(screen.getByRole("link", { name: "Editar perfil" })).toHaveAttribute(
+      "href",
+      "/perfil/editar",
+    );
+    // Atajos de cámara sobre la portada y la foto, como en Facebook (ADR-058).
+    expect(screen.getByRole("link", { name: "Cambiar portada" })).toHaveAttribute(
+      "href",
+      "/perfil/editar",
+    );
+    expect(screen.getByRole("link", { name: "Cambiar foto de perfil" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Studio" })).toHaveAttribute("href", "/studio");
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Seguir/ })).not.toBeInTheDocument();

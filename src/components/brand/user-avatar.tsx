@@ -26,7 +26,7 @@ export function hueFromText(text: string) {
 /** Conectores en minúscula que no aportan inicial: "Casa y Estilo" → "CE", no "CY". */
 const CONNECTORS = new Set(["y", "e", "de", "del", "la", "las", "los"]);
 
-function initials(name: string) {
+export function initials(name: string) {
   // Solo palabras con letras: "Humor · Equipo" → "HE" (no "H·").
   const words = name
     .trim()

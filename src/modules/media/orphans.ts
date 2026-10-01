@@ -12,7 +12,8 @@ import { deleteStoredMedia } from "./variant-keys";
  * Las fotos de un comprobante de autenticidad NUNCA son huérfanas: son privadas a propósito (no se
  * adjuntan a nada) y el equipo las necesita para revisar y auditar. Tampoco las fotos y resultados
  * de Pruébatelo (`try_on_photos`, `try_on_results`, ADR-045): privadas, con su propia fecha de
- * borrado (`tryon/service.ts`). Cuentan las del comprobante
+ * borrado (`tryon/service.ts`). Ni la foto de perfil o la portada de alguien (`profiles`, ADR-058).
+ * Cuentan las del comprobante
  * vigente (`authenticity_checks."proofMediaIds"`, con `@>` para usar su índice GIN) y las de envíos
  * anteriores (`authenticity_proof_history`, índice por `mediaId`; `trust/proof-media.ts`).
  * Cada tanda va en dos pasos dentro de una transacción: bloquear candidatas (`lockOrphanBatch`, con
@@ -69,7 +70,11 @@ export async function deleteOrphanMedia(
           SELECT 1 FROM "authenticity_proof_history" ph WHERE ph."mediaId" = m."id"
         )
         AND NOT EXISTS (SELECT 1 FROM "try_on_photos" tp WHERE tp."mediaId" = m."id")
-        AND NOT EXISTS (SELECT 1 FROM "try_on_results" tr WHERE tr."resultMediaId" = m."id")`;
+        AND NOT EXISTS (SELECT 1 FROM "try_on_results" tr WHERE tr."resultMediaId" = m."id")
+        AND NOT EXISTS (
+          SELECT 1 FROM "profiles" pf
+          WHERE pf."avatarMediaId" = m."id" OR pf."coverMediaId" = m."id"
+        )`;
     return { deleted: row?.count ?? 0, failedFiles: [] };
   }
 
@@ -123,6 +128,10 @@ export async function lockOrphanBatch(tx: Tx, cutoff: Date, batchSize: number) {
       )
       AND NOT EXISTS (SELECT 1 FROM "try_on_photos" tp WHERE tp."mediaId" = o."id")
       AND NOT EXISTS (SELECT 1 FROM "try_on_results" tr WHERE tr."resultMediaId" = o."id")
+      AND NOT EXISTS (
+        SELECT 1 FROM "profiles" pf
+        WHERE pf."avatarMediaId" = o."id" OR pf."coverMediaId" = o."id"
+      )
     ORDER BY o."createdAt"
     LIMIT ${batchSize}::int
     FOR UPDATE SKIP LOCKED`;
@@ -153,5 +162,9 @@ export async function deleteLockedOrphans(tx: Tx, ids: readonly string[]) {
       )
       AND NOT EXISTS (SELECT 1 FROM "try_on_photos" tp WHERE tp."mediaId" = m."id")
       AND NOT EXISTS (SELECT 1 FROM "try_on_results" tr WHERE tr."resultMediaId" = m."id")
+      AND NOT EXISTS (
+        SELECT 1 FROM "profiles" pf
+        WHERE pf."avatarMediaId" = m."id" OR pf."coverMediaId" = m."id"
+      )
     RETURNING m."storageKey"`;
 }

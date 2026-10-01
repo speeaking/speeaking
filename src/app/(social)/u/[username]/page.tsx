@@ -104,7 +104,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
             peopleTotal: profile.followedByPeopleYouFollow.count,
             communities: profile.communitiesInCommon.map((community) => community.name),
           }}
-          cover={profileCover(posts)}
+          // Portada propia (ADR-058) o, sin ella, su última foto desenfocada (ADR-055).
+          cover={profile.cover ?? profileCover(posts)}
+          customCover={profile.cover !== null}
           isOwn={isOwn}
           isSignedIn={viewer !== null}
         />

@@ -1,4 +1,5 @@
 import { BadgeCheck, ImagePlus, LayoutDashboard, PenLine, ShoppingBag } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { ShareButton } from "@/components/share-button";
@@ -32,6 +33,8 @@ export type ProfileHeaderProps = {
   /** Lo que quien mira tiene en común con el perfil (vacío sin sesión o en el propio). */
   inCommon: { people: ProfilePerson[]; peopleTotal: number; communities: string[] };
   cover: FeedMediaDTO | null;
+  /** La portada la subió la persona (ADR-058): se ve nítida. */
+  customCover?: boolean;
   isOwn: boolean;
   isSignedIn: boolean;
 };
@@ -44,20 +47,41 @@ function Dot() {
  * Cabecera del perfil (ADR-055): portada, nombre con sus distintivos, bio, contadores honestos (los
  * ceros se ocultan), una sola acción primaria y la línea «en común» con quien mira.
  */
-export function ProfileHeader({ profile, inCommon, cover, isOwn, isSignedIn }: ProfileHeaderProps) {
+export function ProfileHeader({
+  profile,
+  inCommon,
+  cover,
+  customCover = false,
+  isOwn,
+  isSignedIn,
+}: ProfileHeaderProps) {
+  const base = `/u/${profile.username}`;
+  // Seguidores y seguidos abren su lista (ADR-058); las publicaciones están abajo, en su pestaña.
   const stats = [
-    { value: profile.postCount, label: ["publicación", "publicaciones"] },
-    { value: profile.followerCount, label: ["seguidor", "seguidores"] },
-    { value: profile.followingCount, label: ["siguiendo", "siguiendo"] },
+    { value: profile.postCount, label: ["publicación", "publicaciones"], href: null },
+    {
+      value: profile.followerCount,
+      label: ["seguidor", "seguidores"],
+      href: `${base}/seguidores` as Route,
+    },
+    {
+      value: profile.followingCount,
+      label: ["siguiendo", "siguiendo"],
+      href: `${base}/siguiendo` as Route,
+    },
   ]
     .filter((stat) => stat.value > 0)
-    .map((stat) => ({ value: stat.value, label: stat.label[stat.value === 1 ? 0 : 1]! }));
+    .map((stat) => ({
+      value: stat.value,
+      label: stat.label[stat.value === 1 ? 0 : 1]!,
+      href: stat.href,
+    }));
   const people = peopleInCommonText(
     inCommon.people.map((person) => person.displayName),
     inCommon.peopleTotal,
   );
   const communities = communitiesInCommonText(inCommon.communities);
-  const path = `/u/${profile.username}`;
+  const path = base;
 
   return (
     <header className="flex flex-col gap-4">
@@ -66,7 +90,9 @@ export function ProfileHeader({ profile, inCommon, cover, isOwn, isSignedIn }: P
         username={profile.username}
         avatarUrl={profile.avatarUrl}
         cover={cover}
+        customCover={customCover}
         isSeller={profile.isSeller}
+        isOwn={isOwn}
       />
       <div className="flex flex-col gap-3 px-4 pt-10 md:px-6">
         <div className="flex flex-col gap-1">
@@ -114,10 +140,23 @@ export function ProfileHeader({ profile, inCommon, cover, isOwn, isSignedIn }: P
                   </span>
                 ) : null}
                 <dt className="sr-only">{stat.label}</dt>
-                <dd className="font-heading text-base font-bold text-foreground tabular-nums">
-                  {formatCompactNumber(stat.value)}
+                <dd className="flex items-baseline gap-1">
+                  {stat.href ? (
+                    <Link href={stat.href} className="flex items-baseline gap-1 hover:underline">
+                      <span className="font-heading text-base font-bold text-foreground tabular-nums">
+                        {formatCompactNumber(stat.value)}
+                      </span>{" "}
+                      <span>{stat.label}</span>
+                    </Link>
+                  ) : (
+                    <>
+                      <span className="font-heading text-base font-bold text-foreground tabular-nums">
+                        {formatCompactNumber(stat.value)}
+                      </span>
+                      <span aria-hidden="true">{stat.label}</span>
+                    </>
+                  )}
                 </dd>
-                <span aria-hidden="true">{stat.label}</span>
               </div>
             ))}
           </dl>
@@ -130,7 +169,10 @@ export function ProfileHeader({ profile, inCommon, cover, isOwn, isSignedIn }: P
                 <ImagePlus data-icon="inline-start" />
                 Publicar
               </Link>
-              <Link href="/ajustes" className={buttonVariants({ variant: "outline", size: "lg" })}>
+              <Link
+                href="/perfil/editar"
+                className={buttonVariants({ variant: "outline", size: "lg" })}
+              >
                 <PenLine data-icon="inline-start" />
                 Editar perfil
               </Link>

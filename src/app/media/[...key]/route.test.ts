@@ -14,6 +14,8 @@ const publicProductLink = vi.fn();
 /** Fotos de Pruébatelo (ADR-045): la foto de la persona y el resultado, por `mediaId`. */
 const tryOnPhoto = vi.fn();
 const tryOnResult = vi.fn();
+/** Foto de perfil o portada de alguien (ADR-058). */
+const profileLink = vi.fn();
 const findUserRole = vi.fn();
 
 /** Almacenamiento en memoria: originales y variantes (`variants/...`). */
@@ -38,6 +40,7 @@ vi.mock("@/server/db", () => ({
     productMedia: { count: hiddenProductLinks, findFirst: publicProductLink },
     tryOnPhoto: { findUnique: tryOnPhoto },
     tryOnResult: { findUnique: tryOnResult },
+    profile: { findFirst: profileLink },
   },
 }));
 vi.mock("@/server/providers/storage", () => ({ getStorage: () => ({ get, put }) }));
@@ -115,6 +118,7 @@ beforeEach(() => {
   publicProductLink.mockResolvedValue(null);
   tryOnPhoto.mockResolvedValue(null);
   tryOnResult.mockResolvedValue(null);
+  profileLink.mockResolvedValue(null);
   findUserRole.mockImplementation(async (id: string) => (id === ADMIN ? "ADMIN" : "USER"));
 });
 
@@ -142,6 +146,21 @@ describe("GET /media/[...key] (SEC-14)", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+  });
+
+  it("foto de perfil o portada de alguien (ADR-058): pública, sin sesión", async () => {
+    findUnique.mockResolvedValue(row(0));
+    profileLink.mockResolvedValue({ userId: OWNER });
+
+    const response = await request();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(profileLink).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { OR: [{ avatarMediaId: MEDIA_ID }, { coverMediaId: MEDIA_ID }] },
+      }),
+    );
   });
 
   it("sin adjuntar: 404 para cualquiera que no sea su dueño (no es hosting público)", async () => {

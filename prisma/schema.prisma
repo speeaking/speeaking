@@ -156,7 +156,14 @@ model Profile {
   username               String     @unique
   displayName            String
   bio                    String?
+  /// URL pública de la foto de perfil (la de `avatarMedia` cuando se subió una, ADR-058).
   avatarUrl              String?
+  /// Foto de perfil subida (ADR-058): pública mientras sea su foto, nunca huérfana.
+  avatarMediaId          String?    @unique @db.Uuid
+  avatarMedia            Media?     @relation("profileAvatar", fields: [avatarMediaId], references: [id], onDelete: SetNull)
+  /// Portada propia (ADR-058). Sin ella, el perfil arma una con su última foto.
+  coverMediaId           String?    @unique @db.Uuid
+  coverMedia             Media?     @relation("profileCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   city                   String?
   state                  String?
   goals                  UserGoal[] @default([])
@@ -371,13 +378,16 @@ model Media {
   status      MediaStatus @default(READY)
   createdAt   DateTime    @default(now()) @db.Timestamptz(3)
 
-  postLinks    PostMedia[]
-  productLinks ProductMedia[]
+  postLinks     PostMedia[]
+  productLinks  ProductMedia[]
   /// Envíos como comprobante de autenticidad (P14): privada para siempre, nunca se adjunta.
-  proofHistory AuthenticityProofHistory[]
+  proofHistory  AuthenticityProofHistory[]
   /// Foto de Pruébatelo o su resultado (ADR-045): privadas, con fecha de borrado, nunca se adjuntan.
-  tryOnPhoto   TryOnPhoto?
-  tryOnResult  TryOnResult?               @relation("tryOnResultMedia")
+  tryOnPhoto    TryOnPhoto?
+  tryOnResult   TryOnResult?               @relation("tryOnResultMedia")
+  /// Foto de perfil o portada de alguien (ADR-058): públicas mientras lo sean.
+  profileAvatar Profile?                   @relation("profileAvatar")
+  profileCover  Profile?                   @relation("profileCover")
 
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("media")

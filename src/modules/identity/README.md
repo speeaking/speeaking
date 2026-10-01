@@ -44,3 +44,8 @@ Fases: 1.3 (auth) y 1.4 (perfiles). Ver docs/architecture.md → Estructura.
 
 Pendiente: verificación de correo y restablecer contraseña (necesitan proveedor de correo); cambio de
 contraseña con cierre de otras sesiones (no lo necesita, falta la acción y su lugar en Ajustes).
+
+**Editar perfil (ADR-058).** `profile-edit-schema.ts` (puro: nombre, ciudad, presentación y qué hacer
+con la foto y la portada: `keep`, `remove` o el id recién subido), `profile-actions.ts`
+(`updateProfileAction`: solo imágenes propias, listas y no privadas; límite `profile`) y
+`components/profile-edit-form.tsx` con `profile-image-picker.tsx`. Página: `/perfil/editar`.
