@@ -130,6 +130,12 @@ export const serverEnvSchema = z
     AI_IMAGE_MODEL: optional(
       z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-3.1-flash-image)."),
     ),
+    // Modelo que VE imágenes (búsqueda por foto, ADR-061), en el mismo servidor y con la misma llave.
+    // Sin él, con `openai_compatible` la búsqueda por foto no está disponible (el modelo de texto no
+    // ve fotos); con `mock`, el simulador.
+    AI_VISION_MODEL: optional(
+      z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-2.5-flash-lite)."),
+    ),
     // IA simulada en producción (ADR-038): solo para un piloto cerrado, como decisión explícita. Con
     // `mock`, «Sube y vende» y el kit de anuncios entregan textos de plantilla, no de un modelo. En
     // desarrollo y pruebas no hace falta; en producción, sin ella el arranque falla con `mock`.

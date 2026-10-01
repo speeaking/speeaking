@@ -1,4 +1,9 @@
-import { AI_CALL_TIMEOUT_MS, AI_MAX_INPUT_TOKENS, AI_MAX_OUTPUT_TOKENS } from "@/modules/ai/cost";
+import {
+  AI_CALL_TIMEOUT_MS,
+  AI_IMAGE_INPUT_TOKENS,
+  AI_MAX_INPUT_TOKENS,
+  AI_MAX_OUTPUT_TOKENS,
+} from "@/modules/ai/cost";
 import { AIProviderError } from "./errors";
 import { readErrorDetail } from "./error-detail";
 import { strictJsonSchema } from "./json-schema";
@@ -146,14 +151,15 @@ export class OpenAICompatibleProvider implements AIProvider {
     task: AITask<Input, Output>,
     input: Input,
   ): Promise<AIResult<Output>> {
-    const { system, user } = task.messages(input);
+    const { system, user, images = [] } = task.messages(input);
     // El esquema estricto también entra al contexto del modelo (varios servidores lo insertan en el
     // prompt): cuenta para el tope de entrada, así el costo real no pasa del reservado.
     const schema = task.format === "json" ? strictJsonSchema(task.output) : null;
     const promptTokens =
       estimateTokens(system) +
       estimateTokens(user) +
-      (schema ? estimateTokens(JSON.stringify(schema)) : 0);
+      (schema ? estimateTokens(JSON.stringify(schema)) : 0) +
+      images.length * AI_IMAGE_INPUT_TOKENS;
     if (promptTokens > AI_MAX_INPUT_TOKENS) {
       throw new AIProviderError(
         "input_too_large",
@@ -164,7 +170,17 @@ export class OpenAICompatibleProvider implements AIProvider {
       model: this.model,
       messages: [
         { role: "system", content: system },
-        { role: "user", content: user },
+        // Con fotos, el mensaje va en partes: el texto y cada foto (ADR-061).
+        {
+          role: "user",
+          content:
+            images.length === 0
+              ? user
+              : [
+                  { type: "text", text: user },
+                  ...images.map((url) => ({ type: "image_url", image_url: { url } })),
+                ],
+        },
       ],
       temperature: task.temperature,
       max_tokens: Math.min(task.maxOutputTokens, AI_MAX_OUTPUT_TOKENS),

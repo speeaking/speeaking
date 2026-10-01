@@ -106,6 +106,12 @@ export function modelPrice(model: string) {
  * llamada nunca pasa de `maxCallCostMicrosUsd`, que es lo que se reserva ANTES de llamar.
  */
 export const AI_MAX_INPUT_TOKENS = 4_000;
+/**
+ * Tokens con que se cuenta cada foto de entrada (ADR-061), de más: una foto reducida a 768 px son
+ * ≈ 258 tokens en Gemini y ≈ 765 en otros modelos. Entra en el tope de entrada de arriba, así el
+ * costo real nunca pasa del reservado.
+ */
+export const AI_IMAGE_INPUT_TOKENS = 1_100;
 export const AI_MAX_OUTPUT_TOKENS = 4_000;
 export const AI_CALL_TIMEOUT_MS = 45_000;
 

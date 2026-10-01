@@ -15,6 +15,8 @@ export const AI_TASKS = [
   "look_copy",
   /** «Contexto»: resumen neutral de una publicación larga (ADR-060). */
   "post_context",
+  /** Búsqueda por foto: describir la ropa y los objetos de una foto (ADR-061). */
+  "image_search",
 ] as const;
 export type AITaskId = (typeof AI_TASKS)[number];
 
@@ -25,7 +27,11 @@ export type AIUsage = {
   estimated?: boolean;
 };
 
-export type AIMessages = { system: string; user: string };
+/**
+ * Mensajes de una tarea. `images`: fotos que el modelo debe ver (data URLs JPEG, ya reducidas); solo
+ * las manda el adaptador a modelos que ven imágenes (búsqueda por foto, ADR-061).
+ */
+export type AIMessages = { system: string; user: string; images?: readonly string[] };
 
 /**
  * Una tarea de IA (ADR-005, ADR-034): operación de dominio con salida estructurada, no un chat

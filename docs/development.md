@@ -88,9 +88,15 @@ pruebas E2E). Con `AI_PROVIDER=openai_compatible` y `AI_IMAGE_MODEL` (p. ej.
 que dice la tabla `IMAGE_PRICES_USD_PER_IMAGE` de `src/modules/ai/cost.ts`; un modelo sin precio no se
 llama. Las recargas de saldo usan el pago simulado (`ALLOW_SIMULATED_PAYMENTS`). La suite E2E arranca
 el servidor con `AI_PROVIDER=mock`, `ALLOW_SIMULATED_AI=true` y con `AI_IMAGE_MODEL`,
-`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` vacías (`playwright.config.ts`): aunque tu `.env` tenga
-OpenRouter, la imagen real y Google, las pruebas son deterministas, no gastan saldo ni dependen de
-la velocidad o el crédito de un proveedor externo.
+`AI_VISION_MODEL`, `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` vacías (`playwright.config.ts`):
+aunque tu `.env` tenga OpenRouter, la imagen real y Google, las pruebas son deterministas, no gastan
+saldo ni dependen de la velocidad o el crédito de un proveedor externo.
+
+**Buscar con una foto (ADR-061).** Con `AI_PROVIDER=mock`, `/buscar/foto` usa el simulador: sin ver
+la foto, siempre «ve» una camisa blanca y unos jeans azules y busca eso en el catálogo semilla. Con
+`AI_PROVIDER=openai_compatible` necesita `AI_VISION_MODEL` (p. ej. `google/gemini-2.5-flash-lite`,
+≈ US$0.0002 por foto, con cero retención en OpenRouter): el modelo de texto por omisión no ve
+imágenes, y sin esa variable la página dice que no está disponible. La foto nunca se guarda.
 
 ## Cuentas de prueba
 

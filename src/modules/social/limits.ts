@@ -51,6 +51,12 @@ export const SOCIAL_LIMITS = {
     { scope: "context", subject: "ip", limit: 60, windowSeconds: HOUR },
     { scope: "context", subject: "user", limit: 30, windowSeconds: HOUR },
   ],
+  // Buscar por foto (ADR-061): cada intento reduce una foto en el servidor ANTES de la cuota de IA
+  // (que solo cuenta las fotos válidas); esto acota también los intentos con archivos que no sirven.
+  photo: [
+    { scope: "photo", subject: "ip", limit: 60, windowSeconds: HOUR },
+    { scope: "photo", subject: "user", limit: 30, windowSeconds: HOUR },
+  ],
   // Editar el perfil revalida todo el layout (la foto va en la barra): pocas veces por hora.
   profile: [{ scope: "profile", subject: "user", limit: 20, windowSeconds: HOUR }],
   // Compartir se puede sin cuenta: por IP y, con sesión, también por cuenta.

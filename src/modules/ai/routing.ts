@@ -22,6 +22,7 @@ export const AI_TASK_INFO: Record<AITaskId, { label: string; feature: AIFeature 
   shopping_intent: { label: "¿Qué necesitas? (interpretar)", feature: "SHOPPING_INTENT" },
   look_copy: { label: "Nombre y explicación del look", feature: "LOOK_COPY" },
   post_context: { label: "Contexto de publicaciones largas", feature: "POST_CONTEXT" },
+  image_search: { label: "Búsqueda por foto (ve imágenes)", feature: "IMAGE_SEARCH" },
 };
 
 /**
@@ -40,6 +41,11 @@ export const ROUTABLE_MODELS = [
     provider: "openai_compatible",
     model: "anthropic/claude-haiku-4.5",
     label: "Claude Haiku 4.5 · referencia de calidad",
+  },
+  {
+    provider: "openai_compatible",
+    model: "google/gemini-2.5-flash-lite",
+    label: "Gemini 2.5 Flash Lite · ve imágenes, pago por uso",
   },
 ] as const satisfies readonly { provider: AIProviderId; model: string; label: string }[];
 

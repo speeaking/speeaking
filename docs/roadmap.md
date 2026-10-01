@@ -144,7 +144,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Mensajes privados entre personas (bandeja, hilo, no leídos, reportar)                                                                                         | ✅         |
 | Apoyos voluntarios (`SUPPORT_URL`), `/apoya` con costos transparentes y `/seguridad`; borrar mi cuenta desde Ajustes; columnas pegadas a los bordes (ADR-048) | ✅         |
 | Entrar con Google (código listo; se enciende con las credenciales del fundador, ADR-049); passkeys después                                                    | ✅         |
-| Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)                                                        | ⏳         |
+| Búsqueda por foto: describir las prendas de una foto y buscar parecidos reales (fase 4, `imageSearch`)                                                        | ✅ ADR-061 |
 | Centro de avisos (me gusta, comentarios, seguidores, mensajes), como la campana de Facebook                                                                   | ✅ ADR-059 |
 
 ### Ecosistema de IA por fases (plan del fundador, 2026-09-29)
@@ -159,6 +159,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Carrusel de productos en el feed: patrocinados, búsqueda declarada o comunidades, más vendidos, populares, novedades (ADR-051)                                 | ✅                                                                                               |
 | Detalles que se sienten: publicación en capa sobre el feed, foto que viaja a la ficha, «me gusta» que salta y vibra, doble toque, carrito como panel (ADR-052) | ✅                                                                                               |
 | Página de cookies y pie legal también en teléfono (ADR-053)                                                                                                    | ✅                                                                                               |
+| Buscar con una foto: el modelo describe la ropa y los objetos, la plataforma busca productos reales; la foto no se guarda (ADR-061)                            | ✅                                                                                               |
 | «Contexto»: resumen neutral de publicaciones largas, una vez y guardado (ADR-060)                                                                              | ✅                                                                                               |
 | Campana de avisos: reacciones, comentarios, seguidores y pedidos, agrupados como Facebook (ADR-059)                                                            | ✅                                                                                               |
 | Editar perfil con portada propia y foto; listas de seguidores y seguidos (ADR-058)                                                                             | ✅                                                                                               |
@@ -174,7 +175,7 @@ privacidad completo (descargar/borrar datos), notificaciones, verificación de c
 
 ## Solo preparado
 
-AI Companion del comprador, búsqueda por foto, AI Sales Agent (datos P4 listos), Autopiloto, creadores y
+AI Companion del comprador, AI Sales Agent (datos P4 listos), Autopiloto, creadores y
 afiliados (atribución `sourcePostId` lista), grupos creados por usuarios, app móvil (`/api/v1`).
 
 **Reels (P13), después del rediseño.** Fila de reels en el feed y visor vertical a pantalla completa, con

@@ -25,3 +25,18 @@ visibles por su texto. Límites por sección en `SEARCH_LIMITS`.
   publicaciones solo revisan las `UNINDEXED_SEARCH_WINDOW` (2,000) filas más recientes, así el costo
   no crece con la tabla.
 - **Después:** búsqueda semántica (pgvector) cuando el volumen lo pida.
+
+## Buscar con una foto (ADR-061)
+
+`/buscar/foto`: la persona elige una foto y ve productos parecidos de las tiendas.
+
+- **La IA describe, el código busca (P2).** `photo-search.ts` pide al modelo hasta 4 cosas que se
+  pueden comprar (nombre común en México y color) y las convierte en búsquedas de la más precisa a
+  la más general; `photo-search-service.ts` junta hasta 12 productos por cosa con la búsqueda de
+  siempre (`listShopProducts`), sin repetir.
+- **La foto no se guarda.** El navegador la reduce a 1024 px y el servidor a 768 px en JPEG sin
+  metadatos (`resizeForVision`); solo viaja al modelo. En el registro de IA queda que hubo una foto,
+  nunca la foto. El modelo tiene prohibido describir o identificar personas.
+- **Topes.** Solo con sesión; intentos por hora por cuenta e IP (`SOCIAL_LIMITS.photo`) antes de
+  reducir la foto, y la cuota de IA por persona (`PHOTO_SEARCH_LIMITS`, 10 por hora y 20 al día).
+- **Modelo.** `AI_VISION_MODEL` o la ruta de `image_search` en `/admin/ia`; sin él, «no disponible».

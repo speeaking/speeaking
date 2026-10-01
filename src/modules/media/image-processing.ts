@@ -207,6 +207,41 @@ export async function resizeForDelivery(input: Buffer, width: number): Promise<B
   }
 }
 
+/** Lado máximo de una foto para un modelo que ve imágenes (ADR-061): ≈ 258 tokens en Gemini. */
+export const VISION_DIMENSION = 768;
+
+/**
+ * Foto para la búsqueda por foto (ADR-061): validada como una subida (firma, cabecera, píxeles,
+ * tiempo, misma cola), girada según su EXIF, reducida a 768 px por lado y re-codificada a JPEG SIN
+ * metadatos (nada de ubicación ni cámara). No se guarda en ningún lado: solo viaja al modelo.
+ */
+export async function resizeForVision(input: Buffer): Promise<Buffer> {
+  if (input.byteLength > MAX_UPLOAD_BYTES) throw new ImageValidationError("TOO_LARGE");
+  if (!sniffImageFormat(input)) throw new ImageValidationError("UNSUPPORTED_FORMAT");
+  try {
+    return await queue.run(async () => {
+      await checkHeader(input);
+      try {
+        return await boundedDecoder(input)
+          .rotate()
+          .resize({
+            width: VISION_DIMENSION,
+            height: VISION_DIMENSION,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toBuffer();
+      } catch (error) {
+        throw toValidationError(error);
+      }
+    });
+  } catch (error) {
+    if (error instanceof BusyError) throw new ImageBusyError();
+    throw error;
+  }
+}
+
 async function decodeAndResize(input: Buffer, width: number) {
   await checkHeader(input);
   try {

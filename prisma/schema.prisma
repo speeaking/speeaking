@@ -703,6 +703,8 @@ enum AIFeature {
   VIRTUAL_TRY_ON
   /// «Contexto»: resumen neutral de una publicación larga, una vez por publicación (ADR-060).
   POST_CONTEXT
+  /// Búsqueda por foto: describir lo que se puede comprar en una foto; la foto no se guarda (ADR-061).
+  IMAGE_SEARCH
 }
 
 /// Quién financia una solicitud de IA (ADR-044). Solo PLATFORM y SYSTEM consumen el presupuesto

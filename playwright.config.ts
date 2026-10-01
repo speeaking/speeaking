@@ -46,6 +46,7 @@ export default defineConfig({
       AI_PROVIDER: "mock",
       ALLOW_SIMULATED_AI: "true",
       AI_IMAGE_MODEL: "",
+      AI_VISION_MODEL: "",
       GOOGLE_CLIENT_ID: "",
       GOOGLE_CLIENT_SECRET: "",
     },

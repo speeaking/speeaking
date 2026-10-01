@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "AIFeature" ADD VALUE 'IMAGE_SEARCH';
+

@@ -1665,3 +1665,42 @@ resumen». Aprobado con lo demás de la mesa el 2026-10-01.
 **Consecuencias.** Migración `post_context` (tabla y valor `POST_CONTEXT` de `AIFeature`). Pruebas:
 reglas y limpieza, servicio (guardado, sesión, límite, generación, fallo), botón (unitarias) y E2E
 (publicación larga con resumen; corta sin botón).
+
+## ADR-061 · Buscar con una foto
+
+**Contexto.** En la mesa desde el resumen del 2026-09-30 («búsqueda por foto»); aprobada con lo
+demás el 2026-10-01. Es la búsqueda por imagen de la fase 4 del ecosistema de IA (`imageSearch`).
+
+**Decisión.**
+
+- **Cómo funciona:** en `/buscar/foto` (enlace «Con foto» en Buscar) la persona elige una foto de su
+  galería o de la cámara. El navegador la reduce a 1024 px; el servidor la vuelve a reducir a 768 px,
+  en JPEG y sin metadatos (sin ubicación), y se la manda a un modelo que ve imágenes. El modelo solo
+  describe hasta 4 cosas que se pueden comprar, con el nombre más común en México («jeans», no
+  «pantalón de mezclilla») y su color. El código (P2) limpia eso, arma búsquedas de la más precisa a
+  la más general («camisa de lino blanca» → «camisa de lino» → «camisa blanca» → «camisa») y busca
+  productos reales con la búsqueda de siempre (moderación y existencias incluidas). Cada cosa es un
+  botón; los productos son reales y la nota lo dice («Descrito con IA; los productos son reales»).
+- **Privacidad:** la foto no se guarda en ningún lado: ni en el almacenamiento ni en el registro de
+  IA (solo queda que hubo una foto). El modelo tiene prohibido describir o identificar personas
+  (rostro, edad, cuerpo, si es famosa) y lo que diga la foto es un dato, no una instrucción.
+  OpenRouter con cero retención (`zdr`) y sin recolección de datos. La promesa se lee antes de
+  elegir la foto: «Tu foto no se guarda… Nunca reconocemos a las personas».
+- **Costo y topes (§7 del modelo de ingresos):** ≈ US$0.0002 por foto, medido con Gemini 2.5 Flash
+  Lite (1,494 tokens de entrada y 116 de salida, proveedor Google). Solo con sesión; 10 por hora y 20
+  al día por persona, dentro de las cuotas y del presupuesto mensual de IA. Antes de reducir la foto
+  (CPU) cuentan los intentos: 30 por hora por cuenta y 60 por IP, también con archivos que no sirven.
+- **Modelo:** `AI_VISION_MODEL` (el modelo de texto por omisión no ve imágenes) o la ruta de la
+  tarea `image_search` en `/admin/ia`. Sin modelo, la página dice que no está disponible; con la IA
+  simulada, el simulador «ve» una camisa blanca y unos jeans azules. Interruptor `imageSearch`.
+- **Por qué no embeddings de imagen (pgvector):** con el catálogo de hoy, describir y buscar por texto
+  es más barato, explicable y no obliga a procesar cada foto del catálogo. Los embeddings quedan para
+  cuando el volumen lo pida (ya marcado como V2+ en `docs/mvp-0.1.md`).
+
+**Consecuencias.** Migración `image_search` (valor `IMAGE_SEARCH` de `AIFeature`). El adaptador
+OpenAI-compatible acepta fotos en el mensaje (`images`), contadas como 1,100 tokens cada una para el
+tope de entrada, así el costo real no pasa del reservado. Cada búsqueda registra `SEARCH` con
+`scope: "photo"` (lo que se buscó y cuántos productos salieron; nunca la foto). Pruebas: conversión a
+búsquedas (el color no se repite aunque cambie de género o número), servicio (foto reducida sin
+EXIF, sin modelo de visión, foto inválida antes de gastar, cuota, búsqueda más general), adaptador
+con fotos y E2E (foto → cosas → productos semilla; sin sesión → entrar).

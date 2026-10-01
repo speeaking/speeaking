@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { AI_MAX_INPUT_TOKENS, costMicrosUsd } from "@/modules/ai/cost";
+import { AI_IMAGE_INPUT_TOKENS, AI_MAX_INPUT_TOKENS, costMicrosUsd } from "@/modules/ai/cost";
 import { adCopyTask } from "@/modules/ai/tasks/ad-copy";
 import { saleProposalTask } from "@/modules/ai/tasks/sale-proposal";
 import { AIProviderError } from "./errors";
@@ -277,6 +277,48 @@ describe("OpenAICompatibleProvider", () => {
       kind: "network",
     });
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe("fotos de entrada (búsqueda por foto, ADR-061)", () => {
+  const visionTask: AITask<{ image: string }, { headline: string; tags: string[] }> = {
+    ...(task as unknown as AITask<{ image: string }, { headline: string; tags: string[] }>),
+    messages: ({ image }) => ({ system: "Describe.", user: "¿Qué ves?", images: [image] }),
+  };
+
+  it("manda el texto y cada foto como partes del mensaje", async () => {
+    const { provider, calls } = setup([completion(good)]);
+
+    await provider.generate(visionTask, { image: "data:image/jpeg;base64,AAAA" });
+
+    const body = JSON.parse(String(calls[0]!.init.body));
+    expect(body.messages[1]).toEqual({
+      role: "user",
+      content: [
+        { type: "text", text: "¿Qué ves?" },
+        { type: "image_url", image_url: { url: "data:image/jpeg;base64,AAAA" } },
+      ],
+    });
+  });
+
+  it("cada foto cuenta en el tope de entrada: demasiadas se rechazan antes de llamar", async () => {
+    const { provider, calls } = setup([completion(good)]);
+    const many: AITask<{ image: string }, { headline: string; tags: string[] }> = {
+      ...visionTask,
+      messages: ({ image }) => ({
+        system: "Describe.",
+        user: "¿Qué ves?",
+        images: Array.from(
+          { length: Math.ceil(AI_MAX_INPUT_TOKENS / AI_IMAGE_INPUT_TOKENS) + 1 },
+          () => image,
+        ),
+      }),
+    };
+
+    await expect(provider.generate(many, { image: "data:," })).rejects.toMatchObject({
+      kind: "input_too_large",
+    });
+    expect(calls).toHaveLength(0);
   });
 });
 

@@ -108,7 +108,12 @@ export const AI_FEATURES: readonly AiFeatureDefinition[] = [
     "Resumen neutral de publicaciones largas, una vez por publicación y guardado para todos.",
     4,
   ),
-  planned("imageSearch", "Búsqueda por imagen", "Encuentra productos parecidos a una foto.", 4),
+  built(
+    "imageSearch",
+    "Búsqueda por foto",
+    "Describe la ropa y los objetos de una foto (nunca a las personas) y busca parecidos reales. La foto no se guarda.",
+    4,
+  ),
   planned("buyerAssistant", "Comprador IA", "Compara productos reales sin inventar.", 4),
   planned("giftFinder", "Regalos", "Recomendaciones de regalo con presupuesto.", 4),
   planned(

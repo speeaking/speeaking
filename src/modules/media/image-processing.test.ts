@@ -7,6 +7,7 @@ import {
   MAX_UPLOAD_BYTES,
   processImage,
   resizeForDelivery,
+  resizeForVision,
   sniffImageFormat,
 } from "./image-processing";
 
@@ -261,5 +262,30 @@ describe("resizeForDelivery (variantes de /media, ADR-039)", () => {
     for (const width of [0, -1, 1.5, 1601, Number.NaN]) {
       await expect(resizeForDelivery(input, width)).rejects.toBeInstanceOf(RangeError);
     }
+  });
+});
+
+describe("resizeForVision (búsqueda por foto, ADR-061)", () => {
+  it("reduce a 768 px por lado, en JPEG y sin ubicación ni metadatos", async () => {
+    const meta = await sharp(await resizeForVision(await jpegWithGps(1600, 1200))).metadata();
+
+    expect([meta.format, meta.width, meta.height]).toEqual(["jpeg", 768, 576]);
+    expect(meta.exif).toBeUndefined();
+  });
+
+  it("una foto alta también cabe en 768 px y una chica no se agranda", async () => {
+    const tall = await sharp(await resizeForVision(await jpegWithGps(900, 3000))).metadata();
+    expect(Math.max(tall.width!, tall.height!)).toBe(768);
+    const small = await sharp(await resizeForVision(await jpegWithGps(300, 200))).metadata();
+    expect([small.width, small.height]).toEqual([300, 200]);
+  });
+
+  it("los mismos topes que una subida: nada que no sea una foto llega al decodificador", async () => {
+    await expect(resizeForVision(Buffer.from("<svg></svg>".padEnd(64)))).rejects.toEqual(
+      new ImageValidationError("UNSUPPORTED_FORMAT"),
+    );
+    await expect(resizeForVision(pngHeaderOnly(20_000, 20_000, 8))).rejects.toEqual(
+      new ImageValidationError("TOO_COMPLEX"),
+    );
   });
 });
