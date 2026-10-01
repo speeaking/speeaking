@@ -16,7 +16,7 @@ export default async function PostModalPage({
   const { foto } = await searchParams;
   return (
     <RouteModal label="Publicación" match="/p/">
-      <PostDetail id={id} photo={foto} />
+      <PostDetail id={id} photo={foto} layer />
     </RouteModal>
   );
 }

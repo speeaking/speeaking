@@ -108,7 +108,7 @@ export function PostVideo({
 
   return (
     <div
-      className={cn("relative mx-auto overflow-hidden rounded-2xl bg-foreground", className)}
+      className={cn("relative mx-auto overflow-hidden rounded-2xl bg-black", className)}
       // Nunca más alto que el 75 % de la pantalla: un video vertical en un teléfono deja ver sus
       // controles y el texto; se angosta conservando su proporción.
       style={{ aspectRatio: aspect, width: `min(100%, calc(75dvh * ${aspect}))` }}
@@ -151,12 +151,12 @@ export function PostVideo({
                   type="button"
                   onClick={toggle}
                   aria-label="Pausar video"
-                  className="pointer-events-auto grid size-9 place-items-center rounded-full bg-foreground/70 text-background outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                  className="pointer-events-auto grid size-9 place-items-center rounded-full bg-black/60 text-white outline-none focus-visible:ring-3 focus-visible:ring-ring"
                 >
                   <Pause aria-hidden="true" className="size-4" />
                 </button>
               ) : null}
-              <span className="rounded-full bg-foreground/70 px-2 py-0.5 text-xs font-semibold text-background tabular-nums">
+              <span className="rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white tabular-nums">
                 {formatDuration(video.durationMs)}
               </span>
             </span>
@@ -165,7 +165,7 @@ export function PostVideo({
               onClick={toggleSound}
               aria-label={muted ? "Activar sonido" : "Silenciar"}
               aria-pressed={!muted}
-              className="pointer-events-auto grid size-9 place-items-center rounded-full bg-foreground/70 text-background outline-none focus-visible:ring-3 focus-visible:ring-ring"
+              className="pointer-events-auto grid size-9 place-items-center rounded-full bg-black/60 text-white outline-none focus-visible:ring-3 focus-visible:ring-ring"
             >
               {muted ? (
                 <VolumeX aria-hidden="true" className="size-4" />
@@ -182,7 +182,7 @@ export function PostVideo({
         </div>
       ) : null}
       {unsupported ? (
-        <p className="absolute inset-x-0 bottom-0 bg-foreground/80 px-3 py-2 text-sm text-background">
+        <p className="absolute inset-x-0 bottom-0 bg-black/80 px-3 py-2 text-sm text-white">
           Este navegador no puede reproducir este video. Ábrelo desde tu teléfono.
         </p>
       ) : null}

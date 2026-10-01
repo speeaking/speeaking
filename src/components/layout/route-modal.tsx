@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 /**
  * Una ruta abierta en capa sobre la página anterior (ADR-052): la URL cambia (se puede compartir,
  * recargar abre la página completa) y cerrar o «atrás» regresa a donde estabas, con el scroll intacto.
- * En teléfono ocupa la pantalla; en escritorio es una ventana centrada con scroll propio.
+ * En teléfono ocupa la pantalla; en escritorio es una ventana centrada con scroll propio. Si adentro
+ * hay un visor (`data-layout="theater"`, ADR-064), en pantallas anchas la ventana se ensancha y toma
+ * casi todo el alto: la imagen queda fija a la izquierda y lo demás se desplaza a la derecha.
  *
  * `match`: prefijo de ruta al que pertenece la capa (p. ej. `/p/`). Al navegar a otra ruta desde
  * dentro, el slot paralelo conserva su último contenido; la capa se cierra sola al ver que la URL ya
@@ -34,11 +36,11 @@ export function RouteModal({
       }}
     >
       <DialogContent
-        className="inset-0 top-0 left-0 block h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none bg-background p-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+        className="inset-0 top-0 left-0 block h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none bg-background p-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl lg:has-data-[layout=theater]:h-[92dvh] lg:has-data-[layout=theater]:max-w-[min(76rem,calc(100vw-3rem))] lg:has-data-[layout=theater]:bg-card"
         aria-describedby={undefined}
       >
         <DialogTitle className="sr-only">{label}</DialogTitle>
-        <div className="pt-12 pb-4 sm:pt-4">{children}</div>
+        <div className="pt-12 pb-4 sm:pt-4 lg:has-data-[layout=theater]:p-0">{children}</div>
       </DialogContent>
     </Dialog>
   );

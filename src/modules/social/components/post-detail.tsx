@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
 import { JoinPrompt } from "@/modules/feed/components/join-prompt";
 import { getMoreFromCommunity } from "@/modules/feed/home";
@@ -34,10 +35,16 @@ export async function loadPost(id: string, viewerId: string | null) {
 export async function PostDetail({
   id,
   photo: foto,
+  layer = false,
 }: {
   id: string;
   /** `?foto=3`: la foto que se tocó en el collage del feed (el carrusel la acota a las que hay). */
   photo?: string | string[];
+  /**
+   * En la capa sobre el feed (ADR-064): sin «Más de…» (el feed ya está detrás) y, con fotos o video,
+   * como visor en escritorio: la imagen a la izquierda y los comentarios a la derecha.
+   */
+  layer?: boolean;
 }) {
   const photo = z.coerce.number().int().min(1).safeParse(foto);
   const viewer = await getViewer();
@@ -49,28 +56,16 @@ export async function PostDetail({
   const community = post.community;
   const [comments, more] = await Promise.all([
     listComments(post.id),
-    community ? getMoreFromCommunity(community.slug, post.id, viewerId) : null,
+    community && !layer ? getMoreFromCommunity(community.slug, post.id, viewerId) : null,
   ]);
-  track({
-    type: "VIEW",
-    userId: viewerId,
-    entityType: "POST",
-    entityId: post.id,
-    sourcePostId: post.id,
-    surface: "POST_PAGE",
-  });
-
-  return (
-    <div className="flex flex-col gap-4 pb-4 md:pt-2">
-      <PostCard
-        post={post}
-        expanded
-        initialMediaIndex={photo.success ? photo.data - 1 : 0}
-        isSignedIn={viewer !== null}
-      />
+  // En el visor, lo que sigue a la publicación va dentro de ella (su columna derecha).
+  const theater = layer && (post.media.length > 0 || Boolean(post.video));
+  const inset = theater ? undefined : "px-4 md:px-0";
+  const extras = (
+    <>
       {/* Reportar (P14): anónimo para quien publicó; lo propio no se reporta. */}
       {post.author.userId !== viewerId ? (
-        <div className="-mt-2 flex justify-end px-4 md:px-0">
+        <div className={cn("-mt-2 flex justify-end", inset)}>
           <ReportButton
             targetType="POST"
             targetId={post.id}
@@ -79,8 +74,15 @@ export async function PostDetail({
           />
         </div>
       ) : null}
-      {viewer ? null : <JoinPrompt postPath={postPath} community={community} />}
-      <section aria-labelledby="comentarios" className="flex flex-col gap-4 px-4 md:px-0">
+      {viewer ? null : (
+        <JoinPrompt
+          postPath={postPath}
+          community={community}
+          // En la columna angosta del visor va apilado y sin márgenes propios.
+          className={theater ? "mx-0 md:flex-col md:items-stretch" : undefined}
+        />
+      )}
+      <section aria-labelledby="comentarios" className={cn("flex flex-col gap-4", inset)}>
         <h2 id="comentarios" className="text-lg font-bold">
           {/* El mismo total que la tarjeta («Comentar, 2 comentarios»), no el de la lista, que se
               corta en 100. Sin comentarios no se muestra un cero (principio 5). */}
@@ -93,6 +95,29 @@ export async function PostDetail({
         />
         {comments.length > 0 ? <CommentList comments={comments} /> : null}
       </section>
+    </>
+  );
+  track({
+    type: "VIEW",
+    userId: viewerId,
+    entityType: "POST",
+    entityId: post.id,
+    sourcePostId: post.id,
+    surface: "POST_PAGE",
+  });
+
+  return (
+    <div className={cn("flex flex-col gap-4 pb-4 md:pt-2", theater && "lg:gap-0 lg:p-0")}>
+      <PostCard
+        post={post}
+        expanded
+        initialMediaIndex={photo.success ? photo.data - 1 : 0}
+        isSignedIn={viewer !== null}
+        layout={theater ? "theater" : "card"}
+      >
+        {theater ? extras : null}
+      </PostCard>
+      {theater ? null : extras}
 
       {community && more && more.posts.length > 0 ? (
         <section

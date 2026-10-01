@@ -255,7 +255,7 @@ export function VideoPicker({ name }: { name: string }) {
         </div>
       ) : (
         <div
-          className="relative grid aspect-video place-items-center overflow-hidden rounded-2xl bg-foreground"
+          className="relative grid aspect-video place-items-center overflow-hidden rounded-2xl bg-black"
           data-uploading={phase.step === "working" ? "" : undefined}
         >
           {phase.poster ? (
@@ -294,14 +294,14 @@ export function VideoPicker({ name }: { name: string }) {
               <span className="relative grid size-14 place-items-center rounded-full bg-background/90">
                 <Play aria-hidden="true" className="size-6 translate-x-px" />
               </span>
-              <span className="absolute bottom-2 left-2 rounded-full bg-foreground/80 px-2 py-0.5 text-xs font-semibold text-background tabular-nums">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-xs font-semibold text-white tabular-nums">
                 {formatDuration(phase.durationMs)}
               </span>
               <button
                 type="button"
                 onClick={reset}
                 aria-label="Quitar video"
-                className="absolute top-2 right-2 grid size-9 place-items-center rounded-full bg-foreground/80 text-background outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                className="absolute top-2 right-2 grid size-9 place-items-center rounded-full bg-black/70 text-white outline-none focus-visible:ring-3 focus-visible:ring-ring"
               >
                 <X aria-hidden="true" className="size-5" />
               </button>

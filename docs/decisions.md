@@ -1800,3 +1800,31 @@ puede gastar el saldo de pruebas de una tienda (lo frena su tope diario) y una e
 tienda la quita; los reportes y la moderación siguen igual). Pendiente del abogado: una cláusula de
 colaboraciones en los términos. Pruebas: reglas, métricas, servicio contra PostgreSQL (quién ve
 qué, quién marca y quién quita), acción de publicar, tarjeta, avisos y E2E del flujo completo.
+
+## ADR-064 · Visor de fotos y video al abrir una publicación
+
+**Contexto.** Observación del fundador (2026-10-01): «cuando voy a ver las fotos donde son más de 5
+se abre un feed hacia abajo; se ve mal». La capa que abre una publicación desde el feed (ADR-052)
+pintaba la página completa en una columna de 672 px: la foto (más alta que la ventana de una
+laptop), los comentarios y «Más de <comunidad>» con más publicaciones. Para ver la foto completa
+había que desplazarse, y debajo seguía un feed dentro de la capa.
+
+**Decisión.**
+
+- **En la capa no hay «Más de…»**: el feed ya está detrás. La página completa `/p/[id]` (la puerta
+  de los enlaces compartidos, P1) lo conserva.
+- **Visor en escritorio.** Con fotos o video, en pantallas anchas (≥ 1024 px) la capa se ensancha y
+  toma el 92 % del alto: la imagen a la izquierda sobre negro, ajustada a la ventana y fija; a la
+  derecha, en una columna de 400 px que se desplaza, autor, texto, producto, acciones (barra de
+  íconos) y comentarios. Es CSS: la publicación es una rejilla y la imagen una celda fija
+  (`position: sticky`); el orden del documento no cambia, así que en teléfono se ve apilada como
+  siempre. La capa se ensancha sola con `:has([data-layout="theater"])`.
+- **La foto abierta nunca es más alta que la ventana**, también en la página completa y en teléfono:
+  el marco se angosta conservando su proporción (como ya hacía el video, ADR-062).
+- De paso: el marco y los controles del video usan negro fijo (con el tema oscuro, el marco salía
+  claro).
+
+**Consecuencias.** `PostCard` acepta `layout="theater"` y `children` (los comentarios van dentro de
+la publicación en el visor); `PostDetail` recibe `layer`. Pruebas: tarjeta (visor con fotos, sin
+fotos y sin abrir) y E2E `viewer.spec.ts` (lado a lado y dentro de la ventana en escritorio, apilado
+en teléfono, una sola publicación en la capa y comentar desde el visor).

@@ -24,7 +24,14 @@ import {
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { type CSSProperties, Fragment, useOptimistic, useState, useTransition } from "react";
+import {
+  type CSSProperties,
+  Fragment,
+  type ReactNode,
+  useOptimistic,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { CommunityAvatar } from "@/components/brand/community-avatar";
@@ -511,7 +518,7 @@ function CollaborationChip({ store }: { store: string }) {
   return (
     <p
       data-slot="collaboration-chip"
-      className="inline-flex max-w-full items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-ink-2"
+      className="inline-flex max-w-full items-center gap-1.5 self-start justify-self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-ink-2"
     >
       <Handshake aria-hidden="true" className="size-3.5 shrink-0" />
       <span className="truncate">Colaboración con {store}</span>
@@ -818,10 +825,20 @@ export function PostCard({
   initialMediaIndex = 0,
   isSignedIn = true,
   variant = "standard",
+  layout = "card",
+  children,
 }: {
   post: FeedItemDTO;
   index?: number;
   expanded?: boolean;
+  /**
+   * `theater`: visor de la capa en escritorio (ADR-064). Con fotos o video, la imagen queda a la
+   * izquierda ajustada a la ventana y todo lo demás (texto, acciones y `children`) a la derecha.
+   * En pantallas angostas se ve igual que la tarjeta abierta.
+   */
+  layout?: "card" | "theater";
+  /** Lo que sigue a las acciones dentro de la publicación (comentarios en el visor). */
+  children?: ReactNode;
   /** Foto con la que abre el carrusel (p. ej. la que se tocó en el collage del feed). */
   initialMediaIndex?: number;
   /**
@@ -875,6 +892,9 @@ export function PostCard({
   const useCarousel = expanded || (isSale && images.length === 1);
   const shell =
     "flex flex-col gap-3 border-b bg-card px-4 py-4 motion-safe:animate-rise md:rounded-3xl md:border";
+  // Abierta, la foto nunca es más alta que la ventana: se angosta conservando su proporción.
+  const mediaAspect = cover ? frameAspect(cover, isSale ? PRODUCT_FRAME : FEED_FRAME) : 1;
+  const theater = layout === "theater" && expanded && (cover !== undefined || Boolean(post.video));
 
   // Portada: foto a la izquierda (300 px, como la maqueta) y titular, texto y conversación a la
   // derecha. Tarjeta blanca: la foto pone el color (paleta rosa mexicano; `community-soft` es solo
@@ -955,7 +975,13 @@ export function PostCard({
   }
 
   return (
-    <article data-variant="standard" className={shell} style={style} aria-labelledby={labelledBy}>
+    <article
+      data-variant="standard"
+      data-layout={theater ? "theater" : undefined}
+      className={cn(shell, theater && THEATER)}
+      style={style}
+      aria-labelledby={labelledBy}
+    >
       {intent ? <IntentChip intent={intent} /> : null}
       {post.collaboration && product?.thirdPartyStore ? (
         <CollaborationChip store={product.thirdPartyStore} />
@@ -966,45 +992,60 @@ export function PostCard({
 
       {/* Video corto (ADR-062): empieza solo y sin sonido al verse en el feed; abierto, con controles. */}
       {post.video ? (
-        <PostVideo
-          video={post.video}
-          expanded={expanded}
-          overlay={videoTags}
-          label={
-            product
-              ? `Video de ${product.title}`
-              : `Video de la publicación de ${post.author.displayName}`
-          }
-        />
+        <MediaStage theater={theater}>
+          <PostVideo
+            video={post.video}
+            expanded={expanded}
+            overlay={videoTags}
+            label={
+              product
+                ? `Video de ${product.title}`
+                : `Video de la publicación de ${post.author.displayName}`
+            }
+          />
+        </MediaStage>
       ) : null}
 
       {/* Varias fotos en el feed: mosaico como Facebook (ocupa poco y cada foto abre la publicación
           en ella), también en las ventas, con el precio en su bloque. Una sola foto de venta y la
           publicación abierta: carrusel de marco fijo (4:5 o cuadrado) con el precio encima. */}
       {cover ? (
-        <div className="flex flex-col gap-1.5">
-          {useCarousel ? (
-            <MediaCarousel
-              items={images}
-              label={
-                product
-                  ? `Fotos de ${product.title}`
-                  : `Fotos de la publicación de ${post.author.displayName}`
-              }
-              aspect={frameAspect(cover, isSale ? PRODUCT_FRAME : FEED_FRAME)}
-              preloadFirst={index === 0}
-              initialIndex={initialMediaIndex}
-              onDoubleTap={likeByDoubleTap}
-              overlay={
-                product && productHref ? <PriceTag product={product} href={productHref} /> : null
-              }
-              className="rounded-2xl"
-            />
-          ) : (
-            <MediaCollage items={images} href={`/p/${post.id}`} preloadFirst={index === 0} />
-          )}
-          <PhotoCredit media={post.media} className="text-right" />
-        </div>
+        <MediaStage theater={theater}>
+          <div
+            className={cn(
+              "flex flex-col gap-1.5",
+              expanded && useCarousel && "mx-auto w-[min(100%,calc(78dvh*var(--media-aspect)))]",
+              theater && "lg:w-[min(100%,calc(84dvh*var(--media-aspect)))]",
+            )}
+            style={
+              expanded && useCarousel
+                ? ({ "--media-aspect": mediaAspect } as CSSProperties)
+                : undefined
+            }
+          >
+            {useCarousel ? (
+              <MediaCarousel
+                items={images}
+                label={
+                  product
+                    ? `Fotos de ${product.title}`
+                    : `Fotos de la publicación de ${post.author.displayName}`
+                }
+                aspect={mediaAspect}
+                preloadFirst={index === 0}
+                initialIndex={initialMediaIndex}
+                onDoubleTap={likeByDoubleTap}
+                overlay={
+                  product && productHref ? <PriceTag product={product} href={productHref} /> : null
+                }
+                className="rounded-2xl"
+              />
+            ) : (
+              <MediaCollage items={images} href={`/p/${post.id}`} preloadFirst={index === 0} />
+            )}
+            <PhotoCredit media={post.media} className="text-right" />
+          </div>
+        </MediaStage>
       ) : null}
 
       {product && productHref ? (
@@ -1021,11 +1062,35 @@ export function PostCard({
         post={post}
         isSignedIn={isSignedIn}
         onPostPage={expanded}
+        // La columna del visor es angosta: barra de íconos, como en la portada.
+        compact={theater}
         reaction={reaction}
         onReact={react}
         toggleReaction={toggleReaction}
       />
       {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
+      {children}
     </article>
+  );
+}
+
+/**
+ * Visor de escritorio (ADR-064): la publicación es una rejilla de dos columnas. La imagen ocupa la
+ * izquierda a todo lo alto de la capa y se queda fija mientras la derecha (autor, texto, acciones y
+ * comentarios) se desplaza. Las filas vacías no miden nada: el espacio entre piezas va en márgenes.
+ */
+const THEATER =
+  "lg:grid lg:grid-cols-[minmax(0,1fr)_25rem] lg:content-start lg:gap-0 lg:rounded-none lg:border-0 lg:p-0 lg:pb-5 lg:*:col-start-2 lg:*:mx-5 lg:*:mt-3 lg:*:first:mt-5 lg:*:first:mr-12";
+
+/** El lado de la imagen en el visor; fuera de él no agrega nada. */
+function MediaStage({ theater, children }: { theater: boolean; children: ReactNode }) {
+  if (!theater) return children;
+  return (
+    <div
+      data-slot="post-stage"
+      className="lg:sticky lg:top-0 lg:col-start-1! lg:row-[1/span_40] lg:m-0! lg:grid lg:h-[92dvh] lg:min-w-0 lg:place-items-center lg:bg-black lg:p-4"
+    >
+      {children}
+    </div>
   );
 }

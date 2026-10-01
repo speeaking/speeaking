@@ -319,6 +319,46 @@ describe("PostCard: producto de otra tienda (ADR-063)", () => {
   });
 });
 
+describe("PostCard: visor de la capa (ADR-064)", () => {
+  it("con fotos, la imagen va en su escenario y lo que sigue queda dentro de la publicación", () => {
+    render(
+      <PostCard post={post()} expanded layout="theater">
+        <section aria-label="Comentarios">Sin comentarios</section>
+      </PostCard>,
+    );
+
+    const article = screen.getByRole("article");
+    expect(article).toHaveAttribute("data-layout", "theater");
+    const stage = article.querySelector<HTMLElement>('[data-slot="post-stage"]')!;
+    expect(
+      within(stage).getByRole("region", { name: "Fotos de la publicación de Ana" }),
+    ).toBeInTheDocument();
+    expect(within(article).getByRole("region", { name: "Comentarios" })).toBeInTheDocument();
+    // La foto se limita al alto de la ventana conservando su proporción (4:5 → 0.8).
+    const frame = stage.firstElementChild as HTMLElement;
+    expect(frame.style.getPropertyValue("--media-aspect")).toBe("0.8");
+  });
+
+  it("sin fotos ni video no hay visor: es la tarjeta abierta de siempre", () => {
+    render(
+      <PostCard post={post({ media: [] })} expanded layout="theater">
+        <section aria-label="Comentarios">Sin comentarios</section>
+      </PostCard>,
+    );
+
+    const article = screen.getByRole("article");
+    expect(article).not.toHaveAttribute("data-layout");
+    expect(article.querySelector('[data-slot="post-stage"]')).toBeNull();
+    expect(within(article).getByRole("region", { name: "Comentarios" })).toBeInTheDocument();
+  });
+
+  it("en el feed (sin abrir) nunca es visor, aunque se pida", () => {
+    render(<PostCard post={post()} layout="theater" />);
+
+    expect(screen.getByRole("article")).not.toHaveAttribute("data-layout");
+  });
+});
+
 describe("PostCard: cabecera", () => {
   it("una cuenta editorial empieza por su comunidad, sin avatar de iniciales", () => {
     render(
