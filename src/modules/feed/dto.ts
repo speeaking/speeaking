@@ -1,5 +1,6 @@
 import type {
   Authenticity,
+  MediaKind,
   PaymentMethod,
   PostType,
   ProductStatus,
@@ -21,6 +22,20 @@ export type FeedMediaDTO = {
   alt: string | null;
   /** «Foto: <name> · <license>», enlazado a `url` (solo http/https). */
   credit: { name: string; url: string | null; license: string | null } | null;
+};
+
+/**
+ * Video corto de una publicación (ADR-062). `url` es `/media/<clave>`: autoriza y redirige al
+ * archivo; la portada es una foto como las demás (`/media/<clave>?w=`).
+ */
+export type FeedVideoDTO = {
+  url: string;
+  width: number;
+  height: number;
+  durationMs: number;
+  /** «hvc1»/«hev1» (HEVC): un navegador que no lo reproduce muestra la portada con un aviso. */
+  codec: string | null;
+  poster: { url: string; width: number; height: number; blurDataUrl: string | null } | null;
 };
 
 /**
@@ -51,7 +66,10 @@ export type FeedItemDTO = {
     isSeller: boolean;
   };
   community: { slug: string; name: string; emoji: string; hue: number } | null;
+  /** Fotos (nunca videos). */
   media: FeedMediaDTO[];
+  /** Video corto (ADR-062): una publicación lleva fotos o un video, no los dos. */
+  video?: FeedVideoDTO | null;
   product: {
     slug: string;
     title: string;
@@ -132,6 +150,11 @@ type MediaRow = {
   creditName: string | null;
   creditUrl: string | null;
   license: string | null;
+  /** Sin el campo: foto (consultas que solo leen fotos de productos). */
+  kind?: MediaKind;
+  durationMs?: number | null;
+  videoCodec?: string | null;
+  poster?: { storageKey: string; width: number; height: number; blurDataUrl: string | null } | null;
 };
 
 /** Forma mínima de la fila que necesita el mapeo. No incluye el costo: ni siquiera se consulta. */
@@ -224,6 +247,25 @@ function toMedia(media: MediaRow, publicUrl: (storageKey: string) => string): Fe
   };
 }
 
+function toVideo(media: MediaRow, publicUrl: (storageKey: string) => string): FeedVideoDTO {
+  const poster = media.poster;
+  return {
+    url: publicUrl(media.storageKey),
+    width: media.width,
+    height: media.height,
+    durationMs: media.durationMs ?? 0,
+    codec: media.videoCodec ?? null,
+    poster: poster
+      ? {
+          url: publicUrl(poster.storageKey),
+          width: poster.width,
+          height: poster.height,
+          blurDataUrl: poster.blurDataUrl,
+        }
+      : null,
+  };
+}
+
 /**
  * Construye el DTO público campo por campo (lista blanca): aunque la fila traiga más datos —por
  * ejemplo el costo del producto— no pasan al navegador. `ranking` lo agrega el motor del feed.
@@ -238,7 +280,10 @@ export function toFeedItem(
   // Una publicación de venta muestra las fotos ACTUALES del producto: si el vendedor las cambia,
   // el feed lo refleja. Su copia propia queda solo como respaldo.
   const productLinks = row.type === "PRODUCT" ? (row.product?.media ?? []) : [];
-  const links = productLinks.length > 0 ? productLinks : row.media;
+  const links = (productLinks.length > 0 ? productLinks : row.media).filter(
+    ({ media }) => media.kind !== "VIDEO",
+  );
+  const videoRow = row.media.find(({ media }) => media.kind === "VIDEO")?.media ?? null;
   const product = row.product;
 
   return {
@@ -264,6 +309,7 @@ export function toFeedItem(
         }
       : null,
     media: links.map(({ media }) => toMedia(media, publicUrl)),
+    video: videoRow ? toVideo(videoRow, publicUrl) : null,
     product: product
       ? {
           slug: product.slug,

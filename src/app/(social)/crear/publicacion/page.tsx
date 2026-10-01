@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { listCommunities } from "@/modules/identity/service";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { videoUploadsEnabled } from "@/modules/media/video-upload";
 import { CreatePostForm } from "@/modules/social/components/create-post-form";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
@@ -37,6 +38,7 @@ export default async function NewPostPage() {
           communities={sorted}
           products={products}
           defaultCommunity={sorted.find((community) => mine.has(community.id))?.slug}
+          videoEnabled={videoUploadsEnabled()}
         />
       </div>
     </>

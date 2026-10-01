@@ -12,7 +12,9 @@ import { deleteStoredMedia } from "./variant-keys";
  * Las fotos de un comprobante de autenticidad NUNCA son huérfanas: son privadas a propósito (no se
  * adjuntan a nada) y el equipo las necesita para revisar y auditar. Tampoco las fotos y resultados
  * de Pruébatelo (`try_on_photos`, `try_on_results`, ADR-045): privadas, con su propia fecha de
- * borrado (`tryon/service.ts`). Ni la foto de perfil o la portada de alguien (`profiles`, ADR-058).
+ * borrado (`tryon/service.ts`). Ni la foto de perfil o la portada de alguien (`profiles`, ADR-058),
+ * ni la portada de un video que sigue existiendo (`media."posterId"`, ADR-062): se va en la tanda
+ * siguiente a la de su video. Un video sin adjuntar se borra igual que una foto.
  * Cuentan las del comprobante
  * vigente (`authenticity_checks."proofMediaIds"`, con `@>` para usar su índice GIN) y las de envíos
  * anteriores (`authenticity_proof_history`, índice por `mediaId`; `trust/proof-media.ts`).
@@ -74,7 +76,8 @@ export async function deleteOrphanMedia(
         AND NOT EXISTS (
           SELECT 1 FROM "profiles" pf
           WHERE pf."avatarMediaId" = m."id" OR pf."coverMediaId" = m."id"
-        )`;
+        )
+        AND NOT EXISTS (SELECT 1 FROM "media" v WHERE v."posterId" = m."id")`;
     return { deleted: row?.count ?? 0, failedFiles: [] };
   }
 
@@ -132,6 +135,7 @@ export async function lockOrphanBatch(tx: Tx, cutoff: Date, batchSize: number) {
         SELECT 1 FROM "profiles" pf
         WHERE pf."avatarMediaId" = o."id" OR pf."coverMediaId" = o."id"
       )
+      AND NOT EXISTS (SELECT 1 FROM "media" v WHERE v."posterId" = o."id")
     ORDER BY o."createdAt"
     LIMIT ${batchSize}::int
     FOR UPDATE SKIP LOCKED`;
@@ -166,5 +170,6 @@ export async function deleteLockedOrphans(tx: Tx, ids: readonly string[]) {
         SELECT 1 FROM "profiles" pf
         WHERE pf."avatarMediaId" = m."id" OR pf."coverMediaId" = m."id"
       )
+      AND NOT EXISTS (SELECT 1 FROM "media" v WHERE v."posterId" = m."id")
     RETURNING m."storageKey"`;
 }

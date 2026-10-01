@@ -203,6 +203,54 @@ describe("PostCard: fotos", () => {
   });
 });
 
+describe("PostCard: video corto (ADR-062)", () => {
+  const video: NonNullable<FeedItemDTO["video"]> = {
+    url: "/media/videos/2026/10/v.mp4",
+    width: 180,
+    height: 320,
+    durationMs: 42_000,
+    codec: "avc1",
+    poster: { url: "/media/images/p.webp", width: 180, height: 320, blurDataUrl: null },
+  };
+
+  it("muestra el video con su portada, duración y controles, sin mosaico de fotos", () => {
+    const { container } = render(<PostCard post={post({ media: [], video })} />);
+
+    const element = container.querySelector("video")!;
+    expect(element).toHaveAttribute("src", video.url);
+    expect(element).toHaveAttribute("poster", "/media/images/p.webp?w=828");
+    expect(element).toHaveAttribute("preload", "none");
+    expect(element).toHaveAccessibleName("Video de la publicación de Ana");
+    expect(screen.getByText("0:42")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reproducir video" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Activar sonido" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(container.querySelector("img[src*='/media/']")).toBeNull();
+  });
+
+  it("abierta, usa los controles del navegador y descarga solo sus datos", () => {
+    const { container } = render(<PostCard post={post({ media: [], video })} expanded />);
+
+    const element = container.querySelector("video")!;
+    expect(element).toHaveAttribute("controls");
+    expect(element).toHaveAttribute("preload", "metadata");
+    expect(screen.queryByRole("button", { name: "Reproducir video" })).toBeNull();
+  });
+
+  it("con comunidad y sin fotos no se vuelve tarjeta tipográfica", () => {
+    render(
+      <PostCard
+        post={post({ media: [], video, body: "¡Miren!", community: gaming })}
+        variant="bigType"
+      />,
+    );
+
+    expect(screen.getByRole("article")).toHaveAttribute("data-variant", "standard");
+  });
+});
+
 describe("PostCard: cabecera", () => {
   it("una cuenta editorial empieza por su comunidad, sin avatar de iniciales", () => {
     render(

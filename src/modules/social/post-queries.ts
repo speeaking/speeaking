@@ -9,7 +9,10 @@ import { MAX_POST_IMAGES } from "./schemas";
 /** UUID nulo: permite filtrar "lo del espectador" sin cambiar la forma de la consulta. */
 const NO_VIEWER = "00000000-0000-0000-0000-000000000000";
 
-/** Fotos en orden, hasta el máximo que muestra una publicación (feed y carrusel), con su crédito. */
+/**
+ * Fotos en orden, hasta el máximo que muestra una publicación (feed y carrusel), con su crédito; o
+ * su video corto con la portada (ADR-062).
+ */
 const mediaLinks = {
   orderBy: { position: "asc" },
   take: MAX_POST_IMAGES,
@@ -24,6 +27,10 @@ const mediaLinks = {
         creditName: true,
         creditUrl: true,
         license: true,
+        kind: true,
+        durationMs: true,
+        videoCodec: true,
+        poster: { select: { storageKey: true, width: true, height: true, blurDataUrl: true } },
       },
     },
   },

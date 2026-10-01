@@ -380,6 +380,14 @@ model Media {
   license     String?
   status      MediaStatus @default(READY)
   createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  /// Video corto (ADR-062): duración en milisegundos, leída del archivo por el servidor.
+  durationMs  Int?
+  /// Video: su códec («avc1», «hvc1»…). Un navegador que no reproduce HEVC muestra la portada.
+  videoCodec  String?     @db.VarChar(8)
+  /// Portada de un video: una foto propia, pública cuando el video lo es (ADR-062).
+  posterId    String?     @unique @db.Uuid
+  poster      Media?      @relation("videoPoster", fields: [posterId], references: [id], onDelete: SetNull)
+  posterOf    Media?      @relation("videoPoster")
 
   postLinks     PostMedia[]
   productLinks  ProductMedia[]

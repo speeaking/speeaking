@@ -16,6 +16,13 @@ const tryOnPhoto = vi.fn();
 const tryOnResult = vi.fn();
 /** Foto de perfil o portada de alguien (ADR-058). */
 const profileLink = vi.fn();
+/** Portada de un video adjunto a algo público (ADR-062): el video, por `posterId`. */
+const posterOfLink = vi.fn();
+/** Videos (ADR-062): la entrega la hace su almacenamiento (redirección o rangos). */
+const deliverVideo = vi.fn(
+  async (_key: string, _request: Request, headers: Record<string, string>) =>
+    new Response(null, { status: 302, headers: { ...headers, Location: "https://r2/firmada" } }),
+);
 const findUserRole = vi.fn();
 
 /** Almacenamiento en memoria: originales y variantes (`variants/...`). */
@@ -33,7 +40,7 @@ vi.mock("@/modules/identity/session", () => ({ getSession }));
 vi.mock("@/modules/admin/queries", () => ({ findUserRole }));
 vi.mock("@/server/db", () => ({
   db: {
-    media: { findUnique },
+    media: { findUnique, findFirst: posterOfLink },
     authenticityCheck: { findMany: currentProofs },
     authenticityProofHistory: { findMany: pastProofs },
     postMedia: { findFirst: publicPostLink },
@@ -43,7 +50,10 @@ vi.mock("@/server/db", () => ({
     profile: { findFirst: profileLink },
   },
 }));
-vi.mock("@/server/providers/storage", () => ({ getStorage: () => ({ get, put }) }));
+vi.mock("@/server/providers/storage", () => ({
+  getStorage: () => ({ get, put }),
+  getVideoStore: () => ({ deliver: deliverVideo }),
+}));
 vi.mock("@/modules/media/image-processing", async (importOriginal) => {
   const actual = await importOriginal<typeof ImageProcessing>();
   return {
@@ -119,7 +129,56 @@ beforeEach(() => {
   tryOnPhoto.mockResolvedValue(null);
   tryOnResult.mockResolvedValue(null);
   profileLink.mockResolvedValue(null);
+  posterOfLink.mockResolvedValue(null);
   findUserRole.mockImplementation(async (id: string) => (id === ADMIN ? "ADMIN" : "USER"));
+});
+
+describe("GET /media/[...key]: videos cortos (ADR-062)", () => {
+  const VIDEO_KEY = "videos/2026/10/0199a000-0000-7000-8000-00000000000c.mp4";
+  const video = (links: number) => ({ ...row(links), kind: "VIDEO" });
+
+  it("público: el almacenamiento lo entrega (nunca se carga en la app), caché solo del navegador", async () => {
+    findUnique.mockResolvedValue(video(1));
+
+    const response = await request(VIDEO_KEY);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("https://r2/firmada");
+    expect(response.headers.get("Cache-Control")).toBe("private, max-age=600");
+    expect(response.headers.get("Content-Security-Policy")).toContain("sandbox");
+    expect(deliverVideo).toHaveBeenCalledWith(VIDEO_KEY, expect.any(Request), expect.any(Object));
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it("sin publicar: 404 a los demás y a su dueño sin caché", async () => {
+    findUnique.mockResolvedValue(video(0));
+    expect((await request(VIDEO_KEY)).status).toBe(404);
+    expect(deliverVideo).not.toHaveBeenCalled();
+
+    as(OWNER);
+    const own = await request(VIDEO_KEY);
+    expect(own.status).toBe(302);
+    expect(own.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
+  it("su portada es pública solo mientras el video está en algo publicado", async () => {
+    findUnique.mockResolvedValue(row(0));
+    expect((await request()).status).toBe(404);
+
+    posterOfLink.mockResolvedValue({ id: "video" });
+    const response = await request();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(posterOfLink).toHaveBeenCalledWith({
+      where: {
+        posterId: MEDIA_ID,
+        postLinks: {
+          some: { post: { status: "PUBLISHED", AND: [expect.any(Object)] } },
+        },
+      },
+      select: { id: true },
+    });
+  });
 });
 
 describe("GET /media/[...key] (SEC-14)", () => {
@@ -201,6 +260,7 @@ describe("GET /media/[...key] (SEC-14)", () => {
       ownerId: true,
       status: true,
       width: true,
+      kind: true,
     });
     expect(publicProductLink).toHaveBeenCalledWith({
       where: { mediaId: MEDIA_ID, product: { moderationStatus: "VISIBLE" } },

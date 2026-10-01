@@ -11,7 +11,7 @@ import { isProofMedia } from "@/modules/trust/proof-media";
 import { isTryOnMedia } from "@/modules/tryon/media";
 import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
-import { getStorage } from "@/server/providers/storage";
+import { getStorage, getVideoStore } from "@/server/providers/storage";
 import { assertSafeKey, InvalidStorageKeyError } from "@/server/providers/storage/types";
 
 /**
@@ -23,6 +23,11 @@ import { assertSafeKey, InvalidStorageKeyError } from "@/server/providers/storag
  */
 const PUBLIC_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
 const PRIVATE_CACHE = "private, no-store";
+/**
+ * Video público (ADR-062): la redirección a su URL firmada (o el archivo, en disco) se guarda 10
+ * minutos solo en el navegador, que así reusa lo que ya descargó; nunca en una caché compartida.
+ */
+const PUBLIC_VIDEO_CACHE = "private, max-age=600";
 /** Pública pero entregada degradada (el original en vez de la variante): que nadie la guarde. */
 const DEGRADED_CACHE = "no-store";
 
@@ -71,7 +76,7 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
 
   const media = await db.media.findUnique({
     where: { storageKey: key },
-    select: { id: true, ownerId: true, status: true, width: true },
+    select: { id: true, ownerId: true, status: true, width: true, kind: true },
   });
   if (!media || media.status !== "READY") return notFound();
 
@@ -85,6 +90,16 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
   const isPublic = publiclyAttached && !(await isProof()) && !(await isTryOn());
   if (!isPublic && !(await canSeePrivate(media, publiclyAttached, isProof, isTryOn))) {
     return notFound();
+  }
+
+  // Un video (ADR-062) nunca se carga en la app (pesa hasta 50 MB y Vercel corta en 4.5 MB): con
+  // el bucket, redirección a una URL firmada de lectura; en disco, por rangos (Safari los exige).
+  if (media.kind === "VIDEO") {
+    return getVideoStore().deliver(key, request, {
+      "Cache-Control": isPublic ? PUBLIC_VIDEO_CACHE : PRIVATE_CACHE,
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    });
   }
 
   // Autorizada: recién ahora se lee el archivo o su variante.
@@ -126,7 +141,7 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
  * unirlo a la foto, y eso crece con cada adjunto en cada petición de imagen.
  */
 async function isPubliclyAttached(mediaId: string) {
-  const [post, product, profile] = await Promise.all([
+  const [post, product, profile, posterOf] = await Promise.all([
     db.postMedia.findFirst({
       where: { mediaId, post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } },
       select: { mediaId: true },
@@ -140,8 +155,16 @@ async function isPubliclyAttached(mediaId: string) {
       where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId }] },
       select: { userId: true },
     }),
+    // Portada de un video adjunto a una publicación PUBLICADA (ADR-062): llave única `posterId`.
+    db.media.findFirst({
+      where: {
+        posterId: mediaId,
+        postLinks: { some: { post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } } },
+      },
+      select: { id: true },
+    }),
   ]);
-  return post !== null || product !== null || profile !== null;
+  return post !== null || product !== null || profile !== null || posterOf !== null;
 }
 
 /**

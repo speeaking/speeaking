@@ -1704,3 +1704,51 @@ tope de entrada, así el costo real no pasa del reservado. Cada búsqueda regist
 búsquedas (el color no se repite aunque cambie de género o número), servicio (foto reducida sin
 EXIF, sin modelo de visión, foto inválida antes de gastar, cuota, búsqueda más general), adaptador
 con fotos y E2E (foto → cosas → productos semilla; sin sesión → entrar).
+
+## ADR-062 · Videos cortos
+
+**Contexto.** Último punto de la mesa aprobada el 2026-10-01. P13 pedía un proveedor de video
+gestionado (Cloudflare Stream, Mux o Bunny) para transcodificar, pero cobra por minuto guardado y
+visto sin que nadie lo pague: el plan de sostenibilidad (§7 del modelo de ingresos) eligió guardar
+los videos en R2 tal cual, con topes, para que la función no pierda dinero.
+
+**Decisión.**
+
+- **Qué:** una publicación lleva fotos o un video corto (no los dos), de hasta 60 s y 50 MB, en MP4
+  o MOV (lo que graba cualquier teléfono). En «Nueva publicación» se elige «Fotos | Video»; lo de la
+  otra pestaña no se pierde al cambiar.
+- **Sin transcodificar:** el archivo se guarda como llega. El servidor lo valida leyendo su
+  estructura por rangos, unos KB (`media/video-container.ts`): `ftyp` y `moov` (también al final del
+  archivo), duración de 60 s o menos, hasta 4K, video H.264 o HEVC y audio AAC u Opus (o sin audio).
+  Lo demás se borra de inmediato con el motivo («Ese archivo no es un video MP4 o MOV»). Un video
+  fragmentado sin duración declarada (grabado en un navegador) se rechaza. Un HEVC en un navegador
+  que no lo reproduce muestra la portada con un aviso.
+- **El archivo nunca pasa por la app** (Vercel corta en 4.5 MB): con R2, el navegador lo sube con una
+  URL firmada (PUT con tamaño y tipo firmados, 15 minutos) y `/media` autoriza como siempre y
+  redirige a una URL firmada de lectura (1 h, fechada por bloques de 10 minutos para que el navegador
+  reuse lo descargado). R2 no cobra la salida. En desarrollo, una ruta local recibe el archivo y
+  `/media` lo sirve por rangos (Safari no reproduce sin ellos).
+- **Portada:** el navegador toma un cuadro cerca del primer segundo y lo sube como una foto (se
+  re-codifica sin metadatos). Es pública solo mientras su video lo es.
+- **En el feed (P13):** empieza solo y sin sonido cuando se ve al menos el 60 %; con ahorro de datos,
+  red 2G o «reducir movimiento» solo baja la portada (`preload="none"`) y empieza al tocarlo. Uno a la
+  vez; la bocina activa el sonido. Abierto, con los controles del navegador.
+- **Privacidad y moderación, como las fotos:** privado hasta publicarse, el recolector borra lo
+  abandonado a las 24 h (la portada, en la tanda siguiente a su video), reportes y ocultamiento del
+  equipo. Ventana de retiro: una URL firmada ya entregada sirve hasta ~1 h, más 10 minutos de caché
+  del navegador (en las fotos es la caché de 1 h, ADR-039).
+- **Topes:** 5 videos por hora y 15 al día por cuenta, 30 por hora por IP; cada URL firmada sirve
+  para un archivo de ese tamaño exacto.
+- **En producción, apagado hasta configurar el CORS del bucket** (`VIDEO_UPLOADS=true`,
+  `docs/deploy.md` paso 4 bis). Los ya publicados se ven siempre.
+- **Después:** fila de Reels y visor vertical (P13), subtítulos, métricas (vista a 3 s) y
+  transcodificación con un proveedor cuando haya ingresos que la paguen.
+
+**Consecuencias.** Migración `short_videos` (`durationMs`, `videoCodec`, `posterId` único con un
+CHECK: solo un video tiene portada). Dependencia `@aws-sdk/s3-request-presigner` 3.1140.0 (la misma
+versión que el cliente). CSP: `media-src` y `connect-src` permiten solo el origen del bucket. Las
+fotos de publicaciones, productos y Sube y vende exigen `kind: IMAGE`: un video no se cuela como
+foto. Pruebas: estructura (MP4, `moov` al final, MOV girado, HEVC y cada rechazo con videos reales de
+`tests/fixtures/video`), almacenamiento (rangos, recepción local, URLs firmadas), servicio, `/media`
+(video y portada), recolector (portada), DTO, tarjeta y E2E (subir, revisar, publicar y reproducir;
+un archivo falso se rechaza).

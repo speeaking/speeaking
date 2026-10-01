@@ -1,6 +1,6 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
-import { contentSecurityPolicy, createNonce, NONCE_HEADER } from "@/lib/csp";
+import { contentSecurityPolicy, createNonce, NONCE_HEADER, storageOrigin } from "@/lib/csp";
 import { AUTH_COOKIE_PREFIX, PROTECTED_PREFIXES } from "@/modules/identity/constants";
 
 /**
@@ -29,6 +29,7 @@ export function proxy(request: NextRequest) {
   const policy = contentSecurityPolicy(nonce, {
     isDev: process.env.NODE_ENV === "development",
     isHttps: process.env.APP_URL?.startsWith("https://") ?? false,
+    storageOrigin: storageOrigin(process.env.STORAGE_DRIVER, process.env.S3_ENDPOINT),
   });
   const requestHeaders = new Headers(request.headers);
   // `set` pisa lo que mande el cliente: el nonce y la política solo los decide el servidor.

@@ -82,6 +82,9 @@ export const serverEnvSchema = z
     // Disco local en producción: solo en un servidor con disco persistente y respaldado, como
     // decisión explícita. En Vercel no sirve (su disco es efímero y de solo lectura).
     ALLOW_LOCAL_STORAGE: z.stringbool({ error: "Debe ser true o false." }).default(false),
+    // Subir videos cortos (ADR-062). Sin definir: sí con el disco local (desarrollo) y no con el
+    // bucket, hasta configurar su CORS para que el navegador suba directo (docs/deploy.md).
+    VIDEO_UPLOADS: z.stringbool({ error: "Debe ser true o false." }).optional(),
     // Bucket compatible con S3 (con STORAGE_DRIVER=s3 son obligatorias, salvo la región). El
     // endpoint es solo el origen (R2: https://<cuenta>.r2.cloudflarestorage.com); las llaves son
     // secretos y el bucket es privado (las fotos salen solo por /media).

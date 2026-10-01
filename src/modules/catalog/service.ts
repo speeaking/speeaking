@@ -76,6 +76,8 @@ export async function updateProduct(
       where: {
         id: { in: input.mediaIds },
         status: "READY",
+        // Un video (ADR-062) no es foto de producto.
+        kind: "IMAGE",
         OR: [{ ownerId: sellerUserId }, { productLinks: { some: { productId } } }],
       },
       select: { id: true },

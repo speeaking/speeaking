@@ -57,6 +57,8 @@ export async function createProductAction(
         id: { in: input.mediaIds },
         ownerId: viewer.userId,
         status: "READY",
+        // Un video (ADR-062) no es foto de producto.
+        kind: "IMAGE",
         proofHistory: { none: {} },
       },
       select: { id: true },

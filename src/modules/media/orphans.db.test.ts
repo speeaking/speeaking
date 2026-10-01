@@ -170,6 +170,55 @@ describe.skipIf(!databaseUrl)("deleteOrphanMedia contra PostgreSQL", () => {
     }
   });
 
+  it("la portada de un video sigue mientras el video exista; se va en la tanda siguiente (ADR-062)", async () => {
+    const user = await db.user.create({
+      data: { name: "Prueba", email: `e2e.fix.${randomUUID().slice(0, 8)}@example.com` },
+      select: { id: true, email: true },
+    });
+    try {
+      const poster = await db.media.create({
+        data: {
+          ownerId: user.id,
+          storageKey: `images/test/portada-${randomUUID()}.webp`,
+          mimeType: "image/webp",
+          width: 1,
+          height: 1,
+          sizeBytes: 1,
+          createdAt: OLD,
+        },
+        select: { id: true, storageKey: true },
+      });
+      // Un video sin publicar (abandonado) y su portada: el video se va primero.
+      const video = await db.media.create({
+        data: {
+          ownerId: user.id,
+          kind: "VIDEO",
+          storageKey: `videos/test/${randomUUID()}.mp4`,
+          mimeType: "video/mp4",
+          width: 180,
+          height: 320,
+          sizeBytes: 1,
+          durationMs: 2000,
+          posterId: poster.id,
+          createdAt: OLD,
+        },
+        select: { id: true, storageKey: true },
+      });
+      const deleted: string[] = [];
+      const storage = { delete: vi.fn(async (key: string) => void deleted.push(key)) };
+
+      await deleteOrphanMedia(db, storage, { now: NOW });
+      expect(deleted).toContain(video.storageKey);
+      expect(deleted).not.toContain(poster.storageKey);
+      expect(await db.media.findUnique({ where: { id: poster.id } })).not.toBeNull();
+
+      await deleteOrphanMedia(db, storage, { now: NOW });
+      expect(deleted).toContain(poster.storageKey);
+    } finally {
+      await db.user.delete({ where: { id: user.id } });
+    }
+  });
+
   it("si el archivo no se puede borrar, lo reporta (la fila ya no existe)", async () => {
     const user = await db.user.findUniqueOrThrow({ where: { email }, select: { id: true } });
     const row = await db.media.create({

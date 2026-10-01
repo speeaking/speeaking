@@ -57,6 +57,7 @@ import { canHaveContext } from "../context-rules";
 import { recordShareAction } from "../interaction-actions";
 import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
 import { ContextButton } from "./context-button";
+import { PostVideo } from "./post-video";
 import { ReactionButton, reactionLabel } from "./reaction-button";
 
 type Post = FeedItemDTO;
@@ -871,7 +872,7 @@ export function PostCard({
 
   // Tipográfica: el texto corto en grande sobre un tinte suave de su comunidad con tinta encima
   // (`community-soft`, ADR-042). Ya no es un cartel de color saturado ni una isla oscura.
-  if (variant === "bigType" && community && !cover && !isSale) {
+  if (variant === "bigType" && community && !cover && !post.video && !isSale) {
     return (
       <article
         data-variant="bigType"
@@ -903,6 +904,19 @@ export function PostCard({
       <CardHeader post={post} />
       <PostBody text={post.body} expanded={expanded} />
       {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
+
+      {/* Video corto (ADR-062): empieza solo y sin sonido al verse en el feed; abierto, con controles. */}
+      {post.video ? (
+        <PostVideo
+          video={post.video}
+          expanded={expanded}
+          label={
+            product
+              ? `Video de ${product.title}`
+              : `Video de la publicación de ${post.author.displayName}`
+          }
+        />
+      ) : null}
 
       {/* Varias fotos en el feed: mosaico como Facebook (ocupa poco y cada foto abre la publicación
           en ella), también en las ventas, con el precio en su bloque. Una sola foto de venta y la

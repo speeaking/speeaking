@@ -99,7 +99,8 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
    - Storage class: Standard.
 3. **No lo hagas público.** En Settings del bucket deja **Public Development URL (r2.dev):
    Disabled** y **no** conectes un dominio propio. Las fotos solo salen por `/media`, que revisa quién
-   puede ver cada una (fotos privadas, productos ocultos, comprobantes). No hace falta CORS.
+   puede ver cada una (fotos privadas, productos ocultos, comprobantes). Para las fotos no hace falta
+   CORS; para los **videos** sí (paso 4 bis).
 4. **Token**: R2 object storage → **Account Details** → **API Tokens** → **Manage** → **Create Account
    API token** (el de cuenta sigue vivo aunque cambien los usuarios; el de usuario muere con él):
    - Permisos: **Object Read & Write**.
@@ -114,6 +115,35 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
      escribir en el bucket real.
 5. R2 no tiene tope de gasto: crea una alerta en Cloudflare → **Notifications** (facturación por
    uso) si tu cuenta la ofrece. Al tamaño del piloto cabe en la capa gratuita.
+
+### 4 bis. Videos cortos (ADR-062)
+
+Un video pesa hasta 50 MB y Vercel corta toda petición de más de 4.5 MB: el navegador lo sube
+**directo al bucket** con una URL firmada (la app solo firma y después revisa el archivo). Para eso el
+bucket necesita una regla de CORS; sin ella la subida falla, por eso los videos vienen apagados en
+producción hasta que la pongas:
+
+1. R2 → `vendeia-media` → **Settings** → **CORS Policy** → **Add CORS policy** y pega (con tu
+   dominio; agrega también el `*.vercel.app` del proyecto si quieres probar ahí):
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://tu-dominio.mx"],
+       "AllowedMethods": ["PUT"],
+       "AllowedHeaders": ["content-type"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+   Solo `PUT` y solo tu dominio: nadie más puede subir, y cada URL firmada sirve 15 minutos para un
+   archivo de ese tamaño exacto. Reproducir no necesita CORS (el `<video>` no lo pide).
+
+2. En Vercel agrega `VIDEO_UPLOADS=true` (paso 8) y vuelve a desplegar. Los videos ya publicados se
+   ven aunque la variable no esté.
+3. Verifica: publica un video corto desde tu teléfono y ábrelo en otro navegador. Si la subida
+   falla, revisa la consola del navegador: un error de CORS es la regla (dominio exacto, con `https`).
 
 ## 5. Secretos
 
@@ -215,6 +245,7 @@ Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
 | `AI_DEFAULT_MODEL`             | `qwen/qwen3.5-9b`                                                  | No      | Con `openai_compatible`                                        |
 | `AI_IMAGE_MODEL`               | `google/gemini-3.1-flash-image` (Pruébatelo, ADR-043)              | No      | No (sin él, imágenes simuladas: en producción «no disponible») |
 | `AI_VISION_MODEL`              | `google/gemini-2.5-flash-lite` (Buscar con una foto, ADR-061)      | No      | No (sin él, la búsqueda por foto queda «no disponible»)        |
+| `VIDEO_UPLOADS`                | `true` después de la regla de CORS del paso 4 bis (ADR-062)        | No      | No (sin ella, en producción no se suben videos)                |
 | `ALLOW_SIMULATED_AI`           | `true` solo con `AI_PROVIDER=mock`                                 | No      | Sí con `mock`                                                  |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` (Vercel usa exactamente pnpm 10.33.2 de `packageManager`)      | No      | Recomendada                                                    |
 

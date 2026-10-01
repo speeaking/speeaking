@@ -79,7 +79,13 @@ describe("getProposalDefaults", () => {
     await getProposalDefaults(RESPONSE, USER);
     expect(db.media.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: MEDIA, ownerId: USER, status: "READY", proofHistory: { none: {} } },
+        where: {
+          id: MEDIA,
+          ownerId: USER,
+          status: "READY",
+          kind: "IMAGE",
+          proofHistory: { none: {} },
+        },
       }),
     );
   });

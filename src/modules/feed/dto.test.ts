@@ -112,6 +112,42 @@ describe("toFeedItem (el costo nunca llega al navegador)", () => {
     expect(dto.media.map((item) => item.url)).toEqual(["/media/product/1.webp"]);
   });
 
+  it("un video (ADR-062) va aparte de las fotos, con su portada y sin datos de más", () => {
+    const dto = toFeedItem(
+      {
+        ...row,
+        type: "VIDEO",
+        product: null,
+        media: [
+          {
+            media: {
+              ...media("videos/v.mp4").media,
+              kind: "VIDEO",
+              width: 180,
+              height: 320,
+              durationMs: 2000,
+              videoCodec: "avc1",
+              poster: { storageKey: "images/p.webp", width: 180, height: 320, blurDataUrl: null },
+            },
+          },
+        ],
+      },
+      publicUrl,
+    )!;
+
+    expect(dto.media).toEqual([]);
+    expect(dto.video).toEqual({
+      url: "/media/videos/v.mp4",
+      width: 180,
+      height: 320,
+      durationMs: 2000,
+      codec: "avc1",
+      poster: { url: "/media/images/p.webp", width: 180, height: 320, blurDataUrl: null },
+    });
+    // Una publicación de fotos no trae video.
+    expect(toFeedItem(row, publicUrl)!.video).toBeNull();
+  });
+
   it("marca si la prenda se puede probar («Ver cómo me veo») por categoría, título y etiquetas", () => {
     expect(toFeedItem(row, publicUrl)!.product!.tryOn).toBe(false);
 

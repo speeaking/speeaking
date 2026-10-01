@@ -7,6 +7,20 @@
 /** Cabecera interna con el nonce de la petición. La escribe solo el proxy (pisa la del cliente). */
 export const NONCE_HEADER = "x-nonce";
 
+/**
+ * Origen del bucket de videos para la CSP (ADR-062): el de `S3_ENDPOINT` con `STORAGE_DRIVER=s3`;
+ * `null` con el disco local (todo pasa por la app) o si el valor no es una URL web.
+ */
+export function storageOrigin(driver: string | undefined, endpoint: string | undefined) {
+  if (driver !== "s3" || !endpoint) return null;
+  try {
+    const url = new URL(endpoint);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
 /** 128 bits aleatorios en base64: impredecible y distinto en cada petición. */
 export function createNonce(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -26,18 +40,27 @@ export function createNonce(): string {
  * - Imágenes, fuentes y conexiones solo del propio origen: `/media` sirve las fotos, `next/font`
  *   aloja las fuentes y no hay servicios de terceros. Agregar uno (pagos, analítica) es cambiar
  *   esta función y su prueba.
+ * - Videos (ADR-062): con el bucket, el navegador sube el archivo directo a él (`connect-src`) y lo
+ *   reproduce desde una URL firmada a la que `/media` redirige (`media-src`). Solo ese origen;
+ *   `blob:` es la vista previa local del video elegido.
  */
 export function contentSecurityPolicy(
   nonce: string,
-  { isDev, isHttps }: { isDev: boolean; isHttps: boolean },
+  {
+    isDev,
+    isHttps,
+    storageOrigin = null,
+  }: { isDev: boolean; isHttps: boolean; storageOrigin?: string | null },
 ): string {
+  const storage = storageOrigin ? ` ${storageOrigin}` : "";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
+    `media-src 'self' blob:${storage}`,
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${storage}`,
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",

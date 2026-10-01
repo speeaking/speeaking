@@ -109,6 +109,7 @@ describe("updateProduct", () => {
         where: {
           id: { in: [MEDIA[0], MEDIA[0]] },
           status: "READY",
+          kind: "IMAGE",
           OR: [{ ownerId: SELLER }, { productLinks: { some: { productId: PRODUCT } } }],
         },
       }),

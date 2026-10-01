@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contentSecurityPolicy, createNonce } from "./csp";
+import { contentSecurityPolicy, createNonce, storageOrigin } from "./csp";
 
 function directives(policy: string) {
   return new Map(
@@ -49,6 +49,33 @@ describe("contentSecurityPolicy (SEC-06)", () => {
     expect(dev.get("script-src")).toContain("'unsafe-eval'");
     expect(dev.get("script-src")).not.toContain("'unsafe-inline'");
     expect(dev.has("upgrade-insecure-requests")).toBe(false);
+  });
+
+  it("videos (ADR-062): solo el origen del bucket para subir y reproducir; sin bucket, nada", () => {
+    expect(production.get("media-src")).toEqual(["'self'", "blob:"]);
+    const withBucket = directives(
+      contentSecurityPolicy("abc", {
+        isDev: false,
+        isHttps: true,
+        storageOrigin: storageOrigin("s3", "https://cuenta.r2.cloudflarestorage.com"),
+      }),
+    );
+    expect(withBucket.get("media-src")).toEqual([
+      "'self'",
+      "blob:",
+      "https://cuenta.r2.cloudflarestorage.com",
+    ]);
+    expect(withBucket.get("connect-src")).toEqual([
+      "'self'",
+      "https://cuenta.r2.cloudflarestorage.com",
+    ]);
+    // Imágenes y scripts nunca vienen del bucket.
+    expect(withBucket.get("img-src")).toEqual(["'self'", "data:", "blob:"]);
+    expect(storageOrigin("local", "https://cuenta.r2.cloudflarestorage.com")).toBeNull();
+    expect(storageOrigin("s3", "javascript:alert(1)")).toBeNull();
+    expect(storageOrigin("s3", "https://cuenta.r2.cloudflarestorage.com/ruta?x=1")).toBe(
+      "https://cuenta.r2.cloudflarestorage.com",
+    );
   });
 
   it("sin https no sube las peticiones (rompería `next start` en http://localhost)", () => {

@@ -1,24 +1,36 @@
 "use client";
 
+import { Clapperboard, ImagePlus } from "lucide-react";
 import { type FormEvent, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { ImageUploader } from "@/modules/media/components/image-uploader";
+import { VideoPicker } from "@/modules/media/components/video-picker";
 import { type CreatePostState, createPostAction } from "../actions";
 import { MAX_POST_IMAGES, MAX_POST_LENGTH } from "../schemas";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring";
 
+const modeClass =
+  "flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring";
+
 export function CreatePostForm({
   communities,
   products,
   defaultCommunity,
+  videoEnabled = false,
 }: {
   communities: { slug: string; name: string; emoji: string }[];
   products: { id: string; title: string }[];
   defaultCommunity?: string;
+  /** Se pueden subir videos cortos (ADR-062). */
+  videoEnabled?: boolean;
 }) {
+  // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
+  // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
+  const [mode, setMode] = useState<"photos" | "video">("photos");
   const [state, formAction, pending] = useActionState<CreatePostState, FormData>(
     createPostAction,
     {},
@@ -58,7 +70,44 @@ export function CreatePostForm({
         ) : null}
       </div>
 
-      <ImageUploader name="mediaIds" max={MAX_POST_IMAGES} />
+      {videoEnabled ? (
+        <div role="radiogroup" aria-label="Qué agregar" className="flex gap-2">
+          {(
+            [
+              { value: "photos", label: "Fotos", Icon: ImagePlus },
+              { value: "video", label: "Video", Icon: Clapperboard },
+            ] as const
+          ).map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={mode === value}
+              onClick={() => setMode(value)}
+              className={cn(
+                modeClass,
+                mode === value
+                  ? "border-foreground bg-foreground text-background"
+                  : "bg-card hover:bg-secondary",
+              )}
+            >
+              <Icon aria-hidden="true" className="size-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <fieldset disabled={mode !== "photos"} hidden={mode !== "photos"} className="min-w-0">
+        <legend className="sr-only">Fotos</legend>
+        <ImageUploader name="mediaIds" max={MAX_POST_IMAGES} />
+      </fieldset>
+      {videoEnabled ? (
+        <fieldset disabled={mode !== "video"} hidden={mode !== "video"} className="min-w-0">
+          <legend className="sr-only">Video</legend>
+          <VideoPicker name="videoId" />
+        </fieldset>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <label htmlFor="comunidad" className="text-sm font-medium">
@@ -97,7 +146,7 @@ export function CreatePostForm({
 
       {uploading || state.error ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {uploading ? "Espera a que terminen de subir tus fotos." : state.error}
+          {uploading ? "Espera a que termine de subir lo que agregaste." : state.error}
         </p>
       ) : null}
 

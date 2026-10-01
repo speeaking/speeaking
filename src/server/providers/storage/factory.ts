@@ -2,6 +2,7 @@ import type { ServerEnv } from "@/server/env-schema";
 import { LocalStorageProvider } from "./local-storage";
 import { type S3StorageConfig, S3StorageProvider } from "./s3-storage";
 import type { StorageProvider } from "./types";
+import { LocalVideoStore, S3VideoStore, type VideoStore } from "./video-store";
 
 export type StorageEnv = Pick<
   ServerEnv,
@@ -25,6 +26,16 @@ export function createStorage(env: StorageEnv): StorageProvider {
       return new LocalStorageProvider(env.STORAGE_LOCAL_ROOT);
     case "s3":
       return new S3StorageProvider(s3StorageConfig(env));
+  }
+}
+
+/** Dónde viven los videos (ADR-062): el mismo disco o bucket que las fotos. */
+export function createVideoStore(env: StorageEnv): VideoStore {
+  switch (env.STORAGE_DRIVER) {
+    case "local":
+      return new LocalVideoStore(env.STORAGE_LOCAL_ROOT);
+    case "s3":
+      return new S3VideoStore(s3StorageConfig(env));
   }
 }
 

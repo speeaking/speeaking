@@ -92,6 +92,12 @@ el servidor con `AI_PROVIDER=mock`, `ALLOW_SIMULATED_AI=true` y con `AI_IMAGE_MO
 aunque tu `.env` tenga OpenRouter, la imagen real y Google, las pruebas son deterministas, no gastan
 saldo ni dependen de la velocidad o el crédito de un proveedor externo.
 
+**Videos cortos (ADR-062).** En desarrollo los videos van al disco (`.data/uploads/videos/`): el
+navegador sube el archivo a `/api/uploads/video/<id>` y `/media` lo sirve por rangos. En producción
+van directo a R2 con URLs firmadas y necesitan la regla de CORS del bucket y `VIDEO_UPLOADS=true`
+(`docs/deploy.md`, paso 4 bis). Para probar con un archivo real: `tests/fixtures/video/` tiene
+videos de 2 s (MP4, `moov` al final, MOV girado y HEVC) hechos con ffmpeg.
+
 **Buscar con una foto (ADR-061).** Con `AI_PROVIDER=mock`, `/buscar/foto` usa el simulador: sin ver
 la foto, siempre «ve» una camisa blanca y unos jeans azules y busca eso en el catálogo semilla. Con
 `AI_PROVIDER=openai_compatible` necesita `AI_VISION_MODEL` (p. ej. `google/gemini-2.5-flash-lite`,

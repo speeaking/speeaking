@@ -69,10 +69,13 @@ export type S3StorageOptions = {
 export function createS3Client(
   config: S3StorageConfig,
   requestHandler?: S3ClientConfig["requestHandler"],
+  /** URLs con la ruta (`<endpoint>/<bucket>/…`): las firmadas de los videos (ADR-062). */
+  { forcePathStyle = false }: { forcePathStyle?: boolean } = {},
 ) {
   return new S3Client({
     endpoint: config.endpoint,
     region: config.region,
+    forcePathStyle,
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
     maxAttempts: S3_MAX_ATTEMPTS,
     retryMode: "standard",

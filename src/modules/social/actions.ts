@@ -307,21 +307,29 @@ export async function createPostAction(
     body: formData.get("body"),
     communitySlug: formData.get("communitySlug") || undefined,
     mediaIds: formData.getAll("mediaIds"),
+    videoId: formData.get("videoId") || undefined,
     productId: formData.get("productId") || undefined,
   });
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
-  const { body, communitySlug, mediaIds, productId } = parsed.data;
+  const { body, communitySlug, mediaIds, videoId, productId } = parsed.data;
   const limited = await checkSocialLimit("post", viewer.userId);
   if (!limited.ok) return { error: limited.error };
 
   // Autorización: solo imágenes propias y productos propios (evita adjuntar contenido ajeno).
-  const [media, community, product] = await Promise.all([
+  const [media, video, community, product] = await Promise.all([
     db.media.findMany({
-      where: { id: { in: mediaIds }, ownerId: viewer.userId, status: "READY" },
+      where: { id: { in: mediaIds }, ownerId: viewer.userId, status: "READY", kind: "IMAGE" },
       select: { id: true },
     }),
+    // Un video propio, ya revisado por el servidor (ADR-062).
+    videoId
+      ? db.media.findFirst({
+          where: { id: videoId, ownerId: viewer.userId, status: "READY", kind: "VIDEO" },
+          select: { id: true },
+        })
+      : null,
     communitySlug
       ? db.community.findUnique({ where: { slug: communitySlug }, select: { id: true } })
       : null,
@@ -333,6 +341,7 @@ export async function createPostAction(
       : null,
   ]);
   if (media.length !== mediaIds.length) return { error: INVALID_IMAGE };
+  if (videoId && !video) return { error: "El video no es válido. Vuelve a subirlo." };
   // Una foto de comprobante de autenticidad (vigente o reemplazada) nunca se publica (P14).
   if ((await proofMediaIdsAmong(db, mediaIds)).size > 0) return { error: INVALID_IMAGE };
   if (productId && !product) return { error: "Ese producto no es tuyo." };
@@ -348,7 +357,9 @@ export async function createPostAction(
         body,
         communityId: community?.id ?? null,
         productId: product?.id ?? null,
-        media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) },
+        ...(video
+          ? { type: "VIDEO" as const, media: { create: [{ mediaId: video.id, position: 0 }] } }
+          : { media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) } }),
       },
       select: { id: true },
     });

@@ -6,7 +6,8 @@ export async function generateMetadata({ params }: PageProps<"/p/[id]">): Promis
   const post = await loadPost(id, null);
   if (!post) return {};
   const title = `${post.author.displayName}: ${post.body.slice(0, 60) || "Publicación"}`;
-  const image = post.media[0];
+  // Un video (ADR-062) se comparte con su portada.
+  const image = post.media[0] ?? post.video?.poster ?? undefined;
   return {
     title,
     description: post.body.slice(0, 160),

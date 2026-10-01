@@ -17,7 +17,7 @@ export const HEADLINE_MAX_CHARS = 90;
  */
 export const COVER_MIN_WIDTH = 600;
 
-type VariantInput = Pick<FeedItemDTO, "body" | "media" | "product" | "community">;
+type VariantInput = Pick<FeedItemDTO, "body" | "media" | "product" | "community" | "video">;
 
 /** Caracteres visibles aproximados (un emoji cuenta como uno, no como dos). */
 function visibleLength(text: string) {
@@ -56,6 +56,7 @@ export function pickCardVariant(
   const text = item.body.trim();
   if (
     item.media.length === 0 &&
+    !item.video &&
     item.product === null &&
     item.community !== null &&
     text.length > 0 &&

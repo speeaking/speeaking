@@ -62,6 +62,7 @@ export async function getProposalDefaults(
             id: input.data.mediaId,
             ownerId: userId,
             status: "READY",
+            kind: "IMAGE",
             proofHistory: { none: {} },
           },
           select: { id: true, storageKey: true, width: true, height: true },

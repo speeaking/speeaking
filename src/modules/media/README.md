@@ -84,3 +84,17 @@ Subida, validación por firma de bytes y re-codificación de imágenes (sin EXIF
   4 MB. Una foto que el navegador no puede leer (HEIC en Chrome) se manda tal cual solo si cabe.
 - El selector (`components/image-uploader.tsx`) no manda archivos de más de 40 MB y entiende los
   errores sin cuerpo JSON (un 413 que cierra la conexión, un 503 del proxy).
+
+**Videos cortos (ADR-062, 2026-10-01).**
+
+- Hasta 60 s y 50 MB, MP4 o MOV, sin transcodificar. `video-container.ts` lee la estructura por
+  rangos (`ftyp`, `moov` aunque esté al final, duración, medidas con la rotación del teléfono y
+  códecs: H.264 o HEVC; AAC, Opus o sin audio) y rechaza lo demás con su motivo.
+- El archivo nunca pasa por la app (Vercel corta en 4.5 MB): `video-upload.ts` crea la fila en
+  PROCESSING y da a dónde subir (`server/providers/storage/video-store.ts`: URL firmada del bucket
+  con tamaño y tipo firmados, o `/api/uploads/video/<id>` en disco); después revisa el archivo y lo
+  deja READY o lo borra. Topes: 5 por hora y 15 al día por cuenta, 30 por hora por IP.
+- `/media` autoriza igual que las fotos y entrega con `VideoStore.deliver`: redirección a una URL
+  firmada de lectura (bucket) o rangos (disco). La portada (`media.posterId`) es una foto que el
+  navegador toma del video; es pública solo mientras su video lo es, y el recolector la borra en la
+  tanda siguiente a su video.
