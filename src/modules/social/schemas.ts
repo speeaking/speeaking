@@ -14,6 +14,8 @@ export const createPostSchema = z
     /** Un video corto (ADR-062): va solo, sin fotos. */
     videoId: z.uuid().optional(),
     productId: z.uuid().optional(),
+    /** Declaró un acuerdo con la tienda del producto etiquetado (ADR-063): «Colaboración». */
+    collaboration: z.boolean().default(false),
   })
   .refine((post) => post.body.length > 0 || post.mediaIds.length > 0 || post.videoId, {
     message: "Escribe algo o agrega una imagen o un video.",

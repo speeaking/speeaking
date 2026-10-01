@@ -46,6 +46,7 @@ const publicProductSelect = {
       userId: true,
       displayName: true,
       acceptedPaymentMethods: true,
+      acceptsCollaborations: true,
       user: { select: { profile: { select: { username: true } } } },
     },
   },
@@ -251,6 +252,35 @@ export async function listShopProducts({
     const row = byId.get(id);
     return row ? [toCard(row)] : [];
   });
+}
+
+/**
+ * Productos que se pueden recomendar (ADR-063): de tiendas activas que aceptan colaboraciones, a
+ * la venta y visibles, lo más reciente primero. Sin los de quien mira (esos ya los etiqueta).
+ */
+export async function listCollaborationProducts({
+  excludeUserId,
+  limit = 24,
+}: {
+  excludeUserId: string | null;
+  limit?: number;
+}): Promise<ProductCardDTO[]> {
+  const rows = await db.product.findMany({
+    where: {
+      status: "ACTIVE",
+      stock: { gt: 0 },
+      ...VISIBLE_PRODUCT,
+      seller: {
+        status: "ACTIVE",
+        acceptsCollaborations: true,
+        ...(excludeUserId ? { userId: { not: excludeUserId } } : {}),
+      },
+    },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    select: cardSelect,
+  });
+  return rows.map(toCard);
 }
 
 /**

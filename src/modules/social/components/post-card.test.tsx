@@ -251,6 +251,74 @@ describe("PostCard: video corto (ADR-062)", () => {
   });
 });
 
+describe("PostCard: producto de otra tienda (ADR-063)", () => {
+  const video: NonNullable<FeedItemDTO["video"]> = {
+    url: "/media/videos/2026/10/v.mp4",
+    width: 180,
+    height: 320,
+    durationMs: 12_000,
+    codec: "avc1",
+    poster: null,
+  };
+  const theirs = (overrides: Partial<Product> = {}) =>
+    product({ thirdPartyStore: "Ropero Demo", tryOn: true, ...overrides });
+
+  it("dice de qué tienda es el producto y, con acuerdo declarado, «Colaboración con…»", () => {
+    const { unmount } = render(
+      <PostCard post={post({ product: theirs(), collaboration: true, media: photos(1) })} />,
+    );
+    expect(screen.getByText("Vendido por Ropero Demo")).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="collaboration-chip"]')).toHaveTextContent(
+      "Colaboración con Ropero Demo",
+    );
+    unmount();
+
+    // Sin acuerdo declarado: se dice de quién es, sin la etiqueta de colaboración.
+    render(<PostCard post={post({ product: theirs(), media: photos(1) })} />);
+    expect(screen.getByText("Vendido por Ropero Demo")).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="collaboration-chip"]')).toBeNull();
+  });
+
+  it("un producto propio no dice «Vendido por» ni «Colaboración», aunque llegue marcado", () => {
+    render(<PostCard post={sale({ collaboration: true })} />);
+
+    expect(screen.queryByText(/Vendido por/)).toBeNull();
+    expect(document.querySelector('[data-slot="collaboration-chip"]')).toBeNull();
+  });
+
+  it("en un video, el precio y «Ver cómo me veo» van encima, una sola vez por tarjeta", () => {
+    render(<PostCard post={post({ media: [], video, product: theirs() })} />);
+
+    const frame = document.querySelector("[data-video]")!;
+    const price = within(frame as HTMLElement).getByRole("link", {
+      name: /\$899.*ver Tenis rojos/,
+    });
+    expect(price).toHaveAttribute("href", `/producto/tenis-rojos?from=${POST_ID}`);
+    const tryOn = screen.getAllByRole("link", { name: "Ver cómo me veo: Tenis rojos" });
+    expect(tryOn).toHaveLength(1);
+    expect(frame).toContainElement(tryOn[0]!);
+    expect(tryOn[0]).toHaveAttribute("href", `/producto/tenis-rojos?from=${POST_ID}&probar=1`);
+    // El bloque del producto ya no repite el precio.
+    expect(screen.getAllByText(/\$899/)).toHaveLength(1);
+  });
+
+  it("un video de un producto agotado no lleva etiquetas encima: el bloque dice por qué", () => {
+    render(
+      <PostCard
+        post={post({
+          media: [],
+          video,
+          product: theirs({ availability: "sold_out", inStock: false }),
+        })}
+      />,
+    );
+
+    const frame = document.querySelector("[data-video]") as HTMLElement;
+    expect(within(frame).queryByRole("link")).toBeNull();
+    expect(screen.getByText("Agotado")).toBeInTheDocument();
+  });
+});
+
 describe("PostCard: cabecera", () => {
   it("una cuenta editorial empieza por su comunidad, sin avatar de iniciales", () => {
     render(

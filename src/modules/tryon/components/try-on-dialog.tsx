@@ -41,6 +41,7 @@ export function TryOnDialog({
   status,
   simulated,
   returnTo,
+  sourcePostId = null,
   defaultOpen = false,
 }: {
   product: DialogProduct;
@@ -49,6 +50,8 @@ export function TryOnDialog({
   status: FundingStatus;
   simulated: boolean;
   returnTo: string;
+  /** Publicación desde la que se llegó (ADR-063): la prueba y la compra se le atribuyen. */
+  sourcePostId?: string | null;
   /** Abrir al cargar: la persona llegó desde «Ver cómo me veo» en una tarjeta (`?probar=1`). */
   defaultOpen?: boolean;
 }) {
@@ -87,10 +90,12 @@ export function TryOnDialog({
       const ids = [product.id, ...extras];
       for (const [index, productId] of ids.entries()) {
         const last = index === ids.length - 1;
+        // Solo la prenda de la publicación lleva su origen; los complementos no venían en ella.
+        const source = productId === product.id ? sourcePostId : null;
         const outcome =
           mode === "now" && last
-            ? await buyNowAction({ productId, quantity: 1, sourcePostId: null })
-            : await addToCartAction({ productId, quantity: 1, sourcePostId: null });
+            ? await buyNowAction({ productId, quantity: 1, sourcePostId: source })
+            : await addToCartAction({ productId, quantity: 1, sourcePostId: source });
         if (!outcome.ok) {
           toast.error(outcome.error);
           return;
@@ -149,6 +154,7 @@ export function TryOnDialog({
             <form action={formAction} className="contents">
               <input type="hidden" name="productId" value={product.id} />
               <input type="hidden" name="returnTo" value={returnTo} />
+              <input type="hidden" name="sourcePostId" value={sourcePostId ?? ""} />
               <input type="hidden" name="photoId" value={activePhotoId} />
             </form>
             <Link href={"/estilista" as Route} className="text-sm font-semibold text-primary-text">
@@ -232,6 +238,7 @@ export function TryOnDialog({
                     ))}
                     <input type="hidden" name="photoId" value={activePhotoId} />
                     <input type="hidden" name="returnTo" value={returnTo} />
+                    <input type="hidden" name="sourcePostId" value={sourcePostId ?? ""} />
                     <Button type="submit" variant="outline" size="sm" disabled={pending}>
                       {pending ? (
                         <>
@@ -293,6 +300,7 @@ export function TryOnDialog({
           <form ref={formRef} action={formAction} className="flex flex-col gap-4">
             <input type="hidden" name="productId" value={product.id} />
             <input type="hidden" name="returnTo" value={returnTo} />
+            <input type="hidden" name="sourcePostId" value={sourcePostId ?? ""} />
             {photos.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-semibold">Tu foto</p>

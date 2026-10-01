@@ -4,6 +4,7 @@ import {
   CircleUser,
   Clapperboard,
   Compass,
+  Handshake,
   House,
   LayoutDashboard,
   type LucideIcon,
@@ -37,7 +38,8 @@ export type NavItem = {
 export const socialNav: readonly NavItem[] = [
   { href: "/", label: "Inicio", icon: House, match: "exact" },
   { href: "/descubrir", label: "Descubrir", icon: Compass, also: ["/c", "/buscar"] },
-  { href: "/crear", label: "Crear", icon: Plus },
+  // La sección de creadores (ADR-063) cuelga de Crear.
+  { href: "/crear", label: "Crear", icon: Plus, also: ["/creadores"] },
   {
     href: "/comprar",
     label: "Comprar",
@@ -88,6 +90,7 @@ export const studioNav: readonly NavItem[] = [
   { href: "/studio/contenido", label: "Contenido", icon: Clapperboard },
   { href: "/studio/sube-y-vende", label: "Sube y vende", icon: Sparkles },
   { href: "/studio/campanas", label: "Campañas", icon: Megaphone },
+  { href: "/studio/colaboraciones", label: "Colaboraciones", icon: Handshake },
   { href: "/studio/saldo", label: "Saldo", icon: Wallet },
   { href: "/studio/pedidos", label: "Pedidos", icon: ReceiptText },
   { href: "/studio/analitica", label: "Analítica", icon: ChartColumn },

@@ -1,4 +1,4 @@
-import { ChevronRight, ImagePlus, Package, Sparkles } from "lucide-react";
+import { ChevronRight, Handshake, ImagePlus, Package, Sparkles } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
@@ -15,6 +15,12 @@ const options: { href: Route; title: string; description: string; icon: typeof S
     icon: ImagePlus,
   },
   {
+    href: "/creadores",
+    title: "Recomendar un producto",
+    description: "Publica una foto o un video con el producto de una tienda y mira qué logra.",
+    icon: Handshake,
+  },
+  {
     href: siteConfig.sellerFeaturePath,
     title: siteConfig.sellerFeatureName,
     description: "Sube una foto y pon tu precio: te armamos la publicación y tus números.",
@@ -28,7 +34,7 @@ const options: { href: Route; title: string; description: string; icon: typeof S
   },
 ];
 
-/** Crear (ADR-042): tres opciones iguales, sin bloque oscuro ni distintivo de IA; compartir primero. */
+/** Crear (ADR-042): opciones iguales, sin bloque oscuro ni distintivo de IA; compartir primero. */
 export default function CreatePage() {
   return (
     <>

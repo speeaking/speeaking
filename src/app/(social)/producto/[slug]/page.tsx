@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  Clapperboard,
   EyeOff,
   MapPin,
   PackageCheck,
@@ -277,6 +278,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             viewerUserId={viewer?.userId ?? null}
             isOwner={isOwner}
             autoOpen={probar === "1"}
+            sourcePostId={sourcePostId}
           />
         )}
 
@@ -341,6 +343,17 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             />
           ) : null}
         </div>
+
+        {/* La tienda acepta colaboraciones (ADR-063): cualquiera puede recomendar este producto. */}
+        {!isOwner && !moderation.hidden && inStock && product.seller.acceptsCollaborations ? (
+          <Link
+            href={`/crear/publicacion?producto=${product.slug}` as Route}
+            className="inline-flex min-h-11 w-fit items-center gap-1.5 text-sm font-semibold text-primary-text underline-offset-2 hover:underline"
+          >
+            <Clapperboard aria-hidden="true" className="size-4" />
+            Crear contenido con este producto
+          </Link>
+        ) : null}
       </section>
 
       <div className="mx-4 flex items-center gap-3 rounded-3xl border bg-card p-4 md:mx-0">

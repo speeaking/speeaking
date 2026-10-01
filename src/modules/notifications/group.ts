@@ -12,7 +12,9 @@ export type NotificationKind =
   | "ORDER_PAID"
   | "ORDER_SHIPPED"
   | "ORDER_DELIVERED"
-  | "ORDER_CANCELLED";
+  | "ORDER_CANCELLED"
+  | "PRODUCT_TAGGED"
+  | "PRODUCT_TAG_REMOVED";
 
 export type NotificationActor = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -84,6 +86,11 @@ function hrefFor(
       return actors.length === 1 ? `/u/${actors[0]!.username}` : `/u/${selfUsername}/seguidores`;
     case "ORDER_PAID":
       return "/studio/pedidos";
+    // La tienda llega a su panel de colaboraciones (ahí puede quitar la etiqueta).
+    case "PRODUCT_TAGGED":
+      return "/studio/colaboraciones";
+    case "PRODUCT_TAG_REMOVED":
+      return `/p/${first.postId}`;
     default:
       return `/pedidos/${first.orderId}`;
   }
@@ -169,6 +176,16 @@ export function notificationSentence(item: NotificationItem): { who: string | nu
       return { who: null, what: "Tu pedido se entregó" };
     case "ORDER_CANCELLED":
       return { who: null, what: "La tienda canceló tu pedido" };
+    case "PRODUCT_TAGGED":
+      return {
+        who: actorNames(item.actors),
+        what: "etiquetó uno de tus productos en una publicación",
+      };
+    case "PRODUCT_TAG_REMOVED":
+      return {
+        who: actorNames(item.actors),
+        what: "quitó la etiqueta de su producto de tu publicación",
+      };
   }
 }
 

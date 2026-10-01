@@ -1,4 +1,12 @@
-import { MessageCircle, Package, Truck, UserPlus, XCircle, type LucideIcon } from "lucide-react";
+import {
+  MessageCircle,
+  Package,
+  Tag,
+  Truck,
+  UserPlus,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
@@ -15,6 +23,8 @@ const ICONS: Record<Exclude<NotificationKind, "REACTION">, LucideIcon> = {
   ORDER_SHIPPED: Truck,
   ORDER_DELIVERED: Package,
   ORDER_CANCELLED: XCircle,
+  PRODUCT_TAGGED: Tag,
+  PRODUCT_TAG_REMOVED: Tag,
 };
 
 function Badge({ item }: { item: NotificationItem }) {

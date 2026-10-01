@@ -78,6 +78,46 @@ export function removeFollowNotification(input: { recipientId: string; actorId: 
   );
 }
 
+const tagKey = (postId: string) => `tag:${postId}`;
+
+/**
+ * A la tienda: alguien etiquetó uno de sus productos en una publicación (ADR-063). Uno por
+ * publicación; con él la tienda llega a su panel, donde puede quitar la etiqueta.
+ */
+export function notifyProductTagged(input: {
+  recipientId: string;
+  actorId: string;
+  postId: string;
+}) {
+  if (input.recipientId === input.actorId) return Promise.resolve();
+  const dedupeKey = tagKey(input.postId);
+  return safely("avisar de un producto etiquetado", () =>
+    db.notification.upsert({
+      where: { dedupeKey },
+      create: { ...input, type: "PRODUCT_TAGGED", dedupeKey },
+      update: {},
+    }),
+  );
+}
+
+/**
+ * A quien publicó: la tienda quitó la etiqueta de su producto. El aviso de «etiquetó tu producto»
+ * de esa publicación ya no aplica y se borra.
+ */
+export function notifyProductTagRemoved(input: {
+  recipientId: string;
+  actorId: string;
+  postId: string;
+}) {
+  if (input.recipientId === input.actorId) return Promise.resolve();
+  return safely("avisar de una etiqueta quitada", () =>
+    db.$transaction([
+      db.notification.deleteMany({ where: { dedupeKey: tagKey(input.postId) } }),
+      db.notification.create({ data: { ...input, type: "PRODUCT_TAG_REMOVED" } }),
+    ]),
+  );
+}
+
 type OrderNotice = Extract<
   NotificationType,
   "ORDER_PAID" | "ORDER_SHIPPED" | "ORDER_DELIVERED" | "ORDER_CANCELLED"

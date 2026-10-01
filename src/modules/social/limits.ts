@@ -57,6 +57,8 @@ export const SOCIAL_LIMITS = {
     { scope: "photo", subject: "ip", limit: 60, windowSeconds: HOUR },
     { scope: "photo", subject: "user", limit: 30, windowSeconds: HOUR },
   ],
+  // Colaboraciones (ADR-063): activar o desactivar, quitar una etiqueta, marcar una colaboración.
+  collaboration: [{ scope: "collab", subject: "user", limit: 60, windowSeconds: HOUR }],
   // Editar el perfil revalida todo el layout (la foto va en la barra): pocas veces por hora.
   profile: [{ scope: "profile", subject: "user", limit: 20, windowSeconds: HOUR }],
   // Compartir se puede sin cuenta: por IP y, con sesión, también por cuenta.

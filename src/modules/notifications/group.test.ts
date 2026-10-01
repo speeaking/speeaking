@@ -136,6 +136,34 @@ describe("groupNotifications (ADR-059)", () => {
   });
 });
 
+describe("avisos de colaboraciones (ADR-063)", () => {
+  it("a la tienda: quién etiquetó su producto, y la lleva a su panel de colaboraciones", () => {
+    const [item] = groupNotifications(
+      [row({ type: "PRODUCT_TAGGED", reaction: null, actor: person("Ana") })],
+      "tienda",
+    );
+
+    expect(item!.href).toBe("/studio/colaboraciones");
+    expect(notificationSentence(item!)).toEqual({
+      who: "Ana",
+      what: "etiquetó uno de tus productos en una publicación",
+    });
+  });
+
+  it("a quien publicó: la tienda quitó la etiqueta, y lo lleva a su publicación", () => {
+    const [item] = groupNotifications(
+      [row({ type: "PRODUCT_TAG_REMOVED", reaction: null, actor: person("Ropero") })],
+      "ana",
+    );
+
+    expect(item!.href).toBe("/p/post-1");
+    expect(notificationSentence(item!)).toEqual({
+      who: "Ropero",
+      what: "quitó la etiqueta de su producto de tu publicación",
+    });
+  });
+});
+
 describe("textos de los avisos", () => {
   it("nombres como Facebook: uno, dos, o dos y cuántas personas más", () => {
     expect(actorNames([person("Ana")])).toBe("Ana");

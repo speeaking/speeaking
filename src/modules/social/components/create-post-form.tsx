@@ -1,10 +1,14 @@
 "use client";
 
 import { Clapperboard, ImagePlus } from "lucide-react";
+import Image from "next/image";
 import { type FormEvent, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { COLLABORATION_DISCLOSURE, COLLABORATION_HINT } from "@/modules/creators/rules";
+import type { TaggedProductDTO } from "@/modules/creators/service";
 import { ImageUploader } from "@/modules/media/components/image-uploader";
 import { VideoPicker } from "@/modules/media/components/video-picker";
 import { type CreatePostState, createPostAction } from "../actions";
@@ -21,13 +25,19 @@ export function CreatePostForm({
   products,
   defaultCommunity,
   videoEnabled = false,
+  taggedProduct = null,
 }: {
   communities: { slug: string; name: string; emoji: string }[];
   products: { id: string; title: string }[];
   defaultCommunity?: string;
   /** Se pueden subir videos cortos (ADR-062). */
   videoEnabled?: boolean;
+  /** Producto que se quiere etiquetar (`?producto=`): propio o de una tienda que acepta colaboraciones. */
+  taggedProduct?: TaggedProductDTO | null;
 }) {
+  // El producto de otra tienda (ADR-063) va en su propia tarjeta, con la declaración de acuerdo; se
+  // puede quitar antes de publicar.
+  const [tagged, setTagged] = useState(taggedProduct !== null && !taggedProduct.own);
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
   const [mode, setMode] = useState<"photos" | "video">("photos");
@@ -128,12 +138,57 @@ export function CreatePostForm({
         </select>
       </div>
 
-      {products.length > 0 ? (
+      {taggedProduct && tagged ? (
+        <fieldset className="flex min-w-0 flex-col gap-3 rounded-2xl border p-3.5">
+          <legend className="sr-only">Producto etiquetado</legend>
+          <div className="flex items-center gap-3">
+            {taggedProduct.image ? (
+              <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+                <Image
+                  src={taggedProduct.image.url}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
+              </span>
+            ) : null}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-xs text-muted-foreground">Producto etiquetado</span>
+              <span className="truncate font-semibold">{taggedProduct.title}</span>
+              <span className="truncate text-sm text-muted-foreground">
+                {formatMoney(taggedProduct.priceCents, taggedProduct.currency)} · Vendido por{" "}
+                {taggedProduct.storeName}
+              </span>
+            </div>
+            <Button type="button" variant="ghost" onClick={() => setTagged(false)}>
+              Quitar<span className="sr-only"> el producto etiquetado</span>
+            </Button>
+          </div>
+          <input type="hidden" name="productId" value={taggedProduct.id} />
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="collaboration" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <span className="font-semibold">{COLLABORATION_DISCLOSURE}.</span>{" "}
+              <span className="text-muted-foreground">{COLLABORATION_HINT}</span>
+            </span>
+          </label>
+        </fieldset>
+      ) : products.length > 0 ? (
         <div className="flex flex-col gap-2">
           <label htmlFor="producto" className="text-sm font-medium">
             Etiquetar un producto tuyo (opcional)
           </label>
-          <select id="producto" name="productId" defaultValue="" className={selectClass}>
+          <select
+            id="producto"
+            name="productId"
+            defaultValue={
+              taggedProduct?.own && products.some((product) => product.id === taggedProduct.id)
+                ? taggedProduct.id
+                : ""
+            }
+            className={selectClass}
+          >
             <option value="">Ninguno</option>
             {products.map((product) => (
               <option key={product.id} value={product.id}>

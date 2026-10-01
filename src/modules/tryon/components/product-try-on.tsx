@@ -19,6 +19,7 @@ export async function ProductTryOn({
   viewerUserId,
   isOwner,
   autoOpen = false,
+  sourcePostId = null,
 }: {
   product: {
     id: string;
@@ -33,6 +34,8 @@ export async function ProductTryOn({
   isOwner: boolean;
   /** Llegó desde una tarjeta con «Ver cómo me veo»: el diálogo se abre solo. */
   autoOpen?: boolean;
+  /** Publicación desde la que llegó (ADR-063): la prueba y la compra se le atribuyen. */
+  sourcePostId?: string | null;
 }) {
   const slot = slotForPublicProduct({
     categorySlug: product.categorySlug,
@@ -41,7 +44,11 @@ export async function ProductTryOn({
   });
   if (!slot) return null;
   if (!(await isFeatureOn("virtualTryOn")) || imageAvailability() === "unavailable") return null;
-  const returnTo = `/producto/${product.slug}${autoOpen ? "?probar=1" : ""}`;
+  // Al volver de crear cuenta o de entrar, la ficha conserva de dónde venía la persona.
+  const query = new URLSearchParams();
+  if (autoOpen) query.set("probar", "1");
+  if (sourcePostId) query.set("from", sourcePostId);
+  const returnTo = `/producto/${product.slug}${query.size > 0 ? `?${query}` : ""}`;
 
   if (!viewerUserId) {
     return (
@@ -80,6 +87,7 @@ export async function ProductTryOn({
       status={status}
       simulated={availability.simulated}
       returnTo={returnTo}
+      sourcePostId={sourcePostId}
       defaultOpen={autoOpen}
     />
   );

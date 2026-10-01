@@ -70,6 +70,11 @@ export type FeedItemDTO = {
   media: FeedMediaDTO[];
   /** Video corto (ADR-062): una publicación lleva fotos o un video, no los dos. */
   video?: FeedVideoDTO | null;
+  /**
+   * Colaboración declarada (ADR-063): quien publica tiene un acuerdo con la tienda del producto
+   * etiquetado. La tarjeta lo dice («Colaboración»); solo aplica con `product.thirdPartyStore`.
+   */
+  collaboration?: boolean;
   product: {
     slug: string;
     title: string;
@@ -84,6 +89,11 @@ export type FeedItemDTO = {
     tryOn: boolean;
     /** Datos verificables (P4) para la fila de envío, devoluciones y garantía. */
     facts: ProductFacts;
+    /**
+     * Nombre de la tienda cuando el producto NO es de quien publica (ADR-063): la tarjeta dice de
+     * quién es. `null` (o ausente) si el producto es de quien publica.
+     */
+    thirdPartyStore?: string | null;
   } | null;
   stats: {
     /** Total de reacciones de todos los tipos (ADR-054). */
@@ -164,6 +174,8 @@ export type FeedPostRow = {
   body: string;
   publishedAt: Date;
   isAiGenerated: boolean;
+  /** Colaboración declarada (ADR-063). */
+  collaboration?: boolean;
   likeCount: number;
   commentCount: number;
   saveCount: number;
@@ -201,7 +213,8 @@ export type FeedPostRow = {
     authenticity: Authenticity;
     tags: string[];
     category: { name: string; slug: string };
-    seller: { acceptedPaymentMethods: PaymentMethod[] };
+    /** `userId` solo se compara con quien publica: nunca pasa al navegador. */
+    seller: { acceptedPaymentMethods: PaymentMethod[]; userId?: string; displayName?: string };
     media: { media: MediaRow }[];
   } | null;
   /** Reacción de quien mira (filtrada por su id en la consulta): a lo más una fila. */
@@ -285,6 +298,11 @@ export function toFeedItem(
   );
   const videoRow = row.media.find(({ media }) => media.kind === "VIDEO")?.media ?? null;
   const product = row.product;
+  // El producto es de otra tienda (ADR-063): la tarjeta dice de quién es.
+  const thirdPartyStore =
+    product?.seller.userId && product.seller.userId !== row.author.id
+      ? (product.seller.displayName ?? null)
+      : null;
 
   return {
     id: row.id,
@@ -310,6 +328,7 @@ export function toFeedItem(
       : null,
     media: links.map(({ media }) => toMedia(media, publicUrl)),
     video: videoRow ? toVideo(videoRow, publicUrl) : null,
+    collaboration: Boolean(row.collaboration) && thirdPartyStore !== null,
     product: product
       ? {
           slug: product.slug,
@@ -346,6 +365,7 @@ export function toFeedItem(
             authenticity: product.authenticity,
             acceptedPaymentMethods: product.seller.acceptedPaymentMethods,
           },
+          thirdPartyStore,
         }
       : null,
     stats: {

@@ -135,6 +135,8 @@ const quickSchema = z
     mediaId: z.uuid().optional(),
     consent: z.literal("on").optional(),
     returnTo: z.string().max(200).optional(),
+    /** Publicación desde la que se llegó a la ficha (ADR-063); una liga rara no rompe la prueba. */
+    sourcePostId: z.uuid().optional().catch(undefined),
   })
   .refine((input) => input.photoId || input.mediaId, { message: "photo" });
 
@@ -157,6 +159,7 @@ export async function quickTryOnAction(
     mediaId: formData.get("mediaId") || undefined,
     consent: formData.get("consent") || undefined,
     returnTo,
+    sourcePostId: formData.get("sourcePostId") || undefined,
   });
   if (!parsed.success) {
     return { error: "Sube tu foto para ver cómo te queda." };
@@ -174,6 +177,7 @@ export async function quickTryOnAction(
       userId: viewer.userId,
       photoId,
       productIds: parsed.data.productIds,
+      sourcePostId: parsed.data.sourcePostId ?? null,
     });
     return { result };
   } catch (error) {

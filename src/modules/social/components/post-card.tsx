@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   Eye,
+  Handshake,
   Heart,
   type LucideIcon,
   MapPin,
@@ -477,6 +478,47 @@ function PriceTag({ product, href }: { product: Product; href: Route }) {
   );
 }
 
+/**
+ * Sobre el video (ADR-063): el precio y «Ver cómo me veo», para ir del video a probarse la prenda y
+ * comprarla. Sin etiqueta si el producto no está disponible (el bloque de abajo dice por qué).
+ */
+function VideoProductTags({ product, href }: { product: Product; href: Route }) {
+  const pill =
+    "relative inline-flex h-9 items-center gap-1.5 rounded-full bg-card px-3 text-sm font-bold text-foreground shadow-lg after:absolute after:-inset-1";
+  return (
+    <>
+      <Link href={href} className={cn(pill, "font-heading text-[15px] font-extrabold")}>
+        {formatMoney(product.priceCents, product.currency)}
+        <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
+        <span className="sr-only">, ver {product.title}</span>
+      </Link>
+      {product.tryOn ? (
+        <Link
+          href={`${href}${href.includes("?") ? "&" : "?"}probar=1` as Route}
+          aria-label={`Ver cómo me veo: ${product.title}`}
+          className={pill}
+        >
+          <Camera aria-hidden="true" className="size-4" />
+          Ver cómo me veo
+        </Link>
+      ) : null}
+    </>
+  );
+}
+
+/** «Colaboración con <tienda>» (ADR-063): la publicidad se identifica, arriba de la tarjeta. */
+function CollaborationChip({ store }: { store: string }) {
+  return (
+    <p
+      data-slot="collaboration-chip"
+      className="inline-flex max-w-full items-center gap-1.5 self-start rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-ink-2"
+    >
+      <Handshake aria-hidden="true" className="size-3.5 shrink-0" />
+      <span className="truncate">Colaboración con {store}</span>
+    </p>
+  );
+}
+
 type Fact = { key: string; icon: LucideIcon; text: string };
 
 /** Datos verificables en una línea cada uno, con las mismas reglas que la ficha y el checkout. */
@@ -511,12 +553,15 @@ function ProductBlock({
   href,
   withinBudget,
   showPrice,
+  showTryOn = true,
 }: {
   product: Product;
   href: Route;
   withinBudget: boolean;
   /** Sin foto no hay etiqueta de precio: el precio va aquí (una sola vez por tarjeta). */
   showPrice: boolean;
+  /** `false` cuando «Ver cómo me veo» ya va sobre el video (una sola vez por tarjeta). */
+  showTryOn?: boolean;
 }) {
   const facts = productFacts(product.facts);
   const unavailable =
@@ -529,6 +574,12 @@ function ProductBlock({
           <p className="line-clamp-2 font-heading leading-snug font-bold tracking-title">
             {product.title}
           </p>
+          {/* El producto es de otra tienda, no de quien publica (ADR-063): se dice de quién. */}
+          {product.thirdPartyStore ? (
+            <p className="truncate text-xs text-muted-foreground">
+              Vendido por {product.thirdPartyStore}
+            </p>
+          ) : null}
           {unavailable ? (
             <p className="text-sm font-semibold text-muted-foreground">{unavailable}</p>
           ) : showPrice ? (
@@ -546,7 +597,7 @@ function ProductBlock({
           <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
         </Link>
       </div>
-      {product.tryOn && available ? (
+      {product.tryOn && available && showTryOn ? (
         // Una prenda se prueba desde el feed (ADR-046): la ficha abre con el diálogo listo.
         <Link
           href={`${href}${href.includes("?") ? "&" : "?"}probar=1` as Route}
@@ -815,6 +866,11 @@ export function PostCard({
     ...(community ? { "--hue": community.hue } : {}),
   } as CSSProperties;
   const showReply = !expanded && product === null;
+  // Video con producto disponible: el precio y «Ver cómo me veo» van sobre el video (ADR-063).
+  const videoTags =
+    post.video && product && productHref && product.availability === "available" ? (
+      <VideoProductTags product={product} href={productHref} />
+    ) : null;
   // Carrusel en la publicación abierta y en una venta de una sola foto; mosaico en lo demás.
   const useCarousel = expanded || (isSale && images.length === 1);
   const shell =
@@ -901,6 +957,9 @@ export function PostCard({
   return (
     <article data-variant="standard" className={shell} style={style} aria-labelledby={labelledBy}>
       {intent ? <IntentChip intent={intent} /> : null}
+      {post.collaboration && product?.thirdPartyStore ? (
+        <CollaborationChip store={product.thirdPartyStore} />
+      ) : null}
       <CardHeader post={post} />
       <PostBody text={post.body} expanded={expanded} />
       {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
@@ -910,6 +969,7 @@ export function PostCard({
         <PostVideo
           video={post.video}
           expanded={expanded}
+          overlay={videoTags}
           label={
             product
               ? `Video de ${product.title}`
@@ -952,7 +1012,8 @@ export function PostCard({
           product={product}
           href={productHref}
           withinBudget={post.viewer.withinBudget}
-          showPrice={!cover || !useCarousel}
+          showPrice={videoTags === null && (!cover || !useCarousel)}
+          showTryOn={videoTags === null}
         />
       ) : null}
 

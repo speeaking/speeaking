@@ -7,9 +7,11 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { ReactionKind, Surface } from "@/generated/prisma/enums";
 import { track } from "@/modules/analytics/track";
+import { TAG_ERRORS, tagDecision } from "@/modules/creators/rules";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
 import {
   notifyComment,
+  notifyProductTagged,
   notifyReaction,
   removeReactionNotification,
 } from "@/modules/notifications/notify";
@@ -295,8 +297,6 @@ export async function createCommentAction(
 export type CreatePostState = { error?: string; fieldErrors?: Partial<Record<string, string[]>> };
 
 const INVALID_IMAGE = "Alguna imagen no es válida.";
-const HIDDEN_PRODUCT =
-  "Ese producto está oculto por moderación y no se puede publicar. Revisa su estado en Studio → Productos.";
 
 export async function createPostAction(
   _previous: CreatePostState,
@@ -309,6 +309,7 @@ export async function createPostAction(
     mediaIds: formData.getAll("mediaIds"),
     videoId: formData.get("videoId") || undefined,
     productId: formData.get("productId") || undefined,
+    collaboration: formData.get("collaboration") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
@@ -317,7 +318,8 @@ export async function createPostAction(
   const limited = await checkSocialLimit("post", viewer.userId);
   if (!limited.ok) return { error: limited.error };
 
-  // Autorización: solo imágenes propias y productos propios (evita adjuntar contenido ajeno).
+  // Autorización: solo imágenes propias; productos propios o de una tienda que aceptó
+  // colaboraciones (ADR-063, `creators/rules.ts`).
   const [media, video, community, product] = await Promise.all([
     db.media.findMany({
       where: { id: { in: mediaIds }, ownerId: viewer.userId, status: "READY", kind: "IMAGE" },
@@ -334,9 +336,14 @@ export async function createPostAction(
       ? db.community.findUnique({ where: { slug: communitySlug }, select: { id: true } })
       : null,
     productId
-      ? db.product.findFirst({
-          where: { id: productId, seller: { userId: viewer.userId } },
-          select: { id: true, moderationStatus: true },
+      ? db.product.findUnique({
+          where: { id: productId },
+          select: {
+            id: true,
+            status: true,
+            moderationStatus: true,
+            seller: { select: { userId: true, status: true, acceptsCollaborations: true } },
+          },
         })
       : null,
   ]);
@@ -344,10 +351,13 @@ export async function createPostAction(
   if (videoId && !video) return { error: "El video no es válido. Vuelve a subirlo." };
   // Una foto de comprobante de autenticidad (vigente o reemplazada) nunca se publica (P14).
   if ((await proofMediaIdsAmong(db, mediaIds)).size > 0) return { error: INVALID_IMAGE };
-  if (productId && !product) return { error: "Ese producto no es tuyo." };
-  // Un producto oculto por moderación no se promociona (el selector ya no lo ofrece; esto cubre un
-  // formulario viejo o manipulado). El equipo lo revisa: el vendedor lo ve en Studio → Productos.
-  if (product?.moderationStatus === "HIDDEN") return { error: HIDDEN_PRODUCT };
+  if (productId && !product) return { error: "Ese producto ya no existe." };
+  // Lo propio, siempre (salvo lo oculto por moderación: el selector ya no lo ofrece; esto cubre un
+  // formulario viejo o manipulado). Lo de otra tienda, solo si aceptó colaboraciones y está a la
+  // venta: nadie promociona productos de una tienda sin su permiso.
+  const tag = product ? tagDecision(viewer.userId, product) : null;
+  if (tag && !tag.ok) return { error: TAG_ERRORS[tag.reason] };
+  const thirdParty = tag?.ok === true && tag.kind === "collaboration";
 
   let post: { id: string };
   try {
@@ -357,6 +367,8 @@ export async function createPostAction(
         body,
         communityId: community?.id ?? null,
         productId: product?.id ?? null,
+        // Solo tiene sentido declarar un acuerdo sobre el producto de otra tienda.
+        collaboration: thirdParty && parsed.data.collaboration,
         ...(video
           ? { type: "VIDEO" as const, media: { create: [{ mediaId: video.id, position: 0 }] } }
           : { media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) } }),
@@ -367,6 +379,14 @@ export async function createPostAction(
     // Se guardó como comprobante mientras tanto: el trigger `reject_proof_media_link` lo rechaza.
     if (isProofMediaLinkError(error)) return { error: INVALID_IMAGE };
     throw error;
+  }
+  // La tienda se entera de quién etiquetó su producto (y puede quitar la etiqueta).
+  if (thirdParty && product) {
+    await notifyProductTagged({
+      recipientId: product.seller.userId,
+      actorId: viewer.userId,
+      postId: post.id,
+    });
   }
   redirect(`/p/${post.id}` as Route);
 }

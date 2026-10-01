@@ -1752,3 +1752,51 @@ foto. Pruebas: estructura (MP4, `moov` al final, MOV girado, HEVC y cada rechazo
 `tests/fixtures/video`), almacenamiento (rangos, recepción local, URLs firmadas), servicio, `/media`
 (video y portada), recolector (portada), DTO, tarjeta y E2E (subir, revisar, publicar y reproducir;
 un archivo falso se rechaza).
+
+## ADR-063 · Creadores: recomendar productos de otras tiendas (etapa 1, sin dinero)
+
+**Contexto.** Idea del fundador (2026-10-01): «una sección para creadores de contenido, como TikTok
+Shop: enviar a la persona a ver cómo se le ve el producto y, pum, compra». La simulación de
+ganancias de ese día mostró que con solo pruebas y destacados el ingreso por persona es muy bajo; la
+palanca grande es la comisión por venta. Pero TikTok Shop reparte comisiones porque cobra dentro de
+la app, y aquí los pagos van por fuera (decisión del fundador): sin el pago dentro no se puede
+comprobar una venta ni repartir sin prestarse a fraude. Por eso son dos etapas; esta es la primera.
+El fundador aprobó además que cada tienda decida si acepta colaboraciones.
+
+**Decisión (etapa 1).**
+
+- **La tienda lo activa.** `SellerProfile.acceptsCollaborations` (apagado por omisión) en Studio →
+  Colaboraciones. Con él encendido, cualquier persona puede etiquetar un producto de esa tienda (a
+  la venta y visible) en su publicación o video; lo propio se etiqueta como siempre. Reglas puras
+  en `creators/rules.ts`; la acción de publicar las aplica en el servidor.
+- **La tienda conserva el control.** Recibe un aviso por cada etiqueta, ve en su panel quién la
+  etiquetó y puede quitar la etiqueta de cualquier publicación (la publicación sigue, ya sin el
+  producto, y quien publicó recibe un aviso). Desactivar las colaboraciones impide etiquetas nuevas;
+  las que existen se quitan una por una.
+- **La publicidad se identifica** (LFPC art. 32). Quien etiqueta el producto de otra tienda declara
+  si recibió algo por publicarlo (pago, producto o comisión); con esa declaración la tarjeta dice
+  «Colaboración con <tienda>». La tienda también puede marcarla desde su panel. Solo se marca: no se
+  desmarca. Siempre, con o sin acuerdo, el bloque del producto dice «Vendido por <tienda>».
+- **Del video a probárselo y a comprar.** En un video con producto, el precio y «Ver cómo me veo» van
+  encima del video (una sola vez por tarjeta). La ficha conserva de qué publicación llegó la persona
+  también al probarse la prenda y al comprar desde ese diálogo (antes se perdía).
+- **Qué ve cada quien.** `/creadores` (pública): cómo funciona, los productos que se pueden
+  recomendar y, con sesión, lo que logró cada publicación propia. Studio → Colaboraciones: lo mismo
+  por cada publicación que etiqueta sus productos. Cuatro conteos: visitas a la ficha, pruebas, veces
+  al carrito y pedidos pagados. Solo conteos, nunca quién ni montos. Una visita solo cuenta si la
+  publicación es de ESE producto (`analytics/integrity.ts`) y una vez por persona y hora.
+- **Sin dinero de por medio.** Estreno no cobra ni reparte comisiones: cualquier acuerdo es entre la
+  tienda y quien publica, y ambas pantallas lo dicen. Las pruebas que lleguen de esas publicaciones
+  las paga la tienda como siempre (saldo con tope diario, o cortesía).
+
+**Etapa 2 (después, decisión del fundador).** Comisión automática a quien publica por cada venta,
+con una parte para Estreno. Requiere que el pago pase por la plataforma (Mercado Pago o Stripe con
+reparto), retención de impuestos a quienes cobren y revisión de contador y abogado. La atribución
+que hoy se guarda en cada pedido (`OrderItem.sourcePostId`) es la base.
+
+**Consecuencias.** Migración `creator_collaborations` (`acceptsCollaborations`, `Post.collaboration`
+y dos tipos de aviso). Módulo `creators`. Costo: ≈ $0 (filas en la base). Riesgos: un video muy visto
+puede gastar el saldo de pruebas de una tienda (lo frena su tope diario) y una etiqueta engañosa (la
+tienda la quita; los reportes y la moderación siguen igual). Pendiente del abogado: una cláusula de
+colaboraciones en los términos. Pruebas: reglas, métricas, servicio contra PostgreSQL (quién ve
+qué, quién marca y quién quita), acción de publicar, tarjeta, avisos y E2E del flujo completo.

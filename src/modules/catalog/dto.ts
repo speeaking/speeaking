@@ -38,6 +38,8 @@ export type PublicProductDTO = {
     username: string | null;
     displayName: string;
     acceptedPaymentMethods: PaymentMethod[];
+    /** La tienda acepta que otras personas etiqueten sus productos (ADR-063). */
+    acceptsCollaborations: boolean;
   };
   facts: ProductFacts;
   saveCount: number;
@@ -81,6 +83,8 @@ export type PublicProductRow = {
     userId: string;
     displayName: string;
     acceptedPaymentMethods: PaymentMethod[];
+    /** Sin el campo (consultas que no lo piden): no acepta. */
+    acceptsCollaborations?: boolean;
     user: { profile: { username: string } | null };
   };
   /**
@@ -135,6 +139,7 @@ export function toPublicProduct(row: PublicProductRow, media: MediaDTO[]): Publi
       username: row.seller.user.profile?.username ?? null,
       displayName: row.seller.displayName,
       acceptedPaymentMethods: row.seller.acceptedPaymentMethods,
+      acceptsCollaborations: row.seller.acceptsCollaborations ?? false,
     },
     facts: {
       status: row.status,

@@ -213,6 +213,9 @@ model SellerProfile {
   /// productos a precio comunitario, hasta `tryOnDailyCapCents` al día.
   sponsorsTryOn          Boolean         @default(false)
   tryOnDailyCapCents     Int             @default(0)
+  /// Colaboraciones con creadores (ADR-063): otras personas pueden etiquetar los productos de esta
+  /// tienda en sus publicaciones. La tienda lo activa; puede quitar la etiqueta de cualquiera.
+  acceptsCollaborations  Boolean         @default(false)
   createdAt              DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt              DateTime        @updatedAt @db.Timestamptz(3)
 
@@ -431,6 +434,10 @@ model Post {
   status        PostStatus @default(PUBLISHED)
   /// Contenido generado o asistido por IA: se etiqueta en la interfaz (ADR-018).
   isAiGenerated Boolean    @default(false)
+  /// Colaboración (ADR-063): quien publica declaró un acuerdo con la tienda del producto etiquetado
+  /// (pago, producto o comisión), o la tienda lo marcó. Se muestra «Colaboración»: la publicidad
+  /// debe identificarse (LFPC art. 32).
+  collaboration Boolean    @default(false)
   likeCount     Int        @default(0)
   commentCount  Int        @default(0)
   saveCount     Int        @default(0)
@@ -1625,6 +1632,10 @@ enum NotificationType {
   ORDER_SHIPPED
   ORDER_DELIVERED
   ORDER_CANCELLED
+  /// A la tienda: alguien etiquetó uno de sus productos en una publicación (ADR-063).
+  PRODUCT_TAGGED
+  /// A quien publicó: la tienda quitó la etiqueta de su producto de esa publicación.
+  PRODUCT_TAG_REMOVED
 }
 
 /// Un aviso de la campana. Se borra con quien lo recibe, con quien lo causó y con lo que lo causó

@@ -1,7 +1,7 @@
 "use client";
 
 import { Pause, Play, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { FEED_FRAME, fitForFrame, frameAspect } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import type { FeedVideoDTO } from "@/modules/feed/dto";
@@ -41,11 +41,14 @@ export function PostVideo({
   video,
   label,
   expanded = false,
+  overlay,
   className,
 }: {
   video: FeedVideoDTO;
   label: string;
   expanded?: boolean;
+  /** Lo que va encima del video, arriba: el precio y «Ver cómo me veo» del producto (ADR-063). */
+  overlay?: ReactNode;
   className?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -172,6 +175,11 @@ export function PostVideo({
             </button>
           </div>
         </>
+      ) : null}
+      {overlay ? (
+        <div className="pointer-events-none absolute inset-x-2 top-2 flex flex-wrap items-start gap-2 *:pointer-events-auto">
+          {overlay}
+        </div>
       ) : null}
       {unsupported ? (
         <p className="absolute inset-x-0 bottom-0 bg-foreground/80 px-3 py-2 text-sm text-background">

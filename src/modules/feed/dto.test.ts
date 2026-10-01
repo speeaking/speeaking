@@ -148,6 +148,38 @@ describe("toFeedItem (el costo nunca llega al navegador)", () => {
     expect(toFeedItem(row, publicUrl)!.video).toBeNull();
   });
 
+  it("el producto de otra tienda (ADR-063) dice de quién es; «Colaboración» solo si se declaró", () => {
+    const theirs = {
+      ...row,
+      type: "POST" as const,
+      collaboration: true,
+      product: {
+        ...row.product!,
+        seller: { ...row.product!.seller, userId: "otra-tienda", displayName: "Ropero Demo" },
+      },
+    };
+    const dto = toFeedItem(theirs, publicUrl)!;
+    expect(dto.product!.thirdPartyStore).toBe("Ropero Demo");
+    expect(dto.collaboration).toBe(true);
+    expect(toFeedItem({ ...theirs, collaboration: false }, publicUrl)!.collaboration).toBe(false);
+    // El id de la tienda solo se compara: nunca viaja al navegador.
+    expect(JSON.stringify(dto)).not.toContain("otra-tienda");
+
+    // El producto es de quien publica: ni «Vendido por» ni colaboración, aunque la fila la traiga.
+    const own = toFeedItem(
+      {
+        ...theirs,
+        product: {
+          ...theirs.product,
+          seller: { ...theirs.product.seller, userId: row.author.id },
+        },
+      },
+      publicUrl,
+    )!;
+    expect(own.product!.thirdPartyStore).toBeNull();
+    expect(own.collaboration).toBe(false);
+  });
+
   it("marca si la prenda se puede probar («Ver cómo me veo») por categoría, título y etiquetas", () => {
     expect(toFeedItem(row, publicUrl)!.product!.tryOn).toBe(false);
 

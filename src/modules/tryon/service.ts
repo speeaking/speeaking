@@ -334,13 +334,18 @@ export async function tryOnAvailabilityFor(
  * Alguien quiso probarse un producto cuya tienda no tiene pruebas activas: se registra como demanda
  * (solo un número agregado para quien vende; nunca quién).
  */
-export function recordTryOnDemand(userId: string, productId: string) {
+export function recordTryOnDemand(
+  userId: string,
+  productId: string,
+  sourcePostId: string | null = null,
+) {
   track({
     type: "TRY_ON_REQUESTED",
     userId,
     surface: "PRODUCT_PAGE",
     entityType: "PRODUCT",
     entityId: productId,
+    sourcePostId,
   });
 }
 
@@ -425,11 +430,17 @@ export async function generateTryOn({
   userId,
   photoId,
   productIds,
+  sourcePostId = null,
   now = new Date(),
 }: {
   userId: string;
   photoId: string;
   productIds: string[];
+  /**
+   * Publicación desde la que la persona llegó a la ficha (ADR-063): la prueba se le atribuye a esa
+   * publicación si es de ESTE producto (`analytics/integrity.ts` lo verifica al guardar).
+   */
+  sourcePostId?: string | null;
   now?: Date;
 }): Promise<TryOnResultDTO> {
   await requireFeature("virtualTryOn");
@@ -475,7 +486,7 @@ export async function generateTryOn({
   ]);
   const options = fundingOptions(context);
   if (options.length === 0) {
-    recordTryOnDemand(userId, main.id);
+    recordTryOnDemand(userId, main.id, sourcePostId);
     throw new TryOnError("STORE_NOT_FUNDED", { priceCents: context.priceCents });
   }
 
@@ -560,6 +571,7 @@ export async function generateTryOn({
     surface: "STYLIST",
     entityType: "PRODUCT",
     entityId: main.id,
+    sourcePostId,
     metadata: { funding: reserved.funding, cached: false, garments: garments.length },
   });
   return toDTO(row, false);

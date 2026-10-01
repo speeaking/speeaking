@@ -13,6 +13,7 @@ export async function ProductStylistActions({
   viewerUserId,
   isOwner,
   autoOpen = false,
+  sourcePostId = null,
 }: {
   product: {
     id: string;
@@ -26,6 +27,8 @@ export async function ProductStylistActions({
   viewerUserId: string | null;
   isOwner: boolean;
   autoOpen?: boolean;
+  /** Publicación desde la que se llegó a la ficha (ADR-063). */
+  sourcePostId?: string | null;
 }) {
   const slot = slotForPublicProduct({
     categorySlug: product.categorySlug,
@@ -41,6 +44,7 @@ export async function ProductStylistActions({
         viewerUserId={viewerUserId}
         isOwner={isOwner}
         autoOpen={autoOpen}
+        sourcePostId={sourcePostId}
       />
       {completeOn ? (
         <Link
