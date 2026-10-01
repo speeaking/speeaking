@@ -1426,3 +1426,27 @@ haya ventas reales. Pendientes de la misma línea: el momento de publicar (la pi
 brillo breve), el revelado de «Ver cómo me veo» con antes y después, mantener presionado para acciones
 rápidas. Pruebas: unitarias de `CartSheet`, `toCartSheet`, `RouteModal`, `tapHaptic`, el doble toque y
 las animaciones del «me gusta»; E2E del inicio: abrir en capa y regresar.
+
+## ADR-053 · Página de cookies y pie legal en teléfono
+
+**Contexto.** El fundador pidió (2026-09-30) tener a la vista términos, aviso de privacidad y
+cookies, como en las redes grandes. El aviso y los términos ya existían y se enlazaban en el pie de la
+columna derecha, que en teléfono no existe; de cookies solo había una frase en el aviso.
+
+**Decisión.**
+
+- `/cookies`: inventario real y público de las cookies (sesión `vendeia…`, `estreno-nav`,
+  `vendeia_bienvenida`), con duración y tipo, qué guarda el navegador sin ser cookie, cómo borrarlas
+  y la promesa de que no hay cookies de terceros ni de publicidad. Se actualiza antes de agregar
+  cualquier cookie o proveedor (`docs/legal/00-marco-legal-2026.md` §2.6 es la fuente).
+- **Sin «aceptar cookies».** Solo hay cookies necesarias y de preferencia, propias; la ley mexicana no
+  exige un banner para eso y ponerlo sería teatro. Si algún día entra una herramienta externa que las
+  use, el consentimiento se pide antes (y cambia la CSP, ADR-029).
+- **Pie legal compartido** (`LegalFooter`): Privacidad · Términos · Cookies · Publicidad (`/precios`,
+  qué pagan las tiendas y cómo se marca «Patrocinado») · Seguridad · Apoya. En escritorio al final de
+  la columna derecha; en teléfono al final de Ajustes. No hay «opciones de anuncios» porque no hay
+  segmentación publicitaria: lo que la persona controla (sugerencias, historial de búsqueda) vive en
+  Ajustes.
+
+**Consecuencias.** Pruebas unitarias de la página y E2E del pie. Pendiente legal: la revisión del
+abogado de los tres textos antes del lanzamiento (siguen marcados como borrador).

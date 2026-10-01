@@ -22,6 +22,10 @@ test("las páginas de seguridad y apoyo son públicas y se enlazan desde el regi
   await expect(page.getByRole("heading", { name: /Qué cuesta mantenerlo/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "De dónde sale el dinero" })).toBeVisible();
 
+  await page.goto("/cookies");
+  await expect(page.getByRole("heading", { level: 1, name: "Cookies" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "estreno-nav" })).toBeVisible();
+
   await page.goto("/registro");
   await expect(page.getByRole("link", { name: "Cómo cuidamos tus datos" })).toHaveAttribute(
     "href",
@@ -36,6 +40,15 @@ test("las páginas de seguridad y apoyo son públicas y se enlazan desde el regi
       "/seguridad",
     );
     await expect(footer.getByRole("link", { name: "Apoya" })).toHaveAttribute("href", "/apoya");
+    // Lo legal completo, como lo busca la gente (ADR-053).
+    for (const [name, href] of [
+      ["Privacidad", "/privacidad"],
+      ["Términos", "/terminos"],
+      ["Cookies", "/cookies"],
+      ["Publicidad", "/precios"],
+    ] as const) {
+      await expect(footer.getByRole("link", { name })).toHaveAttribute("href", href);
+    }
   }
 });
 

@@ -1,6 +1,7 @@
 import { Camera, History, ShieldCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/layout/legal-footer";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
@@ -153,6 +154,7 @@ export default async function SettingsPage() {
         </section>
 
         <SignOutButton />
+        <LegalFooter className="px-4 pt-2 md:px-0" />
       </div>
     </>
   );

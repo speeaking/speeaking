@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { siteConfig } from "@/config/site";
 import { SponsoredRail } from "@/modules/billing/components/sponsored-products";
 import { listFeaturedProducts } from "@/modules/catalog/queries";
 import { PeopleSuggestions } from "@/modules/discovery/components/people-suggestions";
@@ -10,6 +8,7 @@ import { getViewer } from "@/modules/identity/session";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
 import { SupportCard } from "@/modules/platform/components/support-card";
 import { env } from "@/server/env";
+import { LegalFooter } from "./legal-footer";
 
 /**
  * Columna derecha de escritorio «Para ti» (F4 + F6b), solo con datos reales. Arriba, el bloque
@@ -52,29 +51,5 @@ export async function SocialAside({ viewer }: { viewer: ViewerSummary }) {
         <LegalFooter />
       </div>
     </div>
-  );
-}
-
-function LegalFooter() {
-  return (
-    <footer className="px-2 text-xs leading-relaxed text-muted-foreground">
-      <p>
-        © {new Date().getFullYear()} {siteConfig.name} · Hecho en México
-      </p>
-      <p className="flex gap-3">
-        <Link href="/privacidad" className="hover:text-foreground hover:underline">
-          Privacidad
-        </Link>
-        <Link href="/terminos" className="hover:text-foreground hover:underline">
-          Términos
-        </Link>
-        <Link href="/seguridad" className="hover:text-foreground hover:underline">
-          Seguridad
-        </Link>
-        <Link href="/apoya" className="hover:text-foreground hover:underline">
-          Apoya
-        </Link>
-      </p>
-    </footer>
   );
 }

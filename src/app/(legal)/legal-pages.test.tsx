@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { LEGAL_VERSIONS } from "@/modules/identity/constants";
+import CookiesPage, { COOKIES_NOTICE_UPDATED } from "./cookies/page";
 import PrivacyNoticePage from "./privacidad/page";
 import TermsPage from "./terminos/page";
 
@@ -75,6 +76,24 @@ describe("Términos y condiciones", () => {
     );
     expect(document.body).not.toHaveTextContent(
       "suspender la venta de una cuenta que incumpla estas reglas, y restaurar",
+    );
+  });
+});
+
+describe("Cookies", () => {
+  it("lista cada cookie real con su duración, dice que no hay de terceros y enlaza al aviso", () => {
+    render(<CookiesPage />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Cookies" })).toBeInTheDocument();
+    expect(document.body).toHaveTextContent(`actualizado el ${COOKIES_NOTICE_UPDATED}`);
+    for (const name of ["vendeia… (sesión)", "estreno-nav", "vendeia_bienvenida"]) {
+      expect(screen.getByRole("cell", { name })).toBeInTheDocument();
+    }
+    expect(document.body).toHaveTextContent("No hay cookies de terceros, ni de publicidad");
+    expect(document.body).toHaveTextContent("no te pedimos «aceptar cookies» al entrar");
+    expect(screen.getAllByRole("link", { name: "aviso de privacidad" })[0]).toHaveAttribute(
+      "href",
+      "/privacidad#publicaciones-en-pantalla",
     );
   });
 });
