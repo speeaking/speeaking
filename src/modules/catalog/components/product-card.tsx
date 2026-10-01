@@ -2,6 +2,7 @@ import { Camera } from "lucide-react";
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ViewTransition } from "react";
 import { formatMoney } from "@/lib/format";
 import { blurPlaceholder } from "@/lib/image";
 import type { ProductCardDTO } from "../queries";
@@ -18,17 +19,20 @@ export function ProductCard({ product, from }: { product: ProductCardDTO; from?:
       <Link href={href} className="flex flex-col gap-2">
         <div className="relative aspect-4/5 overflow-hidden rounded-2xl bg-muted">
           {product.image ? (
-            <Image
-              src={product.image.url}
-              // El título visible ya nombra el producto: la foto sería una segunda lectura.
-              alt=""
-              fill
-              sizes="(max-width: 640px) 50vw, 240px"
-              {...blurPlaceholder(product.image)}
-              // En `style` (no en la clase) para que el desenfoque de carga use el mismo ajuste y no se estire.
-              style={{ objectFit: "cover" }}
-              className="transition-transform duration-300 group-hover:scale-105"
-            />
+            // La foto viaja hasta la ficha al abrirla (ADR-052): mismo nombre en ambos lados.
+            <ViewTransition name={`producto-${product.id}`} share="morph" default="none">
+              <Image
+                src={product.image.url}
+                // El título visible ya nombra el producto: la foto sería una segunda lectura.
+                alt=""
+                fill
+                sizes="(max-width: 640px) 50vw, 240px"
+                {...blurPlaceholder(product.image)}
+                // En `style` (no en la clase) para que el desenfoque de carga use el mismo ajuste y no se estire.
+                style={{ objectFit: "cover" }}
+                className="transition-transform duration-300 group-hover:scale-105"
+              />
+            </ViewTransition>
           ) : null}
           {!product.inStock ? (
             <span className="absolute top-2 left-2 rounded-full bg-foreground px-2 py-0.5 text-xs font-bold text-background">

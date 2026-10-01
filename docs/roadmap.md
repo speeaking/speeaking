@@ -157,6 +157,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | 4                                                                                                                                                              | Búsqueda por imagen, comprador IA, regalos, asistente general, feed personalizado                | Banderas apagadas          |
 | 5                                                                                                                                                              | Negociación, tendencias, insights, antifraude, visualizadores de espacios y autos                | Banderas apagadas          |
 | Carrusel de productos en el feed: patrocinados, búsqueda declarada o comunidades, más vendidos, populares, novedades (ADR-051)                                 | ✅                                                                                               |
+| Detalles que se sienten: publicación en capa sobre el feed, foto que viaja a la ficha, «me gusta» que salta y vibra, doble toque, carrito como panel (ADR-052) | ✅                                                                                               |
 
 ## Sprint 4 — Crecer (fases 13–14) ⏳
 

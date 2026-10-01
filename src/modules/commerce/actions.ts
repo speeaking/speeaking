@@ -15,7 +15,14 @@ import {
 } from "@/server/providers/payments";
 import { limitOrError, rateLimitMany, rateLimitKey } from "@/server/rate-limit";
 import { addressSchema } from "./address-schema";
-import { addToCart, CartError, MAX_QUANTITY_PER_ITEM, setCartItemQuantity } from "./cart";
+import {
+  addToCart,
+  CartError,
+  getCartLines,
+  MAX_QUANTITY_PER_ITEM,
+  setCartItemQuantity,
+} from "./cart";
+import { type CartSheetDTO, toCartSheet } from "./cart-sheet";
 import {
   advanceOrder,
   applyPaymentEvent,
@@ -75,6 +82,13 @@ async function add(
 export async function addToCartAction(input: z.input<typeof addSchema>): Promise<CartActionResult> {
   const { userId: _userId, ...result } = await add(input);
   return result;
+}
+
+/** El carrito tal como lo pinta el panel al agregar algo (ADR-052). `null` sin sesión. */
+export async function cartSheetAction(): Promise<CartSheetDTO | null> {
+  const viewer = await getViewer();
+  if (!viewer) return null;
+  return toCartSheet(await getCartLines(viewer.userId));
 }
 
 /** "Comprar ahora": agrega al carrito y lleva directo al checkout. */

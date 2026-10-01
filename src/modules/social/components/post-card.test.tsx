@@ -1,13 +1,20 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FeedItemDTO } from "@/modules/feed/dto";
+import { tapHaptic } from "@/lib/haptics";
 import { toggleLikeAction, toggleSaveAction } from "../actions";
 import { PostCard } from "./post-card";
 
 // Las acciones reales viven en el servidor (base de datos, sesión): aquí se simulan.
 vi.mock("../actions", () => ({ toggleLikeAction: vi.fn(), toggleSaveAction: vi.fn() }));
 vi.mock("../interaction-actions", () => ({ recordShareAction: vi.fn() }));
+// Micro-respuestas (ADR-052): la vibración y los avisos se observan, no se ejecutan.
+vi.mock("@/lib/haptics", () => ({ tapHaptic: vi.fn() }));
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/c/gaming",
@@ -569,5 +576,53 @@ describe("PostCard: variantes", () => {
     render(<PostCard variant="cover" post={sale()} />);
 
     expect(screen.getByRole("article")).toHaveAttribute("data-variant", "standard");
+  });
+});
+
+describe("PostCard: micro-respuestas (ADR-052)", () => {
+  it("al dar «me gusta» el corazón salta, vibra una vez y el número entra animado", async () => {
+    vi.mocked(toggleLikeAction).mockResolvedValue({ ok: true, active: true, count: 1 });
+    render(<PostCard post={post()} />);
+    const like = screen.getByRole("button", { name: "Me gusta" });
+    expect(like.querySelector("svg")).not.toHaveClass("motion-safe:animate-pop");
+
+    await userEvent.click(like);
+
+    expect(like).toHaveAttribute("aria-pressed", "true");
+    expect(like.querySelector("svg")).toHaveClass("motion-safe:animate-pop");
+    expect(within(like).getByText("1")).toHaveClass("motion-safe:animate-in");
+    expect(tapHaptic).toHaveBeenCalledTimes(1);
+  });
+
+  it("quitar el «me gusta» no vibra ni anima el corazón", async () => {
+    vi.mocked(toggleLikeAction).mockResolvedValue({ ok: true, active: false, count: 2 });
+    render(
+      <PostCard
+        post={post({
+          stats: { likes: 3, comments: 0, saves: 0 },
+          viewer: { liked: true, saved: false, withinBudget: false },
+        })}
+      />,
+    );
+    const like = screen.getByRole("button", { name: "Me gusta, 3" });
+
+    await userEvent.click(like);
+
+    expect(like).toHaveAttribute("aria-pressed", "false");
+    expect(like.querySelector("svg")).not.toHaveClass("motion-safe:animate-pop");
+    expect(tapHaptic).not.toHaveBeenCalled();
+  });
+
+  it("guardar avisa «Guardado» con la liga a Guardados; quitarlo, no", async () => {
+    vi.mocked(toggleSaveAction).mockResolvedValue({ ok: true, active: true, count: 1 });
+    render(<PostCard post={post()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    expect(toast).toHaveBeenCalledWith(
+      "Guardado",
+      expect.objectContaining({ action: expect.objectContaining({ label: "Ver" }) }),
+    );
+    expect(tapHaptic).toHaveBeenCalledTimes(1);
   });
 });

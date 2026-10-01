@@ -1391,3 +1391,38 @@ comparte.
 feed) al mismo precio: el precio no cambia (decisión humana). Costo: una consulta de tarjetas y dos o
 tres agregados ligeros por página. Pendiente: medir clics del carrusel por tramo (hoy solo los
 patrocinados llevan `ref`) y la búsqueda por foto como nuevo tramo personal.
+
+## ADR-052 · Detalles que se sienten: abrir en capa, micro-respuestas y carrito como panel
+
+**Contexto.** El fundador señaló (2026-09-30) que la app se sentía «vieja» en lo pequeño: tocar algo
+cambiaba de página completa, nada respondía al dedo y agregar al carrito te sacaba de donde estabas.
+El neuromarketing y la práctica de las apps que la gente usa a diario coinciden: los detalles de
+respuesta inmediata son los que se recuerdan. El diseño sigue siendo calmo (ADR-042): un detalle por
+momento, movimientos de 150 a 700 ms, nada que suene y todo con salida para quien pide menos
+movimiento.
+
+**Decisión.**
+
+- **Abrir sin salir.** Una publicación tocada desde el feed se abre en capa sobre la página
+  (`@modal/(.)p/[id]` con rutas paralelas e interceptadas; `RouteModal`). La URL es la misma
+  `/p/[id]`: compartirla o recargar abre la página completa; «atrás» o cerrar regresa al feed con el
+  scroll intacto. Al navegar a otra ruta desde dentro, la capa se cierra sola al ver que la URL ya no
+  es la suya (`RouteModal` compara `usePathname()` con su prefijo): sin ruta comodín en el slot,
+  que habría convertido cualquier URL inexistente en un 200. El cuerpo de la publicación es un solo
+  componente (`PostDetail`) para la página y la capa.
+- **La foto viaja.** La foto de una tarjeta de producto y la primera foto de su ficha comparten el
+  nombre de transición (`producto-<id>`, `<ViewTransition share="morph">` de React); el navegador la
+  mueve de un lugar al otro. Donde no hay soporte, no pasa nada.
+- **Micro-respuestas al tocar.** «Me gusta» salta (`animate-pop`) y el número entra animado;
+  activar «me gusta» o «guardar» vibra 10 ms donde el navegador lo permite (`tapHaptic`, nunca con
+  «menos movimiento»); guardar avisa «Guardado» con la liga a Guardados; doble toque sobre la foto en
+  la vista abierta da «me gusta» (nunca lo quita) y muestra un corazón que crece y se va.
+- **Carrito como panel.** «Al carrito» abre un panel (`CartSheet`: abajo en teléfono, derecha en
+  escritorio) con las piezas, el subtotal y dos salidas: pagar o seguir viendo. El carrito completo
+  sigue en `/carrito`. El DTO del panel no lleva costo (P4) y el subtotal lo suma el código (P2).
+
+**Consecuencias.** Sin sonidos: quedan para las tiendas (venta nueva, mensaje) como opción, cuando
+haya ventas reales. Pendientes de la misma línea: el momento de publicar (la pieza entra con un
+brillo breve), el revelado de «Ver cómo me veo» con antes y después, mantener presionado para acciones
+rápidas. Pruebas: unitarias de `CartSheet`, `toCartSheet`, `RouteModal`, `tapHaptic`, el doble toque y
+las animaciones del «me gusta»; E2E del inicio: abrir en capa y regresar.

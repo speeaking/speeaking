@@ -13,3 +13,7 @@ Sprint 2 (fases 7–9).
   simulado no hay nada que enviar).
 - La pasarela simulada solo existe con `simulatedPaymentsEnabled()` (ver `src/server/providers/payments`).
 - `checkout.db.test.ts` corre contra la base de desarrollo (`pnpm db:start`); se omite sin `DATABASE_URL`.
+
+**Carrito como panel (ADR-052).** «Al carrito» en la ficha abre `CartSheet` (abajo en teléfono,
+derecha en escritorio) con lo que trae `cartSheetAction` (`toCartSheet`: piezas, subtotal, nunca el
+costo). Pagar lleva a `/checkout`; el carrito completo sigue en `/carrito`.

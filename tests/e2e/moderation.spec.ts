@@ -206,7 +206,11 @@ test("el equipo oculta un producto: desaparece de todo lo público y su dueño l
     const path = await firstPhotoPath(buyer.page);
     expect((await buyer.page.request.get(path)).status()).toBe(200);
     await buyer.page.getByRole("button", { name: "Al carrito" }).click();
-    await expect(buyer.page.getByText("Agregado al carrito")).toBeVisible();
+    // El carrito abre como panel (ADR-052): se cierra para seguir en la ficha.
+    const cartSheet = buyer.page.getByRole("dialog", { name: "Agregado al carrito" });
+    await expect(cartSheet).toBeVisible();
+    await cartSheet.getByRole("button", { name: "Seguir viendo" }).click();
+    await expect(cartSheet).toHaveCount(0);
     await report(buyer.page, "este producto", "Estafa o engaño");
 
     // Reportar la publicación desde su página (/p/[id]); quien la publicó no ve el botón.

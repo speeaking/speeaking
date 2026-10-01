@@ -231,6 +231,8 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         aspect={cover ? frameAspect(cover, PRODUCT_FRAME) : PRODUCT_FRAME.min}
         fit="contain"
         preloadFirst
+        // La foto de la tarjeta que se tocó viaja hasta aquí (ADR-052).
+        transitionName={`producto-${product.id}`}
         className="md:mt-2 md:rounded-3xl"
       />
 

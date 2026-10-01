@@ -199,3 +199,40 @@ describe("MediaCarousel", () => {
     expect(track.parentElement).toContainElement(screen.getByRole("button", { name: "$899" }));
   });
 });
+
+describe("MediaCarousel: doble toque (ADR-052)", () => {
+  it("dos toques seguidos sobre la foto llaman onDoubleTap una vez y muestran el corazón; uno solo, no", () => {
+    const onDoubleTap = vi.fn();
+    render(<MediaCarousel items={photos(3)} label="Fotos" onDoubleTap={onDoubleTap} />);
+    const { track } = mockTrack();
+
+    fireEvent.click(track);
+    expect(onDoubleTap).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-slot="heart-burst"]')).toBeNull();
+
+    fireEvent.click(track);
+    expect(onDoubleTap).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('[data-slot="heart-burst"]')).not.toBeNull();
+  });
+
+  it("los toques sobre las flechas no cuentan, y sin onDoubleTap no pasa nada", () => {
+    const onDoubleTap = vi.fn();
+    render(<MediaCarousel items={photos(2)} label="Fotos" onDoubleTap={onDoubleTap} />);
+    mockTrack();
+    const next = screen.getByRole("button", { name: "Foto siguiente" });
+
+    fireEvent.click(next);
+    fireEvent.click(next);
+    expect(onDoubleTap).not.toHaveBeenCalled();
+  });
+
+  it("con una sola foto el marco también responde al doble toque", () => {
+    const onDoubleTap = vi.fn();
+    render(<MediaCarousel items={photos(1)} label="Fotos" onDoubleTap={onDoubleTap} />);
+    const frame = screen.getByRole("img").closest("div")!;
+
+    fireEvent.click(frame);
+    fireEvent.click(frame);
+    expect(onDoubleTap).toHaveBeenCalledTimes(1);
+  });
+});

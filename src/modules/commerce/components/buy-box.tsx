@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { addToCartAction, buyNowAction, type CartActionResult } from "../actions";
+import { addToCartAction, buyNowAction, type CartActionResult, cartSheetAction } from "../actions";
+import type { CartSheetDTO } from "../cart-sheet";
+import { CartSheet } from "./cart-sheet";
 
 export function BuyBox({
   productId,
@@ -25,6 +27,11 @@ export function BuyBox({
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [pending, startTransition] = useTransition();
+  // El carrito como panel (ADR-052): se abre al instante y se llena cuando llega.
+  const [sheet, setSheet] = useState<{ open: boolean; cart: CartSheetDTO | null }>({
+    open: false,
+    cart: null,
+  });
 
   const handle = (result: CartActionResult) => {
     if (result.ok) return true;
@@ -96,9 +103,10 @@ export function BuyBox({
             startTransition(async () => {
               const result = await addToCartAction({ productId, quantity, sourcePostId });
               if (handle(result)) {
-                toast.success("Agregado al carrito", {
-                  action: { label: "Ver carrito", onClick: () => router.push("/carrito") },
-                });
+                setSheet({ open: true, cart: null });
+                setSheet({ open: true, cart: await cartSheetAction() });
+                // El contador del carrito de arriba es del servidor: se repinta sin perder el panel.
+                router.refresh();
               }
             })
           }
@@ -110,6 +118,11 @@ export function BuyBox({
       <p className="text-xs text-muted-foreground">
         Etapa de prueba: los pagos son simulados, no se cobra nada.
       </p>
+      <CartSheet
+        open={sheet.open}
+        onOpenChange={(open) => setSheet((current) => ({ ...current, open }))}
+        cart={sheet.cart}
+      />
     </div>
   );
 }

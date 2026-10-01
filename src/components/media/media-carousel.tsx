@@ -1,21 +1,28 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import Image from "next/image";
 import {
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
   type UIEvent,
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
+  ViewTransition,
 } from "react";
 import { blurPlaceholder, fitForFrame } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { dotWindow, type MediaItem } from "./media-layout";
 
 const DEFAULT_SIZES = "(max-width: 768px) 100vw, 576px";
+/** Dos toques en menos de esto cuentan como doble toque. */
+const DOUBLE_TAP_MS = 350;
+/** Lo que dura el corazón en pantalla (igual que su animación). */
+const BURST_MS = 700;
 
 /** Solo nuestras miniaturas en base64 (generadas al subir) se usan como fondo en CSS. */
 const BLUR_DATA_URL = /^data:image\/[a-z+]+;base64,[A-Za-z0-9+/=]+$/;
@@ -41,6 +48,8 @@ export function MediaCarousel({
   preloadFirst = false,
   initialIndex = 0,
   overlay,
+  onDoubleTap,
+  transitionName,
   className,
 }: {
   items: MediaItem[];
@@ -59,6 +68,13 @@ export function MediaCarousel({
    * posiciona con `absolute`; el contador ocupa la esquina superior derecha.
    */
   overlay?: ReactNode;
+  /**
+   * Doble toque sobre la foto (ADR-052), p. ej. dar «me gusta». Muestra un corazón que crece y se
+   * desvanece; los toques sobre enlaces o botones del marco no cuentan.
+   */
+  onDoubleTap?: () => void;
+  /** Nombre de transición compartido de la primera foto (ADR-052): la tarjeta de origen usa el mismo. */
+  transitionName?: string;
   /** Clases del marco (bordes redondeados, márgenes). */
   className?: string;
 }) {
@@ -69,6 +85,32 @@ export function MediaCarousel({
   const previousRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const trackId = useId();
+  const [burst, setBurst] = useState(false);
+  const lastTap = useRef(0);
+  const burstTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(burstTimer.current), []);
+
+  const onTap = (event: MouseEvent<HTMLElement>) => {
+    if (!onDoubleTap) return;
+    if ((event.target as HTMLElement).closest("a, button")) return;
+    const now = Date.now();
+    const isDouble = now - lastTap.current < DOUBLE_TAP_MS;
+    lastTap.current = isDouble ? 0 : now;
+    if (!isDouble) return;
+    onDoubleTap();
+    setBurst(true);
+    window.clearTimeout(burstTimer.current);
+    burstTimer.current = window.setTimeout(() => setBurst(false), BURST_MS);
+  };
+  const burstHeart = burst ? (
+    <div
+      aria-hidden="true"
+      data-slot="heart-burst"
+      className="pointer-events-none absolute inset-0 grid place-items-center"
+    >
+      <Heart className="size-24 fill-current text-background drop-shadow-lg motion-safe:animate-heart-burst" />
+    </div>
+  ) : null;
 
   // Abrir en la foto pedida (p. ej. al tocar la tercera del collage) antes de pintar.
   useLayoutEffect(() => {
@@ -123,20 +165,29 @@ export function MediaCarousel({
             style={{ backgroundImage: `url("${item.blurDataUrl}")` }}
           />
         ) : null}
-        <Image
-          src={item.url}
-          alt={item.alt}
-          fill
-          sizes={sizes}
-          {...blurPlaceholder(item)}
-          preload={preloadFirst && index === start}
-          // En `style` y no en clases: next/image lo usa para que el desenfoque de carga tenga la
-          // misma forma que la foto (con clases lo estira al marco).
-          style={{ objectFit: mode }}
-        />
+        {transitionName && index === 0 ? (
+          <ViewTransition name={transitionName} share="morph" default="none">
+            {photo(item, index, mode)}
+          </ViewTransition>
+        ) : (
+          photo(item, index, mode)
+        )}
       </>
     );
   };
+  const photo = (item: MediaItem, index: number, mode: "cover" | "contain") => (
+    <Image
+      src={item.url}
+      alt={item.alt}
+      fill
+      sizes={sizes}
+      {...blurPlaceholder(item)}
+      preload={preloadFirst && index === start}
+      // En `style` y no en clases: next/image lo usa para que el desenfoque de carga tenga la
+      // misma forma que la foto (con clases lo estira al marco).
+      style={{ objectFit: mode }}
+    />
+  );
 
   if (count === 0) return null;
 
@@ -145,8 +196,10 @@ export function MediaCarousel({
       <div
         className={cn("relative overflow-hidden bg-muted", className)}
         style={{ aspectRatio: aspect }}
+        onClick={onTap}
       >
         {slide(items[0]!, 0)}
+        {burstHeart}
         {overlay}
       </div>
     );
@@ -172,6 +225,7 @@ export function MediaCarousel({
           id={trackId}
           tabIndex={0}
           onScroll={onScroll}
+          onClick={onTap}
           data-slot="carousel-track"
           // Sin `outline-none`: en Tailwind 4 anula el `outline-3` del foco (queda sin anillo).
           className="scrollbar-none flex size-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ring"
@@ -189,6 +243,7 @@ export function MediaCarousel({
           ))}
         </div>
 
+        {burstHeart}
         <span
           aria-hidden="true"
           className="pointer-events-none absolute top-3 right-3 rounded-full bg-background/80 px-2 py-0.5 text-xs font-semibold text-foreground tabular-nums backdrop-blur-sm"

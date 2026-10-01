@@ -54,6 +54,26 @@ test.describe("inicio: visitante", () => {
     }
   });
 
+  test("una publicación se abre en capa sobre el feed y «atrás» la cierra (ADR-052)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const first = page.locator("main article").first();
+    await expect(first).toBeVisible();
+    await first.locator(`a[href^="/p/"]`).first().click();
+
+    await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
+    const layer = page.getByRole("dialog", { name: "Publicación" });
+    await expect(layer).toBeVisible();
+    await expect(layer.getByRole("heading", { name: /^Comentarios/ })).toBeVisible();
+    // El feed sigue detrás (la capa lo deja inerte para lectores: por eso se busca por CSS, no por rol).
+    await expect(page.locator("main h1")).toHaveText("Para ti");
+
+    await page.goBack();
+    await expect(page).toHaveURL("/");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
   test("«Arma tu feed» aparece después de la 2.ª publicación solo sin columna derecha", async ({
     page,
     isMobile,

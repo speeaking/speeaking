@@ -30,6 +30,7 @@ import { CommunityAvatar } from "@/components/brand/community-avatar";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { MediaCarousel } from "@/components/media/media-carousel";
 import { MediaCollage } from "@/components/media/media-collage";
+import { tapHaptic } from "@/lib/haptics";
 import { formatCompactNumber, formatCount, formatMoney, formatRelativeTime } from "@/lib/format";
 import { FEED_FRAME, frameAspect, PRODUCT_FRAME } from "@/lib/image";
 import { cn } from "@/lib/utils";
@@ -72,7 +73,12 @@ const LONG_BODY = 220;
 
 type Toggle = { active: boolean; count: number };
 
-function useToggle(initial: Toggle, action: () => Promise<ToggleResult>) {
+function useToggle(
+  initial: Toggle,
+  action: () => Promise<ToggleResult>,
+  /** Al activar (no al quitar): avisos como «Guardado». */
+  onActivate?: () => void,
+) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(initial);
   const [optimistic, setOptimistic] = useOptimistic(confirmed);
@@ -80,10 +86,16 @@ function useToggle(initial: Toggle, action: () => Promise<ToggleResult>) {
 
   const toggle = () =>
     startTransition(async () => {
+      const activating = !optimistic.active;
       setOptimistic({
-        active: !optimistic.active,
-        count: optimistic.count + (optimistic.active ? -1 : 1),
+        active: activating,
+        count: optimistic.count + (activating ? 1 : -1),
       });
+      // Micro-respuesta (ADR-052): un «clic» en el pulgar al activar; nunca al quitar.
+      if (activating) {
+        tapHaptic();
+        onActivate?.();
+      }
       const result = await action();
       if (result.ok) {
         setConfirmed({
@@ -527,11 +539,16 @@ function withCount(label: string, count: number) {
 function ActionBar({
   post,
   isSignedIn,
+  like,
+  toggleLike,
   compact = false,
   onPostPage = false,
 }: {
   post: Post;
   isSignedIn: boolean;
+  /** Estado y acción de «Me gusta»: viven en la tarjeta porque el doble toque en la foto también lo da. */
+  like: Toggle;
+  toggleLike: () => void;
   /**
    * En la página de la publicación «Comentar» es un ancla nativa (`#comentar`): dispara
    * `hashchange` y el formulario toma el foco (Link cambia la URL sin ese evento).
@@ -548,11 +565,15 @@ function ActionBar({
   const primaryLabel = compact ? "sr-only" : "hidden md:inline";
   const control = cn(actionClass, compact && "px-2");
   const pathname = usePathname();
-  const [like, toggleLike] = useToggle({ active: post.viewer.liked, count: post.stats.likes }, () =>
-    toggleLikeAction(post.id),
-  );
-  const [save, toggleSave] = useToggle({ active: post.viewer.saved, count: post.stats.saves }, () =>
-    toggleSaveAction({ postId: post.id }),
+  const router = useRouter();
+  const [save, toggleSave] = useToggle(
+    { active: post.viewer.saved, count: post.stats.saves },
+    () => toggleSaveAction({ postId: post.id }),
+    () =>
+      toast("Guardado", {
+        description: "Lo encuentras en Guardados cuando quieras.",
+        action: { label: "Ver", onClick: () => router.push("/guardados" as Route) },
+      }),
   );
   const signUp = signUpHref(pathname || "/");
   const comments = post.stats.comments;
@@ -579,16 +600,23 @@ function ActionBar({
 
   const likeContent = (
     <>
+      {/* La `key` lo vuelve a montar al activarse: la animación corre cada vez, no solo la primera. */}
       <Heart
+        key={like.active ? "on" : "off"}
         aria-hidden="true"
         className={cn(
           "size-5 motion-safe:transition-transform motion-safe:active:scale-125",
-          like.active && "fill-current",
+          like.active && "fill-current motion-safe:animate-pop",
         )}
       />
       <span className={primaryLabel}>Me gusta</span>
       {like.count > 0 ? (
-        <span className="tabular-nums">{formatCompactNumber(like.count)}</span>
+        <span
+          key={like.count}
+          className="tabular-nums motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in motion-safe:slide-in-from-bottom-1"
+        >
+          {formatCompactNumber(like.count)}
+        </span>
       ) : null}
     </>
   );
@@ -717,6 +745,15 @@ export function PostCard({
   const community = post.community;
   const product = post.product;
   const isSale = post.type === "PRODUCT" || product !== null;
+  const [like, toggleLike] = useToggle({ active: post.viewer.liked, count: post.stats.likes }, () =>
+    toggleLikeAction(post.id),
+  );
+  // Doble toque sobre la foto (vista abierta): da «me gusta», nunca lo quita (ADR-052).
+  const likeByDoubleTap = isSignedIn
+    ? () => {
+        if (!like.active) toggleLike();
+      }
+    : undefined;
   const images = post.media.map((media, mediaIndex) => ({
     ...media,
     // `||`: un texto alternativo vacío dejaría sin nombre el enlace del mosaico.
@@ -775,7 +812,13 @@ export function PostCard({
           <PostBody text={rest} expanded={expanded} className="text-ink-2" />
           <PhotoCredit media={post.media} />
           <div className="mt-auto flex flex-col gap-2">
-            <ActionBar post={post} isSignedIn={isSignedIn} compact />
+            <ActionBar
+              post={post}
+              isSignedIn={isSignedIn}
+              compact
+              like={like}
+              toggleLike={toggleLike}
+            />
             {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
           </div>
         </div>
@@ -798,7 +841,7 @@ export function PostCard({
           {post.body}
         </p>
         <div className="flex flex-col gap-2">
-          <ActionBar post={post} isSignedIn={isSignedIn} />
+          <ActionBar post={post} isSignedIn={isSignedIn} like={like} toggleLike={toggleLike} />
           {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
         </div>
       </article>
@@ -826,6 +869,7 @@ export function PostCard({
               aspect={frameAspect(cover, isSale ? PRODUCT_FRAME : FEED_FRAME)}
               preloadFirst={index === 0}
               initialIndex={initialMediaIndex}
+              onDoubleTap={likeByDoubleTap}
               overlay={
                 product && productHref ? <PriceTag product={product} href={productHref} /> : null
               }
@@ -847,7 +891,13 @@ export function PostCard({
         />
       ) : null}
 
-      <ActionBar post={post} isSignedIn={isSignedIn} onPostPage={expanded} />
+      <ActionBar
+        post={post}
+        isSignedIn={isSignedIn}
+        onPostPage={expanded}
+        like={like}
+        toggleLike={toggleLike}
+      />
       {showReply ? <ReplyRow post={post} isSignedIn={isSignedIn} /> : null}
     </article>
   );
