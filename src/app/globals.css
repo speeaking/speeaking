@@ -270,3 +270,72 @@
     display: none;
   }
 }
+
+/* ─── Abrir un perfil «pasa la página» (ADR-055) ───
+   Con el tipo de transición «perfil» (lib/page-turn.ts), la instantánea vieja de la raíz queda encima
+   y se despega en diagonal desde la esquina inferior derecha; la pantalla nueva ya está debajo (las
+   barras laterales son iguales en las dos: no se notan). El esqueleto del perfil (`page-sheet`) solo
+   espera debajo; la ficha (`page-ink`) entra con un fundido cuando llega. */
+@property --page-fold {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* La capa de la transición no atrapa los toques mientras anima. */
+::view-transition {
+  pointer-events: none;
+}
+
+:root:active-view-transition-type(perfil)::view-transition-group(root) {
+  z-index: 1;
+}
+
+:root:active-view-transition-type(perfil)::view-transition-old(root) {
+  z-index: 1;
+  mask-image: linear-gradient(
+    to top left,
+    transparent calc(var(--page-fold) - 7%),
+    #000 var(--page-fold)
+  );
+  animation: 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-fold;
+}
+
+:root:active-view-transition-type(perfil)::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-new(.page-sheet) {
+  animation: none;
+}
+
+::view-transition-new(.page-ink) {
+  animation: 240ms ease-out both page-ink;
+}
+
+@keyframes page-fold {
+  from {
+    --page-fold: 0%;
+  }
+  to {
+    --page-fold: 114%;
+  }
+}
+
+@keyframes page-ink {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

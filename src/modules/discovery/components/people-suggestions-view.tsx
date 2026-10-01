@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { Button } from "@/components/ui/button";
+import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { cn } from "@/lib/utils";
 import { toggleFollowAction } from "@/modules/social/follow-actions";
 import { dismissSuggestionAction } from "../actions";
@@ -277,6 +278,7 @@ function SuggestedPerson({
       <li className="relative flex w-40 shrink-0 snap-start flex-col items-center gap-3 rounded-2xl border bg-card p-3 pt-5 text-center">
         <Link
           href={profileHref}
+          transitionTypes={PROFILE_TRANSITION}
           className="flex w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring"
         >
           <UserAvatar
@@ -302,7 +304,11 @@ function SuggestedPerson({
 
   return (
     <li className="flex items-center gap-2.5">
-      <Link href={profileHref} className="flex min-w-0 flex-1 items-center gap-2.5">
+      <Link
+        href={profileHref}
+        transitionTypes={PROFILE_TRANSITION}
+        className="flex min-w-0 flex-1 items-center gap-2.5"
+      >
         <UserAvatar
           name={person.displayName}
           seed={person.username}

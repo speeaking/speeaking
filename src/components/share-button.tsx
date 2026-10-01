@@ -14,6 +14,7 @@ export function ShareButton({
   text,
   label = "Compartir",
   variant = "outline",
+  size = "default",
   onShared,
 }: {
   path: string;
@@ -21,6 +22,8 @@ export function ShareButton({
   text?: string;
   label?: string;
   variant?: "outline" | "default" | "secondary";
+  /** `icon`: solo el ícono; el texto queda como nombre accesible. */
+  size?: "default" | "icon";
   onShared?: (channel: "native" | "copy") => void;
 }) {
   const share = async () => {
@@ -40,6 +43,13 @@ export function ShareButton({
     }
   };
 
+  if (size === "icon") {
+    return (
+      <Button type="button" variant={variant} size="icon-lg" aria-label={label} onClick={share}>
+        <Share2 />
+      </Button>
+    );
+  }
   return (
     <Button type="button" variant={variant} onClick={share}>
       <Share2 data-icon="inline-start" />

@@ -17,6 +17,7 @@ import { UserAvatar } from "@/components/brand/user-avatar";
 import { MediaCarousel } from "@/components/media/media-carousel";
 import { formatMoney } from "@/lib/format";
 import { frameAspect, PRODUCT_FRAME } from "@/lib/image";
+import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { track } from "@/modules/analytics/track";
 import { SponsoredCard } from "@/modules/billing/components/sponsored-products";
 import { ProductCard } from "@/modules/catalog/components/product-card";
@@ -344,7 +345,10 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
 
       <div className="mx-4 flex items-center gap-3 rounded-3xl border bg-card p-4 md:mx-0">
         <Link
-          href={(product.seller.username ? `/u/${product.seller.username}` : "/") as Route}
+          href={
+            (product.seller.username ? `/u/${product.seller.username}?ver=tienda` : "/") as Route
+          }
+          transitionTypes={PROFILE_TRANSITION}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           <UserAvatar

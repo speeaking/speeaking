@@ -253,6 +253,20 @@ export async function listShopProducts({
   });
 }
 
+/**
+ * Lo que vende una tienda, para la pestaña Tienda de su perfil (ADR-055): activo, con existencias y
+ * visible, lo más reciente primero. La misma tarjeta que Comprar.
+ */
+export async function listSellerShowcase(sellerId: string, limit = 24): Promise<ProductCardDTO[]> {
+  const rows = await db.product.findMany({
+    where: { sellerId, status: "ACTIVE", stock: { gt: 0 }, ...VISIBLE_PRODUCT },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    select: cardSelect,
+  });
+  return rows.map(toCard);
+}
+
 export async function listRelatedProducts(categoryId: string, excludeId: string, limit = 6) {
   const rows = await db.product.findMany({
     where: {

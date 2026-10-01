@@ -14,6 +14,12 @@ optimista), `reaction-summary.ts` (`reactionTops`: un `groupBy` por lote de publ
 `reactAction(postId, kind | null)` sustituye a `toggleLikeAction`; `Like.kind` guarda el tipo y
 `Post.likeCount` cuenta todas.
 
+**Perfil (ADR-055).** `components/profile/` (portada con su última foto desenfocada, cabecera con
+distintivos y la línea «en común», pestañas Publicaciones · Fotos · Tienda) y `profile-copy.ts`
+(textos y recortes puros). `getPublicProfile` trae lo «en común» solo con sesión y en perfiles
+ajenos. Abrir un perfil «pasa la página»: enlaces con `transitionTypes` de `lib/page-turn.ts`, CSS en
+`globals.css`, esqueleto propio en `u/[username]/loading.tsx`.
+
 **Abrir en capa (ADR-052).** `components/post-detail.tsx` es el cuerpo de una publicación; lo pintan
 `/p/[id]` (página completa) y `@modal/(.)p/[id]` (capa sobre el feed, `RouteModal`). «Me gusta» vive en
 `PostCard` y lo disparan la barra y el doble toque sobre la foto (`MediaCarousel.onDoubleTap`); al

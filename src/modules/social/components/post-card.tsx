@@ -33,6 +33,7 @@ import { MediaCollage } from "@/components/media/media-collage";
 import { tapHaptic } from "@/lib/haptics";
 import { formatCompactNumber, formatCount, formatMoney, formatRelativeTime } from "@/lib/format";
 import { FEED_FRAME, frameAspect, PRODUCT_FRAME } from "@/lib/image";
+import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { cn } from "@/lib/utils";
 import {
   localDeliveryLine,
@@ -289,6 +290,7 @@ function CardHeader({ post }: { post: Post }) {
               <Link
                 id={`autor-${post.id}`}
                 href={profileHref}
+                transitionTypes={PROFILE_TRANSITION}
                 className="truncate font-semibold hover:underline"
               >
                 {author.displayName}
@@ -301,6 +303,7 @@ function CardHeader({ post }: { post: Post }) {
               <Link
                 id={`autor-${post.id}`}
                 href={profileHref}
+                transitionTypes={PROFILE_TRANSITION}
                 className="truncate font-medium hover:text-foreground"
               >
                 {author.displayName}
@@ -315,7 +318,13 @@ function CardHeader({ post }: { post: Post }) {
 
   return (
     <header className="flex items-center gap-3">
-      <Link href={profileHref} aria-hidden="true" tabIndex={-1} className="shrink-0">
+      <Link
+        href={profileHref}
+        transitionTypes={PROFILE_TRANSITION}
+        aria-hidden="true"
+        tabIndex={-1}
+        className="shrink-0"
+      >
         <UserAvatar name={author.displayName} seed={author.username} src={author.avatarUrl} />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 leading-tight">
@@ -323,6 +332,7 @@ function CardHeader({ post }: { post: Post }) {
           <Link
             id={`autor-${post.id}`}
             href={profileHref}
+            transitionTypes={PROFILE_TRANSITION}
             className="truncate font-semibold hover:underline"
           >
             {author.displayName}

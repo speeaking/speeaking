@@ -180,6 +180,36 @@ test.describe("navegación", () => {
     ).toBeVisible();
   });
 
+  test("abrir un perfil desde el feed «pasa la página» (ADR-055)", async ({ page }) => {
+    // Se anota cada transición de vista que inicia la página, con sus tipos.
+    await page.addInitScript(() => {
+      const recorded: string[][] = [];
+      (window as unknown as { __viewTransitions: string[][] }).__viewTransitions = recorded;
+      const original = Document.prototype.startViewTransition;
+      if (typeof original !== "function") return;
+      Document.prototype.startViewTransition = function (this: Document, options?: unknown) {
+        const types =
+          options && typeof options === "object" && "types" in options
+            ? [...((options as { types?: Iterable<string> }).types ?? [])]
+            : [];
+        recorded.push(types);
+        return original.call(this, options as never);
+      };
+    });
+    await page.goto("/");
+    const author = page.locator("article").first().locator('a[href^="/u/"]').first();
+    const href = await author.getAttribute("href");
+    expect(href).toMatch(/^\/u\/[a-z0-9._-]+$/);
+    await author.click();
+
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    await expect(page.locator("main h1")).toBeVisible();
+    const recorded = await page.evaluate(
+      () => (window as unknown as { __viewTransitions: string[][] }).__viewTransitions,
+    );
+    expect(recorded.some((types) => types.includes("perfil"))).toBe(true);
+  });
+
   test("una ruta inexistente muestra la página 404 en español", async ({ page }) => {
     const response = await page.goto("/esta-ruta-no-existe");
 

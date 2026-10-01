@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { z } from "zod";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { formatRelativeTime } from "@/lib/format";
+import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { track } from "@/modules/analytics/track";
 import { JoinPrompt, joinHref } from "@/modules/feed/components/join-prompt";
 import { getMoreFromCommunity } from "@/modules/feed/home";
@@ -131,7 +132,11 @@ export async function PostDetail({
                 />
                 <div className="flex flex-col gap-0.5">
                   <p className="text-sm">
-                    <Link href={`/u/${comment.author.username}` as Route} className="font-semibold">
+                    <Link
+                      href={`/u/${comment.author.username}` as Route}
+                      transitionTypes={PROFILE_TRANSITION}
+                      className="font-semibold"
+                    >
                       {comment.author.displayName}
                     </Link>{" "}
                     <span className="text-xs text-muted-foreground">

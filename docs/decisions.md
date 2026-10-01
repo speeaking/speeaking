@@ -1481,3 +1481,39 @@ la gente, lleva años con reacciones.
 **Consecuencias.** Migración `post_reactions`; `FeedItemDTO.viewer.reaction` sustituye a `liked` y
 `stats.reactions` trae el resumen (también en `/api/feed`, sin datos personales). Pruebas unitarias
 (módulo puro, acción, botón y tarjeta) y E2E del feed.
+
+## ADR-055 · Perfil nuevo en móvil y abrirlo «pasa la página»
+
+**Contexto.** El fundador mandó (2026-10-01) una captura del perfil de Facebook en su teléfono:
+«mejora el diseño y sorpréndeme»; antes había pedido que al tocar un perfil se abriera «como pasando
+una página desde una esquina». Nuestro perfil era una cabecera plana con avatar, contadores y la lista
+de publicaciones.
+
+**Decisión.**
+
+- **Portada sin pedir nada.** La cabecera usa la última foto de la persona desenfocada y más
+  saturada (como la cabecera de un artista en Spotify) y, sin fotos, un tinte con «su» tono (el
+  mismo del avatar de iniciales). Subir una portada propia queda para cuando haya demanda.
+- **Qué se muestra.** Avatar encimado a la portada (anillo rosa si vende), nombre, «@usuario ·
+  ciudad · Desde septiembre de 2026», distintivos (Tienda, Cuenta editorial), bio, contadores sin
+  ceros, una sola acción primaria (Seguir en perfiles ajenos, Publicar en el propio), Mensaje y
+  Compartir perfil. La línea «en común» sale solo de datos propios (principio 6): «Entre quienes
+  sigues: Ana, Luis y 3 más» (gente que sigues y que sigue este perfil) y «Comparten Gaming y Moda»;
+  solo con sesión y en perfiles ajenos.
+- **Pestañas** Publicaciones · Fotos (cuadrícula de 3, cada foto abre su publicación en capa) ·
+  Tienda (solo si vende: la misma tarjeta de Comprar; el perfil es la tienda, no hay otra página).
+  `?ver=tienda` abre en Tienda, y «Vendido por» en la ficha del producto llega ahí.
+- **Pasar la página.** Los enlaces de perfil llevan `transitionTypes={["perfil"]}`
+  (`lib/page-turn.ts`). Con ese tipo activo (`:active-view-transition-type(perfil)`) la instantánea
+  vieja de la raíz se enmascara en diagonal desde la esquina inferior derecha (560 ms, borde suave) y
+  debajo ya está la pantalla nueva: primero el esqueleto del perfil (`loading.tsx`, envuelto en un
+  `<ViewTransition enter>` porque sin un límite afectado React no inicia la transición) y luego la
+  ficha, que entra con un fundido (`page-ink`); React espera a que termine la transición en curso
+  antes de confirmar la siguiente. Solo perfiles: abrir a una persona es un gesto distinto a abrir
+  un producto. «Atrás» no anima (los navegadores no mandan tipo); con «menos movimiento» o sin
+  soporte, cambio normal.
+
+**Consecuencias.** `getPublicProfile` suma ciudad, antigüedad, tienda y lo «en común» (dos consultas
+más, solo con sesión); `listSellerShowcase` alimenta la pestaña Tienda. Pruebas unitarias (textos,
+cabecera, pestañas) y E2E (abrir un perfil desde el feed registra el tipo «perfil»; seguir, mensaje y
+cerrar sesión siguen igual). Para después: portada propia, lista de seguidores, vista rápida del perfil.

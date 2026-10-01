@@ -3,6 +3,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UserAvatar } from "@/components/brand/user-avatar";
+import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { cn } from "@/lib/utils";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { MessageForm } from "@/modules/messages/components/message-form";
@@ -44,6 +45,7 @@ export default async function ConversationPage({
         </Link>
         <Link
           href={(thread.other.username ? `/u/${thread.other.username}` : "/mensajes") as Route}
+          transitionTypes={PROFILE_TRANSITION}
           className="flex min-w-0 flex-1 items-center gap-2"
         >
           <UserAvatar

@@ -159,6 +159,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Carrusel de productos en el feed: patrocinados, búsqueda declarada o comunidades, más vendidos, populares, novedades (ADR-051)                                 | ✅                                                                                               |
 | Detalles que se sienten: publicación en capa sobre el feed, foto que viaja a la ficha, «me gusta» que salta y vibra, doble toque, carrito como panel (ADR-052) | ✅                                                                                               |
 | Página de cookies y pie legal también en teléfono (ADR-053)                                                                                                    | ✅                                                                                               |
+| Perfil nuevo en móvil: portada con su foto, en común, pestañas Fotos y Tienda; abrirlo pasa la página (ADR-055)                                                | ✅                                                                                               |
 | Reacciones además de «me gusta»: seis emojis, una por persona, resumen por publicación (ADR-054)                                                               | ✅                                                                                               |
 
 ## Sprint 4 — Crecer (fases 13–14) ⏳
