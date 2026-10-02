@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findPersonalData, redactPersonalData } from "./personal-data";
+import { findPersonalData, redactionMarkersIn, redactPersonalData } from "./personal-data";
 
 describe("findPersonalData", () => {
   it.each([
@@ -45,5 +45,30 @@ describe("redactPersonalData (SEC-29)", () => {
     expect(
       redactPersonalData("Llámame al ５５ １２３４ ５６７８ o al 55\u200B1234\u200B5678."),
     ).toBe("Llámame al [teléfono] o al [teléfono].");
+  });
+});
+
+describe("redactionMarkersIn (las marcas nunca deben llegar a un texto publicado)", () => {
+  it("reconoce todas las marcas que pone redactPersonalData, y la del costo", () => {
+    expect(
+      redactionMarkersIn(
+        redactPersonalData(
+          "55 1234 5678, ana@correo.mx, CLABE 012180001234567890, wa.me/52155, @ana",
+        ),
+      ),
+    ).toEqual(["teléfono", "correo", "cuenta", "liga", "usuario"]);
+    expect(redactionMarkersIn("Me salen en [costo] cada una")).toEqual(["costo"]);
+  });
+
+  it("aunque el modelo cambie mayúsculas, acentos o espacios", () => {
+    expect(redactionMarkersIn("Al [Telefono] o a [ CORREO ], a [costo por pieza]")).toEqual([
+      "teléfono",
+      "correo",
+      "costo",
+    ]);
+  });
+
+  it("no confunde el «[PRECIO]» del kit de anuncios ni otros corchetes", () => {
+    expect(redactionMarkersIn("Audífonos a [PRECIO] [nuevo]")).toEqual([]);
   });
 });

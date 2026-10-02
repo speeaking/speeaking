@@ -522,7 +522,12 @@ abiertos, el ajuste de rutas, las evaluaciones y el primer uso nuevo (kit de anu
 - **Privacidad (H3):** el costo del vendedor nunca sale hacia el proveedor: no va en los datos y se
   quita del texto libre («me costaron $2,400» → «me costaron [costo]»), igual que correos,
   teléfonos, ligas y cuentas. Además, cualquier monto en pesos igual al costo confirmado por pieza o
-  al costo total se quita aunque ninguna palabra lo anuncie («di $24,000 por las 10»).
+  al costo total se quita aunque ninguna palabra lo anuncie («di $24,000 por las 10»). Desde
+  `sale-proposal@5` (2026-10-02) al modelo no le llega ni la marca: de la cláusula se quita desde la
+  palabra que anuncia el dato («me salen en», «mándame whats al») hasta su final, o la cláusula
+  entera si ninguna lo anuncia (`sellerTextForModel`), porque un modelo pequeño copió «Me salen en
+  [costo] cada una» a la descripción pública; en un texto sin puntuar se conserva lo de antes (los
+  detalles del producto). El guardián además quita cualquier frase con una marca.
 - **Enrutador `ai.routing`** (`PlatformSetting`, esquema con lista blanca `ROUTABLE_MODELS`, todos con
   precio): tarea → { proveedor, modelo }; sin ruta, las variables de entorno. El servidor y la llave
   son los de `AI_BASE_URL`/`AI_API_KEY`. Cambiarlo es riesgo MEDIO: una persona ADMIN lo aplica en

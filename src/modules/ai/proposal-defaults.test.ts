@@ -69,6 +69,49 @@ describe("getProposalDefaults", () => {
     expect((await getProposalDefaults(RESPONSE, USER))?.simulated).toBe(false);
   });
 
+  it("una propuesta guardada con el precio leído como lote y la marca «[costo]» prellena limpio", async () => {
+    // El caso real del 2026-10-02 (sale-proposal@4), tal como quedó guardado.
+    const bolsas = {
+      text: "Vendo 8 bolsas de piel café, hechas a mano. Me salen en $650 cada una y quiero venderlas a $1,199.",
+      productName: "bolsas de piel café",
+      quantity: 8,
+      priceCents: 119_900,
+      costCents: 65_000,
+      city: null,
+      hasPhoto: false,
+    };
+    const output = {
+      ...(mockSaleProposal(bolsas) as object),
+      productName: "bolsas de piel café",
+      headline: "8 bolsas de piel café hechas a mano por $1,199",
+      description:
+        "Tengo 8 bolsas de piel café hechas a mano disponibles. Me salen en [costo] cada una y las ofrezco a $1,199. Son piezas únicas con un acabado especial. Pídelo aquí.",
+      valueProposition:
+        "8 bolsas de piel café hechas a mano disponibles por $1,199. Un producto único con acabado especial.",
+      adIdeas: [
+        "8 bolsas de piel café hechas a mano por solo $1,199. Pídelo aquí.",
+        "Bolsa de piel café hecha a mano, única y resistente. Aparta la tuya.",
+      ],
+    };
+    db.aIResponse.findFirst.mockResolvedValue({
+      id: RESPONSE,
+      output: withCodeNumbers(output, bolsas),
+      request: { provider: "openai_compatible", input: { ...bolsas, mediaId: null } },
+    });
+
+    const defaults = await getProposalDefaults(RESPONSE, USER);
+
+    expect(defaults).toMatchObject({
+      title: "Bolsas de piel café",
+      description:
+        "Son piezas únicas con un acabado especial. Pídelo aquí.\n\nUn producto único con acabado especial.",
+      postBody: "Bolsa de piel café hecha a mano, única y resistente. Aparta la tuya.",
+      price: "1199",
+      stock: "8",
+    });
+    expect(`${defaults?.description} ${defaults?.postBody}`).not.toMatch(/\[costo\]|8 bolsas/);
+  });
+
   it("la foto se prellena solo si es propia, está lista y no es un comprobante de autenticidad", async () => {
     const MEDIA = "0199a000-0000-7000-8000-0000000000aa";
     const row = stored("openai_compatible");

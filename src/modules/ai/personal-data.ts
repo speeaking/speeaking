@@ -61,9 +61,37 @@ export function findPersonalData(raw: string): PersonalDataKind[] {
   return [...found];
 }
 
+/** Marcas con que se redacta el texto libre: las de aquí y la del costo (`withoutCostMentions`). */
+export type RedactionMarker = "costo" | "correo" | "liga" | "usuario" | "cuenta" | "teléfono";
+
+/**
+ * Una marca de redacción, aunque el modelo la copie con otras mayúsculas, sin acento o con algo más
+ * dentro («[Telefono]», «[ costo por pieza ]»). No incluye el «[PRECIO]» del kit de anuncios.
+ */
+const MARKER = /\[\s*(costo|correo|liga|usuario|cuenta|tel[eé]fono)[^\]\n]{0,20}\]/giu;
+
+/**
+ * Marcas de redacción que aparecen en un texto (sin repetir, en orden de aparición). Ningún texto que
+ * se publique o se muestre puede llevarlas: delatan que había un dato oculto (SEC-28, H3).
+ */
+export function redactionMarkersIn(text: string): RedactionMarker[] {
+  const found = new Set<RedactionMarker>();
+  for (const match of normalizeText(text).matchAll(MARKER)) {
+    const word = match[1]!.toLowerCase();
+    found.add(word.startsWith("tel") ? "teléfono" : (word as RedactionMarker));
+  }
+  return [...found];
+}
+
+/** Dónde empieza la primera marca de redacción de un texto ya normalizado (−1 si no hay). */
+export function redactionMarkerIndex(text: string): number {
+  return text.search(MARKER);
+}
+
 /**
  * Reemplaza correos, ligas, usuarios, teléfonos y cuentas por una marca («[correo]», «[teléfono]»…).
- * Para guardar texto libre sin datos personales (registro de IA, SEC-29).
+ * Para guardar texto libre sin datos personales (registro de IA, SEC-29). Lo que va al modelo además
+ * quita las cláusulas marcadas (`sellerTextForModel`): una marca a la vista invita a copiarla.
  */
 export function redactPersonalData(text: string): string {
   return normalizeText(text)

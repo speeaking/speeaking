@@ -1,5 +1,5 @@
 import { formatMoney } from "@/lib/format";
-import type { SaleProposal, SaleProposalRequest } from "../sale-proposal";
+import { listingTitle, type SaleProposal, type SaleProposalRequest } from "../sale-proposal";
 
 type Profile = {
   categorySlug: string | null;
@@ -135,21 +135,22 @@ export function mockCategoryFor(productName: string) {
 /**
  * Propuesta simulada y determinista: sin costo ni red. Se arma con los datos confirmados por el
  * vendedor, nunca inventa datos del mercado y lo declara en los supuestos. No lleva cifras de rango
- * ni presupuesto: esas las pone el código (P2).
+ * ni presupuesto: esas las pone el código (P2). Sigue las reglas del prompt: en lo que ve quien
+ * compra no dice cuántas piezas hay (junto al precio se leería como el precio del lote), no promete
+ * entregas y la descripción habla del producto, no en primera persona del vendedor.
  */
 export function mockSaleProposal(request: SaleProposalRequest) {
   const { profile } = PROFILES.find(({ match }) => match.test(request.productName)) ?? {
     profile: FALLBACK,
   };
-  const name = request.productName.trim();
+  const name = listingTitle(request.productName);
   const price = formatMoney(request.priceCents);
-  const where = request.city ? `en ${request.city}` : "a todo México";
 
   return {
     productName: name,
     headline: `${name}: ${profile.hook}`,
-    description: `${name} disponible para entrega ${where}. Te lo entregamos listo para usar, con atención directa del vendedor. Precio: ${price}.`,
-    valueProposition: `${name} a ${price} con trato directo y entrega ${where}: sin intermediarios y con respuesta rápida.`,
+    description: `${name}: ${profile.hook}. Revisa las fotos y pregunta cualquier detalle antes de comprar; quien lo vende te responde directo. Precio: ${price}.`,
+    valueProposition: `${name} a ${price}, con trato directo con quien lo vende y sin intermediarios.`,
     categorySlug: profile.categorySlug,
     tags: name
       .toLowerCase()
@@ -164,11 +165,11 @@ export function mockSaleProposal(request: SaleProposalRequest) {
       `Comparte la reseña de tu primer cliente (con su permiso).`,
     ],
     adIdeas: [
-      `${name} a ${price}. Entrega ${where}. Quedan ${request.quantity} piezas.`,
-      `¿Buscabas ${name}? Precio justo, trato directo y entrega ${where}.`,
-      `${name}: ${profile.hook}. Escríbeme y apártalo hoy.`,
+      `${name} a ${price}. Pídelo aquí.`,
+      `¿Buscabas ${name}? Precio justo y trato directo. Aparta el tuyo.`,
+      `${name}: ${profile.hook}. Pídelo aquí.`,
     ],
-    videoScript: `0–3 s: muestra ${name} de cerca. 3–8 s: úsalo y di el beneficio principal (${profile.hook}). 8–12 s: precio (${price}) y entrega ${where}. 12–15 s: "Toca Comprar o escríbeme".`,
+    videoScript: `0–3 s: muestra ${name} de cerca. 3–8 s: úsalo y di el beneficio principal (${profile.hook}). 8–12 s: di el precio (${price}). 12–15 s: "Toca Comprar o escríbeme".`,
     suggestedPriceRange: {
       rationale:
         "Rango de prueba alrededor de tu precio para experimentar. No consultamos precios del mercado en tiempo real.",

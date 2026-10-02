@@ -60,6 +60,21 @@ sus módulos con la misma forma.
   con receta, vapeadores), antes de gastar una llamada.
 - `proposal-numbers.ts`: rango de precio y presupuesto diario calculados por código (P2).
 - `output-guard.ts`: revisa lo que escribió la IA contra los datos (SEC-28); reglas reutilizables.
+  Quita toda frase con una marca de redacción («[costo]», «[teléfono]»…) y, en lo que ve quien
+  compra, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
+  frase del campo («8 bolsas por $1,199» se lee como el precio del lote), antes de una palabra del
+  producto o genérica («Hay 8 bolsas hechas a mano», «ocho piezas») o tras «tenemos / contamos con /
+  quedan»; el lote junto a un precio («todas las bolsas por…», «… en total») y, en descripción y
+  propuesta de valor, la primera persona del vendedor, en singular o plural («tengo», «tenemos»,
+  «me salen», «nos cuestan»). «Quedan N» es urgencia. El título lo redacta la IA (singular); si no
+  es del mismo producto o trae algo sin respaldo, va el nombre confirmado. Las mayúsculas las pone
+  el código (`listingTitle`): la inicial, y las demás solo si el vendedor las escribió así (marcas)
+  o son siglas. Con 2 piezas o más, los textos de respaldo dicen «$X por pieza».
+- `sale-proposal.ts`: contrato de «Sube y vende», extracción determinista del texto (tras «vendo
+  en / doy a / dejo en», el precio va justo después: «Vendo en Guadalajara 15 playeras» no es un
+  precio) y `sellerTextForModel`: al modelo le llega el texto sin el costo ni el contacto, desde la
+  palabra que los anuncia hasta el final de la cláusula (sin marcas que pueda copiar; en un texto
+  sin puntuar se conservan los detalles de antes).
 - `ad-kit/*`: kit de anuncios (datos P4, guardián con las afirmaciones que respaldan los datos,
   composición con el precio vigente y la liga con atribución, servicio y acciones). El precio lo pone
   el código siempre: sustituye `[PRECIO]` donde el modelo lo dejó y, si no lo dejó, encabeza la

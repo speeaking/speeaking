@@ -1,7 +1,12 @@
 import { formatMoney } from "@/lib/format";
-import { findPersonalData, normalizeText } from "./personal-data";
+import {
+  findPersonalData,
+  normalizeText,
+  type RedactionMarker,
+  redactionMarkersIn,
+} from "./personal-data";
 import { suggestedDailyBudgetCents, suggestedPriceRange } from "./proposal-numbers";
-import type { SaleProposal } from "./sale-proposal";
+import { listingTitle, type SaleProposal } from "./sale-proposal";
 
 /**
  * Guardián de contenido de la IA (SEC-28). El esquema solo valida la FORMA; esto valida el
@@ -9,10 +14,17 @@ import type { SaleProposal } from "./sale-proposal";
  *
  * - `contact` / `payment`: correos, teléfonos, ligas, usuarios, CLABE o tarjetas, e instrucciones de
  *   pago por fuera («transferencia», «depósito»…). La plataforma cobra dentro de la app.
- * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy»…); principio P12.
+ * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy», «quedan 5»…); P12.
  * - `claim`: afirmaciones que exigen un dato verificable (P4) que no está en los datos: garantía,
  *   originalidad, envío gratis, devoluciones, tiempos de entrega, descuentos…
- * - `number`: montos, piezas o días distintos de los confirmados (P2).
+ * - `number`: montos, piezas o días distintos de los confirmados (P2). En lo que ve quien compra,
+ *   además, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
+ *   frase del campo («8 bolsas por $1,199» se lee como el precio de las 8), antes de una palabra del
+ *   producto o genérica («Tengo 8 bolsas de piel», «ocho piezas») o tras «tenemos / contamos con»; el
+ *   lote junto a un precio («Todas las bolsas por $1,199», «$1,199 en total») y, en descripción y
+ *   propuesta de valor, la primera persona del vendedor («tengo», «tenemos», «me salen en»).
+ * - Marcas de redacción («[costo]», «[teléfono]»…): delatan un dato oculto. La del costo cuenta como
+ *   `number`, la de cuenta como `payment` y las demás como `contact`. Se revisan en TODO.
  *
  * Una frase (o un elemento de lista) con cualquiera de esos hallazgos se quita entera; si un campo se
  * queda vacío, se usa un texto determinista con los datos del vendedor. En la propuesta de «Vende
@@ -65,9 +77,38 @@ const PAYMENT = phrases([
   String.raw`p[aá]g(?:o|a|ar|ame|arme|ale|amelo)\s+(?:por\s+fuera|directo|directamente|por\s+adelantado|antes)`,
 ]);
 
+/** Las cantidades con letra («Ocho cojines por $320», «Solo quedan tres»). */
+const NUMBER_WORDS: Readonly<Record<number, string>> = {
+  2: "dos",
+  3: "tres",
+  4: "cuatro",
+  5: "cinco",
+  6: "seis",
+  7: "siete",
+  8: "ocho",
+  9: "nueve",
+  10: "diez",
+  11: "once",
+  12: "doce",
+  13: "trece",
+  14: "catorce",
+  15: "quince",
+  16: "diecis[eé]is",
+  17: "diecisiete",
+  18: "dieciocho",
+  19: "diecinueve",
+  20: "veinte",
+  30: "treinta",
+  40: "cuarenta",
+  50: "cincuenta",
+  100: "cien",
+};
+
 const URGENCY = phrases([
   String.raw`[uú]ltim[oa]s?\s+(?:\d+\s+)?(?:piezas?|unidades?|oportunidad|d[ií]as?|horas?|disponibles?)`,
   String.raw`(?:s[oó]lo|solamente)\s+quedan`,
+  // «Quedan 5 bolsas», «solo nos quedan tres»: escasez, sea o no la cifra confirmada.
+  String.raw`quedan\s+(?:\d+|${Object.values(NUMBER_WORDS).join("|")})`,
   String.raw`quedan\s+(?:muy\s+)?poc[oa]s`,
   String.raw`se\s+(?:est[aá]n\s+)?acaba(?:n|ndo)?`,
   String.raw`antes\s+de\s+que\s+se\s+acaben?`,
@@ -84,7 +125,9 @@ const URGENCY = phrases([
   "agotarse",
   String.raw`se\s+(?:est[aá]n?\s+)?agot(?:a|an|e|en|ando|ar[aá]n?)`,
   String.raw`hasta\s+agotar(?:\s+(?:existencias|inventario|stock))?`,
-  String.raw`(?:stock|existencias|inventario|cupo|piezas|unidades)\s+limitad[oa]s?`,
+  String.raw`no\s+esperes(?:\s+m[aá]s)?`,
+  // «Stock limitado», «la variedad es limitada», «el tiempo es limitado»; no «garantía limitada».
+  String.raw`(?:stock|existencias?|inventario|cupo|piezas|unidades|variedad|cantidad(?:es)?|tiempo)\s+(?:(?:es|son|est[aá]n?|muy)\s+)*limitad[oa]s?`,
   String.raw`(?:pocas|contadas|limitadas)\s+(?:piezas|unidades|existencias)`,
 ]);
 
@@ -227,7 +270,156 @@ export type TextRules = {
    * una cifra de la IA (margen, descuento, «ahorra 30 %») y se quita (P2).
    */
   allowedPercents?: ReadonlySet<string>;
+  /**
+   * Piezas en existencia, en lo que ve quien compra: se quita la frase que las junta con un precio
+   * («8 bolsas por $1,199»: ¿$1,199 cada una o las 8?) o que las dice («Tengo 8 bolsas de piel»:
+   * cambia con cada venta). Ver `mentionsStock`. Con 1 pieza no hay lote que confundir.
+   */
+  stock?: number;
+  /**
+   * Sin la primera persona del vendedor, en singular o plural («tengo», «vendemos», «nos salen»…): la
+   * descripción y la propuesta de valor hablan del producto. Las preguntas y las citas («¿Cuánto me cuesta?») son la
+   * voz de quien compra y no cuentan.
+   */
+  noSellerVoice?: boolean;
 };
+
+/** La primera persona del vendedor, en singular o en plural: sus existencias, su costo o su venta. */
+const SELLER_VOICE = phrases([
+  "tengo",
+  "tenemos",
+  "vendo",
+  "vendemos",
+  "ofrezco",
+  "ofrecemos",
+  String.raw`(?:me|nos)\s+sal(?:e|en|ieron|i[oó])`,
+  String.raw`(?:me|nos)\s+cuestan?`,
+  String.raw`(?:me|nos)\s+cost(?:aron|[oó])`,
+  String.raw`(?:cuento|contamos)\s+con`,
+]);
+/** Preguntas (con «¿» o sin él) y citas. */
+const QUESTIONS_AND_QUOTES = /¿[^?]*\?|[^.!?¡¿…]*\?|«[^»]*»|“[^”]*”|"[^"]*"/gu;
+
+const MARKER_FINDING: Record<RedactionMarker, GuardFinding> = {
+  costo: "number",
+  cuenta: "payment",
+  correo: "contact",
+  liga: "contact",
+  usuario: "contact",
+  teléfono: "contact",
+};
+
+/** Medidas, duraciones y rangos después del número: «3 kg», «12 meses», «8–12 s», «8 x 10». */
+const MEASURE_AFTER =
+  /^\s*(?:[–-]\s*\d|(?:%|×|x|kg|kilos?|g|gr|gramos?|mg|l|lts?|litros?|ml|cm|mm|m|metros?|pulgadas?|"|gb|tb|mb|mah|w|v|hz|s|seg|segs|segundos?|min|minutos?|h|hrs?|horas?|d[ií]as?|semanas?|mes|meses|años?|oz|onzas?|°|º)(?![\p{L}\p{N}]))/iu;
+/**
+ * Atributos antes del número: «talla 8», «rin 15», «juego de 4», «con 8 bolsillos», «8–12». «Contamos
+ * con 8» no: son las existencias.
+ */
+const ATTRIBUTE_BEFORE =
+  /(?<!\p{L})(?:talla|tallas|n[uú]mero|n[uú]m\.?|no\.|rodada|rin|modelo|serie|versi[oó]n|generaci[oó]n|edici[oó]n|calibre|tama[nñ]o|(?:paquete|juego|set|kit|caja|pack|estuche)\s+de|(?<!(?:cuento|contamos)\s+)con|incluye|trae|[–-])\s*$/iu;
+/** Quien vende diciendo cuántas tiene: «tenemos 8», «contamos con ocho», «quedan 8». */
+const STOCK_VERB_BEFORE = /(?<!\p{L})(?:tengo|tenemos|(?:cuento|contamos)\s+con|quedan)\s+$/iu;
+/** «8 en existencia», «ocho disponibles». */
+const STOCK_AFTER = /^\s+(?:en\s+(?:existencia|stock|inventario)|disponibles?)(?!\p{L})/iu;
+/** La palabra que sigue al número («8 bolsas hechas a mano», «ocho piezas»). */
+const NEXT_WORD = /^\s+(\p{L}+)/u;
+
+function escapeName(name: string) {
+  return normalizeText(name)
+    .trim()
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\s+/g, String.raw`\s+`);
+}
+
+/**
+ * Las piezas en existencia, en cifra o con letra. La palabra no cuenta si es del nombre confirmado
+ * («Pastel de tres leches» con 3 piezas).
+ */
+function stockPattern(stock: number, productName: string) {
+  const word = NUMBER_WORDS[stock];
+  const inName =
+    word !== undefined &&
+    new RegExp(String.raw`(?<!\p{L})(?:${word})(?!\p{L})`, "iu").test(normalizeText(productName));
+  const alternatives = word && !inName ? `${stock}|${word}` : String(stock);
+  return new RegExp(
+    String.raw`(?<![\p{L}\p{N}.,$#/])(?:${alternatives})(?![\p{L}\p{N}]|[.,]\d)`,
+    "giu",
+  );
+}
+
+/** Las veces que el número de piezas aparece suelto: no dentro de un monto, medida, talla o rango. */
+function* stockCounts(text: string, number: RegExp) {
+  const rest = text.replace(MONEY, " ");
+  for (const match of rest.matchAll(number)) {
+    const before = rest.slice(0, match.index);
+    const after = rest.slice(match.index + match[0].length);
+    if (!ATTRIBUTE_BEFORE.test(before) && !MEASURE_AFTER.test(after)) yield { before, after };
+  }
+}
+
+function hasMoney(text: string) {
+  return [...text.matchAll(MONEY)].length > 0;
+}
+
+/**
+ * ¿La frase dice las piezas en existencia? Cuentan si van con un precio, en la frase o en otra del
+ * mismo campo (`priceInField`: «Son ocho. Llévate la tuya por $1,199.»); antes de una palabra del
+ * producto o genérica («Hay 8 bolsas hechas a mano», «ocho piezas», «8 en existencia»); tras un verbo
+ * de existencias («Tenemos ocho hermosas bolsas»), o justo antes del nombre confirmado («Tengo 8
+ * bolsas de piel café»). Precio y palabras se buscan en `figures` (sin el nombre: «AirPods Pro 2
+ * disponibles» con 2 piezas no cuenta) y el nombre en el texto completo.
+ */
+function mentionsStock(
+  text: string,
+  figures: string,
+  stock: number,
+  productName: string,
+  priceInField: boolean,
+) {
+  if (stock < 2) return false;
+  const number = stockPattern(stock, productName);
+  const withPrice = priceInField || hasMoney(figures);
+  const product = new Set(productWords(productName));
+  for (const { before, after } of stockCounts(figures, number)) {
+    if (withPrice || STOCK_VERB_BEFORE.test(before) || STOCK_AFTER.test(after)) return true;
+    const [word] = productWords(NEXT_WORD.exec(after)?.[1] ?? "");
+    if (word && (product.has(word) || LOT_NOUNS.has(word))) return true;
+  }
+  const name = escapeName(productName);
+  if (!name) return false;
+  const beforeName = new RegExp(String.raw`^\s+${name}`, "iu");
+  for (const { after } of stockCounts(text, number)) if (beforeName.test(after)) return true;
+  return false;
+}
+
+/** El lote completo («El lote completo por $1,199», «$1,199 en total», «el paquete completo a…»). */
+const LOT = phrases([
+  "lote",
+  String.raw`en\s+total`,
+  String.raw`precio\s+total`,
+  String.raw`paquete\s+completo`,
+]);
+/** «Todas las bolsas», «todas nuestras bolsas»: el sustantivo dice si habla del producto. */
+const ALL_OF = /(?<![\p{L}\p{N}])tod[oa]s\s+(?:l[oa]s|mis|nuestr[oa]s)\s+(\p{L}+)/giu;
+/** Sustantivos genéricos del lote (como los da `productWords`: sus primeros 4 caracteres). */
+const LOT_NOUNS = new Set(["piez", "unid", "arti", "prod", "pare"]);
+
+/**
+ * ¿La frase habla del lote completo junto a un precio? Con 2 piezas o más, «Todas las bolsas por
+ * $1,199» se lee como el precio de todas. «Todas nuestras bolsas son de piel» (sin precio) o «para
+ * todos los días» (no habla del producto) no cuentan.
+ */
+function mentionsLot(text: string, figures: string, stock: number, productName: string) {
+  if (stock < 2 || !hasMoney(figures)) return false;
+  if (LOT.test(figures)) return true;
+  const product = new Set(productWords(productName));
+  for (const [, noun] of text.matchAll(ALL_OF)) {
+    const [word] = productWords(noun!);
+    if (word && (product.has(word) || LOT_NOUNS.has(word))) return true;
+  }
+  return false;
+}
 
 export function withoutProductName(text: string, productName: string) {
   const name = normalizeText(productName).trim();
@@ -236,18 +428,48 @@ export function withoutProductName(text: string, productName: string) {
   return text.replace(new RegExp(escaped, "giu"), " ");
 }
 
+/** De dónde viene el texto que se revisa (lo pone `createCleaner`). */
+export type TextContext = {
+  /**
+   * Otra frase del mismo campo trae un precio: las piezas en existencia se leen como el precio del
+   * lote aunque vayan en frases distintas («Son ocho. Llévate la tuya por $1,199.»).
+   */
+  priceInField?: boolean;
+};
+
+/** ¿El campo completo trae un precio (sin contar las cifras del nombre confirmado)? */
+function fieldHasPrice(value: string, productName: string) {
+  return hasMoney(withoutProductName(normalizeText(value), productName));
+}
+
 /** Hallazgos de un texto según las reglas. */
-export function textFindings(raw: string, rules: TextRules): Set<GuardFinding> {
+export function textFindings(
+  raw: string,
+  rules: TextRules,
+  context: TextContext = {},
+): Set<GuardFinding> {
   const found = new Set<GuardFinding>();
   const text = normalizeText(raw);
   const personal = findPersonalData(text);
   if (personal.includes("account")) found.add("payment");
   if (personal.some((kind) => kind !== "account")) found.add("contact");
+  for (const marker of redactionMarkersIn(text)) found.add(MARKER_FINDING[marker]);
   if (PAYMENT.test(text)) found.add("payment");
   if (URGENCY.test(text)) found.add("urgency");
+  // Cuenta como cifra: la primera persona del vendedor trae sus datos («tengo 8», «me salen en»).
+  if (rules.noSellerVoice && SELLER_VOICE.test(text.replace(QUESTIONS_AND_QUOTES, " "))) {
+    found.add("number");
+  }
   // Afirmaciones y cifras se revisan sin el nombre que confirmó el vendedor: repetir «Tenis
   // originales» no es una afirmación de la IA, y «AirPods Pro 2 disponibles» no son 2 piezas.
   const figures = withoutProductName(text, rules.productName);
+  if (
+    rules.stock !== undefined &&
+    (mentionsStock(text, figures, rules.stock, rules.productName, !!context.priceInField) ||
+      mentionsLot(text, figures, rules.stock, rules.productName))
+  ) {
+    found.add("number");
+  }
   const claims = claimsIn(figures, rules.claimKinds);
   if (claims.some((kind) => !rules.allowedClaims?.has(kind))) found.add("claim");
   for (const match of figures.matchAll(MONEY)) {
@@ -278,8 +500,8 @@ const SENTENCE = /(?<=[.!?…])\s+/u;
 export function createCleaner() {
   const findings = new Set<GuardFinding>();
   let removed = 0;
-  const isClean = (text: string, rules: TextRules) => {
-    const found = textFindings(text, rules);
+  const isClean = (text: string, rules: TextRules, context?: TextContext) => {
+    const found = textFindings(text, rules, context);
     for (const finding of found) findings.add(finding);
     return found.size === 0;
   };
@@ -287,10 +509,15 @@ export function createCleaner() {
     isClean,
     text(value: string, fallback: string, rules: TextRules, min = 1) {
       if (!value.trim()) return value;
+      const context: TextContext = {
+        priceInField: rules.stock !== undefined && fieldHasPrice(value, rules.productName),
+      };
       // Respeta los saltos de línea (mensajes de WhatsApp o Facebook): revisa frase por frase.
       const lines = value.split(/\n/u).map((line) => {
         const sentences = line.split(SENTENCE);
-        const kept = sentences.filter((sentence) => !sentence.trim() || isClean(sentence, rules));
+        const kept = sentences.filter(
+          (sentence) => !sentence.trim() || isClean(sentence, rules, context),
+        );
         removed += sentences.length - kept.length;
         return kept.join(" ").trim();
       });
@@ -311,38 +538,80 @@ export function createCleaner() {
   };
 }
 
+/** Palabras que no distinguen un producto de otro. */
+const FILLER_WORDS = new Set(["del", "las", "los", "para", "con", "sin", "por", "una", "uno"]);
+
+/** Palabras de un nombre de producto, sin acentos ni plurales (sus primeros 4 caracteres). */
+function productWords(text: string) {
+  return normalizeText(text)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word.length >= 3 && /\p{L}/u.test(word) && !FILLER_WORDS.has(word))
+    .map((word) => word.slice(0, 4));
+}
+
+/**
+ * ¿El título que redactó la IA es del producto que confirmó el vendedor? Sus cifras deben estar en el
+ * nombre confirmado (ni piezas, ni precio, ni otro modelo) y comparte con él al menos una palabra.
+ */
+function sameProduct(title: string, confirmed: string) {
+  const digits = new Set(normalizeText(confirmed).match(/\d+/gu) ?? []);
+  if ((normalizeText(title).match(/\d+/gu) ?? []).some((run) => !digits.has(run))) return false;
+  const words = new Set(productWords(confirmed));
+  return productWords(title).some((word) => words.has(word));
+}
+
 export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): GuardedProposal {
   const range = suggestedPriceRange(facts.priceCents);
   const daily = suggestedDailyBudgetCents(facts);
   const allowedCents = new Set([facts.priceCents, range.minCents, range.maxCents, daily]);
   const cleaner = createCleaner();
 
-  const name = facts.productName;
   const price = formatMoney(facts.priceCents);
   const base = {
-    productName: name,
+    // Repetir el nombre que CONFIRMÓ el vendedor no es afirmación ni cifra de la IA (el título no).
+    productName: facts.productName,
     allowedCents,
     quantity: facts.quantity,
     allowedPercents: percentsIn(facts.text, facts.productName),
   };
   const publish: TextRules = { ...base, claimKinds: PROPOSAL_CLAIMS };
+  // Lo que ve quien compra: sin las piezas en existencia (cambian con cada venta y, junto al precio,
+  // se leen como el precio del lote).
+  const buyer: TextRules = { ...publish, quantity: null, stock: facts.quantity };
+  // La descripción y la propuesta de valor hablan del producto; el post (anuncios) sí es del vendedor.
+  const listing: TextRules = { ...buyer, noSellerVoice: true };
   const advice: TextRules = { ...base, claimKinds: [] };
+
+  // El título lo redacta la IA (singular, como publicación); si trae algo que no se puede respaldar
+  // o no es del mismo producto, va el nombre que confirmó el vendedor. Las mayúsculas las pone el
+  // código: la inicial, y las demás solo si el vendedor las escribió así (marcas) o son siglas.
+  const [aiTitle] = cleaner.list([proposal.productName], (title) => title, [], buyer);
+  const name = listingTitle(
+    aiTitle && sameProduct(aiTitle, facts.productName) ? aiTitle : facts.productName,
+    [facts.productName, facts.text],
+  );
+
+  // Los textos de respaldo los arma el código. Con 2 piezas o más dicen que el precio es por pieza:
+  // con el nombre en plural del vendedor, «Bolsas de piel café a $1,199» se lee como el precio de todas.
+  const each = facts.quantity >= 2 ? `${price} por pieza` : price;
 
   const guarded: SaleProposal = {
     ...proposal,
-    // El nombre es el que confirmó el vendedor, no el que devolvió la IA.
     productName: name,
-    headline: cleaner.text(proposal.headline, `${name} a ${price}`, publish, 5),
+    headline: cleaner.text(proposal.headline, `${name} a ${each}`, buyer, 5),
     description: cleaner.text(
       proposal.description,
-      `${name} disponible a ${price}. Escríbeme para más detalles.`,
-      publish,
+      `${name} a ${each}. Escríbeme para más detalles.`,
+      listing,
       20,
     ),
     valueProposition: cleaner.text(
       proposal.valueProposition,
-      `${name} a ${price}, con trato directo.`,
-      publish,
+      `${name} a ${each}, con trato directo.`,
+      listing,
       10,
     ),
     tags: cleaner.list(proposal.tags, (tag) => tag, [], publish),
@@ -366,13 +635,13 @@ export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): Gua
     adIdeas: cleaner.list(
       proposal.adIdeas,
       (ad) => ad,
-      [`${name} a ${price}. Escríbeme para apartarlo.`],
-      publish,
+      [`${name} a ${each}. Escríbeme para apartarlo.`],
+      buyer,
     ),
     videoScript: cleaner.text(
       proposal.videoScript,
-      `Muestra ${name} de cerca, di para qué sirve y su precio: ${price}.`,
-      publish,
+      `Muestra ${name} de cerca, di para qué sirve y su precio: ${each}.`,
+      buyer,
     ),
     suggestedPriceRange: {
       ...range,
@@ -391,7 +660,7 @@ export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): Gua
       ],
       advice,
     ),
-    ctas: cleaner.list(proposal.ctas, (cta) => cta, ["Compra ahora"], publish),
+    ctas: cleaner.list(proposal.ctas, (cta) => cta, ["Compra ahora"], buyer),
     assumptions: cleaner.list(
       proposal.assumptions,
       (assumption) => assumption,

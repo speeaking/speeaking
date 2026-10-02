@@ -6,13 +6,12 @@ import { availableDeliveryMethods, orderShippingCents } from "@/modules/commerce
 import { type PolicyViolation, policyViolation } from "../content-policy";
 import { recordedCost } from "../cost";
 import { type ClaimKind, guardProposal } from "../output-guard";
-import { redactPersonalData } from "../personal-data";
 import {
   suggestedDailyBudgetCents,
   suggestedPriceRange,
   withCodeNumbers,
 } from "../proposal-numbers";
-import { knownCategorySlug, saleProposalSchema, withoutCostMentions } from "../sale-proposal";
+import { knownCategorySlug, saleProposalSchema, sellerTextForModel } from "../sale-proposal";
 import { adCopyTask } from "../tasks/ad-copy";
 import { type CategoryOption, saleProposalTask } from "../tasks/sale-proposal";
 import { type AdCopyCase, adKitProductOf, type SaleProposalCase } from "./cases";
@@ -218,14 +217,13 @@ export async function evaluateSaleProposal(
   );
   if (output) {
     const range = suggestedPriceRange(input.priceCents);
-    // Lo que el modelo sí vio: el texto sin costo ni contactos, y las cifras del código.
-    const seen = redactPersonalData(
-      withoutCostMentions(input.text, {
-        costCents: input.costCents,
-        quantity: input.quantity,
-        priceCents: input.priceCents,
-      }),
-    );
+    // Lo que el modelo sí vio: el texto sin las cláusulas del costo ni de contacto, y las cifras del
+    // código.
+    const seen = sellerTextForModel(input.text, {
+      costCents: input.costCents,
+      quantity: input.quantity,
+      priceCents: input.priceCents,
+    });
     const allowed = allowedNumbers([
       pesos(input.priceCents),
       pesos(range.minCents),

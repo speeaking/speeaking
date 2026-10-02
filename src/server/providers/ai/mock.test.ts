@@ -31,7 +31,8 @@ describe("MockAIProvider (contrato que cumple cualquier proveedor)", () => {
 
     expect(output.categorySlug).toBe("audio");
     expect(output.adIdeas[0]).toContain("$3,499");
-    expect(output.adIdeas[0]).toContain("50 piezas");
+    // Las existencias no van junto al precio: «$3,499. Quedan 50 piezas» se lee como precio del lote.
+    expect(output.adIdeas.join(" ")).not.toContain("50");
     // Las cifras del rango y del presupuesto no las da el modelo (P2): las pone el código.
     expect(output).not.toHaveProperty("suggestedDailyBudgetCents");
     expect(output.suggestedPriceRange).not.toHaveProperty("minCents");
