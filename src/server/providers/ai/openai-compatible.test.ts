@@ -242,6 +242,21 @@ describe("OpenAICompatibleProvider", () => {
     expect(body.reasoning).toEqual({ enabled: false });
   });
 
+  it("si el modelo no deja apagar el razonamiento (Gemini 3.5 Flash Lite), pide el mínimo", async () => {
+    // OpenRouter respondió 400 «Reasoning is mandatory for this endpoint» con enabled: false
+    // (prueba en vivo del 2026-10-01, ADR-071); con effort minimal, 200 y 0 tokens de razonamiento.
+    const { provider, calls } = setup([completion(good)], {
+      baseUrl: "https://openrouter.ai/api/v1",
+      model: "google/gemini-3.5-flash-lite",
+    });
+
+    await provider.generate(task, { product: "Audífonos" });
+
+    const body = JSON.parse(String(calls[0]!.init.body));
+    expect(body.reasoning).toEqual({ effort: "minimal" });
+    expect(body.provider).toEqual({ data_collection: "deny", zdr: true, require_parameters: true });
+  });
+
   it("otros servidores no reciben los campos propios de OpenRouter", async () => {
     const { provider, calls } = setup([completion(good)], {
       baseUrl: "https://ia.example.com/v1",

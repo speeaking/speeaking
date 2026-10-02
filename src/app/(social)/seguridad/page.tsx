@@ -28,7 +28,7 @@ export default function SecurityPage() {
     {
       icon: ShieldCheck,
       title: "Ninguna tarjeta pasa por aquí",
-      text: `Los pagos van con un proveedor de pagos; ${siteConfig.name} nunca ve ni guarda números de tarjeta. En esta etapa los pagos y las recargas son simulados y no se cobra nada.`,
+      text: `Los pagos van con un proveedor de pagos; ${siteConfig.name} nunca ve ni guarda números de tarjeta. En esta etapa no se cobra nada: los pagos de los pedidos son simulados y las recargas de saldo llegan con el primer medio de pago real.`,
     },
     {
       icon: Trash2,

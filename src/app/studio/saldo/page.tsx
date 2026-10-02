@@ -11,7 +11,7 @@ import { getSponsorStatus, getTryOnPricing, getWallet } from "@/modules/billing/
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { sellerTryOnStats } from "@/modules/tryon/service";
-import { simulatedPaymentsEnabled } from "@/server/providers/payments";
+import { simulatedTopUpsEnabled } from "@/server/providers/payments";
 
 export const metadata: Metadata = { title: "Saldo y «Ver cómo me veo»" };
 
@@ -108,7 +108,7 @@ export default async function StudioWalletPage() {
         <h2 id="recargar" className="font-heading text-lg font-bold">
           Recargar saldo
         </h2>
-        {simulatedPaymentsEnabled() ? (
+        {simulatedTopUpsEnabled() ? (
           <TopUpForm packs={TOPUP_PACKS} tryOnPriceCents={pricing.priceCents} />
         ) : (
           <p className="text-sm text-muted-foreground">

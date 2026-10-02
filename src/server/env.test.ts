@@ -107,6 +107,62 @@ describe("serverEnvSchema", () => {
     });
   });
 
+  describe("en Vercel nada se queda con su valor de desarrollo (SEC-21, ADR-071)", () => {
+    const vercel = {
+      NODE_ENV: "production",
+      VERCEL: "1",
+      APP_URL: "https://speeaking.com",
+      TRUSTED_PROXY_HOPS: "1",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+      ALLOW_SIMULATED_PAYMENTS: "true",
+      ALLOW_SIMULATED_AI: "true",
+      CRON_SECRET: "c".repeat(32),
+      STORAGE_DRIVER: "s3",
+      S3_ENDPOINT: "https://0123456789abcdef.r2.cloudflarestorage.com",
+      S3_BUCKET: "speeaking-media",
+      S3_ACCESS_KEY_ID: "a".repeat(32),
+      S3_SECRET_ACCESS_KEY: "s".repeat(64),
+    };
+    const issues = (input: Record<string, string>) =>
+      (serverEnvSchema.safeParse(input).error?.issues ?? []).map((issue) => issue.path.join("."));
+    const without = (name: keyof typeof vercel) =>
+      Object.fromEntries(Object.entries(vercel).filter(([key]) => key !== name));
+
+    it("con todo configurado pasa", () => {
+      expect(issues(vercel)).toEqual([]);
+    });
+
+    it("sin APP_URL el build FALLA (por omisión sería localhost: cookies sin Secure y sin cron)", () => {
+      expect(issues(without("APP_URL"))).toEqual(["APP_URL"]);
+      expect(issues({ ...vercel, APP_URL: "http://localhost:3000" })).toEqual(["APP_URL"]);
+      expect(issues({ ...vercel, APP_URL: "http://127.0.0.1:3000" })).toEqual(["APP_URL"]);
+    });
+
+    it("el mensaje dice qué poner", () => {
+      const message = serverEnvSchema
+        .safeParse(without("APP_URL"))
+        .error?.issues.find((issue) => issue.path.join(".") === "APP_URL")?.message;
+      expect(message).toContain("https://");
+      expect(message).toContain(".vercel.app");
+    });
+
+    it("sin TRUSTED_PROXY_HOPS el build FALLA (sin IP confiable no hay límites por IP)", () => {
+      expect(issues(without("TRUSTED_PROXY_HOPS"))).toEqual(["TRUSTED_PROXY_HOPS"]);
+      expect(issues({ ...vercel, TRUSTED_PROXY_HOPS: "0" })).toEqual(["TRUSTED_PROXY_HOPS"]);
+      expect(issues({ ...vercel, TRUSTED_PROXY_HOPS: "2" })).toEqual([]);
+    });
+
+    it("fuera de Vercel el build de producción en loopback sigue sirviendo (pnpm start, E2E)", () => {
+      const local = { ...without("VERCEL"), APP_URL: "http://localhost:3000" };
+      expect(
+        issues(
+          Object.fromEntries(Object.entries(local).filter(([key]) => key !== "TRUSTED_PROXY_HOPS")),
+        ),
+      ).toEqual([]);
+    });
+  });
+
   describe("pagos simulados (SEC-01)", () => {
     const production = {
       NODE_ENV: "production",

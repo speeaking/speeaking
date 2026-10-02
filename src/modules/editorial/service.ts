@@ -27,7 +27,11 @@ import { type EditorialDraftInput, editorialDraftTask, RECENT_EXCERPT_CHARS } fr
  * marca de IA y aquí nunca se crean usuarios, comentarios, reacciones ni seguidores.
  */
 
-/** Tope diario del gasto de la redacción (un borrador cuesta ≈ US$0.00007 con su modelo de arranque). */
+/**
+ * Tope diario del gasto de la redacción. Un borrador costaba ≈ US$0.00007 con Gemini 2.5 Flash Lite;
+ * con 3.5 (ADR-071) ≈ US$0.0004 [estimación: entrada 3 veces y salida 6 veces más cara]. Una llamada
+ * fallida cuenta su costo máximo (≈ US$0.011): el tope deja ≈ 20 fallas seguidas en un día.
+ */
 export const EDITORIAL_DAILY_CAP_USD = 0.25;
 /** Con esta cantidad de borradores sin revisar, la comunidad deja de recibir automáticos. */
 export const MAX_PENDING_PER_COMMUNITY = 3;

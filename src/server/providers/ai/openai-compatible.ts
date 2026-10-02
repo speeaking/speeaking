@@ -81,18 +81,28 @@ export function unwrapJson(text: string) {
  * - Sin razonamiento (`reasoning.enabled: false`): los modelos que «piensan» por defecto (Qwen 3.5)
  *   gastaban todo `max_tokens` en el razonamiento y nunca escribían la respuesta (evaluación del
  *   2026-09-27: 0 de 29 JSON válidos). Nuestras tareas son cortas y estructuradas; el razonamiento
- *   solo sumaba costo.
+ *   solo sumaba costo. Los modelos que no dejan apagarlo (`REASONING_REQUIRED_MODELS`) piden el
+ *   mínimo.
  * Otros servidores (vLLM, Ollama, DeepInfra…) no reciben campos que no conocen.
  */
-function providerExtras(baseUrl: URL): Record<string, unknown> {
+function providerExtras(baseUrl: URL, model: string): Record<string, unknown> {
   if (baseUrl.hostname === "openrouter.ai" || baseUrl.hostname.endsWith(".openrouter.ai")) {
     return {
       provider: { data_collection: "deny", zdr: true, require_parameters: true },
-      reasoning: { enabled: false },
+      reasoning: REASONING_REQUIRED_MODELS.has(model.toLowerCase())
+        ? { effort: "minimal" }
+        : { enabled: false },
     };
   }
   return {};
 }
+
+/**
+ * Modelos de OpenRouter que responden 400 «Reasoning is mandatory for this endpoint» con
+ * `reasoning.enabled: false`. Con `effort: "minimal"` responden sin tokens de razonamiento (prueba en
+ * vivo del 2026-10-01 con foto y json_schema, ADR-071).
+ */
+const REASONING_REQUIRED_MODELS = new Set(["google/gemini-3.5-flash-lite"]);
 
 /**
  * Adaptador para cualquier servidor con la API de OpenAI (`POST {base}/chat/completions`):
@@ -132,7 +142,7 @@ export class OpenAICompatibleProvider implements AIProvider {
     endpoint.hash = "";
     if (endpoint.origin !== base.origin) throw new Error("[ai] AI_BASE_URL inválida.");
     this.#endpoint = endpoint;
-    this.#extras = providerExtras(base);
+    this.#extras = providerExtras(base, config.model);
     this.model = config.model;
     this.#apiKey = config.apiKey;
     this.#timeoutMs = config.timeoutMs ?? AI_CALL_TIMEOUT_MS;

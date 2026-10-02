@@ -26,6 +26,26 @@ const SIZE_CLASS = {
 } as const;
 
 /**
+ * El aviso con «Deshacer» dura 10 s y no los 4 de sonner: con teclado o lector de pantalla hay que
+ * llegar hasta el botón.
+ */
+const UNDO_TOAST_MS = 10_000;
+
+/** Cada aviso lleva un id nuevo: sonner borra POR ID el que se está retirando, y uno nuevo con el
+ * mismo id creado en esos 200 ms heredaba el «borrar» y no llegaba a verse. */
+let toastSequence = 0;
+
+const membershipToastPrefix = (communityId: string) => `membresia-${communityId}:`;
+
+/** Retira los avisos de membresía activos de una comunidad (de este botón o de otro). */
+function dismissMembershipToasts(communityId: string) {
+  const prefix = membershipToastPrefix(communityId);
+  for (const { id } of toast.getToasts()) {
+    if (String(id).startsWith(prefix)) toast.dismiss(id);
+  }
+}
+
+/**
  * «Unirme» / «Miembro». El nombre accesible empieza con el texto visible y dice lo que hace el botón
  * («Unirme a Gaming», «Miembro, salir de Gaming»: WCAG 2.5.3); por eso no lleva `aria-pressed`. Al
  * salir aparece «Saliste de Gaming» con «Deshacer». Con el puntero encima (o con foco de teclado),
@@ -99,12 +119,11 @@ export function JoinButton({
       }
       setConfirmed(result.active);
       // Un solo aviso por comunidad: salir otra vez lo reemplaza y volver a unirse lo retira.
-      const toastId = `membresia-${communityId}`;
-      if (result.active) {
-        toast.dismiss(toastId);
-      } else {
+      dismissMembershipToasts(communityId);
+      if (!result.active) {
         toast(communityName ? `Saliste de ${communityName}` : "Saliste de la comunidad", {
-          id: toastId,
+          id: `${membershipToastPrefix(communityId)}${++toastSequence}`,
+          duration: UNDO_TOAST_MS,
           action: { label: "Deshacer", onClick: () => update(true) },
         });
       }

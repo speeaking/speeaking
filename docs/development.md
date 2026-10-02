@@ -115,9 +115,10 @@ videos de 2 s (MP4, `moov` al final, MOV girado y HEVC) hechos con ffmpeg.
 
 **Buscar con una foto (ADR-061).** Con `AI_PROVIDER=mock`, `/buscar/foto` usa el simulador: sin ver
 la foto, siempre «ve» una camisa blanca y unos jeans azules y busca eso en el catálogo semilla. Con
-`AI_PROVIDER=openai_compatible` necesita `AI_VISION_MODEL` (p. ej. `google/gemini-2.5-flash-lite`,
-≈ US$0.0002 por foto, con cero retención en OpenRouter): el modelo de texto por omisión no ve
-imágenes, y sin esa variable la página dice que no está disponible. La foto nunca se guarda.
+`AI_PROVIDER=openai_compatible` necesita `AI_VISION_MODEL` (p. ej. `google/gemini-3.5-flash-lite`,
+≈ US$0.0004 por foto, con cero retención en OpenRouter; el 2.5 se retira el 2026-10-20, ADR-071): el
+modelo de texto por omisión no ve imágenes, y sin esa variable la página dice que no está
+disponible. La foto nunca se guarda.
 
 ## Cuentas de prueba
 

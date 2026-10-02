@@ -13,7 +13,9 @@ export const LEGAL_VERSIONS = {
   // 2026-09-30: quien vende paga las simulaciones, saldo solo de tiendas y destacados «Patrocinado»
   // (ADR-046).
   // 2026-10-01: colaboraciones con tiendas (ADR-063) y cuentas editoriales con textos redactados con
-  // ayuda de IA y aprobados por el equipo (ADR-066).
+  // ayuda de IA y aprobados por el equipo (ADR-066). El mismo día, antes del lanzamiento y sin
+  // personas reales que la hubieran aceptado: las recargas se habilitan con un medio de pago real
+  // (ADR-071).
   terms: "2026-10-01",
   // 2026-09-26: proveedor externo de IA como encargado (nombre y país pendientes antes de activarlo),
   // kit de anuncios, eventos anónimos y reglas de «Gente de tus comunidades» (ADR-030, ADR-038).

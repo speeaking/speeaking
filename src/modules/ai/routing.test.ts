@@ -27,6 +27,15 @@ describe("ROUTABLE_MODELS", () => {
       expect(maxCallCostMicrosUsd(option.model), option.model).not.toBeNull();
     }
   });
+
+  it("no ofrece Gemini 2.5 Flash Lite: OpenRouter lo retira el 2026-10-20 (ADR-071)", () => {
+    expect(
+      isRoutable({ provider: "openai_compatible", model: "google/gemini-2.5-flash-lite" }),
+    ).toBe(false);
+    expect(
+      isRoutable({ provider: "openai_compatible", model: "google/gemini-3.5-flash-lite" }),
+    ).toBe(true);
+  });
 });
 
 describe("aiRoutingSchema", () => {
@@ -72,7 +81,7 @@ describe("resolveRoute", () => {
   it("una tarea con modelo de arranque lo usa en lugar del de las variables de entorno", () => {
     expect(resolveRoute(DEFAULT_AI_ROUTING, "editorial_draft", openai)).toEqual({
       provider: "openai_compatible",
-      model: "google/gemini-2.5-flash-lite",
+      model: "google/gemini-3.5-flash-lite",
       source: "default",
     });
     // Sin servidor de IA no hay modelo de arranque que valga: el simulador.

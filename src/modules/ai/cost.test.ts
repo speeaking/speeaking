@@ -43,6 +43,11 @@ describe("pricedModelId", () => {
   it("no iguala variantes con otro precio", () => {
     expect(pricedModelId("qwen/qwen3.5-9b:free")).toBeNull();
     expect(pricedModelId("qwen/qwen3.5-122b-a10b")).toBeNull();
+    expect(pricedModelId("google/gemini-3.5-flash-lite:batch")).toBeNull();
+  });
+
+  it("Gemini 3.5 Flash Lite tiene precio (reemplaza a 2.5, que se retira; ADR-071)", () => {
+    expect(modelPrice("google/gemini-3.5-flash-lite")).toEqual({ input: 0.3, output: 2.5 });
   });
 });
 

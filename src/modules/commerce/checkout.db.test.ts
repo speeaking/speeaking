@@ -258,7 +258,13 @@ describe.skipIf(!databaseUrl)("checkout contra PostgreSQL", () => {
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
     const rejected = results.find((result) => result.status === "rejected");
-    expect((rejected?.reason as InstanceType<typeof CheckoutError>).code).toBe("CART_CHANGED");
+    // Las dos respuestas son el mismo rechazo y dependen de cuándo arranca la segunda: si leyó el
+    // carrito antes de que la primera terminara, se forma en fila y encuentra las líneas ya tomadas
+    // (CART_CHANGED); si lo leyó después, ya está vacío (EMPTY_CART). Lo que no puede pasar es una
+    // segunda reserva: un solo checkout y el stock apartado una vez.
+    expect(["CART_CHANGED", "EMPTY_CART"]).toContain(
+      (rejected?.reason as InstanceType<typeof CheckoutError>).code,
+    );
     expect(await stockOf(productId)).toBe(3);
     expect(await db.checkout.count({ where: { buyerId: buyer } })).toBe(1);
   });

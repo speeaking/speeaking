@@ -4,7 +4,13 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
-const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn(), dismiss: vi.fn() }));
+const toast = vi.hoisted(() =>
+  Object.assign(vi.fn(), {
+    error: vi.fn(),
+    dismiss: vi.fn(),
+    getToasts: vi.fn((): { id: string | number }[] => []),
+  }),
+);
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/c/gaming",
@@ -41,8 +47,12 @@ function renderButton(props: Partial<Parameters<typeof JoinButton>[0]> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  toast.getToasts.mockReturnValue([]);
   window.history.replaceState(null, "", "/c/gaming");
 });
+
+/** Id de un aviso de membresía de Gaming: prefijo fijo y un número que nunca se repite. */
+const GAMING_TOAST = new RegExp(`^membresia-${GAMING}:\\d+$`);
 
 describe("JoinButton", () => {
   it("dice lo que hace: «Unirme a Gaming» (y no usa aria-pressed)", () => {
@@ -77,8 +87,9 @@ describe("JoinButton", () => {
     );
   });
 
-  it("unirse cambia al instante y se confirma con el servidor", async () => {
+  it("unirse cambia al instante, se confirma con el servidor y retira solo el aviso de esa comunidad", async () => {
     vi.mocked(toggleMembershipAction).mockResolvedValue({ ok: true, active: true, count: 11 });
+    toast.getToasts.mockReturnValue([{ id: `membresia-${GAMING}:7` }, { id: "otro-aviso" }]);
     renderButton();
 
     await userEvent.click(screen.getByRole("button", { name: "Unirme a Gaming" }));
@@ -88,7 +99,8 @@ describe("JoinButton", () => {
       await screen.findByRole("button", { name: "Miembro, salir de Gaming" }),
     ).not.toHaveAttribute("aria-disabled", "true");
     expect(toast).not.toHaveBeenCalled();
-    expect(toast.dismiss).toHaveBeenCalledWith(`membresia-${GAMING}`);
+    expect(toast.dismiss).toHaveBeenCalledTimes(1);
+    expect(toast.dismiss).toHaveBeenCalledWith(`membresia-${GAMING}:7`);
   });
 
   it("al salir avisa «Saliste de Gaming» con «Deshacer», que vuelve a unir", async () => {
@@ -100,9 +112,11 @@ describe("JoinButton", () => {
     await userEvent.click(screen.getByRole("button", { name: "Miembro, salir de Gaming" }));
 
     expect(toggleMembershipAction).toHaveBeenLastCalledWith(GAMING, false);
+    // 10 s y no los 4 de sonner: con teclado o lector de pantalla hay que llegar hasta «Deshacer».
     await waitFor(() =>
       expect(toast).toHaveBeenCalledWith("Saliste de Gaming", {
-        id: `membresia-${GAMING}`,
+        id: expect.stringMatching(GAMING_TOAST),
+        duration: 10_000,
         action: { label: "Deshacer", onClick: expect.any(Function) },
       }),
     );
@@ -111,7 +125,11 @@ describe("JoinButton", () => {
       "true",
     );
 
-    const [, options] = toast.mock.calls[0] as [string, { action: { onClick: () => void } }];
+    const [, options] = toast.mock.calls[0] as [
+      string,
+      { id: string; action: { onClick: () => void } },
+    ];
+    toast.getToasts.mockReturnValue([{ id: options.id }]);
     options.action.onClick();
 
     await waitFor(() => expect(toggleMembershipAction).toHaveBeenLastCalledWith(GAMING, true));
@@ -119,7 +137,33 @@ describe("JoinButton", () => {
       await screen.findByRole("button", { name: "Miembro, salir de Gaming" }),
     ).toBeInTheDocument();
     // Al volver a unirse, el aviso de «Saliste» se retira.
-    expect(toast.dismiss).toHaveBeenCalledWith(`membresia-${GAMING}`);
+    expect(toast.dismiss).toHaveBeenCalledWith(options.id);
+  });
+
+  it("salir otra vez crea un aviso con id nuevo y retira el anterior (nunca reutiliza un id)", async () => {
+    // Sonner borra por id el aviso que se está retirando: uno nuevo con el mismo id, creado en esos
+    // 200 ms, heredaba el «borrar» y no se veía (la prueba E2E de «Deshacer» fallaba a veces).
+    vi.mocked(toggleMembershipAction)
+      .mockResolvedValueOnce({ ok: true, active: false, count: 10 })
+      .mockResolvedValueOnce({ ok: true, active: true, count: 11 })
+      .mockResolvedValueOnce({ ok: true, active: false, count: 10 });
+    renderButton({ initialJoined: true });
+
+    await userEvent.click(screen.getByRole("button", { name: "Miembro, salir de Gaming" }));
+    await waitFor(() => expect(toast).toHaveBeenCalledTimes(1));
+    const first = (toast.mock.calls[0] as [string, { id: string }])[1].id;
+
+    await userEvent.click(await screen.findByRole("button", { name: "Unirme a Gaming" }));
+    await screen.findByRole("button", { name: "Miembro, salir de Gaming" });
+    // El primero sigue en pantalla cuando se sale otra vez: se retira antes de crear el nuevo.
+    toast.getToasts.mockReturnValue([{ id: first }]);
+    await userEvent.click(screen.getByRole("button", { name: "Miembro, salir de Gaming" }));
+
+    await waitFor(() => expect(toast).toHaveBeenCalledTimes(2));
+    const second = (toast.mock.calls[1] as [string, { id: string }])[1].id;
+    expect(second).toMatch(GAMING_TOAST);
+    expect(second).not.toBe(first);
+    expect(toast.dismiss).toHaveBeenLastCalledWith(first);
   });
 
   it("mientras espera al servidor conserva el foco de teclado (no usa `disabled` nativo)", async () => {

@@ -1,3 +1,5 @@
+import { isLoopbackUrl } from "../../loopback";
+
 /**
  * Política de pagos simulados (SEC-01), sin dependencias del servidor: la usan el esquema de
  * variables de entorno (falla al arrancar) y el código en tiempo de ejecución (404 en la pasarela
@@ -26,6 +28,19 @@ export function simulatedPaymentsAllowed(config: PaymentsConfig) {
   return (
     config.PAYMENT_PROVIDER === SIMULATED_PAYMENT_PROVIDER &&
     (config.NODE_ENV !== "production" || config.ALLOW_SIMULATED_PAYMENTS)
+  );
+}
+
+/**
+ * ¿Se puede recargar saldo con el simulador (ADR-071)? Nunca en un sitio público: el saldo paga
+ * costos reales de IA (pruebas patrocinadas de «Ver cómo me veo»), así que regalarlo es regalar
+ * dinero. Los pedidos simulados del piloto siguen (`simulatedPaymentsAllowed`); el saldo llega con el
+ * primer proveedor real. En desarrollo, pruebas y el build de producción en loopback (E2E), sí.
+ */
+export function simulatedTopUpsAllowed(config: PaymentsConfig & { APP_URL: string }) {
+  return (
+    simulatedPaymentsAllowed(config) &&
+    (config.NODE_ENV !== "production" || isLoopbackUrl(config.APP_URL))
   );
 }
 

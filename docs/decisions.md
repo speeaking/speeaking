@@ -2063,3 +2063,72 @@ cambio sale barato: no hay usuarios, dominio, tiendas ni redes a las que avisar.
   - el dominio;
   - renombrar el repositorio de GitHub;
   - mover la carpeta a `E:\speeaking` (pasos en `docs/development.md`).
+
+## ADR-071 · Antes de subir: modelo que se retira, nada con valores de desarrollo en Vercel y sin recargas simuladas en público
+
+**Contexto.** Antes del primer despliegue (2026-10-01) se revisaron contra sus fuentes los links,
+precios y datos de `docs/deploy.md`, y el código contra la guía. Salieron tres problemas que ninguna
+prueba veía:
+
+1. OpenRouter retira `google/gemini-2.5-flash-lite` el **2026-10-20** (`expiration_date` en
+   `/api/v1/models`). Lo usan «Buscar con una foto» (`AI_VISION_MODEL`) y la redacción diaria
+   (`TASK_DEFAULT_MODELS`). Además, sus únicos endpoints con cero retención (los de Vertex) son los
+   que se retiran, y la app exige `zdr`: después de esa fecha las dos funciones quedarían sin modelo.
+2. `APP_URL` vale `http://localhost:3000` por omisión. Si se olvida en Vercel, el build pasa: como es
+   loopback, deja de exigir `CRON_SECRET`, las cookies salen sin Secure y las sesiones y Google
+   esperan otro origen (pendiente de SEC-21). Lo mismo con `TRUSTED_PROXY_HOPS`: en 0 no hay IP
+   confiable y los límites por IP no aplican, con solo un aviso en el registro.
+3. En producción `ALLOW_SIMULATED_PAYMENTS=true` es obligatorio (no hay proveedor real) y con él
+   cualquier tienda podía recargar saldo simulado gratis en `/studio/saldo` y gastarlo en pruebas
+   patrocinadas de «Ver cómo me veo», que cuestan dinero real (≈ US$0.067 cada una). Lo pagado con
+   saldo no pasa por el presupuesto ni por el tope diario de las pruebas gratis: el único freno era el
+   límite de la llave de OpenRouter. Contradice la decisión del fundador de que el saldo se recarga de
+   verdad solo con Mercado Pago o Stripe.
+
+**Decisión.** El fundador aprobó las tres (la tercera es de dinero, riesgo ALTO).
+
+- **Modelo:** `google/gemini-3.5-flash-lite` reemplaza a 2.5 en la lista permitida, como modelo de
+  arranque de la redacción y como `AI_VISION_MODEL` recomendado. Es GA, sin fecha de retiro, ve
+  imágenes y tiene endpoints con cero retención (Google en Vertex). Cuesta US$0.30 / 2.50 por millón
+  de tokens contra US$0.10 / 0.40: ≈ US$0.0004 por foto (medido en vivo con una foto del catálogo
+  semilla: 1,167 tokens de entrada y 18 de salida) y ≈ US$0.0004 por borrador [estimación]. No deja
+  apagar el razonamiento: con `reasoning.enabled: false` OpenRouter responde 400 «Reasoning is
+  mandatory». El adaptador le pide `effort: "minimal"` (`REASONING_REQUIRED_MODELS`), que respondió
+  con 0 tokens de razonamiento. Cambiar solo el nombre del modelo habría roto las dos funciones. El
+  precio de 2.5 se queda en `cost.ts` para lo ya registrado. Una ruta guardada con 2.5 deja de ser
+  válida y `ai.routing` vuelve al predeterminado (en desarrollo no había ninguna).
+- **Vercel:** con `NODE_ENV=production` y `VERCEL=1`, el build falla si `APP_URL` es loopback
+  (también por omisión) o si `TRUSTED_PROXY_HOPS` es 0. Fuera de Vercel nada cambia: el build de
+  producción en localhost (E2E) sigue igual.
+- **Recargas:** `simulatedTopUpsAllowed` (`payments/policy.ts`) solo las permite en desarrollo,
+  pruebas y en un build de producción con `APP_URL` loopback. En un sitio público, `/studio/saldo`
+  dice que las recargas todavía no están disponibles y `topUpSimulated` responde
+  `PAYMENTS_UNAVAILABLE`. Los pedidos simulados del piloto siguen. Las tiendas conservan sus pruebas
+  de cortesía (`STORE_TRIAL_TRY_ONS`), que pagan la plataforma y su presupuesto. El patrocinio y los
+  destacados llegan con el primer proveedor de pagos real.
+
+**Consecuencias.** `src/server/loopback.ts` (compartido por el esquema y la política de pagos).
+`/precios`, `/seguridad` y los Términos ya no dicen que las recargas sean simuladas en un sitio
+público: `/precios` usa la misma política y los Términos dicen que las recargas se habilitan con un
+medio de pago real (misma versión `2026-10-01`: cambio del mismo día, antes del lanzamiento y sin
+personas reales que la hubieran aceptado). `docs/deploy.md` corregido con lo que cambió en las
+fuentes: la guía de dominios de Vercel tiene otra dirección, Cloudflare Registrar vende `.mx`, el `.com` sube el 2026-11-01, Gmail retira
+«Enviar como» externo en enero de 2027 (sección nueva de correo del dominio), Neon Launch apaga a los
+5 minutos fijos y la tabla de variables suma `SUPPORT_URL` y las de Google.
+
+**Pruebas que dependían de la velocidad de la máquina** (el fundador pidió cero fallas). Las tres
+fallaban a veces con toda la suite corriendo:
+
+- **Subidas (SEC-03).** La prueba E2E manda solo las cabeceras y espera la respuesta. Con el cuerpo
+  en camino, el cierre de la conexión le ganaba a veces a la respuesta (ECONNRESET). Ahora también
+  prueba algo más fuerte: el servidor responde sin recibir un solo byte del cuerpo.
+- **«Deshacer» al salir de una comunidad.** Sonner borra por id el aviso que se está retirando, y uno
+  nuevo creado con el mismo id en esos 200 ms heredaba el «borrar» y no se veía. Ahora cada aviso
+  tiene un id propio, y antes de crear uno se retiran los activos de esa comunidad. Además dura 10 s
+  en lugar de 4, porque con teclado o lector de pantalla hay que llegar hasta el botón.
+- **Checkout doble (SEC-23).** La segunda confirmación simultánea puede rechazarse como
+  `CART_CHANGED` o `EMPTY_CART`, según si leyó el carrito antes o después de que terminara la
+  primera. Las dos respuestas son correctas. La prueba acepta cualquiera de las dos y sigue exigiendo
+  un solo checkout y una sola reserva de stock. También la nube gris de
+  Cloudflare, un solo origen, Google en el aviso de privacidad antes de activarlo, costos de imágenes y
+  videos, y verificaciones nuevas.

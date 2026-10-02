@@ -1,3 +1,4 @@
+import { request as httpRequest } from "node:http";
 import { deflateSync } from "node:zlib";
 import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
@@ -19,6 +20,27 @@ async function registerAndOnboard(page: Page) {
   await completeOnboarding(page, user);
   await expect(page).toHaveURL("/");
   return user;
+}
+
+/**
+ * Manda solo las cabeceras de un POST y devuelve el estado de la respuesta, sin enviar el cuerpo:
+ * prueba que el servidor decide con las cabeceras (si intentara leer el cuerpo, se quedaría
+ * esperando y vencería el plazo). Con el cuerpo en camino, el cierre de la conexión
+ * (`Connection: close` sin leer lo que llega) podía ganarle a la respuesta y `fetch` veía un
+ * ECONNRESET en su lugar.
+ */
+function statusFromHeadersOnly(url: string, headers: Record<string, string>) {
+  return new Promise<number>((resolve, reject) => {
+    const request = httpRequest(url, { method: "POST", headers });
+    request.setTimeout(15_000, () => request.destroy(new Error("El servidor esperó el cuerpo.")));
+    request.on("response", (response) => {
+      resolve(response.statusCode ?? 0);
+      response.resume();
+      request.destroy();
+    });
+    request.on("error", reject);
+    request.flushHeaders();
+  });
 }
 
 /** Cookie de sesión del navegador para peticiones hechas con `fetch` de Node (cuerpos en stream). */
@@ -76,33 +98,15 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
       "Content-Type": "multipart/form-data; boundary=----speeaking",
     };
 
-    // 200 MB en stream (Transfer-Encoding: chunked). Antes se leía completo (~800 MB de RAM) → 422.
-    // A ~50 MB/s: la respuesta llega mientras el cliente sigue mandando (a toda velocidad, el cierre
-    // de la conexión puede ganarle a la respuesta y `fetch` ve un ECONNRESET en su lugar).
-    let sentMb = 0;
-    const endless = new ReadableStream<Uint8Array>({
-      async pull(controller) {
-        if (sentMb >= 200) return controller.close();
-        sentMb += 1;
-        await new Promise((resolve) => setTimeout(resolve, 20));
-        controller.enqueue(new Uint8Array(MB));
-      },
-    });
-    const chunked = await fetch(`${baseURL}/api/uploads`, {
-      method: "POST",
-      headers,
-      body: endless,
-      duplex: "half",
-    } as RequestInit);
-    // 411 se decide con las cabeceras: si el servidor hubiera leído el cuerpo, respondería 422.
-    expect(chunked.status).toBe(411);
-
-    const tooBig = await fetch(`${baseURL}/api/uploads`, {
-      method: "POST",
-      headers,
-      body: new Uint8Array(11 * MB),
-    });
-    expect(tooBig.status).toBe(413);
+    // Chunked (antes se leía completo: ~800 MB de RAM con 200 MB → 422) y un Content-Length mayor al
+    // tope: el servidor responde sin que llegue ni un byte del cuerpo.
+    const url = `${baseURL}/api/uploads`;
+    expect(await statusFromHeadersOnly(url, { ...headers, "Transfer-Encoding": "chunked" })).toBe(
+      411,
+    );
+    expect(
+      await statusFromHeadersOnly(url, { ...headers, "Content-Length": String(11 * MB) }),
+    ).toBe(413);
 
     const notAForm = await page.request.post("/api/uploads", {
       data: "hola",

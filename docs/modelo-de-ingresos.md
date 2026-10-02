@@ -112,6 +112,9 @@ por foto y prenda siguen: evitan el abuso, no cobran.
 - El bono se registra aparte (`PROMO` en el libro del saldo): no es ingreso.
 - Hoy la recarga usa el `PaymentProvider` **simulado** (ADR-032): no se cobra nada y el saldo se marca
   como simulado. Con Mercado Pago/Stripe se acredita solo por webhook con firma verificada.
+- En un sitio público **no hay recargas simuladas** (ADR-071): el saldo paga IA real (pruebas
+  patrocinadas), así que regalarlo sería regalar dinero. Hasta conectar un proveedor real, las tiendas
+  del piloto tienen sus pruebas de cortesía y nada más.
 - Comisión del procesador ≈ 4 % + IVA por recarga [supuesto; confirmar al contratar]. Con la recarga
   mínima de $99 la comisión queda por debajo del 5 %.
 - El saldo no es dinero: no se transfiere ni se retira en efectivo; se devuelve el saldo no usado si
@@ -189,6 +192,8 @@ precio.
    https://fal.ai/learn/tools/best-virtual-try-on-apis-2026 · consultado 2026-09-29.
 3. OpenRouter, precios de modelos de texto (Gemini 2.5 Flash Lite US$0.10/0.40, Qwen3.5-9B
    US$0.10/0.15 por millón de tokens). https://openrouter.ai/api/v1/models · consultado 2026-09-27.
+   Gemini 3.5 Flash Lite US$0.30/2.50, sin fecha de retiro; 2.5 Flash Lite se retira el 2026-10-20
+   (ADR-071) · consultado 2026-10-01.
 4. Costo por mil impresiones de anuncios en redes sociales en México: rangos publicados por agencias
    en 2025–2026 (entre $30 y $80 MXN según formato y público) [estimación; confirmar con la primera
    campaña propia].
@@ -223,7 +228,7 @@ precio.
 | «Crea mi look» y «Completa mi look»                                                       | $0 (lo calcula el código)                      | Nadie                             | No usa IA                                                                                                                     |
 | «¿Qué necesitas?», nombre de los looks, Sube y vende, kit de anuncios                     | US$0.0002 a 0.01 por llamada                   | Presupuesto de IA                 | Cuotas por persona (hora, día, mes), presupuesto mensual, caché de looks por 1 h                                              |
 | **«Contexto»** (resumen de publicaciones largas, ADR-060)                                 | ≈ US$0.00015 por publicación, **una sola vez** | Presupuesto de IA                 | Se guarda y se reusa para todos; solo textos largos; límite por persona y tope diario                                         |
-| **Buscar con una foto** (ADR-061)                                                         | ≈ US$0.0002 por foto (medido)                  | Presupuesto de IA                 | Solo con sesión; 10 por hora y 20 al día por persona; la foto no se guarda                                                    |
+| **Buscar con una foto** (ADR-061)                                                         | ≈ US$0.0004 por foto (medido con 3.5, ADR-071) | Presupuesto de IA                 | Solo con sesión; 10 por hora y 20 al día por persona; la foto no se guarda                                                    |
 | **Videos cortos** (ADR-062)                                                               | ≈ US$0.0005 al mes por video de 30 MB en R2    | Costo fijo                        | 60 s y 50 MB máximo, 15 al día por cuenta, servidos directo de R2 (salida sin costo)                                          |
 | **Colaboraciones con creadores** (ADR-063, etapa 1)                                       | ≈ $0 (filas en la base)                        | Costo fijo                        | Límites de publicación; las pruebas que llegan las paga la tienda con su tope diario; sin comisiones hasta tener pagos reales |
 | «Ver cómo me veo»                                                                         | ≈ US$0.07 (≈ $1.26) por imagen                 | **La tienda**, antes de generarse | Precio ≥ 1.5 × costo; cortesía de 10 por tienda con tope diario de US$5                                                       |
@@ -239,7 +244,7 @@ primer día, como las de la tabla.
 | Servicio                                             | Al mes [estimación; confirmar al contratar] |
 | ---------------------------------------------------- | ------------------------------------------- |
 | Vercel Pro (el plan gratis no permite uso comercial) | ≈ US$20                                     |
-| Neon (base de datos)                                 | $0 hasta 0.5 GB; después, desde ≈ US$19     |
+| Neon (base de datos)                                 | $0 hasta 1 GB; Launch por uso, sin mínimo   |
 | Cloudflare R2 (fotos y videos)                       | $0 hasta 10 GB; después, US$0.015 por GB    |
 | Correo transaccional                                 | $0 hasta 3,000 correos al mes               |
 | Dominio speeaking.mx                                 | ≈ $40 MXN (≈ $500 MXN al año)               |

@@ -134,11 +134,11 @@ describe("searchByPhoto (ADR-061)", () => {
 
     await expect(searchByPhoto(USER, photo)).resolves.toEqual({ ok: false, reason: "unavailable" });
 
-    env.AI_VISION_MODEL = "google/gemini-2.5-flash-lite";
+    env.AI_VISION_MODEL = "google/gemini-3.5-flash-lite";
     await searchByPhoto(USER, photo);
     expect(providerForRoute).toHaveBeenLastCalledWith({
       provider: "openai_compatible",
-      model: "google/gemini-2.5-flash-lite",
+      model: "google/gemini-3.5-flash-lite",
     });
   });
 

@@ -44,9 +44,10 @@ export const ROUTABLE_MODELS = [
     label: "Claude Haiku 4.5 · referencia de calidad",
   },
   {
+    // ADR-071: reemplaza a Gemini 2.5 Flash Lite, que OpenRouter retira el 2026-10-20.
     provider: "openai_compatible",
-    model: "google/gemini-2.5-flash-lite",
-    label: "Gemini 2.5 Flash Lite · ve imágenes, pago por uso",
+    model: "google/gemini-3.5-flash-lite",
+    label: "Gemini 3.5 Flash Lite · ve imágenes, pago por uso",
   },
 ] as const satisfies readonly { provider: AIProviderId; model: string; label: string }[];
 
@@ -56,9 +57,9 @@ export const ROUTABLE_MODELS = [
  * tarea, y debe estar en `ROUTABLE_MODELS` (una prueba lo exige).
  */
 export const TASK_DEFAULT_MODELS: Partial<Record<AITaskId, string>> = {
-  // ADR-066: redacta en español de México con más naturalidad que el modelo de texto por omisión,
-  // al mismo costo por borrador.
-  editorial_draft: "google/gemini-2.5-flash-lite",
+  // ADR-066: redacta en español de México con más naturalidad que el modelo de texto por omisión.
+  // ADR-071: Gemini 3.5 Flash Lite en lugar de 2.5, que OpenRouter retira el 2026-10-20.
+  editorial_draft: "google/gemini-3.5-flash-lite",
 };
 
 export type AIRoute = { provider: AIProviderId; model: string };

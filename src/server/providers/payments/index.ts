@@ -1,7 +1,7 @@
 import "server-only";
 import { env } from "@/server/env";
 import { MockPaymentProvider } from "./mock";
-import { simulatedPaymentsAllowed } from "./policy";
+import { simulatedPaymentsAllowed, simulatedTopUpsAllowed } from "./policy";
 import type { PaymentProvider } from "./types";
 
 let provider: PaymentProvider | undefined;
@@ -27,6 +27,11 @@ function createProvider(): PaymentProvider {
 /** ¿Existe la pasarela simulada? Si no, su página y su acción responden 404. */
 export function simulatedPaymentsEnabled() {
   return simulatedPaymentsAllowed(env);
+}
+
+/** ¿Se puede recargar saldo con el simulador? Nunca en un sitio público (ADR-071). */
+export function simulatedTopUpsEnabled() {
+  return simulatedTopUpsAllowed(env);
 }
 
 export { isSimulatedPayment, SIMULATED_PAYMENT_PROVIDER } from "./policy";

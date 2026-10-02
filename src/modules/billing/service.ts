@@ -8,7 +8,7 @@ import { getAiBudget } from "@/modules/platform/settings";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getImageProvider } from "@/server/providers/image";
-import { simulatedPaymentsEnabled } from "@/server/providers/payments";
+import { simulatedTopUpsEnabled } from "@/server/providers/payments";
 import { featuredDaysLeft, featuredUntilAfter } from "./featured";
 import {
   featuredCostCents,
@@ -79,7 +79,7 @@ export function getWallet(userId: string) {
 export async function topUpSimulated(userId: string, packId: string, now = new Date()) {
   const pack = topUpPack(packId);
   if (!pack) throw new BillingError("UNKNOWN_PACK");
-  if (!simulatedPaymentsEnabled()) throw new BillingError("PAYMENTS_UNAVAILABLE");
+  if (!simulatedTopUpsEnabled()) throw new BillingError("PAYMENTS_UNAVAILABLE");
   const result = await db.$transaction(async (tx) => {
     const wallet = await tx.wallet.upsert({
       where: { userId },

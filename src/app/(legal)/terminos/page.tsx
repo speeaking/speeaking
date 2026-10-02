@@ -189,7 +189,8 @@ export default function TermsPage() {
         dentro de los 5 días hábiles siguientes a una recarga. Si una simulación falla, no se cobra
         (o se devuelve el cargo). Los vendedores pueden patrocinar simulaciones sobre sus productos
         con un tope diario que ellos fijan; el cargo sale de su saldo por cada simulación generada.
-        Durante la etapa de prueba las recargas son simuladas y no se cobra nada.
+        Durante la etapa de prueba no se cobra nada: las recargas se habilitan cuando haya un medio
+        de pago real.
       </p>
 
       <h2>Pagos</h2>

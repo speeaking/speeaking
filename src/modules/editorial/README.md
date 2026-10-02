@@ -9,7 +9,8 @@ una persona del equipo decide qué se publica. Nada sale sin aprobación.
   día y la misma comunidad dan el mismo encargo.
 - **La IA solo redacta** (`task.ts`, tarea `editorial_draft`). Recibe el nombre y la descripción de
   la comunidad, el encargo y el inicio de lo reciente de la propia cuenta editorial; nunca datos de
-  personas. Modelo de arranque: Gemini 2.5 Flash Lite (`TASK_DEFAULT_MODELS` en `ai/routing.ts`).
+  personas. Modelo de arranque: Gemini 3.5 Flash Lite (`TASK_DEFAULT_MODELS` en `ai/routing.ts`;
+  ADR-071, en lugar de 2.5, que OpenRouter retira el 2026-10-20).
 - **El código limpia** (`draft-text.ts`): sin Markdown, hashtags, ligas, datos de contacto, montos ni
   porcentajes; por oraciones completas hasta 600 caracteres. Lo que queda vacío, choca con la
   política de contenido o repite algo reciente no se guarda.

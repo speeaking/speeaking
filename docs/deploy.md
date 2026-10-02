@@ -10,8 +10,8 @@ horas la primera vez.
 | -------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Vercel** (Pro)     | Corre la app (páginas, API, fotos por `/media`, cron)       | Sí: abre más instancias con más visitas y las apaga sin tráfico (Fluid compute). Tope: presupuesto de gasto                 |
 | **Neon** (Launch)    | Base de datos PostgreSQL                                    | Sí: sube y baja la CPU/RAM entre un mínimo y un máximo que tú fijas, y se apaga sin uso (scale to zero). Tope: el máximo CU |
-| **Cloudflare R2**    | Guarda las fotos (bucket privado)                           | Sí: no hay servidor ni disco que llenar; pagas lo guardado. Sacar datos (egress) es gratis                                  |
-| **OpenRouter** (IA)  | Modelo abierto pagado por uso (Qwen 3.5, ADR-033 #6)        | Sí: pagas por llamada. Tope: límite de crédito de la llave + presupuesto de IA de la app                                    |
+| **Cloudflare R2**    | Guarda las fotos y los videos (bucket privado)              | Sí: no hay servidor ni disco que llenar; pagas lo guardado. Sacar datos (egress) es gratis                                  |
+| **OpenRouter** (IA)  | Texto con Qwen 3.5; imagen, visión y redacción con Gemini   | Sí: pagas por llamada. Tope: límite de crédito de la llave + presupuesto de IA de la app                                    |
 | **Dominio** + GitHub | Tu dirección web; el código privado de donde Vercel publica | —                                                                                                                           |
 
 **Antes de empezar.** Una tarjeta **tuya** (ADR-033 #7 y #8: nada se gasta en automático sin ella),
@@ -24,8 +24,11 @@ correo.
 
 ## 1. Subir el código a GitHub (repositorio privado)
 
-1. Crea una cuenta en <https://github.com/signup> y activa la verificación en dos pasos.
-2. **New repository** → nombre `speeaking` → **Private** → sin README ni `.gitignore` → **Create**.
+1. Crea una cuenta en <https://github.com/signup> y activa la verificación en dos pasos
+   (<https://github.com/settings/security>).
+2. **New repository** (<https://github.com/new>) → nombre `speeaking` → **Private** → sin README ni
+   `.gitignore` → **Create**. Si ya tienes el repositorio vacío `vendeia` (creado el 2026-09-27),
+   renómbralo en **Settings → General → Repository name** en lugar de crear otro.
 3. En la terminal, dentro de `E:\speeaking`:
 
    ```
@@ -44,8 +47,9 @@ correo.
 ## 2. Vercel Pro
 
 1. <https://vercel.com/signup> → **Continue with GitHub**.
-2. **Plan Pro**, no Hobby: Hobby es solo para uso personal no comercial
-   ([Hobby](https://vercel.com/docs/plans/hobby), «fair use guidelines»). Pro cuesta US$20 al mes
+2. **Plan Pro**, no Hobby: Hobby es solo para uso personal no comercial (vender, anunciar o mostrar
+   publicidad es comercial, [uso justo](https://vercel.com/docs/limits/fair-use-guidelines)) y su
+   contrato de datos (DPA) solo cubre Pro y Enterprise. Pro cuesta US$20 al mes
    por asiento e incluye US$20 de crédito de uso y el CDN con 1 millón de peticiones y 1 TB de
    transferencia al mes ([Pro](https://vercel.com/docs/plans/pro-plan)).
 3. **Tope de gasto** (Settings → Billing → Spend Management; [guía](https://vercel.com/docs/spend-management)):
@@ -65,7 +69,7 @@ Recomendado: crearla desde Vercel (una sola factura y las variables se crean sol
 1. En Vercel: **Storage** → **Create Database** → **Neon** (Marketplace).
 2. Región: **US East (N. Virginia) / `aws-us-east-1`**, la misma zona que las funciones de Vercel
    (`iad1`, fijado en `vercel.json`). Otra región suma latencia a cada consulta.
-3. Plan: **Launch** (pago por uso; el gratuito solo da 0.5 GB y 6 h de historial).
+3. Plan: **Launch** (pago por uso; el gratuito solo da 1 GB por proyecto y 6 h de historial).
 4. Al conectarla al proyecto elige **solo el entorno Production** y **no** actives «crear una rama
    por cada vista previa»: esas ramas copian la base de producción (con datos personales) a cada
    vista previa.
@@ -75,7 +79,8 @@ Recomendado: crearla desde Vercel (una sola factura y las variables se crean sol
    directa ([Neon + Prisma](https://neon.com/docs/guides/prisma)).
 6. Abre la base en Neon (**Open in Neon**) y ajusta:
    - **Compute** (rama `main` → Edit compute): autoscaling **mínimo 0.25 CU, máximo 2 CU**; **scale
-     to zero: 5 minutos** (activado). 1 CU ≈ 4 GB de RAM. El máximo es tu **tope de costo**: en el
+     to zero activado** (en Launch son 5 minutos fijos: solo se activa o se desactiva). 1 CU ≈ 4 GB de
+     RAM. El máximo es tu **tope de costo**: en el
      peor caso (2 CU las 24 h) serían ≈ US$155 al mes; en el piloto se espera mucho menos (ver
      Costos). Súbelo solo si `/admin` o Neon muestran la base al tope.
    - **History / Restore window: 7 días** (el máximo del plan Launch;
@@ -110,7 +115,8 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
      ([tokens](https://developers.cloudflare.com/r2/api/tokens/)).
    - El **Token value** (`cfat_…`) es para la API de Cloudflare: la app no lo usa; solo van las dos
      llaves S3 y el endpoint. Si una llave se pega en un chat o en un correo, en **Manage → Roll** se
-     rota y la anterior deja de servir. Estas llaves solo van en las variables de producción (paso
+     rota y la anterior deja de servir
+     ([rotar](https://developers.cloudflare.com/fundamentals/api/how-to/roll-token/)). Estas llaves solo van en las variables de producción (paso
      8): en tu PC el desarrollo usa el disco (`STORAGE_DRIVER=local`) y las pruebas no deben
      escribir en el bucket real.
 5. R2 no tiene tope de gasto: crea una alerta en Cloudflare → **Notifications** (facturación por
@@ -175,24 +181,38 @@ Dos opciones para el piloto cerrado (ADR-038):
   3. **Privacidad** (<https://openrouter.ai/settings/privacy>): desactiva los proveedores que
      «pueden entrenar con tus datos» (modelos de pago y gratuitos) y deja apagado el registro de
      entradas y salidas de OpenRouter. La app ya pide en cada llamada excluir a los proveedores que
-     guardan datos o no borran lo enviado (`data_collection: "deny"` y `zdr: true`).
+     guardan datos o no borran lo enviado (`data_collection: "deny"` y `zdr: true`,
+     [cero retención](https://openrouter.ai/docs/guides/features/zdr)). Por eso cada modelo necesita
+     un endpoint con cero retención: los ids «-preview» de Google no lo tienen (404 «data policy»).
+     Antes de cada despliegue revisa en <https://openrouter.ai/api/v1/models> que ningún modelo
+     configurado tenga `expiration_date` cercana (ADR-071: Gemini 2.5 Flash Lite se retira el
+     2026-10-20).
   4. Antes de encenderla, llena en el aviso de privacidad el proveedor de IA y su país (ver «Lo legal
      de la infraestructura»).
   5. Variables: `AI_PROVIDER=openai_compatible`, `AI_BASE_URL=https://openrouter.ai/api/v1`,
-     `AI_API_KEY=<llave>`, `AI_DEFAULT_MODEL=qwen/qwen3.5-9b`.
+     `AI_API_KEY=<llave>`, `AI_DEFAULT_MODEL=qwen/qwen3.5-9b`; para «Pruébatelo»
+     `AI_IMAGE_MODEL=google/gemini-3.1-flash-image` y para «Buscar con una foto»
+     `AI_VISION_MODEL=google/gemini-3.5-flash-lite`. La redacción diaria usa Gemini 3.5 Flash Lite
+     aunque `AI_DEFAULT_MODEL` sea Qwen (se cambia en `/admin/ia`).
 - **IA simulada:** `AI_PROVIDER=mock` y `ALLOW_SIMULATED_AI=true`. Los vendedores reciben textos de
   plantilla, no de un modelo; sin costo.
 
 ## 6 bis. Entrar con Google (opcional, ADR-049)
 
-1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «speeaking» (es lo que la
-   gente ve en «Ir a …» al entrar), correo de contacto, dominio del sitio; alcance solo `email` y
-   `profile`. Mientras la app esté en modo «Prueba», solo entran los correos listados en «Usuarios
-   de prueba»; para abrirla a cualquiera hay que publicarla (con esos dos alcances no pide
-   verificación).
-2. Credenciales → Crear → «ID de cliente de OAuth» → Aplicación web. Orígenes autorizados:
-   `https://<tu dominio>` (y `http://localhost:3000` para probar). URI de redirección autorizada:
-   `https://<tu dominio>/api/auth/callback/google` (y la de localhost).
+0. **Antes**, el aviso de privacidad debe nombrar a Google (Google LLC, EE. UU.) como encargado de
+   «Entrar con Google» y subir `LEGAL_VERSIONS.privacyNotice`: hoy no lo menciona.
+1. Google Auth Platform → **Branding** (<https://console.cloud.google.com/auth/branding>): nombre
+   «speeaking» (es lo que la gente ve en «Ir a …» al entrar), correo de contacto, dominio del sitio y
+   las ligas a la página de inicio, `/privacidad` y `/terminos` (obligatorias para publicarla). Para
+   que se vean el nombre y el logo hace falta la verificación de marca de Google; sin ella sale el
+   dominio. Alcances: solo `openid`, `email` y `profile` (los que pide la app). Con solo esos tres,
+   cualquier cuenta de Google puede entrar aunque la app siga en «Prueba»; aun así publícala en
+   **Audience** (<https://console.cloud.google.com/auth/audience>). Con esos alcances no pide
+   verificación ([ayuda](https://support.google.com/cloud/answer/15549945)).
+2. **Clients** (<https://console.cloud.google.com/auth/clients>) → Create client → Aplicación web.
+   Orígenes autorizados: `https://<tu dominio>` (y `http://localhost:3000` para probar). URI de
+   redirección autorizada: `https://<tu dominio>/api/auth/callback/google` (y la de localhost). El
+   secreto se muestra una sola vez ([ayuda](https://support.google.com/cloud/answer/15549257)).
 3. Copia el ID y el secreto a `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. Con las dos variables
    aparece «Continuar con Google» en Entrar y Registro; sin ellas, nada cambia. Usa un cliente para
    desarrollo (localhost) y otro distinto para producción: si un secreto se pega en un chat o en un
@@ -221,16 +241,17 @@ Dos opciones para el piloto cerrado (ADR-038):
 
 En Vercel → Settings → Environment Variables, entorno **Production**. Las secretas, con
 **Sensitive** activado (después nadie puede leerlas, [guía](https://vercel.com/docs/environment-variables/sensitive-environment-variables)).
-Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
+Si falta o está mal alguna obligatoria, el build falla y dice **cuál** (nunca su valor); en Vercel
+eso incluye `APP_URL` (si falta valdría localhost) y `TRUSTED_PROXY_HOPS` (si falta valdría 0), ADR-071.
 
 | Variable                       | Valor o ejemplo                                                    | Secreta | Obligatoria                                                    |
 | ------------------------------ | ------------------------------------------------------------------ | ------- | -------------------------------------------------------------- |
-| `APP_URL`                      | `https://<tu-dominio>` (al inicio `https://<proyecto>.vercel.app`) | No      | Sí                                                             |
+| `APP_URL`                      | `https://<tu-dominio>` (al inicio `https://<proyecto>.vercel.app`) | No      | Sí (sin ella el build falla en Vercel)                         |
 | `DATABASE_URL`                 | La crea Neon: host con `-pooler`, `?sslmode=require`               | Sí      | Sí                                                             |
 | `DATABASE_URL_UNPOOLED`        | La crea Neon: host sin `-pooler`, `?sslmode=require`               | Sí      | Sí (migraciones)                                               |
 | `BETTER_AUTH_SECRET`           | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                                                             |
 | `CRON_SECRET`                  | Paso 5 (≥ 32 caracteres)                                           | Sí      | Sí                                                             |
-| `TRUSTED_PROXY_HOPS`           | `1` (Vercel pone la IP real del cliente)                           | No      | Sí en Vercel                                                   |
+| `TRUSTED_PROXY_HOPS`           | `1` (Vercel pone la IP real del cliente)                           | No      | Sí (con 0 el build falla en Vercel)                            |
 | `STORAGE_DRIVER`               | `s3`                                                               | No      | Sí                                                             |
 | `S3_ENDPOINT`                  | `https://<id-de-cuenta>.r2.cloudflarestorage.com` (sin ruta)       | No      | Sí                                                             |
 | `S3_BUCKET`                    | `speeaking-media`                                                  | No      | Sí                                                             |
@@ -238,29 +259,57 @@ Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
 | `S3_ACCESS_KEY_ID`             | Paso 4                                                             | Sí      | Sí                                                             |
 | `S3_SECRET_ACCESS_KEY`         | Paso 4                                                             | Sí      | Sí                                                             |
 | `PAYMENT_PROVIDER`             | `mock` (pagos por terceros o en persona, ADR-033 #4)               | No      | No (por omisión `mock`)                                        |
-| `ALLOW_SIMULATED_PAYMENTS`     | `true` solo en el piloto cerrado (nadie paga por la plataforma)    | No      | Sí con `mock`                                                  |
+| `ALLOW_SIMULATED_PAYMENTS`     | `true` en el piloto (pedidos simulados; sin recargas de saldo)     | No      | Sí con `mock`                                                  |
 | `AI_PROVIDER`                  | `openai_compatible` (o `mock`)                                     | No      | No (por omisión `mock`)                                        |
 | `AI_BASE_URL`                  | `https://openrouter.ai/api/v1`                                     | No      | Con `openai_compatible`                                        |
 | `AI_API_KEY`                   | Paso 6 (`sk-or-…`)                                                 | Sí      | Con `openai_compatible`                                        |
 | `AI_DEFAULT_MODEL`             | `qwen/qwen3.5-9b`                                                  | No      | Con `openai_compatible`                                        |
 | `AI_IMAGE_MODEL`               | `google/gemini-3.1-flash-image` (Pruébatelo, ADR-043)              | No      | No (sin él, imágenes simuladas: en producción «no disponible») |
-| `AI_VISION_MODEL`              | `google/gemini-2.5-flash-lite` (Buscar con una foto, ADR-061)      | No      | No (sin él, la búsqueda por foto queda «no disponible»)        |
+| `AI_VISION_MODEL`              | `google/gemini-3.5-flash-lite` (Buscar con una foto, ADR-071)      | No      | No (sin él, la búsqueda por foto queda «no disponible»)        |
 | `VIDEO_UPLOADS`                | `true` después de la regla de CORS del paso 4 bis (ADR-062)        | No      | No (sin ella, en producción no se suben videos)                |
 | `ALLOW_SIMULATED_AI`           | `true` solo con `AI_PROVIDER=mock`                                 | No      | Sí con `mock`                                                  |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` (Vercel usa exactamente pnpm 10.33.2 de `packageManager`)      | No      | Recomendada                                                    |
+| `SUPPORT_URL`                  | Liga https de apoyo (Mercado Pago, PayPal.me, Ko-fi), ADR-048      | No      | No (sin ella, `/apoya` explica los costos sin botón)           |
+| `GOOGLE_CLIENT_ID`             | Paso 6 bis                                                         | No      | No (las dos o ninguna)                                         |
+| `GOOGLE_CLIENT_SECRET`         | Paso 6 bis                                                         | Sí      | No (las dos o ninguna)                                         |
 
 No pongas `NODE_ENV` (Vercel ya usa `production`), ni `STORAGE_LOCAL_ROOT`, ni `ALLOW_LOCAL_STORAGE`:
 en Vercel el disco es efímero y la app rechaza guardar fotos en él aunque la bandera diga `true`.
 
 ## 9. Dominio y HTTPS
 
-1. Compra el dominio (p. ej. `.mx` o `.com` en tu registrador). Pro incluye un dominio gratis el
-   primer año solo en `.app`, `.dev`, `.online`, `.site`, `.space`, `.store`, `.tech` o `.website`
-   (no durante la prueba gratis de Pro; [detalle](https://vercel.com/docs/plans/pro-plan)).
+1. Compra el dominio. [Cloudflare Registrar](https://www.cloudflare.com/domains/) cobra a precio de
+   costo y vende `.com`, `.app` y `.mx` ([lista](https://www.cloudflare.com/tld-policies/); `.mx`
+   pide una verificación extra del titular). El `.com` cuesta ≈ US$10.46 al año y sube a ≈ US$11.17
+   desde el 2026-11-01 (aumento de Verisign). Pro incluye un dominio gratis el primer año solo en
+   `.app`, `.dev`, `.online`, `.site`, `.space`, `.store`, `.tech` o `.website` (no durante la prueba
+   gratis de Pro; [detalle](https://vercel.com/docs/domains/free-domain-with-pro)).
 2. Vercel → Settings → **Domains** → **Add** → sigue las instrucciones de DNS (registros A o CNAME en
-   tu registrador). El certificado HTTPS se emite y renueva solo.
+   tu registrador; [guía](https://vercel.com/docs/domains/working-with-domains/add-a-domain)). El
+   certificado HTTPS se emite y renueva solo.
+   - Usa **un solo origen** (con o sin `www`) y redirige el otro a él en Vercel: `APP_URL` es el único
+     origen que aceptan las sesiones, «Entrar con Google» y las impresiones.
+   - Si el DNS queda en Cloudflare, los registros de Vercel van en **DNS only** (nube gris). Con el
+     proxy (nube naranja) Cloudflare queda delante de Vercel, `TRUSTED_PROXY_HOPS=1` tomaría la IP de
+     Cloudflare y los límites por IP se romperían.
 3. Cambia `APP_URL` a `https://<tu-dominio>` y **Redeploy** (las cookies de sesión y los enlaces usan
    esa URL; la app exige https).
+
+### 9 bis. Correo del dominio
+
+El aviso de privacidad promete un medio de contacto para solicitudes ARCO, y soporte necesita una
+dirección: con `contacto@<tu-dominio>` basta.
+
+- **Solo recibir (gratis):** Cloudflare Email Routing reenvía `contacto@` a tu Gmail
+  ([guía](https://developers.cloudflare.com/email-service/get-started/route-emails/)). Necesita el
+  DNS en Cloudflare.
+- **Recibir y responder desde el dominio:** Zoho Mail Lite (≈ MXN 18 por usuario al mes, pago anual,
+  [precios](https://www.zoho.com/mail/zohomail-pricing.html)) o Google Workspace (MXN 140,
+  [precios](https://workspace.google.com/intl/es-419/pricing.html)). No uses Gmail «Enviar como» con
+  un SMTP externo: Google lo retira en enero de 2027
+  ([aviso](https://support.google.com/mail/answer/17101213?hl=es-419)).
+- La app hoy no manda correos (la verificación de correo está apagada), así que no hace falta Resend
+  todavía.
 
 ## 10. Primer despliegue y migraciones
 
@@ -305,6 +354,10 @@ Remove-Item Env:DATABASE_URL, Env:NODE_ENV
   metería cuentas y productos de demostración en la base real (y sus fotos en tu disco, no en R2).
 - La salida debe incluir `Producción: se omite el contenido editorial y de demostración`. Si no la
   ves, avisa al equipo.
+- Con `NODE_ENV=production` el seed valida todas las variables y también lee el `.env` de tu PC:
+  necesita ahí `BETTER_AUTH_SECRET`, `ALLOW_SIMULATED_PAYMENTS=true` y la IA configurada (o
+  `ALLOW_SIMULATED_AI=true`). Si falta algo, falla con «Variables de entorno inválidas» y no toca la
+  base.
 
 **Contenido editorial** (ADR-033 #11 y ADR-066): con IA real, la operación diaria deja cada mañana un
 borrador por comunidad en `/admin/redaccion`; tú lo ajustas y lo publicas (sale como «Equipo
@@ -358,6 +411,13 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
       OpenRouter.
 - [ ] Redacción: en `/admin/redaccion` toca «Pedir borrador» para una comunidad, ajústalo y
       publícalo; en la comunidad debe salir de «Equipo speeaking» con «Editorial» y «Con ayuda de IA».
+- [ ] Saldo: `/studio/saldo` y `/precios` dicen «Las recargas todavía no están disponibles» (en un
+      sitio público no hay recargas simuladas, ADR-071).
+- [ ] Con `AI_IMAGE_MODEL`: «Ver cómo me veo» genera una imagen. Con `AI_VISION_MODEL`:
+      `/buscar/foto` encuentra productos parecidos.
+- [ ] Con `VIDEO_UPLOADS=true`: publica un video corto desde tu teléfono y ábrelo en otro navegador.
+- [ ] Con Google: una cuenta nueva cae en la bienvenida y acepta términos y aviso (paso 6 bis.4).
+- [ ] Con `SUPPORT_URL`: `/apoya` muestra el botón y abre tu liga.
 
 ## 14. Respaldos
 
@@ -366,7 +426,7 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
   producción).
 - **Simulacro mensual** (10 minutos): en Neon crea una rama desde «hace 1 hora», revisa en el SQL
   Editor que tenga datos (`SELECT count(*) FROM users;`) y bórrala. Anota la fecha.
-- **Fotos:** el respaldo de la base no restaura archivos. Las fotos que la app borra (huérfanas,
+- **Fotos y videos:** el respaldo de la base no restaura archivos. Los que la app borra (huérfanos,
   cuentas borradas) no se recuperan. Pendiente: copia periódica del bucket si el negocio lo requiere.
 
 ## 15. Cómo crece solo (y dónde están los topes)
@@ -382,22 +442,27 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
   consulta después tarda un poco más en despertar). El pooler acepta hasta 10,000 conexiones de
   clientes ([pooling](https://neon.com/docs/connect/connection-pooling)); el disco crece solo.
   **Tope:** el máximo de CU.
-- **R2:** sin servidores; lo guardado crece sin configurar nada. Solo lee `/media` (con caché de
-  variantes en el mismo bucket); las fotos públicas quedan además hasta 1 hora en el CDN de Vercel,
-  así que muchas vistas no llegan ni a la función ni a R2. **Tope:** ninguno automático; alerta de
-  facturación.
+- **R2:** sin servidores; lo guardado crece sin configurar nada. Las fotos se leen por `/media` (con
+  caché de variantes en el mismo bucket) y las públicas quedan además hasta 1 hora en el CDN de
+  Vercel, así que muchas vistas no llegan ni a la función ni a R2. Los videos se reproducen directo
+  desde R2 con una URL firmada: cada vista cuenta como lecturas clase B (10 millones gratis al mes).
+  **Tope:** ninguno automático; alerta de facturación.
 - **Lo que no crece solo:** el cron (una vez al día, 300 s), el procesamiento de fotos con sharp (CPU
   por foto nueva y por cada ancho la primera vez) y el máximo de CU de Neon.
 
 ## 16. Costos esperados en el piloto
 
-| Servicio        | Precio publicado                                                                                       | Piloto (≤ 100 vendedores) [estimación]                     |
-| --------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| Vercel Pro      | US$20/mes por asiento, incluye US$20 de uso; CDN con 1 M de peticiones y 1 TB al mes                   | ≈ US$20/mes (el uso cabe en el crédito)                    |
-| Neon Launch     | US$0.106 por CU-hora, US$0.35 por GB-mes, historial US$0.20 por GB-mes; sin mínimo                     | ≈ US$5–15/mes (≈ 0.5 CU unas 6 h al día, 1 GB)             |
-| Cloudflare R2   | 10 GB-mes gratis, luego US$0.015 por GB-mes; 1 M escrituras y 10 M lecturas gratis al mes; egress US$0 | US$0 (≈ 3 GB: 100 vendedores × 50 fotos con variantes)     |
-| OpenRouter (IA) | Qwen3.5-9B: US$0.08–0.17 entrada / US$0.13–0.25 salida por millón de tokens según proveedor; +5.5 %    | ≤ US$50/mes (tope de la llave; ≈ US$0.0003 por generación) |
-| Dominio         | Según registrador                                                                                      | Anual                                                      |
+| Servicio        | Precio publicado                                                                                           | Piloto (≤ 100 vendedores) [estimación]                |
+| --------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Vercel Pro      | US$20/mes por asiento, incluye US$20 de uso; CDN con 1 M de peticiones y 1 TB al mes                       | ≈ US$20/mes (el uso cabe en el crédito)               |
+| Neon Launch     | US$0.106 por CU-hora, US$0.35 por GB-mes, historial US$0.20 por GB-mes; sin mínimo                         | ≈ US$5–15/mes (≈ 0.5 CU unas 6 h al día, 1 GB)        |
+| Cloudflare R2   | 10 GB-mes gratis, luego US$0.015 por GB-mes; 1 M escrituras y 10 M lecturas gratis al mes; egress US$0     | US$0–1 (≈ 3 GB de fotos; cada video pesa hasta 50 MB) |
+| OpenRouter (IA) | Qwen3.5-9B US$0.08–0.17 / 0.13–0.25 por millón; imagen US$0.067; Gemini 3.5 Flash Lite 0.30 / 2.50; +5.5 % | ≤ US$50/mes (tope de la llave)                        |
+| Dominio         | Según registrador                                                                                          | Anual                                                 |
+
+En la IA lo que pesa son las imágenes de «Ver cómo me veo»: ≈ US$0.067 cada una, así que el tope de
+US$50 alcanza para ≈ 740 imágenes al mes. Un texto con Qwen cuesta ≈ US$0.0003, una búsqueda por foto
+≈ US$0.0004 (medido el 2026-10-01) y un borrador de la redacción ≈ US$0.0004 [estimación].
 
 Total esperado: **≈ US$30–40 al mes más la IA** (tope US$50). Fuentes:
 [Vercel Pro](https://vercel.com/docs/plans/pro-plan), [Neon](https://neon.com/pricing),
@@ -420,7 +485,7 @@ completo está en `docs/legal/00-marco-legal-2026.md` (§2.7, encargados y trans
 - Con esta infraestructura los datos personales se tratan **fuera de México**, en Estados Unidos:
   Vercel Inc. (funciones en `iad1` y registros), Neon/Databricks (base en `aws-us-east-1`),
   Cloudflare Inc. (fotos, bucket con sugerencia ENAM) y, con IA real, OpenRouter Inc. y el proveedor
-  del modelo al que enruta. Estas regiones son las que fija esta guía: confírmalas en cada consola.
+  del modelo al que enruta. Con «Entrar con Google», también Google LLC (paso 6 bis). Estas regiones son las que fija esta guía: confírmalas en cada consola.
 - Son **encargados** (tratan datos por cuenta de speeaking): mandarles datos no es una transferencia,
   pero la relación debe constar en un contrato de encargo. El aviso de privacidad de la app promete
   nombrarlos con su país: antes del primer vendedor real hay que completar «Encargados y

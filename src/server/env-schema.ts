@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isLoopback } from "./loopback";
 import {
   PAYMENT_PROVIDERS,
   SIMULATED_PAYMENT_PROVIDER,
@@ -137,7 +138,7 @@ export const serverEnvSchema = z
     // Sin él, con `openai_compatible` la búsqueda por foto no está disponible (el modelo de texto no
     // ve fotos); con `mock`, el simulador.
     AI_VISION_MODEL: optional(
-      z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-2.5-flash-lite)."),
+      z.string().regex(MODEL_ID, "Id de modelo inválido (p. ej. google/gemini-3.5-flash-lite)."),
     ),
     // IA simulada en producción (ADR-038): solo para un piloto cerrado, como decisión explícita. Con
     // `mock`, «Sube y vende» y el kit de anuncios entregan textos de plantilla, no de un modelo. En
@@ -244,8 +245,42 @@ export const serverEnvSchema = z
           "Obligatoria en producción (mínimo 32 caracteres): protege las tareas programadas.",
       });
     }
+    checkVercel(env, app, ctx);
     checkStorage(env, app, ctx);
   });
+
+/**
+ * En Vercel (ADR-071) nada se queda con su valor de desarrollo, que haría pasar el build mal
+ * configurado: APP_URL por omisión es localhost (cookies sin Secure, cron sin secreto, Better Auth y
+ * Google con otro origen) y TRUSTED_PROXY_HOPS=0 deja sin IP confiable (sin límites por IP).
+ */
+function checkVercel(
+  env: {
+    NODE_ENV: "development" | "test" | "production";
+    VERCEL?: string | undefined;
+    TRUSTED_PROXY_HOPS: number;
+  },
+  app: URL | null,
+  ctx: z.RefinementCtx,
+) {
+  if (env.NODE_ENV !== "production" || env.VERCEL !== "1") return;
+  if (app && isLoopback(app.hostname)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["APP_URL"],
+      message:
+        "En Vercel APP_URL es obligatoria: la dirección pública del sitio con https:// (al inicio https://<proyecto>.vercel.app, después tu dominio).",
+    });
+  }
+  if (env.TRUSTED_PROXY_HOPS === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["TRUSTED_PROXY_HOPS"],
+      message:
+        "En Vercel TRUSTED_PROXY_HOPS debe ser 1: Vercel pone la IP real del cliente y sin ella no hay límites por IP.",
+    });
+  }
+}
 
 /**
  * Almacenamiento (ADR-040). En producción, el disco local se pierde en una plataforma serverless
@@ -365,9 +400,4 @@ export function aiProviderConfig(
 /** `new URL` sin lanzar: `null` si el valor no es una URL (el campo ya reportó el problema). */
 function parseUrl(value: string): URL | null {
   return URL.canParse(value) ? new URL(value) : null;
-}
-
-/** `localhost`, `127.x.x.x` o `[::1]`: la conexión no sale de la máquina. */
-function isLoopback(hostname: string) {
-  return hostname === "localhost" || hostname === "[::1]" || /^127(\.\d{1,3}){3}$/.test(hostname);
 }

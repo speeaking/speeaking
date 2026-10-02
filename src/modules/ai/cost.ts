@@ -6,7 +6,9 @@
  * - Claude: lista de Anthropic, consultada 2026-06 (referencia de calidad, ADR-033 #9).
  * - Modelos abiertos y de referencia vía OpenRouter: API pública de modelos
  *   (https://openrouter.ai/api/v1/models), consultada el 2026-09-27. Qwen3.5-9B subió de
- *   US$0.08/0.13 a US$0.10/0.15.
+ *   US$0.08/0.13 a US$0.10/0.15. Gemini 3.5 Flash Lite, consultado el 2026-10-01 (ADR-071):
+ *   reemplaza a 2.5 Flash Lite, que OpenRouter retira el 2026-10-20 (su precio queda para lo ya
+ *   registrado).
  *
  * Un modelo que no esté aquí NO tiene precio: el guardián no lo llama (ADR-031) y, si aun así llega
  * una respuesta, su costo se marca como desconocido en lugar de contarse como 0.
@@ -20,6 +22,7 @@ export const MODEL_PRICES_USD_PER_MTOK: Record<string, { input: number; output: 
   "qwen3.5-flash-02-23": { input: 0.065, output: 0.26 },
   "mistral-small-2603": { input: 0.15, output: 0.6 },
   "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5 },
   mock: { input: 0, output: 0 },
 };
 

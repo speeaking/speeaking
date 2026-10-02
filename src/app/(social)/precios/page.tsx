@@ -13,6 +13,7 @@ import {
   tryOnsAffordable,
 } from "@/modules/billing/pricing";
 import { getTryOnPricing } from "@/modules/billing/service";
+import { simulatedTopUpsEnabled } from "@/server/providers/payments";
 
 export const metadata: Metadata = {
   title: "Precios",
@@ -134,7 +135,10 @@ export default async function PricingPage() {
           <p className="text-xs text-muted-foreground">
             Un solo saldo para todo, sin planes que venzan. No es dinero ni se transfiere; puedes
             pedir la devolución del saldo no usado dentro de los 5 días hábiles siguientes a una
-            recarga. En esta etapa las recargas son simuladas y no se cobra nada.
+            recarga.{" "}
+            {simulatedTopUpsEnabled()
+              ? "En esta etapa las recargas son simuladas y no se cobra nada."
+              : "Las recargas todavía no están disponibles: pronto podrás pagar con tarjeta o en OXXO."}
           </p>
         </section>
       </div>
