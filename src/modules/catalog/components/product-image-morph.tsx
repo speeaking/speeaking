@@ -20,8 +20,10 @@ export function ProductImageMorph({
   const arm = () => setArmed(true);
   const disarm = () => setArmed(false);
   return (
+    // `relative` no cambia nada (con `contents` el span no tiene caja), pero next/image revisa el
+    // `position` del padre directo de una imagen `fill` y avisaba en la consola de desarrollo.
     <span
-      className="contents"
+      className="relative contents"
       data-slot="product-image-morph"
       data-armed={armed ? "" : undefined}
       onPointerDown={arm}
