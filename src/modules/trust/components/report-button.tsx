@@ -3,7 +3,7 @@
 import { Flag } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { type ReactNode, useActionState, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -27,31 +27,30 @@ const TARGET_NOUNS: Record<ReportableTarget, string> = {
 };
 
 /**
- * «Reportar» un producto o una publicación. El reporte es anónimo para quien publicó y llega a la
- * cola del equipo. Sin sesión, lleva a iniciar sesión y regresa aquí.
+ * El diálogo para reportar, controlado desde afuera: lo abre su botón (`ReportButton`) o una opción
+ * de un menú (la conversación, ADR-069). `children` va dentro del diálogo (p. ej. su disparador).
  */
-export function ReportButton({
+export function ReportDialog({
+  open,
+  onOpenChange,
   targetType,
   targetId,
-  isSignedIn,
-  returnTo,
-  className,
+  onSent,
+  children,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   targetType: ReportableTarget;
   targetId: string;
-  isSignedIn: boolean;
-  /** Ruta a la que se regresa después de iniciar sesión. */
-  returnTo: string;
-  className?: string;
+  onSent?: () => void;
+  children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const [sent, setSent] = useState(false);
   const [state, formAction, pending] = useActionState<ReportFormState, FormData>(
     async (previous, formData) => {
       const result = await reportAction(previous, formData);
       if (result.ok) {
-        setSent(true);
-        setOpen(false);
+        onSent?.();
+        onOpenChange(false);
         toast.success(result.message);
       }
       return result;
@@ -59,36 +58,10 @@ export function ReportButton({
     {},
   );
   const noun = TARGET_NOUNS[targetType];
-  const triggerClass = cn(
-    buttonVariants({ variant: "ghost" }),
-    "h-11 px-3 text-muted-foreground",
-    className,
-  );
-
-  if (!isSignedIn) {
-    return (
-      <Link href={`/entrar?next=${encodeURIComponent(returnTo)}` as Route} className={triggerClass}>
-        <Flag data-icon="inline-start" />
-        Reportar
-      </Link>
-    );
-  }
-
-  if (sent) {
-    return (
-      <span className={cn(triggerClass, "pointer-events-none")} aria-live="polite">
-        <Flag data-icon="inline-start" />
-        Reportado
-      </span>
-    );
-  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button type="button" variant="ghost" className={triggerClass} />}>
-        <Flag data-icon="inline-start" />
-        Reportar
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children}
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">Reportar {noun}</DialogTitle>
@@ -139,7 +112,7 @@ export function ReportButton({
               type="button"
               variant="outline"
               className="h-11 px-4"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
@@ -150,5 +123,65 @@ export function ReportButton({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * «Reportar» un producto o una publicación. El reporte es anónimo para quien publicó y llega a la
+ * cola del equipo. Sin sesión, lleva a iniciar sesión y regresa aquí.
+ */
+export function ReportButton({
+  targetType,
+  targetId,
+  isSignedIn,
+  returnTo,
+  className,
+}: {
+  targetType: ReportableTarget;
+  targetId: string;
+  isSignedIn: boolean;
+  /** Ruta a la que se regresa después de iniciar sesión. */
+  returnTo: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sent, setSent] = useState(false);
+  const triggerClass = cn(
+    buttonVariants({ variant: "ghost" }),
+    "h-11 px-3 text-muted-foreground",
+    className,
+  );
+
+  if (!isSignedIn) {
+    return (
+      <Link href={`/entrar?next=${encodeURIComponent(returnTo)}` as Route} className={triggerClass}>
+        <Flag data-icon="inline-start" />
+        Reportar
+      </Link>
+    );
+  }
+
+  if (sent) {
+    return (
+      <span className={cn(triggerClass, "pointer-events-none")} aria-live="polite">
+        <Flag data-icon="inline-start" />
+        Reportado
+      </span>
+    );
+  }
+
+  return (
+    <ReportDialog
+      open={open}
+      onOpenChange={setOpen}
+      targetType={targetType}
+      targetId={targetId}
+      onSent={() => setSent(true)}
+    >
+      <DialogTrigger render={<Button type="button" variant="ghost" className={triggerClass} />}>
+        <Flag data-icon="inline-start" />
+        Reportar
+      </DialogTrigger>
+    </ReportDialog>
   );
 }

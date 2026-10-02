@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
@@ -29,6 +30,17 @@ vi.mock("next/form", () => ({
 }));
 // Las acciones reales viven en el servidor (sesión, base de datos): aquí no se ejecutan.
 vi.mock("@/modules/identity/actions", () => ({ signOutAction: vi.fn() }));
+vi.mock("@/modules/notifications/actions", () => ({
+  loadNotificationsAction: vi.fn(async () => []),
+  markNotificationsReadAction: vi.fn(async () => 0),
+}));
+vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn(async () => ({})) }));
+vi.mock("@/modules/messages/actions", () => ({
+  loadInboxAction: vi.fn(async () => []),
+  loadThreadAction: vi.fn(async () => null),
+  sendMessageAction: vi.fn(async () => ({})),
+  setMessagesBlockedAction: vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("@/modules/social/components/join-button", () => ({
   JoinButton: () => <button type="button">Unirme</button>,
 }));
@@ -91,6 +103,19 @@ describe("BottomNav", () => {
 
     rerender(<BottomNav viewer={null} />);
     expect(within(screen.getByRole("link", { name: "Perfil" })).queryByText("SR")).toBeNull();
+  });
+
+  it("con sesión, «Crear» abre sus opciones ahí mismo; sin sesión lleva a /crear", async () => {
+    const { unmount } = render(<BottomNav viewer={viewer} />);
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
+    expect(await screen.findByRole("menuitem", { name: /^Publicación/ })).toHaveAttribute(
+      "href",
+      "/crear/publicacion",
+    );
+    unmount();
+
+    render(<BottomNav viewer={null} />);
+    expect(screen.getByRole("link", { name: "Crear" })).toHaveAttribute("href", "/crear");
   });
 });
 
@@ -177,24 +202,73 @@ describe("SideNav", () => {
 });
 
 describe("TopBar", () => {
-  it("con sesión: búsqueda, Crear, campana, carrito con su número y menú de la cuenta", () => {
-    render(<TopBar viewer={{ ...viewer!, unreadNotifications: 3 }} />);
+  it("con sesión: búsqueda, Crear, campana, mensajes, carrito con su número y menú de la cuenta", () => {
+    render(<TopBar viewer={{ ...viewer!, unreadNotifications: 3, unreadMessages: 1 }} />);
 
     expect(screen.getByRole("searchbox", { name: /Buscar comunidades/ })).toHaveAttribute(
       "name",
       "q",
     );
-    expect(screen.getByRole("link", { name: "Crear" })).toHaveAttribute("href", "/crear");
     for (const cart of screen.getAllByRole("link", { name: /^Carrito/ })) {
       expect(cart).toHaveAccessibleName("Carrito (2)");
     }
     expect(screen.getByRole("button", { name: "Tu cuenta: Sofía Ramos" })).toBeInTheDocument();
-    // La campana (ADR-059): en móvil y en escritorio, con su número en el nombre.
-    for (const bell of screen.getAllByRole("link", { name: /^Avisos/ })) {
+    // La campana (ADR-059) y los mensajes abren su recuadro ahí mismo (ADR-068): son botones, con
+    // su número en el nombre, en móvil y en escritorio.
+    expect(screen.getAllByRole("button", { name: /^Avisos/ })).toHaveLength(2);
+    for (const bell of screen.getAllByRole("button", { name: /^Avisos/ })) {
       expect(bell).toHaveAccessibleName("Avisos (3 sin leer)");
-      expect(bell).toHaveAttribute("href", "/avisos");
     }
+    for (const chat of screen.getAllByRole("button", { name: /^Mensajes/ })) {
+      expect(chat).toHaveAccessibleName("Mensajes (1 sin leer)");
+    }
+    expect(screen.queryByRole("link", { name: /^Avisos|^Mensajes/ })).toBeNull();
     expect(screen.queryByRole("link", { name: "Únete" })).toBeNull();
+  });
+
+  it("«Crear» abre sus opciones ahí mismo; «Publicación» abre la ventana para escribir", async () => {
+    render(<TopBar viewer={viewer} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByRole("menuitem", { name: /^Publicación/ })).toHaveAttribute(
+      "href",
+      "/crear/publicacion",
+    );
+    expect(within(menu).getByRole("menuitem", { name: /^Producto a mano/ })).toHaveAttribute(
+      "href",
+      "/studio/productos/nuevo",
+    );
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(4);
+  });
+
+  it("al ver los avisos, el globo de la campana se apaga sin recargar la página", async () => {
+    const { loadNotificationsAction, markNotificationsReadAction } =
+      await import("@/modules/notifications/actions");
+    vi.mocked(loadNotificationsAction).mockResolvedValueOnce([
+      {
+        key: "follow:1",
+        type: "FOLLOW",
+        actors: [{ username: "ana", displayName: "Ana", avatarUrl: null }],
+        at: new Date(),
+        unread: true,
+        postExcerpt: null,
+        commentExcerpt: null,
+        reactions: [],
+        orderTitle: null,
+        href: "/u/ana",
+      },
+    ]);
+    vi.mocked(markNotificationsReadAction).mockResolvedValueOnce(1);
+    render(<TopBar viewer={{ ...viewer!, unreadNotifications: 1 }} />);
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Avisos (1 sin leer)" })[0]!);
+
+    expect(await screen.findByText("empezó a seguirte")).toBeInTheDocument();
+    expect(markNotificationsReadAction).toHaveBeenCalledTimes(1);
+    // Con el panel abierto, el resto de la página queda fuera del árbol accesible (`hidden`).
+    expect(await screen.findAllByRole("button", { name: "Avisos", hidden: true })).toHaveLength(2);
   });
 
   it("sin sesión: Entrar y Crear cuenta en escritorio, Únete en móvil, sin carrito", () => {

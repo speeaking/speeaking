@@ -10,7 +10,8 @@ async function secondUser(browser: Browser, isMobile: boolean) {
   return { context, page, user };
 }
 
-// La campana (ADR-059): seguir, reaccionar y comentar avisan a quien publicó; abrirla los marca leídos.
+// La campana (ADR-059): seguir, reaccionar y comentar avisan a quien publicó; abrirla los marca
+// leídos. Se abre ahí mismo, en un recuadro (ADR-068): no se sale de la página.
 test("la campana avisa quién te sigue, reacciona y comenta, y se apaga al abrirla", async ({
   page,
   browser,
@@ -45,19 +46,30 @@ test("la campana avisa quién te sigue, reacciona y comenta, y se apaga al abrir
   // La autora ve el número en la campana (se consulta hasta que llegan los tres avisos).
   await expect(async () => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "Avisos (3 sin leer)" }).first()).toBeVisible({
+    await expect(page.getByRole("button", { name: "Avisos (3 sin leer)" }).first()).toBeVisible({
       timeout: 2_000,
     });
   }).toPass({ timeout: 20_000 });
-  await page.getByRole("link", { name: "Avisos (3 sin leer)" }).first().click();
-  await expect(page).toHaveURL("/avisos");
-  const fresh = page.getByRole("region", { name: "Nuevos" });
+  // Listo para abrir su recuadro (antes de cargar es solo el enlace a /avisos).
+  const bell = page.getByRole("button", { name: "Avisos (3 sin leer)" }).first();
+  await expect(bell).toHaveAttribute("aria-haspopup", "dialog");
+  await bell.click();
+  const panel = page.getByRole("dialog", { name: "Avisos" });
+  const fresh = panel.getByRole("region", { name: "Nuevos" });
   await expect(fresh.getByText("empezó a seguirte")).toBeVisible();
   await expect(fresh.getByText("reaccionó a tu publicación")).toBeVisible();
   await expect(fresh.getByText("comentó tu publicación")).toBeVisible();
   await expect(fresh.getByText("«¡La de mi barrio, sin duda!»")).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await expect(panel.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/avisos");
 
-  // Abrirla los marca leídos: el globo se apaga.
-  await expect(page.getByRole("link", { name: "Avisos", exact: true }).first()).toBeVisible();
+  // Abrirla los marca leídos: el globo se apaga sin recargar la página.
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Avisos", exact: true }).first()).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await page.goto("/avisos");
+  await expect(page.getByRole("region", { name: "Anteriores" })).toContainText(
+    "comentó tu publicación",
+  );
   await fan.context.close();
 });

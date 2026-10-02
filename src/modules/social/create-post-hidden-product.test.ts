@@ -22,7 +22,10 @@ const redirect = vi.hoisted(() =>
 const notifyProductTagged = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock("@/server/db", () => ({ db }));
-vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next/navigation", () => ({
+  redirect,
+  RedirectType: { push: "push", replace: "replace" },
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modules/identity/session", () => ({
   getViewer: vi.fn(),

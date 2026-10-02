@@ -376,6 +376,10 @@ Reglas:
 - Aplican las reglas de la comunidad (acoso, datos personales de otros, estafas): un mensaje
   insistente no deseado es acoso y se puede reportar a la persona desde el hilo; el equipo puede
   revisar los mensajes reportados y suspender la cuenta.
+- Cada persona puede **bloquear los mensajes** de otra desde el hilo (agregado 2026-10-01,
+  ADR-069): mientras dure, ninguna de las dos puede escribir en esa conversación ni empezar otra; el
+  historial se queda y solo quien bloqueó lo quita. A la otra persona no se le dice que la
+  bloquearon.
 - Los pagos se hacen dentro del pedido. Estreno nunca pide depósitos por mensaje y no responde por
   pagos hechos a cuentas escritas en una conversación.
 - Límites contra el spam: cantidad de mensajes por periodo y de conversaciones nuevas por día.

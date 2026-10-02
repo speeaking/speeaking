@@ -19,10 +19,13 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 export function RouteModal({
   label,
   match,
+  showTitle = false,
   children,
 }: {
   label: string;
   match: string;
+  /** El título se ve arriba (p. ej. «Crear publicación», ADR-068); si no, solo lo leen los lectores. */
+  showTitle?: boolean;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -39,8 +42,22 @@ export function RouteModal({
         className="inset-0 top-0 left-0 block h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none bg-background p-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl lg:has-data-[layout=theater]:h-[92dvh] lg:has-data-[layout=theater]:max-w-[min(76rem,calc(100vw-3rem))] lg:has-data-[layout=theater]:bg-card"
         aria-describedby={undefined}
       >
-        <DialogTitle className="sr-only">{label}</DialogTitle>
-        <div className="pt-12 pb-4 sm:pt-4 lg:has-data-[layout=theater]:p-0">{children}</div>
+        <DialogTitle
+          className={
+            showTitle
+              ? "px-4 pt-4 pr-14 font-heading text-xl font-extrabold sm:px-6 sm:pr-14"
+              : "sr-only"
+          }
+        >
+          {label}
+        </DialogTitle>
+        <div
+          className={
+            showTitle ? "pt-4 pb-4" : "pt-12 pb-4 sm:pt-4 lg:has-data-[layout=theater]:p-0"
+          }
+        >
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );

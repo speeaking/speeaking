@@ -88,6 +88,47 @@ describe("rankCandidates", () => {
     expect(ranked.map((item) => item.reason)).toEqual(["follow", "community", "explore"]);
   });
 
+  it("lo tuyo de la última hora va primero, aunque no tenga comunidad ni reacciones (ADR-068)", () => {
+    const context: ViewerContext = {
+      ...emptyContext,
+      viewerId: "yo",
+      communityIds: new Set(["gaming"]),
+    };
+    const ranked = rankCandidates(
+      [
+        candidate({ id: "comunidad", communityId: "gaming", likeCount: 40 }),
+        candidate({ id: "mia", authorId: "yo", publishedAt: new Date(NOW.getTime() - 0.2 * HOUR) }),
+        candidate({
+          id: "mia-vieja",
+          authorId: "yo",
+          publishedAt: new Date(NOW.getTime() - 2 * HOUR),
+        }),
+      ],
+      context,
+      DEFAULT_FEED_POLICY,
+      NOW,
+    );
+    expect(ranked[0]).toMatchObject({ candidate: { id: "mia" }, reason: "own", intent: null });
+    expect(ranked.find((item) => item.candidate.id === "mia-vieja")?.reason).toBe("explore");
+
+    // La exploración solo entra cada tantos lugares; lo tuyo no espera su turno.
+    expect(mixFeed(ranked, DEFAULT_FEED_POLICY)[0]).toMatchObject({
+      candidate: { id: "mia" },
+      slot: "content",
+      position: 0,
+    });
+  });
+
+  it("sin sesión nada cuenta como propio", () => {
+    const ranked = rankCandidates(
+      [candidate({ id: "x", authorId: "yo" })],
+      emptyContext,
+      DEFAULT_FEED_POLICY,
+      NOW,
+    );
+    expect(ranked[0]?.reason).toBe("explore");
+  });
+
   it("la intención de compra solo impulsa productos, no contenido", () => {
     const context: ViewerContext = {
       ...emptyContext,

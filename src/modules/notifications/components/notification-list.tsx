@@ -98,15 +98,22 @@ function Row({ item }: { item: NotificationItem }) {
 /**
  * La campana (ADR-059): primero lo nuevo, luego lo anterior. Cada aviso agrupado dice quién, qué y
  * de qué, y lleva a donde pasó (la publicación, el panel de comentarios, el perfil o el pedido).
+ * `idPrefix` distingue sus títulos si la página y el recuadro de la barra (ADR-068) están a la vez.
  */
-export function NotificationList({ items }: { items: readonly NotificationItem[] }) {
+export function NotificationList({
+  items,
+  idPrefix = "avisos",
+}: {
+  items: readonly NotificationItem[];
+  idPrefix?: string;
+}) {
   const fresh = items.filter((item) => item.unread);
   const earlier = items.filter((item) => !item.unread);
   return (
     <div className="flex flex-col gap-4">
       {fresh.length > 0 ? (
-        <section aria-labelledby="avisos-nuevos" className="flex flex-col gap-1">
-          <h2 id="avisos-nuevos" className="px-3 font-heading text-base font-bold">
+        <section aria-labelledby={`${idPrefix}-nuevos`} className="flex flex-col gap-1">
+          <h2 id={`${idPrefix}-nuevos`} className="px-3 font-heading text-base font-bold">
             Nuevos
           </h2>
           <ul className="flex flex-col">
@@ -117,8 +124,8 @@ export function NotificationList({ items }: { items: readonly NotificationItem[]
         </section>
       ) : null}
       {earlier.length > 0 ? (
-        <section aria-labelledby="avisos-anteriores" className="flex flex-col gap-1">
-          <h2 id="avisos-anteriores" className="px-3 font-heading text-base font-bold">
+        <section aria-labelledby={`${idPrefix}-anteriores`} className="flex flex-col gap-1">
+          <h2 id={`${idPrefix}-anteriores`} className="px-3 font-heading text-base font-bold">
             Anteriores
           </h2>
           <ul className="flex flex-col">

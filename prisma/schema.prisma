@@ -22,46 +22,49 @@ model User {
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 
-  sessions             Session[]
-  accounts             Account[]
-  profile              Profile?
-  sellerProfile        SellerProfile?
-  consents             UserConsent[]
-  interests            UserInterest[]
-  shoppingIntents      ShoppingIntent[]
-  memberships          CommunityMembership[]
-  posts                Post[]
-  comments             Comment[]
-  likes                Like[]
-  savedItems           SavedItem[]
-  following            Follow[]              @relation("follower")
-  followers            Follow[]              @relation("following")
-  media                Media[]
-  aiRequests           AIRequest[]
-  cart                 Cart?
-  addresses            Address[]
-  checkouts            Checkout[]
-  orders               Order[]               @relation("buyerOrders")
+  sessions              Session[]
+  accounts              Account[]
+  profile               Profile?
+  sellerProfile         SellerProfile?
+  consents              UserConsent[]
+  interests             UserInterest[]
+  shoppingIntents       ShoppingIntent[]
+  memberships           CommunityMembership[]
+  posts                 Post[]
+  comments              Comment[]
+  likes                 Like[]
+  savedItems            SavedItem[]
+  following             Follow[]              @relation("follower")
+  followers             Follow[]              @relation("following")
+  media                 Media[]
+  aiRequests            AIRequest[]
+  cart                  Cart?
+  addresses             Address[]
+  checkouts             Checkout[]
+  orders                Order[]               @relation("buyerOrders")
   /// Sugerencias de «Gente de tus comunidades» que la persona quitó, y las veces que otros la quitaron.
-  dismissedSuggestions SuggestionDismissal[] @relation("dismisser")
-  dismissedBy          SuggestionDismissal[] @relation("dismissedTarget")
+  dismissedSuggestions  SuggestionDismissal[] @relation("dismisser")
+  dismissedBy           SuggestionDismissal[] @relation("dismissedTarget")
   // Administración y moderación (architecture.md → Administración y operación). Rol: `Profile.role`.
-  reportsFiled         Report[]              @relation("reportsFiled")
-  reportsResolved      Report[]              @relation("reportsResolved")
-  authenticityReviews  AuthenticityCheck[]   @relation("authenticityReviewer")
-  decisionsApproved    PlatformDecision[]    @relation("decisionApprover")
-  editorialReviews     EditorialDraft[]      @relation("editorialReviewer")
+  reportsFiled          Report[]              @relation("reportsFiled")
+  reportsResolved       Report[]              @relation("reportsResolved")
+  authenticityReviews   AuthenticityCheck[]   @relation("authenticityReviewer")
+  decisionsApproved     PlatformDecision[]    @relation("decisionApprover")
+  editorialReviews      EditorialDraft[]      @relation("editorialReviewer")
   // Saldo, Pruébatelo y looks (ADR-043, ADR-044, ADR-045).
-  wallet               Wallet?
-  tryOnPhotos          TryOnPhoto[]
-  tryOnResults         TryOnResult[]
-  styleLooks           StyleLook[]
-  conversationsAsA     Conversation[]        @relation("conversationsAsA")
-  conversationsAsB     Conversation[]        @relation("conversationsAsB")
-  messagesSent         Message[]             @relation("messagesSent")
+  wallet                Wallet?
+  tryOnPhotos           TryOnPhoto[]
+  tryOnResults          TryOnResult[]
+  styleLooks            StyleLook[]
+  conversationsAsA      Conversation[]        @relation("conversationsAsA")
+  conversationsAsB      Conversation[]        @relation("conversationsAsB")
+  messagesSent          Message[]             @relation("messagesSent")
+  // «Bloquear mensajes» (ADR-069): los que hizo y los que recibió.
+  messageBlocksMade     MessageBlock[]        @relation("messageBlocksMade")
+  messageBlocksReceived MessageBlock[]        @relation("messageBlocksReceived")
   // Avisos (ADR-059): los que recibe y los que causó.
-  notifications        Notification[]        @relation("notificationsReceived")
-  notificationsCaused  Notification[]        @relation("notificationsCaused")
+  notifications         Notification[]        @relation("notificationsReceived")
+  notificationsCaused   Notification[]        @relation("notificationsCaused")
 
   @@map("users")
 }
@@ -1751,4 +1754,19 @@ model EditorialDraft {
   @@index([communityId, status, createdAt(sort: Desc)])
   @@index([reviewedById])
   @@map("editorial_drafts")
+}
+
+/// «Bloquear mensajes» (ADR-069): mientras exista, ninguna de las dos personas puede escribir en su
+/// conversación ni empezar una nueva. La conversación y su historial se quedan. Solo lo quita quien
+/// bloqueó.
+model MessageBlock {
+  blockerId String   @db.Uuid
+  blocker   User     @relation("messageBlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String   @db.Uuid
+  blocked   User     @relation("messageBlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("message_blocks")
 }

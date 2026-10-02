@@ -5,10 +5,11 @@ import { cleanMessageBody, conversationPair, hasUnread, sideOf } from "./pair";
 /**
  * Mensajes privados (ADR-047): una conversación por par de personas, texto plano, solo para las dos.
  * Gratis para todos: es el pegamento de la red social. Reglas: cuenta con perfil terminado, nunca
- * con uno mismo ni con las cuentas editoriales; la persona puede reportar a la otra desde el hilo.
+ * con uno mismo ni con las cuentas editoriales; la persona puede reportar a la otra desde el hilo y
+ * bloquear sus mensajes (ADR-069): mientras dure, ninguna de las dos escribe.
  */
 export type MessageErrorCode =
-  "NOT_FOUND" | "SELF" | "EDITORIAL" | "NOT_ONBOARDED" | "EMPTY" | "FORBIDDEN";
+  "NOT_FOUND" | "SELF" | "EDITORIAL" | "NOT_ONBOARDED" | "EMPTY" | "FORBIDDEN" | "BLOCKED";
 
 export class MessageError extends Error {
   override name = "MessageError";
@@ -33,10 +34,17 @@ export type ConversationSummaryDTO = {
 
 export type MessageDTO = { id: string; body: string; mine: boolean; at: string };
 
+/**
+ * Bloqueo de mensajes entre las dos (ADR-069): `byMe`, lo bloqueó quien ve (puede quitarlo);
+ * `byThem`, lo bloqueó la otra persona (solo se dice que no se puede responder).
+ */
+export type ThreadBlock = "byMe" | "byThem" | null;
+
 export type ThreadDTO = {
   id: string;
   other: PersonDTO;
   messages: MessageDTO[];
+  blocked: ThreadBlock;
 };
 
 const personSelect = {
@@ -58,7 +66,25 @@ function toPerson(row: PersonRow): PersonDTO {
   };
 }
 
-/** Persona a la que se le puede escribir: existe, con perfil terminado, no editorial, no uno mismo. */
+/** ¿Hay un bloqueo de mensajes entre las dos personas? Desde el punto de vista de `viewerId`. */
+async function blockBetween(viewerId: string, otherUserId: string): Promise<ThreadBlock> {
+  const rows = await db.messageBlock.findMany({
+    where: {
+      OR: [
+        { blockerId: viewerId, blockedId: otherUserId },
+        { blockerId: otherUserId, blockedId: viewerId },
+      ],
+    },
+    select: { blockerId: true },
+  });
+  if (rows.some((row) => row.blockerId === viewerId)) return "byMe";
+  return rows.length > 0 ? "byThem" : null;
+}
+
+/**
+ * Persona a la que se le puede escribir: existe, con perfil terminado, no editorial, no uno mismo y
+ * sin un bloqueo de mensajes entre las dos (en ningún sentido).
+ */
 export async function findRecipient(viewerId: string, username: string): Promise<PersonDTO> {
   const row = await db.user.findFirst({
     where: { profile: { username: username.toLowerCase() } },
@@ -79,6 +105,7 @@ export async function findRecipient(viewerId: string, username: string): Promise
   if (row.id === viewerId) throw new MessageError("SELF");
   if (row.profile.isEditorial) throw new MessageError("EDITORIAL");
   if (!row.profile.onboardedAt) throw new MessageError("NOT_ONBOARDED");
+  if (await blockBetween(viewerId, row.id)) throw new MessageError("BLOCKED");
   return toPerson(row);
 }
 
@@ -178,11 +205,14 @@ export async function getThread(
   });
   if (!row) return null;
   const side = sideOf(row, viewerId);
-  await db.conversation.update({
-    where: { id: row.id },
-    data: { [side.readField]: now },
-    select: { id: true },
-  });
+  const [blocked] = await Promise.all([
+    blockBetween(viewerId, side.otherUserId),
+    db.conversation.update({
+      where: { id: row.id },
+      data: { [side.readField]: now },
+      select: { id: true },
+    }),
+  ]);
   return {
     id: row.id,
     other: toPerson(side.otherUserId === row.userAId ? row.userA : row.userB),
@@ -192,7 +222,41 @@ export async function getThread(
       mine: message.senderId === viewerId,
       at: message.createdAt.toISOString(),
     })),
+    blocked,
   };
+}
+
+/** La otra persona de una conversación propia, o `null` si no es suya. */
+async function otherParticipant(viewerId: string, conversationId: string) {
+  const conversation = await db.conversation.findFirst({
+    where: { id: conversationId, OR: [{ userAId: viewerId }, { userBId: viewerId }] },
+    select: { userAId: true, userBId: true },
+  });
+  if (!conversation) return null;
+  return conversation.userAId === viewerId ? conversation.userBId : conversation.userAId;
+}
+
+/**
+ * «Bloquear mensajes» (ADR-069) desde una conversación propia: la otra persona ya no puede
+ * escribir. `false` si la conversación no es suya. Repetirlo no hace nada.
+ */
+export async function blockMessages(viewerId: string, conversationId: string): Promise<boolean> {
+  const otherUserId = await otherParticipant(viewerId, conversationId);
+  if (!otherUserId) return false;
+  await db.messageBlock.upsert({
+    where: { blockerId_blockedId: { blockerId: viewerId, blockedId: otherUserId } },
+    create: { blockerId: viewerId, blockedId: otherUserId },
+    update: {},
+  });
+  return true;
+}
+
+/** Quitar el bloqueo propio. Solo lo quita quien bloqueó. `false` si la conversación no es suya. */
+export async function unblockMessages(viewerId: string, conversationId: string): Promise<boolean> {
+  const otherUserId = await otherParticipant(viewerId, conversationId);
+  if (!otherUserId) return false;
+  await db.messageBlock.deleteMany({ where: { blockerId: viewerId, blockedId: otherUserId } });
+  return true;
 }
 
 /** Envía un mensaje en una conversación propia; el texto limpio, nunca vacío. */
@@ -204,6 +268,9 @@ export async function sendMessage(viewerId: string, conversationId: string, rawB
     select: { id: true, userAId: true, userBId: true },
   });
   if (!conversation) throw new MessageError("FORBIDDEN");
+  const otherUserId =
+    conversation.userAId === viewerId ? conversation.userBId : conversation.userAId;
+  if (await blockBetween(viewerId, otherUserId)) throw new MessageError("BLOCKED");
   const now = new Date();
   const side = sideOf({ ...conversation, aReadAt: null, bReadAt: null }, viewerId);
   const [message] = await db.$transaction([

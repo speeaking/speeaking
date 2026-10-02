@@ -12,5 +12,7 @@ cambian de estado.
   `notifications-retention` de la operación diaria).
 - `group.ts` (puro): agrupa como Facebook (reacciones y comentarios por publicación, seguidores del
   mismo día) y redacta la frase en singular o plural.
-- `components/`: la lista con «Nuevos» y «Anteriores» y `MarkNotificationsRead`, que al abrir
-  `/avisos` los marca leídos y apaga el globo de la barra.
+- `components/`: la lista con «Nuevos» y «Anteriores»; `MarkNotificationsRead`, que al abrir
+  `/avisos` los marca leídos y apaga el globo de la barra, y `NotificationsPanel`, el recuadro de la
+  campana (ADR-068): los carga con `loadNotificationsAction`, los marca leídos y apaga el globo sin
+  recargar la página.

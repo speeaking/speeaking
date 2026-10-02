@@ -21,6 +21,18 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+// Los paneles de la barra (ADR-068) llaman acciones del servidor: aquí no se ejecutan.
+vi.mock("@/modules/notifications/actions", () => ({
+  loadNotificationsAction: vi.fn(async () => []),
+  markNotificationsReadAction: vi.fn(async () => 0),
+}));
+vi.mock("@/modules/messages/actions", () => ({
+  loadInboxAction: vi.fn(async () => []),
+  loadThreadAction: vi.fn(async () => null),
+  sendMessageAction: vi.fn(async () => ({})),
+  setMessagesBlockedAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn(async () => ({})) }));
 vi.mock("next/form", () => ({
   default: ({ action, children, ...props }: ComponentProps<"form"> & { action: string }) => (
     <form action={action} {...props}>

@@ -1,46 +1,22 @@
-import { ChevronRight, Handshake, ImagePlus, Package, Sparkles } from "lucide-react";
-import type { Metadata, Route } from "next";
+import { ChevronRight } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
-import { siteConfig } from "@/config/site";
+import { CREATE_OPTIONS } from "@/config/create-options";
 
 export const metadata: Metadata = { title: "Crear" };
 
-// Red social primero: compartir va antes que vender.
-const options: { href: Route; title: string; description: string; icon: typeof Sparkles }[] = [
-  {
-    href: "/crear/publicacion",
-    title: "Publicación",
-    description: "Tu día, una experiencia, una noticia o una foto para tus comunidades.",
-    icon: ImagePlus,
-  },
-  {
-    href: "/creadores",
-    title: "Recomendar un producto",
-    description: "Publica una foto o un video con el producto de una tienda y mira qué logra.",
-    icon: Handshake,
-  },
-  {
-    href: siteConfig.sellerFeaturePath,
-    title: siteConfig.sellerFeatureName,
-    description: "Sube una foto y pon tu precio: te armamos la publicación y tus números.",
-    icon: Sparkles,
-  },
-  {
-    href: "/studio/productos/nuevo",
-    title: "Producto a mano",
-    description: "Publica algo que vendes con precio, inventario y envío, campo por campo.",
-    icon: Package,
-  },
-];
-
-/** Crear (ADR-042): opciones iguales, sin bloque oscuro ni distintivo de IA; compartir primero. */
+/**
+ * Crear (ADR-042): opciones iguales, sin bloque oscuro ni distintivo de IA; compartir primero. Las
+ * barras abren las mismas opciones en un menú ahí mismo (ADR-068); esta página queda para los
+ * enlaces directos.
+ */
 export default function CreatePage() {
   return (
     <>
       <PageHeader title="Crear" description="¿Qué quieres compartir hoy?" />
       <div className="flex flex-col gap-3 px-4 md:px-0">
-        {options.map(({ href, title, description, icon: Icon }) => (
+        {CREATE_OPTIONS.map(({ href, title, description, icon: Icon }) => (
           <Link
             key={href}
             href={href}

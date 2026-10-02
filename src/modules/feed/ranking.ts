@@ -4,9 +4,13 @@
  */
 import type { FeedPolicy } from "./policy";
 
-export const ALGORITHM_VERSION = "v0-explicable";
+// v1: lo tuyo de la última hora va primero (ADR-068).
+export const ALGORITHM_VERSION = "v1-explicable";
 
 const HOUR = 3_600_000;
+
+/** Lo que publicas va primero en tu inicio durante esta ventana, como en Facebook (ADR-068). */
+export const OWN_POST_FIRST_HOURS = 1;
 
 export type Candidate = {
   id: string;
@@ -39,6 +43,8 @@ export type IntentQuery = {
 };
 
 export type ViewerContext = {
+  /** Quién ve, si tiene sesión: lo suyo recién publicado va primero. */
+  viewerId?: string;
   communityIds: ReadonlySet<string>;
   followingIds: ReadonlySet<string>;
   /** Intención de compra por categoría, de 0 a 1 (Commerce Engine). */
@@ -49,7 +55,7 @@ export type ViewerContext = {
   intentQueries: readonly IntentQuery[];
 };
 
-export type RankReason = "follow" | "community" | "intent" | "explore";
+export type RankReason = "own" | "follow" | "community" | "intent" | "explore";
 
 /**
  * Por qué una pieza comercial se eligió por intención, solo en términos que se pueden decir sin
@@ -114,15 +120,19 @@ export function rankCandidates(
         }
       }
 
-      return {
+      // Lo tuyo recién publicado va primero, aunque no tenga comunidad ni reacciones (ADR-068).
+      const own = candidate.authorId === context.viewerId && ageHours < OWN_POST_FIRST_HOURS;
+      const ranked: Ranked = {
         candidate,
         score: (0.6 * recency + 0.4 * engagement) * (1 + affinity),
-        reason,
-        intent,
+        reason: own ? "own" : reason,
+        intent: own ? null : intent,
       };
+      return ranked;
     })
     .sort(
       (a, b) =>
+        Number(b.reason === "own") - Number(a.reason === "own") ||
         b.score - a.score ||
         b.candidate.publishedAt.getTime() - a.candidate.publishedAt.getTime() ||
         a.candidate.id.localeCompare(b.candidate.id),
@@ -144,14 +154,23 @@ function takeDiverse(queue: Ranked[], recentAuthors: readonly string[]): Ranked 
  * - un mismo autor no se repite dentro de `authorWindow` posiciones si hay alternativas.
  */
 export function mixFeed(ranked: readonly Ranked[], policy: FeedPolicy): MixedItem[] {
-  const commerce = ranked.filter((item) => item.candidate.isCommerce);
-  const affinity = ranked.filter((item) => !item.candidate.isCommerce && item.reason !== "explore");
-  const explore = ranked.filter((item) => !item.candidate.isCommerce && item.reason === "explore");
+  // Lo tuyo recién publicado abre la página (ADR-068): al publicar y volver al inicio, lo ves arriba.
+  const result: MixedItem[] = ranked
+    .filter((item) => item.reason === "own")
+    .map((item, position) => ({
+      ...item,
+      slot: item.candidate.isCommerce ? "commerce" : "content",
+      position,
+    }));
+  const rest = ranked.filter((item) => item.reason !== "own");
+  const commerce = rest.filter((item) => item.candidate.isCommerce);
+  const affinity = rest.filter((item) => !item.candidate.isCommerce && item.reason !== "explore");
+  const explore = rest.filter((item) => !item.candidate.isCommerce && item.reason === "explore");
   const exploreEvery =
     policy.explorationShare > 0 ? Math.max(2, Math.round(1 / policy.explorationShare)) : Infinity;
 
-  const result: MixedItem[] = [];
-  let lastCommerce = Number.NEGATIVE_INFINITY;
+  const ownCommerce = result.findLastIndex((item) => item.slot === "commerce");
+  let lastCommerce = ownCommerce === -1 ? Number.NEGATIVE_INFINITY : ownCommerce;
   let contentSlots = 0;
 
   for (;;) {

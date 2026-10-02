@@ -26,6 +26,7 @@ export function CreatePostForm({
   defaultCommunity,
   videoEnabled = false,
   taggedProduct = null,
+  inLayer = false,
 }: {
   communities: { slug: string; name: string; emoji: string }[];
   products: { id: string; title: string }[];
@@ -34,6 +35,8 @@ export function CreatePostForm({
   videoEnabled?: boolean;
   /** Producto que se quiere etiquetar (`?producto=`): propio o de una tienda que acepta colaboraciones. */
   taggedProduct?: TaggedProductDTO | null;
+  /** En la ventana encima del feed (ADR-068): al publicar, cerrar regresa al feed, no al formulario. */
+  inLayer?: boolean;
 }) {
   // El producto de otra tienda (ADR-063) va en su propia tarjeta, con la declaración de acuerdo; se
   // puede quitar antes de publicar.
@@ -56,6 +59,7 @@ export function CreatePostForm({
 
   return (
     <form action={formAction} onSubmit={guardUploads} className="flex flex-col gap-5">
+      {inLayer ? <input type="hidden" name="enCapa" value="1" /> : null}
       <div className="flex flex-col gap-2">
         <label htmlFor="cuerpo" className="text-sm font-medium">
           ¿Qué quieres compartir?

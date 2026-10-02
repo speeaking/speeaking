@@ -206,6 +206,15 @@ Publicar crea un `Post` de la cuenta editorial de la comunidad con `isAiGenerate
 el borrador el texto final y `postId`. Si se borra la publicación, el borrador queda (`postId`
 vacío) como registro de lo que se revisó.
 
+## Bloquear mensajes (2026-10-01, ADR-069)
+
+| Entidad        | Campos clave                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `MessageBlock` | blockerId, blockedId (cascada ambos; único el par: un bloqueo por dirección), createdAt; índice por blockedId |
+
+Mientras exista en cualquier dirección, ninguna de las dos personas escribe ni empieza una
+conversación. Desbloquear lo borra.
+
 ## Índices principales
 
 | Consulta                       | Índice                                                                                                                                                               |

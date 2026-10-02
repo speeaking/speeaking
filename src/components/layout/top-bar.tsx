@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Suspense, useTransition } from "react";
+import { Suspense, useCallback, useState, useTransition } from "react";
 import { Logo } from "@/components/brand/logo";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -32,6 +32,9 @@ import { shellGrid, shellMain } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/modules/identity/actions";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
+import { MessagesPanel } from "@/modules/messages/components/messages-panel";
+import { NotificationsPanel } from "@/modules/notifications/components/notifications-panel";
+import { CreateMenu } from "./create-menu";
 import { SearchBox } from "./search-box";
 
 type Viewer = NonNullable<ViewerSummary>;
@@ -39,81 +42,90 @@ type Viewer = NonNullable<ViewerSummary>;
 /** Íconos de la barra móvil: 44 px, el mínimo cómodo para el dedo. */
 const mobileIcon = buttonVariants({ variant: "ghost", size: "icon-lg", className: "size-11" });
 
+/** El globo con el número (carrito, avisos y mensajes). */
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+const iconButton = buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" });
+
 /** Carrito con su número de piezas. El nombre accesible empieza con «Carrito» e incluye el número. */
 function CartLink({ count, className }: { count: number; className?: string }) {
   return (
-    <Link
-      href="/carrito"
-      aria-label={`Carrito (${count})`}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" }),
-        className,
-      )}
-    >
+    <Link href="/carrito" aria-label={`Carrito (${count})`} className={cn(iconButton, className)}>
       <ShoppingCart className="size-5" />
-      {count > 0 ? (
-        <span
-          aria-hidden="true"
-          className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
-        >
-          {count > 99 ? "99+" : count}
-        </span>
-      ) : null}
+      <CountBadge count={count} />
     </Link>
   );
 }
 
-/** La campana: avisos sin leer (ADR-059), con el mismo globo que mensajes. */
-function NotificationsLink({ unread, className }: { unread: number; className?: string }) {
-  const label = unread > 0 ? `Avisos (${unread} sin leer)` : "Avisos";
+/** Lo que la barra cuenta sin leer; baja ahí mismo al abrir los recuadros (ADR-068). */
+type Unread = { notifications: number; messages: number };
+
+function unreadOf(viewer: ViewerSummary): Unread {
+  return {
+    notifications: viewer?.unreadNotifications ?? 0,
+    messages: viewer?.unreadMessages ?? 0,
+  };
+}
+
+/**
+ * La campana (ADR-059) y los mensajes (ADR-047) abren su recuadro ahí mismo (ADR-068): en
+ * escritorio bajo el botón y en teléfono como panel desde abajo. Las páginas /avisos y /mensajes
+ * siguen para verlo todo.
+ */
+function InboxButtons({
+  unread,
+  onNotificationsSeen,
+  onConversationRead,
+  className,
+}: {
+  unread: Unread;
+  onNotificationsSeen: () => void;
+  onConversationRead: () => void;
+  className?: string;
+}) {
+  const bell = unread.notifications > 0 ? `Avisos (${unread.notifications} sin leer)` : "Avisos";
+  const chat = unread.messages > 0 ? `Mensajes (${unread.messages} sin leer)` : "Mensajes";
   return (
-    <Link
-      href="/avisos"
-      aria-label={label}
-      title={label}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" }),
-        className,
-      )}
-    >
-      <Bell
-        className={cn("size-5", unread > 0 && "motion-safe:animate-[bell-ring_1s_ease-in-out_1]")}
+    <>
+      <NotificationsPanel
+        onSeen={onNotificationsSeen}
+        trigger={
+          <Link href="/avisos" aria-label={bell} title={bell} className={cn(iconButton, className)}>
+            <Bell
+              className={cn(
+                "size-5",
+                unread.notifications > 0 && "motion-safe:animate-[bell-ring_1s_ease-in-out_1]",
+              )}
+            />
+            <CountBadge count={unread.notifications} />
+          </Link>
+        }
       />
-      {unread > 0 ? (
-        <span
-          aria-hidden="true"
-          className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
-        >
-          {unread > 99 ? "99+" : unread}
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
-/** Mensajes con su número de conversaciones sin leer (ADR-047). */
-function MessagesLink({ unread, className }: { unread: number; className?: string }) {
-  const label = unread > 0 ? `Mensajes (${unread} sin leer)` : "Mensajes";
-  return (
-    <Link
-      href="/mensajes"
-      aria-label={label}
-      title={label}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon-lg", className: "relative" }),
-        className,
-      )}
-    >
-      <MessageCircle className="size-5" />
-      {unread > 0 ? (
-        <span
-          aria-hidden="true"
-          className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground ring-2 ring-background"
-        >
-          {unread > 99 ? "99+" : unread}
-        </span>
-      ) : null}
-    </Link>
+      <MessagesPanel
+        onRead={onConversationRead}
+        trigger={
+          <Link
+            href="/mensajes"
+            aria-label={chat}
+            title={chat}
+            className={cn(iconButton, className)}
+          >
+            <MessageCircle className="size-5" />
+            <CountBadge count={unread.messages} />
+          </Link>
+        }
+      />
+    </>
   );
 }
 
@@ -206,9 +218,27 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
 /**
  * Barra superior. Móvil: logo, lupa (→ /buscar), tema, campana, mensajes y carrito (o «Únete»).
  * Escritorio: sobre la misma rejilla que el contenido, logo · búsqueda · «Crear», campana, mensajes,
- * carrito y avatar (o «Entrar» y «Crear cuenta»). La campana de avisos llegó con ADR-059.
+ * carrito y avatar (o «Entrar» y «Crear cuenta»). La campana de avisos llegó con ADR-059; «Crear»,
+ * la campana y los mensajes abren ahí mismo desde ADR-068.
  */
 export function TopBar({ viewer }: { viewer: ViewerSummary }) {
+  // Los números llegan del servidor en cada navegación; al leer en un recuadro bajan ahí mismo, sin
+  // recargar la página de atrás (así no se pierde dónde ibas en el feed).
+  const [unread, setUnread] = useState<Unread>(() => unreadOf(viewer));
+  const [source, setSource] = useState(viewer);
+  if (source !== viewer) {
+    setSource(viewer);
+    setUnread(unreadOf(viewer));
+  }
+  const onNotificationsSeen = useCallback(
+    () => setUnread((current) => ({ ...current, notifications: 0 })),
+    [],
+  );
+  const onConversationRead = useCallback(
+    () => setUnread((current) => ({ ...current, messages: Math.max(0, current.messages - 1) })),
+    [],
+  );
+
   return (
     // La línea inferior es una sombra, no un borde: así la barra mide 64 px justos y las columnas
     // sticky (top-16) empiezan exactamente debajo, sin un píxel cortado al final.
@@ -225,8 +255,12 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
           </span>
           {viewer ? (
             <>
-              <NotificationsLink unread={viewer.unreadNotifications} className="size-11" />
-              <MessagesLink unread={viewer.unreadMessages} className="size-11" />
+              <InboxButtons
+                unread={unread}
+                onNotificationsSeen={onNotificationsSeen}
+                onConversationRead={onConversationRead}
+                className="size-11"
+              />
               <CartLink count={viewer.cartCount} className="size-11" />
             </>
           ) : (
@@ -254,17 +288,24 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
           <div className="flex shrink-0 items-center justify-end gap-1">
             {viewer ? (
               <>
-                <Link
-                  href="/crear"
-                  className={buttonVariants({
-                    className: "mr-1.5 h-10 gap-1.5 px-4 text-[15px] font-bold",
-                  })}
-                >
-                  <Plus className="size-[18px]" strokeWidth={2.6} />
-                  Crear
-                </Link>
-                <NotificationsLink unread={viewer.unreadNotifications} />
-                <MessagesLink unread={viewer.unreadMessages} />
+                <CreateMenu
+                  trigger={
+                    <Link
+                      href="/crear"
+                      className={buttonVariants({
+                        className: "mr-1.5 h-10 gap-1.5 px-4 text-[15px] font-bold",
+                      })}
+                    >
+                      <Plus className="size-[18px]" strokeWidth={2.6} />
+                      Crear
+                    </Link>
+                  }
+                />
+                <InboxButtons
+                  unread={unread}
+                  onNotificationsSeen={onNotificationsSeen}
+                  onConversationRead={onConversationRead}
+                />
                 <CartLink count={viewer.cartCount} />
                 <AccountMenu viewer={viewer} />
               </>

@@ -538,7 +538,10 @@ para publicidad. **Plazo:** mientras exista tu cuenta; al borrarla se borran tod
 conversaciones. No hay cifrado de extremo a extremo en esta versión (los mensajes se guardan
 cifrados en reposo por el proveedor de base de datos). Regla: los pagos van dentro del pedido; si
 un mensaje parece contener datos bancarios, la plataforma muestra un recordatorio automático (sin
-bloquear ni leerlo una persona).
+bloquear ni leerlo una persona). **Bloquear mensajes (agregado 2026-10-01, ADR-069):** si una
+persona bloquea a otra, se guarda quién bloqueó a quién y cuándo, mientras dure el bloqueo; al
+quitarlo se borra. Solo sirve para impedir que se escriban; la persona bloqueada no ve quién la
+bloqueó.
 
 ### 7 quater. «Contexto», buscar con una foto, videos y colaboraciones (agregado 2026-10-01, ADR-060 a ADR-063)
 

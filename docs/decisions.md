@@ -1947,3 +1947,62 @@ metadatos (A5 de los términos).
 `video-container.ts` expone su recorrido de cajas. Pruebas con los videos reales y con uno armado con
 la ubicación de Android, de iPhone, de una pista y un XMP de 64 bits: después no queda rastro y se
 reproduce igual; el servidor rechaza el original. Aviso de privacidad versión 2026-10-01 («Videos»).
+
+## ADR-068 · Avisos, mensajes y «Crear» se abren ahí mismo
+
+**Contexto.** El fundador (2026-10-01): «¿por qué las notificaciones y los mensajes se abren en otra
+página? Estaría bien que al oprimir el botón de mensajes se abra un recuadro ahí mismo… y al oprimir
+alguno se abra ahí mismo la conversación», y después: «lo mismo pasa al hacer una nueva
+publicación». Ir a otra página sacaba a la persona del feed y perdía dónde iba.
+
+**Decisión.**
+
+- **Campana y mensajes en un recuadro** (`components/layout/inbox-surface.tsx`): en tableta y
+  escritorio, un recuadro bajo su botón, como Facebook; en teléfono, un panel que sube desde abajo
+  (Base UI Drawer, se cierra deslizando, el campo de escribir queda sobre el teclado). La página de
+  atrás no se mueve. Avisos: se ven ahí y quedan leídos (igual que /avisos). Mensajes: la bandeja y,
+  al tocar una conversación, el hilo en el mismo recuadro, con su campo para escribir y refresco cada
+  10 s mientras está a la vista; abrirlo lo marca como leído. Los globos de la barra bajan ahí mismo,
+  sin recargar la página. /avisos y /mensajes siguen para verlo todo.
+- **«Crear» abre sus opciones ahí mismo** (menú, `components/layout/create-menu.tsx`), arriba en
+  escritorio y en el «+» de abajo en teléfono. **«Publicación» abre una ventana encima** de donde
+  estabas (ruta interceptada `@modal/(.)crear/publicacion`, como la capa de las publicaciones de
+  ADR-052): el campo del inicio también. Al publicar, la publicación nueva se abre en su capa y
+  reemplaza a la ventana en el historial: cerrar regresa al feed, que ya la muestra arriba. Recargar
+  abre la página completa.
+- **Lo tuyo va primero en tu inicio durante una hora**, como en Facebook (motor del feed v1, motivo
+  `own`). Antes, una publicación sin comunidad ni reacciones competía con las de tus comunidades y
+  podía quedar fuera de la primera página: al cerrar la capa no la encontrabas.
+- **Mejora progresiva:** los tres botones son enlaces a su página (/avisos, /mensajes, /crear)
+  hasta que la página termina de cargar y se sabe el tamaño de la pantalla; después abren su panel.
+  Un toque temprano nunca se pierde.
+
+**Consecuencias.** Acciones `loadNotificationsAction`, `loadInboxAction` y `loadThreadAction` (las
+mismas consultas y reglas que las páginas); piezas compartidas con las páginas
+(`ConversationSummary`, `ThreadMessages`, `NewPost`, `CREATE_OPTIONS`); `useWideScreen` en `lib`.
+Pruebas de componentes (paneles, menú, barra) y E2E `in-place.spec.ts`, más avisos y mensajes desde
+el recuadro.
+
+## ADR-069 · Opciones de la conversación y bloquear mensajes
+
+**Contexto.** El fundador mostró el menú de Messenger que se abre al tocar a la persona en un chat.
+De sus opciones, aquí aplican pocas: no hay cifrado de extremo a extremo, estilos, apodos ni grupos.
+
+**Decisión.**
+
+- **Tocar a la persona** (en el recuadro y en /mensajes/[id]) abre: Ver perfil, Abrir en Mensajes
+  (desde el recuadro), **Bloquear mensajes** / Desbloquear y Reportar (el formulario de siempre; desde
+  el recuadro abre la página del hilo con `?reportar=1`, porque un diálogo encima del recuadro lo
+  cerraría).
+- **Bloquear mensajes** (`MessageBlock`): mientras exista, ninguna de las dos personas escribe en su
+  conversación ni empieza otra; el historial se queda. Solo quien bloqueó lo quita. A quien bloqueó
+  se le dice y tiene «Desbloquear» en lugar del campo para escribir; a la otra persona solo «No
+  puedes responder a esta conversación», sin decirle que la bloquearon. Límite de 30 cambios por
+  hora.
+- Silenciar no aplica todavía (los mensajes no mandan avisos aparte del globo); archivar y borrar
+  conversaciones quedan para después.
+
+**Consecuencias.** Migración `message_blocks`. `findRecipient` y `sendMessage` rechazan con
+`BLOCKED`; `getThread` dice `blocked` (`byMe`, `byThem` o nada). `ReportDialog` se separó de
+`ReportButton` para abrirlo desde un menú. Pruebas contra PostgreSQL (nadie de fuera bloquea, ninguna
+escribe, solo quien bloqueó quita), de componentes y E2E (bloquear desde el recuadro).

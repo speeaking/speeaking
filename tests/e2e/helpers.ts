@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /** PNG de 1×1 válido para probar subidas sin archivos externos. */
 export const TINY_PNG = Buffer.from(
@@ -87,4 +87,21 @@ export async function registerAndOnboard(page: Page) {
   await completeOnboarding(page, user);
   await expect(page).toHaveURL("/");
   return user;
+}
+
+/**
+ * Espera a que React tome el elemento (la página terminó de cargar). Los botones de la barra que
+ * abren su panel ahí mismo (ADR-068) son enlaces a su página completa hasta entonces.
+ */
+export async function waitForHydration(locator: Locator) {
+  await locator.evaluate(
+    (element) =>
+      new Promise<void>((resolve) => {
+        const check = () =>
+          Object.keys(element).some((key) => key.startsWith("__reactProps"))
+            ? resolve()
+            : requestAnimationFrame(check);
+        check();
+      }),
+  );
 }

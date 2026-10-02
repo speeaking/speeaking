@@ -171,6 +171,7 @@ export async function loadViewerContext(viewerId: string, asOf: Date): Promise<V
   }
 
   return {
+    viewerId,
     communityIds: new Set(memberships.map((membership) => membership.communityId)),
     followingIds: new Set(follows.map((follow) => follow.followingId)),
     categoryIntent: categoryIntentScores(signals),

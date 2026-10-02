@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { RedirectType, redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { ReactionKind, Surface } from "@/generated/prisma/enums";
@@ -388,5 +388,12 @@ export async function createPostAction(
       postId: post.id,
     });
   }
-  redirect(`/p/${post.id}` as Route);
+  // El inicio vuelve a pedirse con la publicación nueva.
+  revalidatePath("/");
+  // Desde la ventana encima del feed (ADR-068) la publicación toma su lugar en el historial: al
+  // cerrarla se regresa al feed, no al formulario ya enviado.
+  redirect(
+    `/p/${post.id}` as Route,
+    formData.get("enCapa") === "1" ? RedirectType.replace : RedirectType.push,
+  );
 }

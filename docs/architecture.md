@@ -111,8 +111,9 @@ La implementación se elige por variable de entorno en `server/providers/<tipo>/
   Cada comunidad se relaciona con categorías de producto, lo que conecta interés social con intención
   comercial.
 - **RecommendationEngine** (interfaz): `getFeed({ viewerId, cursor, limit }) → { items, nextCursor }`.
-  La implementación v0 es explicable: candidatos → puntuación → Commerce Engine → reglas de mezcla →
-  paginación por cursor.
+  La implementación es explicable: candidatos → puntuación → Commerce Engine → reglas de mezcla →
+  paginación por cursor. Desde la v1, lo que la persona publicó en la última hora abre su página
+  (motivo `own`, ADR-068): al publicar y volver al inicio, lo ve arriba, como en Facebook.
 - **Política de mezcla** (`FeedPolicy`): tope comercial (~1 de cada 3–4), diversidad de autores y
   comunidades. Es un parámetro con límites validados, almacenado como ajuste de plataforma y ajustable
   por el motor de automejora dentro de esos límites.
@@ -473,7 +474,13 @@ Tienda  ──▶ /studio/saldo (saldo, «Ver cómo me veo» activo, recargas) �
 - **Cobro:** `docs/modelo-de-ingresos.md`. Página pública `/precios`.
 - **Mensajes privados (`modules/messages`, ADR-047):** una conversación por par de personas,
   texto plano, gratis, con no leídos en la barra superior, reporte de la cuenta desde el hilo y
-  antispam por persona. Sin sockets: el hilo se refresca cada 10 s mientras está visible.
+  antispam por persona. Sin sockets: el hilo se refresca cada 10 s mientras está visible. Bloquear
+  mensajes (ADR-069) se revisa en el servicio, al empezar y al enviar.
+- **Recuadros ahí mismo (ADR-068):** la campana, los mensajes y «Crear» son enlaces a su página
+  hasta que la página carga y se sabe el tamaño de la pantalla (`useWideScreen`); después abren un
+  recuadro (Base UI Popover) en escritorio o un panel desde abajo (Drawer) en teléfono, que traen
+  sus datos con acciones del servidor de lectura (mismas consultas y reglas que las páginas). La
+  publicación nueva se escribe en una ruta interceptada del `@modal`, como la capa de ADR-052.
 - **Redacción diaria (`modules/editorial`, ADR-066):** el código arma el encargo (tipo, enfoque y
   fecha del calendario), la IA redacta un borrador por comunidad en la operación diaria, el código lo
   limpia y el equipo lo publica desde `/admin/redaccion` como la cuenta editorial. Nada se publica

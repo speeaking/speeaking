@@ -22,7 +22,10 @@ const redirect = vi.hoisted(() =>
 );
 
 vi.mock("@/server/db", () => ({ db }));
-vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next/navigation", () => ({
+  redirect,
+  RedirectType: { push: "push", replace: "replace" },
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modules/identity/session", () => ({
   getViewer: vi.fn(),
@@ -102,5 +105,14 @@ describe("createPostAction con fotos de comprobante (P14)", () => {
       "REDIRECT /p/0199a000-0000-7000-8000-0000000000aa",
     );
     expect(db.post.create).toHaveBeenCalledOnce();
+    expect(redirect).toHaveBeenCalledWith("/p/0199a000-0000-7000-8000-0000000000aa", "push");
+  });
+
+  it("desde la ventana encima del feed, la publicación reemplaza a la ventana en el historial (ADR-068)", async () => {
+    const data = form([PHOTO]);
+    data.set("enCapa", "1");
+
+    await expect(createPostAction({}, data)).rejects.toThrow("REDIRECT /p/");
+    expect(redirect).toHaveBeenCalledWith("/p/0199a000-0000-7000-8000-0000000000aa", "replace");
   });
 });
