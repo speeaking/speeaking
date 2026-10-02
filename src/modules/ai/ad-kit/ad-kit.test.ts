@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AdCopy } from "../tasks/ad-copy";
 import { adCopyTask } from "../tasks/ad-copy";
+import { SELLER_COPY_RULES } from "../tasks/sale-proposal";
 import { composeAdKit, productShareUrl } from "./compose";
 import {
   type AdKitProduct,
@@ -75,6 +76,14 @@ describe("datos del producto (P4)", () => {
     expect(`${system}${user}`).not.toMatch(/1234|cost|unitCost/i);
     expect(user).toContain("[teléfono]");
     expect(user).toContain("$899");
+  });
+
+  it("usa las mismas reglas de redacción que «Sube y vende»: al cambiarlas, sube su versión", () => {
+    // Llamados sin género y «la plataforma no verifica nada» (revisión del video, 2026-10-02).
+    const { system } = adCopyTask.messages(adCopyInput(product));
+    expect(system).toContain(SELLER_COPY_RULES);
+    expect(system).toContain("«Haz tu pedido aquí»");
+    expect(adCopyTask.promptVersion).toBe("ad-copy@3");
   });
 
   it("la huella cambia si cambian el precio o un dato verificable", () => {

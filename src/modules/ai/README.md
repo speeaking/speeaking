@@ -69,7 +69,10 @@ sus módulos con la misma forma.
   «me salen», «nos cuestan»). «Quedan N» es urgencia. El título lo redacta la IA (singular); si no
   es del mismo producto o trae algo sin respaldo, va el nombre confirmado. Las mayúsculas las pone
   el código (`listingTitle`): la inicial, y las demás solo si el vendedor las escribió así (marcas)
-  o son siglas. Con 2 piezas o más, los textos de respaldo dicen «$X por pieza».
+  o son siglas. Con 2 piezas o más, los textos de respaldo dicen «$X por pieza». En todo, también en
+  los consejos para el vendedor, quita lo que dice que la plataforma verifica, revisa, certifica o
+  garantiza algo («la plataforma verifica…», «verificamos», «comprobado por la plataforma»,
+  «certificado por…»): no lo hace.
 - `sale-proposal.ts`: contrato de «Sube y vende», extracción determinista del texto (tras «vendo
   en / doy a / dejo en», el precio va justo después: «Vendo en Guadalajara 15 playeras» no es un
   precio) y `sellerTextForModel`: al modelo le llega el texto sin el costo ni el contacto, desde la

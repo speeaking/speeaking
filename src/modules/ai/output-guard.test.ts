@@ -151,7 +151,7 @@ describe("guardProposal (SEC-28)", () => {
     expect(claimsIn("Garantía limitada de un año.")).toEqual(["warranty"]);
     // «quedan» sin un número no es escasez.
     expect(hasUrgency("Les quedan perfectas a todas.")).toBe(false);
-    for (const cta of ["Pídelo aquí", "Aparta el tuyo", "Espera tu pedido con gusto."]) {
+    for (const cta of ["Pídelo aquí", "Haz tu pedido aquí", "Espera tu pedido con gusto."]) {
       expect(hasUrgency(cta)).toBe(false);
     }
   });
@@ -680,6 +680,118 @@ describe("guardProposal: productName es un título de publicación", () => {
   });
 });
 
+describe("guardProposal: la plataforma no verifica nada (P4)", () => {
+  // El caso real del 2026-10-02 (qwen/qwen3.5-9b, sale-proposal@5), en «Lo que te van a preguntar».
+  const real =
+    "El vendedor indica que es de piel, pero la plataforma verifica estos detalles con las fotos.";
+  /** Reglas de los consejos para el vendedor: sin afirmaciones P4 que revisar. */
+  const advice = {
+    productName: "bolsas de piel café",
+    allowedCents: new Set<number>(),
+    quantity: null,
+    claimKinds: [],
+  };
+
+  it("quita el caso real de «Lo que te van a preguntar»", () => {
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        objections: [
+          { objection: "¿Es piel genuina?", answer: real },
+          { objection: "¿Es de piel?", answer: "Muestra de cerca la textura de la piel." },
+        ],
+      },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.objections).toEqual([
+      { objection: "¿Es de piel?", answer: "Muestra de cerca la textura de la piel." },
+    ]);
+    expect(findings).toContain("claim");
+  });
+
+  it.each([
+    real,
+    "La plataforma revisa que la piel sea real.",
+    "speeaking revisa cada publicación antes de mostrarla.",
+    "Speeaking verifica el material con las fotos.",
+    "La plataforma se encarga de verificar la autenticidad.",
+    "La plataforma te garantiza una compra segura.",
+    "Verificamos cada bolsa antes de publicarla.",
+    "Lo revisamos antes de que llegue a tus manos.",
+    "Hemos comprobado el material de cada pieza.",
+    "Nuestro equipo revisa cada pieza.",
+    "Material comprobado por la plataforma.",
+    "Producto verificado por speeaking.",
+    "Piel certificada por expertos.",
+    "Compra con la garantía de speeaking.",
+  ])("quita «%s» de lo que ve quien compra y de los consejos", (sentence) => {
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        description: `${sentence} Son piezas únicas con un acabado especial.`,
+        adIdeas: [sentence, "Bolsa de piel café a $1,199."],
+        contentIdeas: [sentence, "Foto de la bolsa con luz natural."],
+        budgetRationale: `Empieza con poco y mide. ${sentence}`,
+        objections: [
+          { objection: "¿Es de piel?", answer: sentence },
+          { objection: "¿Por qué ese precio?", answer: "Explica que cada pieza es hecha a mano." },
+        ],
+        assumptions: [sentence, "Usamos los datos que confirmaste."],
+      },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.description).toBe("Son piezas únicas con un acabado especial.");
+    expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
+    expect(guarded.contentIdeas).toEqual(["Foto de la bolsa con luz natural."]);
+    expect(guarded.budgetRationale).toBe("Empieza con poco y mide.");
+    expect(guarded.objections.map((item) => item.objection)).toEqual(["¿Por qué ese precio?"]);
+    expect(guarded.assumptions).toEqual(["Usamos los datos que confirmaste."]);
+    expect(findings).toContain("claim");
+    expect(textFindings(sentence, advice)).toEqual(new Set(["claim"]));
+  });
+
+  it.each([
+    // Lo que hace quien compra o quien vende, no la plataforma.
+    "Revisa las fotos y pregunta cualquier detalle antes de comprar.",
+    "El vendedor puede mostrar el ticket.",
+    "Muestra el ticket para que quien compra lo compruebe.",
+    "Verifica las medidas antes de comprar.",
+    "Comprueba tú mismo la textura con fotos de cerca.",
+    "Responde solo con lo que puedas comprobar (factura, empaque sellado).",
+    // Lo que la plataforma NO hace, dicho con honestidad.
+    "La plataforma no verifica materiales: muestra fotos de cerca.",
+    "Nosotros no revisamos el material; enséñalo en fotos.",
+    // «La plataforma» como lugar, no como quien revisa.
+    "Dentro de la plataforma revisa con quien compra la talla.",
+    "Acuerda la entrega dentro de la plataforma y revisa la talla con quien compra.",
+    "Sube tus fotos a la plataforma revisando que se vean bien.",
+    // El producto, no la plataforma: la app de un reloj, un equipo usado, zapatos de plataforma.
+    "La app revisa tu ritmo cardiaco todo el día.",
+    "El equipo se revisó y funciona perfecto.",
+    "La plataforma te asegura estabilidad al caminar.",
+    // «garantía» sin la plataforma (en los consejos es legítimo).
+    "El presupuesto sugerido es una prueba inicial, no una garantía de ventas.",
+  ])("conserva «%s»", (sentence) => {
+    expect(textFindings(sentence, advice).size).toBe(0);
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        objections: [{ objection: "¿Es de piel?", answer: sentence }],
+        assumptions: [sentence],
+      },
+      bolsas,
+    );
+    const { proposal: guarded } = guardProposal(proposal, bolsas);
+
+    expect(guarded.objections).toEqual(proposal.objections);
+    expect(guarded.assumptions).toEqual(proposal.assumptions);
+  });
+});
+
 describe("la propuesta simulada sigue las reglas nuevas", () => {
   it.each([
     bolsas,
@@ -695,6 +807,11 @@ describe("la propuesta simulada sigue las reglas nuevas", () => {
     expect(guarded.proposal).toEqual(proposal);
     for (const text of buyerFacing(proposal)) {
       expect(text).not.toMatch(new RegExp(String.raw`(?<![\d,.$–-])${request.quantity}\s+(?!s\b)`));
+      // Llamados sin género: «Aparta el tuyo» con «Bolsa…» se leía mal (video del 2026-10-02).
+      expect(text).not.toMatch(/el tuyo|la tuya/i);
     }
+    expect(proposal.adIdeas).toContain(
+      `¿Buscabas ${proposal.productName}? Precio justo y trato directo. Haz tu pedido aquí.`,
+    );
   });
 });

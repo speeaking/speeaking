@@ -107,6 +107,28 @@ describe("SellWithAiForm: la etiqueta sigue a la propuesta que llegó (ADR-038)"
     expect(screen.queryByText(/Piloto/)).not.toBeInTheDocument();
   });
 
+  it.each([
+    // Ejemplos genéricos y hechos a mano, sin marcas de terceros (revisión del video, 2026-10-02).
+    [/^Tengo 30 velas/, "velas aromáticas de soya", "30", "45", "120"],
+    [/^Vendo 20 pasteles/, "pasteles de tres leches", "20", "180", "450"],
+    [/^Vendo 12 macetas/, "macetas de barro", "12", "60", "150"],
+  ])("el ejemplo %s llena bien los datos", async (chip, product, pieces, cost, price) => {
+    const user = userEvent.setup();
+    render(<SellWithAiForm />);
+
+    await user.click(screen.getByRole("button", { name: chip }));
+
+    expect(screen.getByLabelText("Producto")).toHaveValue(product);
+    expect(screen.getByLabelText("Piezas")).toHaveValue(pieces);
+    expect(screen.getByLabelText("Costo c/u")).toHaveValue(cost);
+    expect(screen.getByLabelText("Precio c/u")).toHaveValue(price);
+  });
+
+  it("los ejemplos no usan marcas de terceros", () => {
+    render(<SellWithAiForm />);
+    expect(screen.queryByRole("button", { name: /AirPods|Nike/i })).not.toBeInTheDocument();
+  });
+
   it("sobre tus números dice la verdad: el costo no se publica ni se manda a la IA (H3)", () => {
     render(<SellWithAiForm />);
     expect(

@@ -166,7 +166,7 @@ export function mockSaleProposal(request: SaleProposalRequest) {
     ],
     adIdeas: [
       `${name} a ${price}. Pídelo aquí.`,
-      `¿Buscabas ${name}? Precio justo y trato directo. Aparta el tuyo.`,
+      `¿Buscabas ${name}? Precio justo y trato directo. Haz tu pedido aquí.`,
       `${name}: ${profile.hook}. Pídelo aquí.`,
     ],
     videoScript: `0–3 s: muestra ${name} de cerca. 3–8 s: úsalo y di el beneficio principal (${profile.hook}). 8–12 s: di el precio (${price}). 12–15 s: "Toca Comprar o escríbeme".`,

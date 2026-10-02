@@ -64,7 +64,27 @@ describe("ProposalView (P2, principio 5, SEC-28)", () => {
     expect(within(budget).getByText("$300 al día")).toBeInTheDocument();
     const price = screen.getByRole("heading", { name: "Precio para probar" }).closest("section")!;
     expect(within(price).getByText("$3,329 – $3,609")).toBeInTheDocument();
-    expect(screen.getByText(/Para cubrir \$300\/día × 7 días/)).toBeInTheDocument();
+  });
+
+  it("«Tus números» dice qué es cada cifra: la ganancia de vender todas, no un precio de lote", async () => {
+    // Video del 2026-10-02: «Si vendes las 8» junto a la ganancia se leía como el precio de las 8, y
+    // «Para cubrir $X/día» no decía que es la publicidad sugerida.
+    render(<ProposalView result={await result()} onReset={() => {}} />);
+
+    const numbers = screen.getByRole("heading", { name: "Tus números" }).closest("section")!;
+    const total = within(numbers).getByText("Ganas si vendes las 50 piezas");
+    expect(total.nextElementSibling).toHaveTextContent("$54,950");
+    expect(within(numbers).queryByText(/^Si vendes las/)).not.toBeInTheDocument();
+    const breakEven = within(numbers).getByText("Para cubrir publicidad de $300/día × 7 días");
+    expect(breakEven.nextElementSibling).toHaveTextContent("2 ventas");
+  });
+
+  it("con una sola pieza, la ganancia total no dice «las 1»", async () => {
+    const single = { ...(await result()), quantity: 1 };
+    render(<ProposalView result={single} onReset={() => {}} />);
+
+    expect(screen.getByText("Ganas si vendes la pieza")).toBeInTheDocument();
+    expect(screen.queryByText(/las 1\b/)).not.toBeInTheDocument();
   });
 
   it("etiqueta lo que redactó la IA", async () => {

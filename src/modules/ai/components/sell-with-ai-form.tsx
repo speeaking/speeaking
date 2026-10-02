@@ -12,10 +12,11 @@ import { generateProposalAction, type ProposalState } from "../actions";
 import { parseSellerText } from "../sale-proposal";
 import { ProposalView } from "./proposal-view";
 
+/** Productos genéricos, hechos a mano o locales: sin marcas de terceros (revisión del 2026-10-02). */
 const EXAMPLES = [
-  "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.",
+  "Tengo 30 velas aromáticas de soya. Me costaron $45 cada una y quiero venderlas a $120.",
   "Vendo 20 pasteles de tres leches, me cuesta $180 hacer cada uno y los vendo a $450.",
-  "Tengo 6 tenis Nike para correr, costo $900 y precio $1,499.",
+  "Vendo 12 macetas de barro, pintadas a mano. Me salen en $60 cada una y las doy a $150.",
 ];
 
 const pesos = (cents: number | null) =>

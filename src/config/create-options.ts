@@ -24,7 +24,8 @@ export const CREATE_OPTIONS: readonly CreateOption[] = [
   {
     href: siteConfig.sellerFeaturePath as Route,
     title: siteConfig.sellerFeatureName,
-    description: "Sube una foto y pon tu precio: te armamos la publicación y tus números.",
+    // Empieza con una frase; la foto es opcional y la IA no la lee (revisión del 2026-10-02).
+    description: "Cuéntalo en una frase: te armamos la publicación y tus números.",
     icon: Sparkles,
   },
   {

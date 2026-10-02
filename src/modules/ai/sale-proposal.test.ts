@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROPOSAL_FINAL_CHECK, saleProposalTask } from "./tasks/sale-proposal";
+import { PROPOSAL_FINAL_CHECK, SELLER_COPY_RULES, saleProposalTask } from "./tasks/sale-proposal";
 import {
   knownCategorySlug,
   listingTitle,
@@ -55,11 +55,26 @@ describe("parseSellerText (extracción determinista, P2)", () => {
       costCents: 18_000,
       priceCents: 45_000,
     });
-    expect(parseSellerText("Tengo 6 tenis Nike para correr, costo $900 y precio $1,499.")).toEqual({
-      productName: "tenis Nike para correr",
-      quantity: 6,
-      costCents: 90_000,
-      priceCents: 149_900,
+    // Ejemplos genéricos y hechos a mano, sin marcas de terceros (revisión del video, 2026-10-02).
+    expect(
+      parseSellerText(
+        "Tengo 30 velas aromáticas de soya. Me costaron $45 cada una y quiero venderlas a $120.",
+      ),
+    ).toEqual({
+      productName: "velas aromáticas de soya",
+      quantity: 30,
+      costCents: 4_500,
+      priceCents: 12_000,
+    });
+    expect(
+      parseSellerText(
+        "Vendo 12 macetas de barro, pintadas a mano. Me salen en $60 cada una y las doy a $150.",
+      ),
+    ).toEqual({
+      productName: "macetas de barro",
+      quantity: 12,
+      costCents: 6_000,
+      priceCents: 15_000,
     });
   });
 
@@ -423,11 +438,11 @@ describe("knownCategorySlug (la categoría que eligió el modelo)", () => {
   });
 });
 
-describe("prompt de «Vende con IA» (sale-proposal@5): precio por pieza, título y descripción", () => {
+describe("prompt de «Vende con IA» (sale-proposal@6): precio por pieza, título y descripción", () => {
   const { system, user } = saleProposalTask.messages({ ...bolsas, categories: [] });
 
   it("sube la versión del prompt", () => {
-    expect(saleProposalTask.promptVersion).toBe("sale-proposal@5");
+    expect(saleProposalTask.promptVersion).toBe("sale-proposal@6");
   });
 
   it("los datos dicen que el precio es por pieza y que las piezas son existencias, no un lote", () => {
@@ -479,6 +494,21 @@ describe("prompt de «Vende con IA» (reglas de siempre)", () => {
   it("prohíbe la urgencia más común y ofrece llamados neutros", () => {
     expect(system).toContain("no te quedes sin el tuyo");
     expect(system).toContain("Pídelo aquí");
+  });
+
+  it("los llamados sugeridos no tienen género (el video: «Bolsa… Aparta el tuyo»)", () => {
+    expect(SELLER_COPY_RULES).toContain("«Pídelo aquí» o «Haz tu pedido aquí»");
+    expect(PROPOSAL_FINAL_CHECK).toContain("«Pídelo aquí» o «Haz tu pedido aquí»");
+    for (const text of [SELLER_COPY_RULES, PROPOSAL_FINAL_CHECK, system, user]) {
+      expect(text).not.toMatch(/aparta (?:el tuyo|la tuya)/i);
+    }
+  });
+
+  it("no dice que la plataforma comprueba datos y prohíbe afirmarlo (el video: «la plataforma verifica»)", () => {
+    expect(SELLER_COPY_RULES).toMatch(
+      /Nunca digas que la plataforma verifica, revisa o garantiza algo/,
+    );
+    expect(system).not.toMatch(/cuando los comprueba/);
   });
 
   it("no repite originalidad ni garantía aunque el vendedor las escriba (P4, P14)", () => {

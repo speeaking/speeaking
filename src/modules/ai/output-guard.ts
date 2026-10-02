@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { formatMoney } from "@/lib/format";
 import {
   findPersonalData,
@@ -16,7 +17,9 @@ import { listingTitle, type SaleProposal } from "./sale-proposal";
  *   pago por fuera («transferencia», «depósito»…). La plataforma cobra dentro de la app.
  * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy», «quedan 5»…); P12.
  * - `claim`: afirmaciones que exigen un dato verificable (P4) que no está en los datos: garantía,
- *   originalidad, envío gratis, devoluciones, tiempos de entrega, descuentos…
+ *   originalidad, envío gratis, devoluciones, tiempos de entrega, descuentos… Y en TODO, también en
+ *   los consejos para el vendedor, que la plataforma verifica, revisa, certifica o garantiza algo
+ *   (`PLATFORM_CLAIM`): no lo hace.
  * - `number`: montos, piezas o días distintos de los confirmados (P2). En lo que ve quien compra,
  *   además, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
  *   frase del campo («8 bolsas por $1,199» se lee como el precio de las 8), antes de una palabra del
@@ -129,6 +132,41 @@ const URGENCY = phrases([
   // «Stock limitado», «la variedad es limitada», «el tiempo es limitado»; no «garantía limitada».
   String.raw`(?:stock|existencias?|inventario|cupo|piezas|unidades|variedad|cantidad(?:es)?|tiempo)\s+(?:(?:es|son|est[aá]n?|muy)\s+)*limitad[oa]s?`,
   String.raw`(?:pocas|contadas|limitadas)\s+(?:piezas|unidades|existencias)`,
+]);
+
+const BRAND = siteConfig.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * La plataforma como sujeto: «la plataforma», «speeaking», «nosotros», «nuestro equipo». Ni «la app»
+ * ni «el equipo» a secas: en una descripción suelen ser el producto («la app revisa tu ritmo
+ * cardiaco», «el equipo se revisó y funciona»).
+ */
+const PLATFORM = String.raw`(?:(?:la|esta|nuestra)\s+)?plataforma|${BRAND}|nosotros|nuestro\s+equipo|el\s+equipo\s+de\s+${BRAND}`;
+/**
+ * Raíces de verificar, revisar, comprobar, certificar, autenticar, garantizar, validar… Sin
+ * «asegurar»: «la plataforma te asegura estabilidad» habla de unos zapatos de plataforma.
+ */
+const CHECK_STEM = String.raw`(?:verifi(?:c|qu)|comprueb|comprob|certifi(?:c|qu)|autenti(?:c|qu)|garanti(?:z|c)|valid|revis|aval|respald|inspeccion|audit|che(?:c|qu))`;
+/** Participios: «comprobado», «verificada», «revisados»… */
+const CHECKED = String.raw`(?:verificad|comprobad|certificad|autenticad|garantizad|validad|revisad|avalad|respaldad|inspeccionad|auditad|checad|aprobad)[oa]s?`;
+
+/**
+ * La plataforma verifica, revisa, certifica o garantiza algo: speeaking no comprueba materiales ni
+ * calidad (el modelo escribía «la plataforma verifica estos detalles con las fotos», 2026-10-02). Se
+ * revisa en todo, también en los consejos para el vendedor. No cuenta lo que hace quien compra o vende
+ * («Revisa las fotos», «el vendedor puede mostrar el ticket»), lo dicho en negativo («la plataforma no
+ * verifica materiales») ni «la plataforma» como lugar («dentro de la plataforma revisa la talla»).
+ */
+const PLATFORM_CLAIM = phrases([
+  // «La plataforma verifica», «speeaking te garantiza», «la plataforma se encarga de verificar».
+  String.raw`(?<!(?<!\p{L})(?:en|a|al|de|del|por|con|desde|para|sobre|hacia|entre)\s+(?:(?:la|esta|nuestra)\s+)?)(?:${PLATFORM})(?:\s+(?:se\s+encarga\s+de|puede|podr[aá]|va\s+a|suele|siempre|tambi[eé]n|ya|s[oó]lo|lo|la|los|las|le|les|te|se|nos))*\s+${CHECK_STEM}\p{L}*`,
+  // «Verificamos», «lo revisamos», «hemos comprobado»; no «no verificamos».
+  String.raw`(?<!(?<!\p{L})no\s+(?:(?:lo|la|los|las|le|les|te)\s+)?)${CHECK_STEM}(?:amos|aremos|[aá]bamos)`,
+  String.raw`hemos\s+${CHECKED}`,
+  // «Comprobado por la plataforma», «verificado por speeaking», «certificado por expertos».
+  String.raw`${CHECKED}\s+(?:por|en)\s+(?:${PLATFORM})`,
+  String.raw`certificad[oa]s?\s+por`,
+  // «Con la garantía de speeaking», «el respaldo de la plataforma».
+  String.raw`(?:verificaci[oó]n|certificaci[oó]n|garant[ií]a|respaldo|aval)\s+de\s+(?:${PLATFORM})`,
 ]);
 
 /** Afirmaciones que exigen un dato verificable (P4), por tipo. */
@@ -472,6 +510,8 @@ export function textFindings(
   }
   const claims = claimsIn(figures, rules.claimKinds);
   if (claims.some((kind) => !rules.allowedClaims?.has(kind))) found.add("claim");
+  // Nunca respaldada por un dato, ni en los consejos para el vendedor: la plataforma no verifica.
+  if (PLATFORM_CLAIM.test(figures)) found.add("claim");
   for (const match of figures.matchAll(MONEY)) {
     const cents = match[1] ? toCents(match[1], match[2]) : toCents(match[3]!, match[4]);
     if (!rules.allowedCents.has(cents)) found.add("number");

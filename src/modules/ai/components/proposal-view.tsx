@@ -148,7 +148,12 @@ export function ProposalView({
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Si vendes las {quantity}</dt>
+            {/* «Si vendes las 8» junto a la ganancia se leía como el precio de las 8 (2026-10-02). */}
+            <dt className="text-muted-foreground">
+              {quantity === 1
+                ? "Ganas si vendes la pieza"
+                : `Ganas si vendes las ${quantity} piezas`}
+            </dt>
             <dd className="font-heading text-xl font-extrabold">
               {formatMoney(numbers.potentialProfitCents)}
             </dd>
@@ -160,7 +165,9 @@ export function ProposalView({
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Para cubrir {formatMoney(daily)}/día × 7 días</dt>
+            <dt className="text-muted-foreground">
+              Para cubrir publicidad de {formatMoney(daily)}/día × 7 días
+            </dt>
             <dd className="font-heading text-xl font-extrabold">
               {numbers.breakEvenWeek === null ? "Sin margen" : `${numbers.breakEvenWeek} ventas`}
             </dd>
