@@ -28,6 +28,35 @@ describe("parseSellerText (extracción determinista, P2)", () => {
     });
   });
 
+  it("entiende los ejemplos del formulario: «me cuesta $180» no es el precio", () => {
+    expect(
+      parseSellerText(
+        "Vendo 20 pasteles de tres leches, me cuesta $180 hacer cada uno y los vendo a $450.",
+      ),
+    ).toEqual({
+      productName: "pasteles de tres leches",
+      quantity: 20,
+      costCents: 18_000,
+      priceCents: 45_000,
+    });
+    expect(parseSellerText("Tengo 6 tenis Nike para correr, costo $900 y precio $1,499.")).toEqual({
+      productName: "tenis Nike para correr",
+      quantity: 6,
+      costCents: 90_000,
+      priceCents: 149_900,
+    });
+  });
+
+  it("«a $» cuenta como precio solo si «a» es una palabra suelta", () => {
+    expect(
+      parseSellerText("Vendo 8 bolsas de piel, me salen en $650 y las doy a $1,199."),
+    ).toMatchObject({ costCents: 65_000, priceCents: 119_900 });
+    expect(parseSellerText("Vendo 4 lámparas; me cuesta $300 cada una")).toMatchObject({
+      costCents: 30_000,
+      priceCents: null,
+    });
+  });
+
   it("no inventa números que la persona no escribió", () => {
     expect(parseSellerText("Quiero vender pasteles caseros")).toEqual({
       productName: "pasteles caseros",

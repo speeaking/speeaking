@@ -145,3 +145,59 @@ describe("ImageUploader", () => {
     expect(screen.queryByRole("button", { name: "Agregar" })).toBeNull();
   });
 });
+
+describe("ImageUploader: singular y plural", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
+
+  it("el aviso habla de una imagen cuando solo cabe una y de varias cuando caben más", () => {
+    const { unmount } = render(<ImageUploader name="mediaId" max={1} />);
+    expect(
+      screen.getByText(
+        "Una imagen de hasta 10 MB. Borramos la ubicación y otros datos ocultos de tu foto.",
+      ),
+    ).toBeInTheDocument();
+    unmount();
+
+    render(<ImageUploader name="mediaIds" max={10} />);
+    expect(
+      screen.getByText(
+        "Hasta 10 imágenes de 10 MB. Borramos la ubicación y otros datos ocultos de tus fotos.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("elegir de más avisa el límite en singular si solo cabe una", async () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
+    render(<ImageUploader name="mediaId" max={1} />);
+
+    await userEvent.upload(screen.getByLabelText("Elegir imágenes"), [
+      new File(["x"], "a.png", { type: "image/png" }),
+      new File(["y"], "b.png", { type: "image/png" }),
+    ]);
+
+    expect(toast).toHaveBeenCalledWith("Solo puedes agregar una imagen.");
+    expect(document.querySelectorAll("[data-uploading]")).toHaveLength(1);
+  });
+
+  it("si solo una de varias pesa más de 40 MB, lo dice en singular", async () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:local");
+    render(<ImageUploader name="mediaIds" max={10} />);
+    const heavy = new File(["x"], "pesada.jpg", { type: "image/jpeg" });
+    Object.defineProperty(heavy, "size", { value: 40 * 1024 * 1024 + 1 });
+
+    await userEvent.upload(screen.getByLabelText("Elegir imágenes"), [
+      heavy,
+      new File(["y"], "a.png", { type: "image/png" }),
+      new File(["z"], "b.png", { type: "image/png" }),
+    ]);
+
+    expect(toast.error).toHaveBeenCalledWith("Una de las imágenes pesa más de 40 MB.");
+    // Las ligeras sí se suben.
+    expect(document.querySelectorAll("[data-uploading]")).toHaveLength(2);
+  });
+});

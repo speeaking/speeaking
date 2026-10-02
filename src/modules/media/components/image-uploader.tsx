@@ -87,11 +87,22 @@ export function ImageUploader({
     const room = max - slots.length;
     // Una imagen enorme ni se intenta leer; las pesadas se reducen antes de subirlas (`upload`).
     const light = [...files].filter((file) => file.size <= MAX_ORIGINAL_BYTES);
-    if (light.length < files.length) {
-      toast.error(files.length === 1 ? IMAGE_TOO_HEAVY : "Algunas imágenes pesan más de 40 MB.");
+    const heavy = files.length - light.length;
+    if (heavy > 0) {
+      toast.error(
+        files.length === 1
+          ? IMAGE_TOO_HEAVY
+          : heavy === 1
+            ? "Una de las imágenes pesa más de 40 MB."
+            : "Algunas imágenes pesan más de 40 MB.",
+      );
     }
     const accepted = light.slice(0, room);
-    if (light.length > room) toast(`Puedes agregar hasta ${max} imágenes.`);
+    if (light.length > room) {
+      toast(
+        max === 1 ? "Solo puedes agregar una imagen." : `Puedes agregar hasta ${max} imágenes.`,
+      );
+    }
     const created = accepted.map((file) => ({
       key: crypto.randomUUID(),
       preview: URL.createObjectURL(file),
@@ -215,7 +226,9 @@ export function ImageUploader({
         onChange={(event) => onFiles(event.target.files)}
       />
       <p className="text-xs text-muted-foreground">
-        Hasta {max} imágenes de 10 MB. Borramos la ubicación y otros datos ocultos de tus fotos.
+        {max === 1
+          ? "Una imagen de hasta 10 MB. Borramos la ubicación y otros datos ocultos de tu foto."
+          : `Hasta ${max} imágenes de 10 MB. Borramos la ubicación y otros datos ocultos de tus fotos.`}
       </p>
     </div>
   );

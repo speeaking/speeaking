@@ -157,9 +157,10 @@ export function parseSellerText(text: string): ParsedSellerText {
   const quantity = quantityMatch ? Number(quantityMatch[1]) : null;
 
   const costCents = amountAfter(clean, COST_KEYWORDS);
+  // «a $» solo como palabra suelta («los vendo a $450»): dentro de «me cuest|a $180» es el costo.
   const priceCents = amountAfter(
     clean,
-    "venderl[oa]s? a|venderl[oa]s? en|vender a|vender en|precio|a \\$",
+    "venderl[oa]s? a|venderl[oa]s? en|vender a|vender en|precio|(?<![a-záéíóúüñ])a \\$",
   );
 
   // Nombre: lo que sigue a "tengo 50 / vendo 3 / quiero vender" hasta el primer signo o número.

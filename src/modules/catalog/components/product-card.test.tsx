@@ -40,6 +40,28 @@ describe("ProductCard", () => {
     expect(screen.queryByRole("link", { name: /Ver cómo me veo/ })).not.toBeInTheDocument();
     expect(screen.getByText("Agotado")).toBeInTheDocument();
   });
+
+  it("«Ver cómo me veo» se ancla a la foto, no al pie: un título de dos líneas no lo tapa", () => {
+    render(<ProductCard product={product({ title: "Camisa blanca de lino con manga larga" })} />);
+
+    // jsdom no calcula el layout: se fija la estructura. El botón vive en un marco que cubre
+    // exactamente la foto (arriba, a todo lo ancho y con su misma proporción), así que no depende
+    // de lo alto que quede el texto de abajo.
+    const aspect = (element: Element) =>
+      [...element.classList].find((name) => name.startsWith("aspect-"));
+    const photo = screen.getByRole("link", { name: /\$899/ }).firstElementChild!;
+    const tryOn = screen.getByRole("link", { name: /^Ver cómo me veo:/ });
+    const frame = tryOn.parentElement!;
+
+    expect(aspect(photo)).toBeDefined();
+    expect(aspect(frame)).toBe(aspect(photo));
+    expect(frame).toHaveClass("absolute", "inset-x-0", "top-0");
+    expect(tryOn).toHaveClass("absolute", "right-2", "bottom-2");
+    expect(tryOn.className).not.toMatch(/bottom-\[/);
+    // El marco no le roba el toque a la foto (que abre la ficha); el botón sí lo recibe.
+    expect(frame).toHaveClass("pointer-events-none");
+    expect(tryOn).toHaveClass("pointer-events-auto");
+  });
 });
 
 describe("ProductCard: la foto que viaja (ADR-052)", () => {

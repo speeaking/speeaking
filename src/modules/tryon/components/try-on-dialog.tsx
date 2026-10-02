@@ -262,7 +262,9 @@ export function TryOnDialog({
             ) : null}
 
             <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2">
+              {/* Una columna, como el pie del carrito (ADR-052): a 360–390 px dos columnas dejan
+                  ~140 px por botón y «Comprar todo · $12,345» no cabe. */}
+              <div className="flex flex-col gap-2">
                 <Button
                   size="lg"
                   className="h-12 text-base"
