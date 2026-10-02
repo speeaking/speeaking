@@ -7,7 +7,7 @@ import {
   redactionMarkersIn,
 } from "./personal-data";
 import { suggestedDailyBudgetCents, suggestedPriceRange } from "./proposal-numbers";
-import { listingTitle, type SaleProposal } from "./sale-proposal";
+import { isKnownBrand, listingTitle, NUMBER_WORDS, type SaleProposal } from "./sale-proposal";
 
 /**
  * Guardián de contenido de la IA (SEC-28). El esquema solo valida la FORMA; esto valida el
@@ -16,18 +16,21 @@ import { listingTitle, type SaleProposal } from "./sale-proposal";
  * - `contact` / `payment`: correos, teléfonos, ligas, usuarios, CLABE o tarjetas, e instrucciones de
  *   pago por fuera («transferencia», «depósito»…). La plataforma cobra dentro de la app.
  * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy», «quedan 5», «única pieza
- *   disponible», «solo queda una»…); P12.
+ *   disponible», «solo queda una», «no te quedes con las ganas»…); P12.
  * - `claim`: afirmaciones que exigen un dato verificable (P4) que no está en los datos: garantía,
  *   originalidad, envío gratis, devoluciones, tiempos de entrega, descuentos… Y en TODO, también en
  *   los consejos para el vendedor, que la plataforma verifica, revisa, certifica o garantiza algo
  *   (`PLATFORM_CLAIM`): no lo hace; o atribuirle al vendedor lo que no escribió («El vendedor menciona
  *   que es original», `misattributes`).
- * - `number`: montos, piezas o días distintos de los confirmados (P2). En lo que ve quien compra,
- *   además, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
- *   frase del campo («8 bolsas por $1,199» se lee como el precio de las 8), antes de una palabra del
- *   producto o genérica («Tengo 8 bolsas de piel», «ocho piezas») o tras «tenemos / contamos con»; el
- *   lote junto a un precio («Todas las bolsas por $1,199», «$1,199 en total») y, en descripción y
- *   propuesta de valor, la primera persona del vendedor («tengo», «tenemos», «me salen en»).
+ * - `number`: montos, piezas o días distintos de los confirmados (P2).
+ * - `stock`: en lo que ve quien compra, las piezas en existencia (en cifra o con letra) junto a un
+ *   precio, aunque vaya en otra frase del campo («8 bolsas por $1,199» se lee como el precio de las
+ *   8), antes de una palabra del producto o genérica («Tengo 8 bolsas de piel», «ocho piezas») o tras
+ *   «tenemos / contamos con», y el lote junto a un precio («Todas las bolsas por $1,199», «$1,199 en
+ *   total», «Llévatelas por $1,199», «Todas a $1,199»). Cambian con cada venta y se leen como el
+ *   precio de todas. En el título, además, el plural y el lote sin precio.
+ * - `voice`: en título, descripción y propuesta de valor, la primera persona del vendedor («tengo»,
+ *   «nuestras», «me salen en»): esos textos describen el producto para quien compra.
  * - Marcas de redacción («[costo]», «[teléfono]»…): delatan un dato oculto. La del costo cuenta como
  *   `number`, la de cuenta como `payment` y las demás como `contact`. Se revisan en TODO.
  *
@@ -39,7 +42,17 @@ import { listingTitle, type SaleProposal } from "./sale-proposal";
  * respaldan los datos estructurados del producto (`allowedClaims`).
  */
 
-export type GuardFinding = "contact" | "payment" | "urgency" | "claim" | "number";
+export const GUARD_FINDINGS = [
+  "contact",
+  "payment",
+  "urgency",
+  "claim",
+  "number",
+  "stock",
+  "voice",
+] as const;
+
+export type GuardFinding = (typeof GUARD_FINDINGS)[number];
 
 /** Datos confirmados por el vendedor contra los que se revisa la salida. */
 export type ProposalFacts = {
@@ -82,33 +95,6 @@ const PAYMENT = phrases([
   String.raw`p[aá]g(?:o|a|ar|ame|arme|ale|amelo)\s+(?:por\s+fuera|directo|directamente|por\s+adelantado|antes)`,
 ]);
 
-/** Las cantidades con letra («Ocho cojines por $320», «Solo quedan tres»). */
-const NUMBER_WORDS: Readonly<Record<number, string>> = {
-  2: "dos",
-  3: "tres",
-  4: "cuatro",
-  5: "cinco",
-  6: "seis",
-  7: "siete",
-  8: "ocho",
-  9: "nueve",
-  10: "diez",
-  11: "once",
-  12: "doce",
-  13: "trece",
-  14: "catorce",
-  15: "quince",
-  16: "diecis[eé]is",
-  17: "diecisiete",
-  18: "dieciocho",
-  19: "diecinueve",
-  20: "veinte",
-  30: "treinta",
-  40: "cuarenta",
-  50: "cincuenta",
-  100: "cien",
-};
-
 const ONLY = String.raw`(?:s[oó]lo|solamente|[uú]nicamente|nada\s+m[aá]s)`;
 /**
  * Una sola pieza («solo queda una», «solo hay 1»), salvo que siga lo que no son existencias: «solo hay
@@ -135,6 +121,9 @@ const URGENCY = phrases([
   String.raw`queda\s+(?:${ONLY}\s+${ONE}|(?:una|uno|1)\s+sol[oa])`,
   String.raw`${ONLY}\s+(?:hay|tengo|tenemos|existe)\s+${ONE}`,
   String.raw`${ONLY}\s+(?:una|uno|1)\s+(?:(?:pieza|unidad)\s+)?disponible`,
+  // «Es el único disponible», «único par» de tenis (2026-10-02); no «un único par de agujetas».
+  String.raw`[uú]nic[oa]s?\s+(?:disponibles?|en\s+existencia)`,
+  String.raw`(?<!(?<!\p{L})un[oa]?\s+)[uú]nic[oa]\s+(?:ejemplar|par)(?!\s+de\s)`,
   String.raw`se\s+(?:est[aá]n\s+)?acaba(?:n|ndo)?`,
   String.raw`antes\s+de\s+que\s+se\s+acaben?`,
   String.raw`por\s+tiempo\s+limitado`,
@@ -144,7 +133,11 @@ const URGENCY = phrases([
   String.raw`date\s+prisa`,
   "ap[uú]rate",
   "c[oó]rrele",
-  String.raw`no\s+te\s+quedes\s+sin`,
+  String.raw`no\s+te\s+quedes\s+(?:sin|con\s+las\s+ganas)`,
+  // «Aprovecha mientras haya», «aprovéchalo mientras dure»; «mientras haya existencias».
+  String.raw`aprov[eé]ch\p{L}*\s+(?:\p{L}+\s+){0,2}?mientras`,
+  String.raw`mientras\s+(?:haya|queden?|duren?|existan?)\s+(?:existencias|piezas|unidades|stock|inventario)`,
+  String.raw`mientras\s+(?:haya|queden?|duren?)(?=\s*(?:[.,;!…]|$))`,
   String.raw`[uú]ltima\s+llamada`,
   "urgente",
   "agotarse",
@@ -410,6 +403,11 @@ export type TextRules = {
    */
   noSellerVoice?: boolean;
   /**
+   * Es el título de la publicación: con 2 piezas o más (`stock`) no va en plural («Aguas de jamaica»)
+   * ni habla del lote, aunque no traiga precio («Bolsa de piel en total»).
+   */
+  title?: boolean;
+  /**
    * Lo que escribió el vendedor (su texto y el nombre que confirmó). Con él, una frase que le atribuye
    * algo que no está ahí se quita («El vendedor menciona que es original»). Sin él (el kit de
    * anuncios) no se revisan las atribuciones.
@@ -417,7 +415,10 @@ export type TextRules = {
   sellerText?: string;
 };
 
-/** La primera persona del vendedor, en singular o en plural: sus existencias, su costo o su venta. */
+/**
+ * La primera persona del vendedor, en singular o en plural: sus existencias, su costo, su venta,
+ * quién lo hace («las hago yo misma») y lo suyo («nuestras bolsas»).
+ */
 const SELLER_VOICE = phrases([
   "tengo",
   "tenemos",
@@ -425,11 +426,35 @@ const SELLER_VOICE = phrases([
   "vendemos",
   "ofrezco",
   "ofrecemos",
+  "dejo",
+  "dejamos",
+  "doy",
+  "damos",
+  "hago",
+  "hacemos",
+  "elaboro",
+  "elaboramos",
+  "fabrico",
+  "fabricamos",
+  "preparo",
+  "preparamos",
+  "horneo",
+  "horneamos",
+  "cocino",
+  "cocinamos",
+  String.raw`nuestr[oa]s?`,
+  // «Las hago yo misma»; no el juguete «yo-yo».
+  String.raw`(?<!-)yo(?!-)`,
   String.raw`(?:me|nos)\s+sal(?:e|en|ieron|i[oó])`,
   String.raw`(?:me|nos)\s+cuestan?`,
   String.raw`(?:me|nos)\s+cost(?:aron|[oó])`,
   String.raw`(?:cuento|contamos)\s+con`,
 ]);
+/**
+ * «Por mí», «mi taller», «mis bolsas». Sin la bandera `i` a propósito: «Mi» antes de una mayúscula
+ * es una marca («Mi Band», «Mi Fitness»).
+ */
+const SELLER_MY = /(?<![\p{L}\p{N}])(?:[Mm]í|[Mm]is?(?!\s+\p{Lu}))(?![\p{L}\p{N}])/u;
 /** Preguntas (con «¿» o sin él) y citas. */
 const QUESTIONS_AND_QUOTES = /¿[^?]*\?|[^.!?¡¿…]*\?|«[^»]*»|“[^”]*”|"[^"]*"/gu;
 
@@ -539,9 +564,102 @@ const ALL_OF = /(?<![\p{L}\p{N}])tod[oa]s\s+(?:l[oa]s|mis|nuestr[oa]s)\s+(\p{L}+
 const LOT_NOUNS = new Set(["piez", "unid", "arti", "prod", "pare"]);
 
 /**
+ * Un verbo de compra o de venta con el pronombre en plural: «Llévatelas», «cómpralos», «apártalas»,
+ * «pídelos»; «te las dejo», «los doy». El grupo 1 o 2 dice el género («a» u «o»).
+ */
+const PLURAL_PRONOUN =
+  /(?<!\p{L})(?:ll[eé]v|c[oó]mpr|ap[aá]rt|p[ií]d|cons[ií]gu|adqui[eé]r|estr[eé]n)(?:a|e|ate|ete)?l([ao])s(?!\p{L})|(?<!\p{L})(?:(?:te|se|me)\s+)?l([ao])s\s+(?:dejo|dejamos|doy|damos|vendo|vendemos|ofrezco|ofrecemos|pongo|paso)(?!\p{L})/giu;
+/** «Todas a $1,199», «todos por solo $1,199»; «para todas a $1,199» no habla del lote. */
+const ALL_AT_PRICE =
+  /(?<![\p{L}\p{N}])(?<!(?:para|con|de)\s+)tod[oa]s\s+(?:a|por|en|de)\s+(?:(?:s[oó]lo|solamente)\s+)?(?=\$|\d)/iu;
+/** El precio dicho por pieza: «llévatelas a $1,199 cada una» no es el precio de todas. */
+const PER_PIECE = phrases([
+  String.raw`cada\s+(?:un[oa]|pieza|unidad|par)`,
+  String.raw`por\s+(?:pieza|unidad|par)`,
+  "c/u",
+]);
+
+/**
+ * Productos que se nombran en plural aunque sean uno, con su género: «Llévatelos» habla de UN par
+ * de tenis; «Llévatelas» con unas bolsas, de todas.
+ */
+const PLURAL_NAMED: Readonly<Record<string, "a" | "o">> = {
+  airpods: "o",
+  anteojos: "o",
+  aretes: "o",
+  audifonos: "o",
+  binoculares: "o",
+  botines: "o",
+  calcetines: "o",
+  guantes: "o",
+  huaraches: "o",
+  jeans: "o",
+  leggings: "o",
+  lentes: "o",
+  mocasines: "o",
+  pantalones: "o",
+  pants: "o",
+  patines: "o",
+  shorts: "o",
+  tacones: "o",
+  tenis: "o",
+  zapatos: "o",
+  bermudas: "a",
+  botas: "a",
+  calcetas: "a",
+  chanclas: "a",
+  crocs: "a",
+  gafas: "a",
+  mallas: "a",
+  medias: "a",
+  pantuflas: "a",
+  pinzas: "a",
+  sandalias: "a",
+  tijeras: "a",
+  zapatillas: "a",
+};
+/** Antes del nombre en plural, dice que el producto es otro: «Funda para audífonos». */
+const OTHER_PRODUCT_BEFORE = new Set(["para", "de", "con", "sin", "por", "a", "en"]);
+
+/** Palabras sin acentos y en minúsculas. */
+function plainWords(text: string) {
+  return normalizeText(text)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+/** Género del nombre en plural de UN producto («Tenis Nike» → «o»), o `null`. */
+export function pluralNamedGender(productName: string): "a" | "o" | null {
+  const words = plainWords(productName);
+  for (const [index, word] of words.entries()) {
+    const gender = PLURAL_NAMED[word];
+    if (gender && !OTHER_PRODUCT_BEFORE.has(words[index - 1] ?? "")) return gender;
+  }
+  return null;
+}
+
+/**
+ * ¿La frase (que ya trae un precio) habla de todas con un pronombre en plural? «Llévatelas por
+ * $1,199», «Te las dejo en $1,199», «Todas a $1,199». No cuenta si el precio se dice por pieza ni si
+ * el pronombre es del nombre en plural de un solo producto («Tenis Nike: llévatelos por $1,199»).
+ */
+function pluralPronounLot(figures: string, productName: string) {
+  if (PER_PIECE.test(figures)) return false;
+  if (ALL_AT_PRICE.test(figures)) return true;
+  const named = pluralNamedGender(productName);
+  for (const match of figures.matchAll(PLURAL_PRONOUN)) {
+    if ((match[1] ?? match[2])!.toLowerCase() !== named) return true;
+  }
+  return false;
+}
+
+/**
  * ¿La frase habla del lote completo junto a un precio? Con 2 piezas o más, «Todas las bolsas por
- * $1,199» se lee como el precio de todas. «Todas nuestras bolsas son de piel» (sin precio) o «para
- * todos los días» (no habla del producto) no cuentan.
+ * $1,199» o «Llévatelas por $1,199» se leen como el precio de todas. «Todas nuestras bolsas son de
+ * piel» (sin precio) o «para todos los días» (no habla del producto) no cuentan.
  */
 function mentionsLot(text: string, figures: string, stock: number, productName: string) {
   if (stock < 2 || !hasMoney(figures)) return false;
@@ -551,7 +669,47 @@ function mentionsLot(text: string, figures: string, stock: number, productName: 
     const [word] = productWords(noun!);
     if (word && (product.has(word) || LOT_NOUNS.has(word))) return true;
   }
-  return false;
+  return pluralPronounLot(figures, productName);
+}
+
+/** Terminan como plural y nombran una cosa: «Tres leches», «Lunes», «Cumpleaños». */
+const SINGULAR_ENDING_IN_S = new Set([
+  "dos",
+  "tres",
+  "seis",
+  "mes",
+  "gas",
+  "tos",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "cumpleaños",
+]);
+/** Compuestos de verbo y sustantivo en plural, que son singulares: «Paraguas», «Cubrebocas». */
+const COMPOUND_IN_S =
+  /^(?:abre|corta|cubre|cuenta|guarda|lava|limpia|mata|para|pasa|pica|porta|quita|rompe|saca|salva|tapa|toca)\p{L}{3,}s$/u;
+const PLURAL_ARTICLES = new Set(["los", "las", "unos", "unas"]);
+const SINGULAR_ARTICLES = new Set(["el", "la", "un", "una"]);
+
+/**
+ * ¿El título está en plural? Lo dice su primera palabra, o la que sigue a «el / la / un / una»:
+ * «Bolsas de piel», «Hermosas bolsas», «Las bolsas». No cuentan el nombre en plural de un solo
+ * producto («Tenis Nike», «Nuevos AirPods»), los compuestos («Cubrebocas», «Paraguas»), las marcas
+ * («Adidas») ni lo que termina en «s» acentuada, «-is» o «-us» («Autobús», «Análisis», «Virus»).
+ */
+function pluralTitle(title: string) {
+  if (pluralNamedGender(title)) return false;
+  const [first = "", second = ""] = normalizeText(title)
+    .toLocaleLowerCase("es-MX")
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+  if (PLURAL_ARTICLES.has(first)) return true;
+  const head = SINGULAR_ARTICLES.has(first) ? second : first;
+  if (head.length < 4 || SINGULAR_ENDING_IN_S.has(head) || COMPOUND_IN_S.test(head)) return false;
+  if (isKnownBrand(head)) return false;
+  return /[aeo]s$/u.test(head);
 }
 
 export function withoutProductName(text: string, productName: string) {
@@ -589,9 +747,10 @@ export function textFindings(
   for (const marker of redactionMarkersIn(text)) found.add(MARKER_FINDING[marker]);
   if (PAYMENT.test(text)) found.add("payment");
   if (URGENCY.test(text)) found.add("urgency");
-  // Cuenta como cifra: la primera persona del vendedor trae sus datos («tengo 8», «me salen en»).
-  if (rules.noSellerVoice && SELLER_VOICE.test(text.replace(QUESTIONS_AND_QUOTES, " "))) {
-    found.add("number");
+  if (rules.noSellerVoice) {
+    // Sin preguntas ni citas (la voz de quien compra) ni el nombre confirmado («Xiaomi Mi Band 8»).
+    const said = withoutProductName(text.replace(QUESTIONS_AND_QUOTES, " "), rules.productName);
+    if (SELLER_VOICE.test(said) || SELLER_MY.test(said)) found.add("voice");
   }
   // Afirmaciones y cifras se revisan sin el nombre que confirmó el vendedor: repetir «Tenis
   // originales» no es una afirmación de la IA, y «AirPods Pro 2 disponibles» no son 2 piezas.
@@ -601,7 +760,15 @@ export function textFindings(
     (mentionsStock(text, figures, rules.stock, rules.productName, !!context.priceInField) ||
       mentionsLot(text, figures, rules.stock, rules.productName))
   ) {
-    found.add("number");
+    found.add("stock");
+  }
+  if (
+    rules.title &&
+    rules.stock !== undefined &&
+    rules.stock >= 2 &&
+    (LOT.test(figures) || pluralTitle(text))
+  ) {
+    found.add("stock");
   }
   const claims = claimsIn(figures, rules.claimKinds);
   if (claims.some((kind) => !rules.allowedClaims?.has(kind))) found.add("claim");
@@ -700,6 +867,13 @@ function sameProduct(title: string, confirmed: string) {
   return productWords(title).some((word) => words.has(word));
 }
 
+/** ¿Es el mismo texto, sin contar mayúsculas ni espacios? */
+function sameText(a: string, b: string) {
+  const key = (text: string) =>
+    normalizeText(text).replace(/\s+/gu, " ").trim().toLocaleLowerCase("es-MX");
+  return key(a) === key(b);
+}
+
 export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): GuardedProposal {
   const range = suggestedPriceRange(facts.priceCents);
   const daily = suggestedDailyBudgetCents(facts);
@@ -723,10 +897,15 @@ export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): Gua
   const listing: TextRules = { ...buyer, noSellerVoice: true };
   const advice: TextRules = { ...base, claimKinds: [] };
 
-  // El título lo redacta la IA (singular, como publicación); si trae algo que no se puede respaldar
-  // o no es del mismo producto, va el nombre que confirmó el vendedor. Las mayúsculas las pone el
-  // código: la inicial, y las demás solo si el vendedor las escribió así (marcas) o son siglas.
-  const [aiTitle] = cleaner.list([proposal.productName], (title) => title, [], buyer);
+  // El título lo redacta la IA (singular, como publicación) y es lo más visible: sin la voz del
+  // vendedor, sin el lote y, con 2 piezas o más, sin plural. Si trae algo que no se puede respaldar o
+  // no es del mismo producto, va el nombre que confirmó el vendedor. Si la IA copió ese nombre tal
+  // cual, es del vendedor (aunque vaya en plural): no se revisa como título de la IA. Las mayúsculas
+  // las pone el código: la inicial, y las demás solo si el vendedor las escribió así (marcas) o son
+  // siglas.
+  const own = sameText(proposal.productName, facts.productName);
+  const titleRules: TextRules = own ? buyer : { ...listing, title: true };
+  const [aiTitle] = cleaner.list([proposal.productName], (title) => title, [], titleRules);
   const name = listingTitle(
     aiTitle && sameProduct(aiTitle, facts.productName) ? aiTitle : facts.productName,
     [facts.productName, facts.text],

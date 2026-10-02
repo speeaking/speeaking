@@ -88,7 +88,7 @@ describe("generateSaleProposal", () => {
     expect(call.provider).toEqual({
       id: "openai_compatible",
       model: "qwen/qwen3.5-9b",
-      promptVersion: "sale-proposal@6",
+      promptVersion: "sale-proposal@7",
     });
     expect(getAIProvider).toHaveBeenCalledWith("sale_proposal");
   });

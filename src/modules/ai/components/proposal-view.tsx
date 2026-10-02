@@ -17,10 +17,39 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import type { ProposalState } from "../actions";
+import type { GuardFinding } from "../output-guard";
 import { DAILY_BUDGET_RULE, PRICE_RANGE_RULE } from "../proposal-numbers";
 import { SIMULATED_OUTPUT_LABEL } from "../tasks/simulation";
 
 type Result = NonNullable<ProposalState["result"]>;
+
+/** Por qué se quitó una frase, en el orden en que se dicen. Contacto y pago van juntos. */
+const GUARD_REASONS: readonly [readonly GuardFinding[], string][] = [
+  [["claim"], "garantías, envíos o tiempos que no confirmaste"],
+  [["contact", "payment"], "datos de contacto o de pago por fuera"],
+  [["urgency"], "urgencia o escasez inventada"],
+  [["number"], "cifras distintas a las tuyas"],
+  [["stock"], "las piezas que tienes o un precio que parecía ser por todas"],
+  [["voice"], "texto en tu voz («tengo», «vendo») en lugar de una descripción del producto"],
+];
+
+/**
+ * El aviso de lo que quitó el guardián de contenido, con los motivos que de verdad encontró: «cifras
+ * distintas a las tuyas» no describe una frase que decía cuántas piezas tienes ni una en tu voz.
+ */
+function guardNotice(removed: number, findings: readonly GuardFinding[], simulated: boolean) {
+  const phrases = removed === 1 ? "1 frase" : `${removed} frases`;
+  const author = simulated ? "" : " de la IA";
+  const verb = removed === 1 ? "debía" : "debían";
+  const reasons = GUARD_REASONS.filter(([kinds]) =>
+    kinds.some((kind) => findings.includes(kind)),
+  ).map(([, reason]) => reason);
+  const why =
+    reasons.length === 0
+      ? ""
+      : ` ${reasons.length === 1 ? "Motivo" : "Motivos"}: ${reasons.join("; ")}.`;
+  return `Quitamos ${phrases}${author} que no ${verb} publicarse.${why}`;
+}
 
 function Card({
   icon: Icon,
@@ -123,12 +152,7 @@ export function ProposalView({
       {guard.removed > 0 ? (
         <p className="flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2 text-sm">
           <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span>
-            {guard.removed === 1 ? "Quitamos 1 frase" : `Quitamos ${guard.removed} frases`} que{" "}
-            {simulated ? "no podíamos" : "la IA no podía"} respaldar con tus datos: garantías,
-            envíos o tiempos que no confirmaste, datos de contacto o de pago, urgencia o cifras
-            distintas a las tuyas.
-          </span>
+          <span>{guardNotice(guard.removed, guard.findings, simulated)}</span>
         </p>
       ) : null}
 

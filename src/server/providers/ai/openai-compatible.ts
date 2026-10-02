@@ -63,6 +63,21 @@ function contentText(content: unknown): string | null {
   return null;
 }
 
+/** Cuántos campos con error se registran como máximo. */
+const MAX_FAILING_FIELDS = 10;
+
+/**
+ * Los campos que no cumplieron el esquema, con el código del error («description (too_big)»,
+ * «tags.0 (invalid_type)»): sirven para diagnosticar sin registrar lo que escribió el modelo (podría
+ * traer el texto del vendedor).
+ */
+function failingFields(issues: readonly { path: readonly PropertyKey[]; code: string }[]) {
+  const fields = issues.map(
+    (issue) => `${issue.path.map(String).join(".") || "(raíz)"} (${issue.code})`,
+  );
+  return [...new Set(fields)].slice(0, MAX_FAILING_FIELDS);
+}
+
 /** Quita un bloque de razonamiento (`<think>…</think>`) y cercas de código alrededor del JSON. */
 export function unwrapJson(text: string) {
   return text
@@ -115,7 +130,8 @@ const REASONING_REQUIRED_MODELS = new Set(["google/gemini-3.5-flash-lite"]);
  *   creciente ante 429 o 5xx (respeta `Retry-After`). Un corte de red o un plazo vencido NO se
  *   reintenta: el proveedor pudo haber cobrado ya esa llamada.
  * - La salida se valida SIEMPRE con el esquema de la tarea; si no cumple, `invalid_output` con el
- *   uso que informó el proveedor (para registrar el costo).
+ *   uso que informó el proveedor (para registrar el costo) y los campos que fallaron, sin su
+ *   contenido (para el registro).
  * - La llave vive en un campo privado: no aparece en `JSON.stringify`, `console.log` ni errores.
  * - Sin redirecciones (`redirect: "error"`): la petición solo va al servidor de `AI_BASE_URL`.
  */
@@ -213,8 +229,14 @@ export class OpenAICompatibleProvider implements AIProvider {
     const choice = data.choices?.[0];
     const text = contentText(choice?.message?.content) ?? "";
     const usage = readUsage(data, promptTokens, text);
-    const fail = (reason: string) =>
-      new AIProviderError("invalid_output", `[ai] ${task.task} (${this.model}): ${reason}`, usage);
+    const fail = (reason: string, fields?: string[]) =>
+      new AIProviderError(
+        "invalid_output",
+        `[ai] ${task.task} (${this.model}): ${reason}`,
+        usage,
+        undefined,
+        fields,
+      );
 
     if (choice?.message?.refusal) throw fail("el modelo se negó a responder");
     if (choice?.finish_reason === "length") throw fail("la respuesta se cortó en max_tokens");
@@ -229,7 +251,10 @@ export class OpenAICompatibleProvider implements AIProvider {
       }
     }
     const parsed = task.output.safeParse(raw);
-    if (!parsed.success) throw fail("la respuesta no cumple el esquema");
+    if (!parsed.success) {
+      const fields = failingFields(parsed.error.issues);
+      throw fail(`la respuesta no cumple el esquema: ${fields.join(", ")}`, fields);
+    }
     return { output: parsed.data, usage };
   }
 

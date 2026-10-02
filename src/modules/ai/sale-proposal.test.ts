@@ -163,6 +163,42 @@ describe("parseSellerText (extracción determinista, P2)", () => {
     });
   });
 
+  it("lee la cantidad escrita con letra y la quita del nombre (2026-10-02)", () => {
+    // Con «ocho» en el nombre, el guardián no contaba «Ocho cojines… por $320» como existencias.
+    expect(
+      parseSellerText("Tengo ocho cojines bordados a mano, me cuestan $150 y los vendo a $320."),
+    ).toEqual({
+      productName: "cojines bordados",
+      quantity: 8,
+      costCents: 15_000,
+      priceCents: 32_000,
+    });
+    expect(parseSellerText("Vendo dieciséis velas aromáticas de soya, precio $180.")).toMatchObject(
+      { productName: "velas aromáticas de soya", quantity: 16 },
+    );
+    expect(parseSellerText("Vendo Veinticinco termos Stanley, precio $599.")).toMatchObject({
+      productName: "termos Stanley",
+      quantity: 25,
+    });
+    expect(parseSellerText("Hay cien llaveros de resina. Precio $45.")).toMatchObject({
+      quantity: 100,
+    });
+  });
+
+  it("un número con letra que es parte del producto no es la cantidad", () => {
+    expect(parseSellerText("Vendo tres leches de fresa, precio $450.")).toMatchObject({
+      productName: "tres leches de fresa",
+      quantity: null,
+    });
+    expect(parseSellerText("Vendo pasteles de tres leches, precio $450.")).toMatchObject({
+      productName: "pasteles de tres leches",
+      quantity: null,
+    });
+    expect(parseSellerText("Vendo una guitarra acústica, precio $1,900.")).toMatchObject({
+      quantity: null,
+    });
+  });
+
   it("no inventa números que la persona no escribió", () => {
     expect(parseSellerText("Quiero vender pasteles caseros")).toEqual({
       productName: "pasteles caseros",
@@ -354,7 +390,7 @@ describe("listingTitle (título de la publicación: mayúscula inicial por códi
     ["bolsas de piel café", "Bolsas de piel café"],
     ["bolsa de piel café hecha a mano", "Bolsa de piel café hecha a mano"],
     ["ácido hialurónico 50 ml", "Ácido hialurónico 50 ml"],
-    ["  tenis   nike  ", "Tenis nike"],
+    ["  tenis   nike  ", "Tenis Nike"],
     // Marcas y modelos con mayúsculas propias se respetan.
     ["iPhone 17 Pro", "iPhone 17 Pro"],
     ["eBook Kindle", "eBook Kindle"],
@@ -401,11 +437,38 @@ describe("listingTitle (título de la publicación: mayúscula inicial por códi
     ["Audífonos Sony WH-1000XM4", "Audífonos Sony WH-1000XM4", audifonos],
     ["Playera Anime Talla CH", "Playera anime talla CH", playeras],
     // Siglas y mayúsculas propias, aunque el vendedor las escriba en minúsculas.
-    ["Bocina JBL Flip 6", "Bocina JBL flip 6", ["bocina jbl flip 6"]],
+    ["Bocina JBL Flip 6", "Bocina JBL Flip 6", ["bocina jbl flip 6"]],
     ["Cable USB-C De Carga Rápida", "Cable USB-C de carga rápida", ["cable usb-c de carga rápida"]],
     ["Funda Para iPhone 17", "Funda para iPhone 17", ["funda para iphone 17"]],
     ["Playera Talla G", "Playera talla G", ["playeras de anime"]],
   ])("marcas, modelos y siglas se respetan: «%s» → «%s»", (name, title, sources) => {
+    expect(listingTitle(name, sources)).toBe(title);
+  });
+});
+
+describe("listingTitle: marcas conocidas y letras que son nombre (2026-10-02)", () => {
+  it.each([
+    // Como se escriben, aunque el vendedor las ponga en minúsculas o en mayúsculas.
+    ["Tenis Nike Air Max", ["tenis nike air max"], "Tenis Nike Air Max"],
+    ["Tenis NIKE Air Max", ["TENIS NIKE AIR MAX"], "Tenis Nike Air Max"],
+    ["tenis nike air max 90", undefined, "Tenis Nike Air Max 90"],
+    ["iphone 17 pro max", undefined, "iPhone 17 Pro Max"],
+    ["Control dualsense para ps5", ["control dualsense para ps5"], "Control DualSense para PS5"],
+    ["Bocina jbl Go 3", ["bocina jbl go 3"], "Bocina JBL Go 3"],
+    // Una letra que es nombre, no conjunción.
+    ["Vitamina E", ["vitamina e"], "Vitamina E"],
+    ["Vitamina E En Cápsulas", ["vitamina e en cápsulas"], "Vitamina E en cápsulas"],
+  ])("«%s» (vendedor: %j) → «%s»", (name, sources, title) => {
+    expect(listingTitle(name, sources)).toBe(title);
+  });
+
+  it.each([
+    // Las líneas solo se escriben así detrás de una marca.
+    ["Funda Flip Para Celular", ["funda flip para celular"], "Funda flip para celular"],
+    ["Termo Max De Acero", ["termo max de acero"], "Termo max de acero"],
+    // La «a» y la «y» entre palabras siguen siendo minúsculas.
+    ["Pulsera De Plata Y Oro", ["pulsera de plata y oro"], "Pulsera de plata y oro"],
+  ])("«%s» (vendedor: %j) → «%s»", (name, sources, title) => {
     expect(listingTitle(name, sources)).toBe(title);
   });
 });
@@ -438,11 +501,11 @@ describe("knownCategorySlug (la categoría que eligió el modelo)", () => {
   });
 });
 
-describe("prompt de «Vende con IA» (sale-proposal@6): precio por pieza, título y descripción", () => {
+describe("prompt de «Vende con IA» (sale-proposal@7): precio por pieza, título y descripción", () => {
   const { system, user } = saleProposalTask.messages({ ...bolsas, categories: [] });
 
   it("sube la versión del prompt", () => {
-    expect(saleProposalTask.promptVersion).toBe("sale-proposal@6");
+    expect(saleProposalTask.promptVersion).toBe("sale-proposal@7");
   });
 
   it("los datos dicen que el precio es por pieza y que las piezas son existencias, no un lote", () => {
@@ -491,16 +554,15 @@ describe("prompt de «Vende con IA» (reglas de siempre)", () => {
     categories: [],
   });
 
-  it("prohíbe la urgencia más común y ofrece llamados neutros", () => {
+  it("prohíbe la urgencia más común", () => {
     expect(system).toContain("no te quedes sin el tuyo");
-    expect(system).toContain("Pídelo aquí");
   });
 
-  it("los llamados sugeridos no tienen género (el video: «Bolsa… Aparta el tuyo»)", () => {
-    expect(SELLER_COPY_RULES).toContain("«Pídelo aquí» o «Haz tu pedido aquí»");
-    expect(PROPOSAL_FINAL_CHECK).toContain("«Pídelo aquí» o «Haz tu pedido aquí»");
+  it("los llamados sugeridos no llevan pronombre: «Bolsa… Aparta el tuyo» ni «Pídelo aquí» concordaban", () => {
+    expect(SELLER_COPY_RULES).toContain("«Haz tu pedido aquí» o «Aparta aquí»");
+    expect(PROPOSAL_FINAL_CHECK).toContain("«Haz tu pedido aquí» o «Aparta aquí»");
     for (const text of [SELLER_COPY_RULES, PROPOSAL_FINAL_CHECK, system, user]) {
-      expect(text).not.toMatch(/aparta (?:el tuyo|la tuya)/i);
+      expect(text).not.toMatch(/p[ií]delo aqu[ií]|aparta (?:el tuyo|la tuya)/i);
     }
   });
 

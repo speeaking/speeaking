@@ -5,6 +5,7 @@ import { AIProviderError } from "@/server/providers/ai/errors";
 import { MockAIProvider } from "@/server/providers/ai/mock";
 import type { AIProvider } from "@/server/providers/ai/types";
 import { saleProposalTask } from "../tasks/sale-proposal";
+import { mockSaleProposal } from "../tasks/sale-proposal-mock";
 import { adCopyCaseSchema, parseCases, saleProposalCaseSchema } from "./cases";
 import { evalReport, formatUsdMicros, wilsonInterval } from "./report";
 import { EVAL_GATE, evalGate, runEval, summarize } from "./runner";
@@ -117,7 +118,13 @@ describe("runEval con el proveedor simulado", () => {
         .fn()
         .mockResolvedValueOnce({ output, usage: { inputTokens: 3_000, outputTokens: 2_000 } })
         .mockRejectedValueOnce(
-          new AIProviderError("invalid_output", "x", { inputTokens: 1_000, outputTokens: 1_000 }),
+          new AIProviderError(
+            "invalid_output",
+            "x",
+            { inputTokens: 1_000, outputTokens: 1_000 },
+            undefined,
+            ["description (too_big)", "ctas.3 (too_big)"],
+          ),
         ),
     };
     const beforeCall = vi.fn(async (caseId: string) => `req-${caseId}`);
@@ -142,6 +149,10 @@ describe("runEval con el proveedor simulado", () => {
       expect.objectContaining({ ok: false, errorCode: "INVALID_OUTPUT" }),
     );
     expect(results[1]!.jsonValid).toBe(false);
+    // Dice qué campos no cumplieron (sin su contenido) para poder diagnosticarlo.
+    expect(results[1]!.failures).toContain(
+      "El modelo no devolvió JSON válido según el esquema: description (too_big), ctas.3 (too_big).",
+    );
     // 600 (3k/2k) + 250 (1k/1k) micro-dólares: el costo de la salida inválida también cuenta.
     expect(metrics.costMicros).toBe(850);
     expect(metrics.gate.reasons).toEqual(
@@ -151,6 +162,55 @@ describe("runEval con el proveedor simulado", () => {
       ]),
     );
   });
+});
+
+describe("precio por pieza leído como el del lote (2026-10-02)", () => {
+  const bolsas = saleCases.find((testCase) => testCase.id === "bolsas-piel-precio-por-pieza")!;
+  /** El modelo responde la propuesta simulada (limpia y bien clasificada) con `overrides`. */
+  const answering = (overrides: Record<string, unknown>): AIProvider => ({
+    id: "openai_compatible",
+    model: "qwen/qwen3.5-9b",
+    generate: vi.fn().mockResolvedValue({
+      output: {
+        ...mockSaleProposal(bolsas.input),
+        categorySlug: "accesorios-moda",
+        ...overrides,
+      },
+      usage: { inputTokens: 3_000, outputTokens: 2_000 },
+    }),
+  });
+
+  it("sin lectura de lote ni existencias, el caso pasa", async () => {
+    const { results } = await runEval("sale_proposal", [bolsas], {
+      provider: answering({}),
+      categories,
+    });
+
+    expect(results[0]!).toMatchObject({ passed: true, stock: false, guardRemoved: 0 });
+  });
+
+  it.each([
+    { adIdeas: ["Llévatelas por $1,199."] },
+    { adIdeas: ["8 bolsas de piel café por $1,199."] },
+    { productName: "Bolsas de piel café hechas a mano" },
+  ])(
+    "si el guardián quita existencias o lote, el caso no pasa y la corrida no aprueba: %j",
+    async (overrides) => {
+      const { results, metrics } = await runEval("sale_proposal", [bolsas], {
+        provider: answering(overrides),
+        categories,
+      });
+
+      expect(results[0]!).toMatchObject({ passed: false, stock: true });
+      expect(results[0]!.failures).toContain(
+        "Dijo las piezas en existencia o un precio que se lee como el de todas (lo quitó el guardián).",
+      );
+      expect(metrics.stockCases).toBe(1);
+      expect(metrics.gate.reasons).toContain(
+        "Existencias o precio de todas en 1 caso (debe ser 0).",
+      );
+    },
+  );
 });
 
 describe("evalGate (ADR-033 #9)", () => {

@@ -79,11 +79,11 @@ describe("datos del producto (P4)", () => {
   });
 
   it("usa las mismas reglas de redacción que «Sube y vende»: al cambiarlas, sube su versión", () => {
-    // Llamados sin género y «la plataforma no verifica nada» (revisión del video, 2026-10-02).
+    // Llamados sin pronombre y «la plataforma no verifica nada» (revisión del video, 2026-10-02).
     const { system } = adCopyTask.messages(adCopyInput(product));
     expect(system).toContain(SELLER_COPY_RULES);
-    expect(system).toContain("«Haz tu pedido aquí»");
-    expect(adCopyTask.promptVersion).toBe("ad-copy@3");
+    expect(system).toContain("«Haz tu pedido aquí» o «Aparta aquí»");
+    expect(adCopyTask.promptVersion).toBe("ad-copy@4");
   });
 
   it("la huella cambia si cambian el precio o un dato verificable", () => {

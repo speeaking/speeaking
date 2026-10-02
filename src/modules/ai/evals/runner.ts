@@ -49,6 +49,12 @@ export type CaseResult = {
   urgency: boolean;
   contact: boolean;
   spanish: boolean | null;
+  /**
+   * El guardián quitó una frase que decía las piezas en existencia o un precio que se lee como el de
+   * todas («Llévatelas por $1,199», un título en plural). Los validadores no lo ven: es la lectura
+   * del precio por pieza como precio del lote (2026-10-02).
+   */
+  stock: boolean;
   /** Categoría (propuesta) o que el anuncio hable del producto (kit). `null` si no aplica. */
   category: { expected: string[]; got: string | null; correct: boolean } | null;
   guardRemoved: number;
@@ -90,6 +96,7 @@ function emptyResult(id: string, expectedBlocked: PolicyViolation | null): CaseR
     unsupportedClaims: [],
     urgency: false,
     contact: false,
+    stock: false,
     spanish: null,
     category: null,
     guardRemoved: 0,
@@ -146,7 +153,8 @@ async function call<T>(
     result.usage = error instanceof AIProviderError ? (error.usage ?? null) : null;
     if (invalid) {
       result.jsonValid = false;
-      result.failures.push("El modelo no devolvió JSON válido según el esquema.");
+      const fields = error.fields?.length ? `: ${error.fields.join(", ")}` : "";
+      result.failures.push(`El modelo no devolvió JSON válido según el esquema${fields}.`);
     } else {
       result.providerError = error instanceof AIProviderError ? error.kind : "unknown";
       result.failures.push(`Error del proveedor (${result.providerError}).`);
@@ -278,7 +286,14 @@ export async function evaluateSaleProposal(
       withCodeNumbers({ ...output, categorySlug: got }, input),
     );
     if (full.success) {
-      result.guardRemoved = guardProposal(full.data, input).removed;
+      const guarded = guardProposal(full.data, input);
+      result.guardRemoved = guarded.removed;
+      result.stock = guarded.findings.includes("stock");
+      if (result.stock) {
+        result.failures.push(
+          "Dijo las piezas en existencia o un precio que se lee como el de todas (lo quitó el guardián).",
+        );
+      }
     } else {
       result.failures.push("La propuesta completa no cumple el esquema.");
     }
@@ -372,6 +387,8 @@ export type EvalMetrics = {
   unsupportedClaimsCases: number;
   urgencyCases: number;
   contactCases: number;
+  /** Casos en que el guardián quitó existencias o un precio leído como el de todas. */
+  stockCases: number;
   nonSpanishCases: number;
   category: { checked: number; correct: number };
   policy: { checked: number; correct: number };
@@ -424,6 +441,7 @@ export function summarize(
     unsupportedClaimsCases: count((result) => result.unsupportedClaims.length > 0),
     urgencyCases: count((result) => result.urgency),
     contactCases: count((result) => result.contact),
+    stockCases: count((result) => result.stock),
     nonSpanishCases: count((result) => result.spanish === false),
     category: {
       checked: categoryChecked.length,
@@ -452,10 +470,11 @@ export function summarize(
 
 /**
  * Veredicto: JSON válido en todos los casos, 0 cifras inventadas (P2), 0 afirmaciones sin respaldo
- * (P4), 0 urgencia, 0 contacto o pago por fuera, todo en español, ≥ 90 % de categoría correcta (o
- * de anuncios que hablan del producto), la política de productos acierta en todos, el archivo de
- * casos COMPLETO (una corrida con `--limit` elige qué casos cuentan) y al menos 25 casos que
- * respondió el modelo sin errores del proveedor (los bloqueados por la política no miden al modelo).
+ * (P4), 0 urgencia, 0 contacto o pago por fuera, 0 existencias o precio de todas, todo en español,
+ * ≥ 90 % de categoría correcta (o de anuncios que hablan del producto), la política de productos
+ * acierta en todos, el archivo de casos COMPLETO (una corrida con `--limit` elige qué casos cuentan)
+ * y al menos 25 casos que respondió el modelo sin errores del proveedor (los bloqueados por la
+ * política no miden al modelo).
  */
 export function evalGate(metrics: Omit<EvalMetrics, "gate">): EvalMetrics["gate"] {
   const reasons: string[] = [];
@@ -493,6 +512,9 @@ export function evalGate(metrics: Omit<EvalMetrics, "gate">): EvalMetrics["gate"
   }
   if (metrics.contactCases > 0) {
     reasons.push(`Contacto o pago por fuera en ${cases(metrics.contactCases)} (debe ser 0).`);
+  }
+  if (metrics.stockCases > 0) {
+    reasons.push(`Existencias o precio de todas en ${cases(metrics.stockCases)} (debe ser 0).`);
   }
   if (metrics.nonSpanishCases > 0) {
     reasons.push(`Texto que no está en español en ${cases(metrics.nonSpanishCases)}.`);

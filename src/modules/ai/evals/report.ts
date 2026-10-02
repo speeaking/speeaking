@@ -72,6 +72,7 @@ export function evalReport({
     `| Afirmaciones sin respaldo (P4) | ${metrics.unsupportedClaimsCases} casos |`,
     `| Urgencia inventada | ${metrics.urgencyCases} casos |`,
     `| Contacto o pago por fuera | ${metrics.contactCases} casos |`,
+    `| Existencias o precio de todas | ${metrics.stockCases} casos |`,
     `| Fuera de español | ${metrics.nonSpanishCases} casos |`,
     `| ${metrics.task === "sale_proposal" ? "Categoría correcta" : "Habla del producto"} | ${metrics.category.correct} de ${metrics.category.checked} (${percent(metrics.category.correct, metrics.category.checked)}${interval(metrics.category.correct, metrics.category.checked)}) |`,
     `| Política de productos | ${metrics.policy.correct} de ${metrics.policy.checked} |`,

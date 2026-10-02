@@ -325,7 +325,7 @@ describe("generateAdKit", () => {
       expect.objectContaining({
         userId: OWNER,
         feature: "CONTENT_GENERATION",
-        provider: { id: "mock", model: "mock", promptVersion: "ad-copy@3" },
+        provider: { id: "mock", model: "mock", promptVersion: "ad-copy@4" },
         input: expect.objectContaining({ kind: "ad_kit", productId: productRow.id }),
       }),
     );

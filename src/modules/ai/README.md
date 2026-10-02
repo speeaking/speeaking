@@ -64,18 +64,23 @@ sus módulos con la misma forma.
   compra, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
   frase del campo («8 bolsas por $1,199» se lee como el precio del lote), antes de una palabra del
   producto o genérica («Hay 8 bolsas hechas a mano», «ocho piezas») o tras «tenemos / contamos con /
-  quedan»; el lote junto a un precio («todas las bolsas por…», «… en total») y, en descripción y
+  quedan»; el lote junto a un precio («todas las bolsas por…», «… en total», «Llévatelas por…»,
+  «Todas a…»; no el plural de un solo producto: «Tenis Nike: llévatelos») y, en descripción y
   propuesta de valor, la primera persona del vendedor, en singular o plural («tengo», «tenemos»,
-  «me salen», «nos cuestan»). «Quedan N» es urgencia. El título lo redacta la IA (singular); si no
-  es del mismo producto o trae algo sin respaldo, va el nombre confirmado. Las mayúsculas las pone
-  el código (`listingTitle`): la inicial, y las demás solo si el vendedor las escribió así (marcas)
-  o son siglas. Con 2 piezas o más, los textos de respaldo dicen «$X por pieza». En todo, también en
-  los consejos para el vendedor, quita lo que dice que la plataforma verifica, revisa, certifica o
+  «me salen», «nuestras», «las hago yo misma»). «Quedan N», «no te quedes con las ganas», «única
+  pieza (disponible)» y «solo queda una» son urgencia. Existencias y lote cuentan como `stock` y la
+  voz del vendedor como `voice` (el aviso dice el motivo real y la evaluación los cuenta como falla).
+  El título lo redacta la IA (singular) y pasa también la voz del vendedor y el lote; con 2 piezas o
+  más no va en plural. Si no es del mismo producto o trae algo sin respaldo, va el nombre
+  confirmado. Las mayúsculas las pone el código (`listingTitle`): la inicial, las marcas conocidas
+  y sus líneas («Nike Air Max», «JBL Flip»), y las demás solo si el vendedor las escribió así o son
+  siglas. Con 2 piezas o más, los textos de respaldo dicen «$X por pieza». En todo, también en los
+  consejos para el vendedor, quita lo que dice que la plataforma verifica, revisa, certifica o
   garantiza algo («la plataforma verifica…», «verificamos», «comprobado por la plataforma»,
   «certificado por…»): no lo hace.
 - `sale-proposal.ts`: contrato de «Sube y vende», extracción determinista del texto (tras «vendo
   en / doy a / dejo en», el precio va justo después: «Vendo en Guadalajara 15 playeras» no es un
-  precio) y `sellerTextForModel`: al modelo le llega el texto sin el costo ni el contacto, desde la
+  precio; la cantidad con letra, «Tengo ocho cojines», se lee y sale del nombre) y `sellerTextForModel`: al modelo le llega el texto sin el costo ni el contacto, desde la
   palabra que los anuncia hasta el final de la cláusula (sin marcas que pueda copiar; en un texto
   sin puntuar se conservan los detalles de antes).
 - `ad-kit/*`: kit de anuncios (datos P4, guardián con las afirmaciones que respaldan los datos,

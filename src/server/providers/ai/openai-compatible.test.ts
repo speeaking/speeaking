@@ -125,6 +125,25 @@ describe("OpenAICompatibleProvider", () => {
     });
   });
 
+  it("si no cumple el esquema, el error dice qué campos fallaron y por qué, nunca su contenido", async () => {
+    // Una de 10 llamadas en vivo falló así (2026-10-02) y el registro no decía dónde.
+    const { provider } = setup([
+      completion(JSON.stringify({ headline: "secreto ".repeat(20), tags: [42, "b", "c", "d"] })),
+      completion(JSON.stringify({ tags: [] })),
+    ]);
+
+    const tooLong = await provider.generate(task, { product: "Audífonos" }).catch((e) => e);
+    expect(tooLong).toMatchObject({ kind: "invalid_output" });
+    expect(tooLong.fields).toEqual(
+      expect.arrayContaining(["headline (too_big)", "tags (too_big)", "tags.0 (invalid_type)"]),
+    );
+    expect(tooLong.message).toMatch(/no cumple el esquema: .*headline \(too_big\)/);
+    expect(tooLong.message).not.toMatch(/secreto|42/);
+
+    const missing = await provider.generate(task, { product: "Audífonos" }).catch((e) => e);
+    expect(missing.fields).toEqual(["headline (invalid_type)"]);
+  });
+
   it("una salida que no es JSON, cortada o rechazada es invalid_output", async () => {
     const { provider } = setup([
       completion("Claro, aquí tienes tus anuncios"),

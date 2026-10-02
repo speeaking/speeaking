@@ -32,6 +32,11 @@ export class AIProviderError extends Error {
     /** Uso informado por el proveedor, si alcanzó a responder (p. ej. salida inválida). */
     readonly usage?: AIUsage,
     readonly status?: number,
+    /**
+     * Campos de la salida que no cumplieron el esquema y por qué («ctas.3 (too_big)»): solo la ruta y
+     * el código del error, nunca el contenido.
+     */
+    readonly fields?: readonly string[],
   ) {
     super(message);
   }

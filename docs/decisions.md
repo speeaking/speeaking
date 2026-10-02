@@ -419,6 +419,42 @@ mientras el proveedor sea simulado, pero es bloqueador antes de uno de pago.
   es un paso de la operación diaria (`pnpm ops:daily`, `/api/cron/daily`); hay que programarla en
   el hosting (ver `architecture.md` → Operación).
 
+**Adenda (2026-10-02): lo que dejó pasar la reevaluación en vivo.** Tras el arreglo del costo y del
+precio de lote (`sale-proposal@5`), una reevaluación con el modelo real dejó huecos menores en
+«Sube y vende». Se cerraron con pruebas primero y sin tocar rutas, precios, cuotas ni costos:
+
+- **Lote con pronombre:** con 2 piezas o más, «Llévatelas por $1,199», «Te las dejo en…» o «Todas
+  a $1,199» se leen como el precio de todas. No cuentan si el precio se dice por pieza ni si el
+  pronombre es del nombre en plural de UN producto, según su género (tenis, botas, audífonos:
+  «Tenis Nike: llévatelos»; «Funda para audífonos: llévatelas» sí cuenta).
+- **Urgencia suave y escasez falsa:** «No te quedes con las ganas», «Aprovecha mientras haya», «es
+  el único disponible» y «único par», además de la escasez que ya quitaba la revisión del video
+  («Única pieza», «solo queda una»), con cualquier existencia: el texto puede quedarse aunque el
+  stock suba. «Pieza única» (cada una es distinta), «una única pieza de piel» o «solo hay una talla»
+  no.
+- **Voz del vendedor** en descripción y propuesta de valor: también posesivos y quien lo hace
+  («nuestras bolsas», «por mí en mi taller», «las hago yo misma»). «Mi» antes de mayúscula es una
+  marca («Mi Band»).
+- **Título de la IA:** pasa las mismas reglas que la descripción (voz del vendedor, lote aunque no
+  traiga precio) y, con 2 piezas o más, no va en plural («Aguas de jamaica»). Si la IA copió tal
+  cual el nombre del vendedor, es suyo y no cuenta como frase quitada.
+- **Hallazgos con su motivo:** existencias y lote cuentan como `stock` y la voz del vendedor como
+  `voice` (antes, `number`). El aviso de la propuesta dice el motivo real, no «cifras distintas a
+  las tuyas», y la evaluación cuenta `stock` como falla del caso y del veredicto («Existencias o
+  precio de todas», debe ser 0): antes no veía una lectura de lote que el guardián quitaba.
+- **Lector y título:** la cantidad con letra («Tengo ocho cojines») se lee y sale del nombre (con
+  «ocho» en el nombre, el guardián no la contaba); «tres leches» sigue siendo un producto. Una lista
+  corta de marcas y sus líneas fija su escritura («Tenis Nike Air Max», «Bocina JBL Flip 6») y una
+  letra que es nombre se queda («Vitamina E»).
+- **Llamados sin pronombre:** «Haz tu pedido aquí» y «Aparta aquí». Ni «Aparta el tuyo» ni «Pídelo
+  aquí» (el de `@6`) concuerdan con «Bolsa…». Cambia la regla común, así que suben
+  `sale-proposal@7` y `ad-copy@4`; el peor caso de entrada queda en ≈ 3,189 de 3,200 tokens. Las
+  corridas con las versiones anteriores ya no respaldan un cambio de ruta: hace falta una nueva.
+- **Salida fuera del esquema:** el registro dice qué campos fallaron y por qué («ctas.3 (too_big)»),
+  sin su contenido; la evaluación lo repite. Una de 10 llamadas en vivo falló así sin pista.
+
+Sigue siendo una lista de patrones: mitiga, no garantiza.
+
 **Pendiente antes de un proveedor de pago.** El adaptador real debe mandar `max_tokens` y el timeout;
 exigir correo verificado (SEC-10); nombrar al proveedor en el aviso de privacidad (encargado, país,
 sin entrenamiento ni retención); decidir si se aparta parte del presupuesto para vendedores con ventas.

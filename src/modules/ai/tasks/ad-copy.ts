@@ -71,9 +71,9 @@ function mockAdCopy(input: AdCopyInput): AdCopy {
 /** «Kit de anuncios» (Studio → Contenido): 4 textos por canal, anclados a los datos del producto. */
 export const adCopyTask: AITask<AdCopyInput, AdCopy> = {
   task: "ad_copy",
-  // @3: cambiaron las reglas comunes (`SELLER_COPY_RULES`): llamados sin género y la plataforma no
-  // verifica nada (2026-10-02).
-  promptVersion: "ad-copy@3",
+  // @4: llamados sin pronombre («Haz tu pedido aquí», «Aparta aquí»): «Pídelo aquí» tampoco
+  // concordaba con «Bolsa…». @3: llamados sin género y la plataforma no verifica nada (2026-10-02).
+  promptVersion: "ad-copy@4",
   format: "json",
   schemaName: "ad_copy",
   output: adCopySchema,

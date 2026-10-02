@@ -116,6 +116,14 @@ describe("guardProposal (SEC-28)", () => {
     ["urgency", "Los tonos son pocos y el tiempo es limitado."],
     ["urgency", "Quedan 5 bolsas de piel."],
     ["urgency", "Solo nos quedan tres."],
+    // Urgencia suave y escasez falsa (reevaluación del 2026-10-02): hay 3 en existencia.
+    ["urgency", "No te quedes con las ganas."],
+    ["urgency", "Aprovecha mientras haya."],
+    ["urgency", "Aprovéchalo mientras dure."],
+    ["urgency", "Única pieza a $20,000."],
+    ["urgency", "Es el único disponible."],
+    ["urgency", "Único par en existencia."],
+    ["urgency", "Solo hay uno, a $20,000."],
     // Afirmaciones sin respaldo en los datos del vendedor (P4) y promociones que no existen.
     ["claim", "Envío incluido a todo México."],
     ["claim", "Entrega inmediata."],
@@ -151,7 +159,10 @@ describe("guardProposal (SEC-28)", () => {
     expect(claimsIn("Garantía limitada de un año.")).toEqual(["warranty"]);
     // «quedan» sin un número no es escasez.
     expect(hasUrgency("Les quedan perfectas a todas.")).toBe(false);
-    for (const cta of ["Pídelo aquí", "Haz tu pedido aquí", "Espera tu pedido con gusto."]) {
+    // «mientras» o «aprovecha» sin prisa tampoco.
+    expect(hasUrgency("Toma la foto mientras haya luz natural.")).toBe(false);
+    expect(hasUrgency("Aprovecha su bolsillo interior para tus llaves.")).toBe(false);
+    for (const cta of ["Haz tu pedido aquí", "Aparta aquí", "Espera tu pedido con gusto."]) {
       expect(hasUrgency(cta)).toBe(false);
     }
   });
@@ -363,7 +374,8 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
       expect(text).not.toMatch(/(?<![\d,.$])8(?![\d,.])/);
       expect(text).not.toContain("[costo]");
     }
-    expect(findings).toContain("number");
+    // El costo oculto cuenta como cifra; las existencias y el lote, aparte (aviso y evaluación).
+    expect(findings).toEqual(expect.arrayContaining(["number", "stock"]));
   });
 
   it("con 2 piezas o más, los textos que arma el código dicen que el precio es por pieza", () => {
@@ -416,7 +428,7 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
     const { proposal: guarded, findings } = guardProposal(proposal, facts);
 
     expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
-    expect(findings).toContain("number");
+    expect(findings).toContain("stock");
   });
 
   it.each([
@@ -450,7 +462,72 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
     const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
 
     expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
-    expect(findings).toContain("number");
+    expect(findings).toContain("stock");
+  });
+
+  // Reevaluación en vivo del 2026-10-02: el pronombre en plural junto al precio también es el lote.
+  it.each([
+    "Llévatelas por $1,199.",
+    "Cómpralas por $1,199.",
+    "Apártalas hoy por $1,199.",
+    "Te las dejo en $1,199.",
+    "Las doy a $1,199.",
+    "Todas a $1,199.",
+    "Todas por solo $1,199.",
+  ])("con 2 piezas o más, quita el pronombre en plural junto a un precio: «%s»", (sentence) => {
+    const proposal = parseFor(
+      { ...bolsasOutput, adIdeas: [sentence, "Bolsa de piel café a $1,199."] },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
+    expect(findings).toContain("stock");
+  });
+
+  it.each([
+    // El plural es del nombre de UN producto: un par de tenis, unas botas, unos audífonos.
+    ["Tenis Nike Air Max 90", "Llévatelos por $1,199."],
+    ["Botas vaqueras de piel", "Llévatelas por $1,199."],
+    ["Audífonos de diadema inalámbricos", "Cómpralos por $1,199."],
+    ["Audífonos de diadema inalámbricos", "Te los dejo en $1,199."],
+    // Singular, o con el precio por pieza dicho.
+    ["bolsas de piel café", "Llévatela por $1,199."],
+    ["bolsas de piel café", "Llévatelas a $1,199 cada una."],
+    ["bolsas de piel café", "Todas a $1,199 por pieza."],
+    // «para todas» no habla del lote, ni un verbo que no es de compra.
+    ["bolsas de piel café", "Un regalo para todas a $1,199."],
+    ["bolsas de piel café", "Combínalas con todo, a $1,199."],
+  ])("con 8 piezas de «%s» conserva «%s»", (productName, sentence) => {
+    const facts = { ...bolsas, productName };
+    const proposal = parseFor({ ...bolsasOutput, adIdeas: [sentence] }, facts);
+
+    expect(guardProposal(proposal, facts).proposal.adIdeas).toEqual([sentence]);
+  });
+
+  it("el pronombre que no es del producto en plural sí cuenta («Funda para audífonos… llévatelas»)", () => {
+    const facts = { ...bolsas, productName: "Funda para audífonos" };
+    const proposal = parseFor(
+      { ...bolsasOutput, adIdeas: ["Llévatelas por $1,199.", "Funda para audífonos a $1,199."] },
+      facts,
+    );
+
+    expect(guardProposal(proposal, facts).proposal.adIdeas).toEqual([
+      "Funda para audífonos a $1,199.",
+    ]);
+  });
+
+  it.each([
+    // «Pieza única» es de calidad (cada una es distinta), no escasez; ni el material ni una talla.
+    "Cada bolsa es una pieza única, a $1,199.",
+    "Son piezas únicas con un acabado especial.",
+    "Hecha de una única pieza de piel, a $1,199.",
+    "Solo hay una talla, a $1,199.",
+  ])("no es escasez falsa: conserva «%s»", (sentence) => {
+    const facts = bolsas;
+    const proposal = parseFor({ ...bolsasOutput, adIdeas: [sentence] }, facts);
+
+    expect(guardProposal(proposal, facts).proposal.adIdeas).toEqual([sentence]);
   });
 
   it.each([
@@ -460,6 +537,7 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
     [8, "Combina con todo, a $1,199."],
     // Con una sola pieza no hay lote que confundir.
     [1, "Todas las bolsas de piel café por $1,199."],
+    [1, "Llévatelas por $1,199."],
   ])("con %i en existencia conserva «%s»", (quantity, sentence) => {
     const facts = { ...bolsas, quantity };
     const proposal = parseFor({ ...bolsasOutput, adIdeas: [sentence] }, facts);
@@ -494,7 +572,7 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
     const { proposal: guarded, findings } = cojinAds({ ...cojines, quantity }, sentence);
 
     expect(guarded.adIdeas).toEqual(["Cojín bordado a mano a $320."]);
-    expect(findings).toContain("number");
+    expect(findings).toContain("stock");
   });
 
   it.each([
@@ -530,7 +608,7 @@ describe("guardProposal: precio por pieza y piezas en existencia (lo publicable)
     const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
 
     expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
-    expect(findings).toContain("number");
+    expect(findings).toContain("stock");
   });
 
   it.each([
@@ -581,6 +659,13 @@ describe("guardProposal: descripción y propuesta de valor sin la primera person
     "Nos salen caras, pero valen la pena.",
     "Nos cuesta hacerlas, pero valen la pena.",
     "Nos costaron más que las de fábrica.",
+    // Posesivos y quien lo hace (reevaluación del 2026-10-02).
+    "Nuestras bolsas son de piel café.",
+    "Hechas por mí en mi taller.",
+    "Las hago yo misma.",
+    "Las hacemos a mano, una por una.",
+    "Mi taller está en Oaxaca.",
+    "Te la dejo con un acabado especial.",
   ])("quita «%s»", (sentence) => {
     const proposal = parseFor(
       {
@@ -594,7 +679,30 @@ describe("guardProposal: descripción y propuesta de valor sin la primera person
 
     expect(guarded.description).toBe("Son piezas únicas con un acabado especial.");
     expect(guarded.valueProposition).toBe("Un producto único con acabado especial.");
-    expect(findings).toContain("number");
+    expect(findings).toContain("voice");
+  });
+
+  it("«Mi» de una marca o «yo-yo» no son la voz del vendedor", () => {
+    const rules = (productName: string) => ({
+      productName,
+      allowedCents: new Set<number>(),
+      quantity: null,
+      claimKinds: [],
+      noSellerVoice: true,
+    });
+
+    expect(
+      textFindings("Se sincroniza con la app Mi Fitness.", rules("Reloj Xiaomi Mi Band 8")),
+    ).toEqual(new Set());
+    expect(
+      textFindings("Xiaomi Mi Band 8 con pantalla AMOLED.", rules("xiaomi mi band 8")),
+    ).toEqual(new Set());
+    expect(textFindings("Un yo-yo de madera que gira suave.", rules("Juguete de madera"))).toEqual(
+      new Set(),
+    );
+    expect(textFindings("Hechas por mí en mi taller.", rules("Bolsa de piel"))).toEqual(
+      new Set(["voice"]),
+    );
   });
 
   it("conserva la voz de quien compra en una pregunta, y la del vendedor en el post y los consejos", () => {
@@ -649,6 +757,70 @@ describe("guardProposal: productName es un título de publicación", () => {
     ["con el precio", "Bolsa de piel café a $1,199"],
   ])("un título %s se cambia por el nombre que confirmó el vendedor", (_reason, title) => {
     expect(withTitle(title).productName).toBe("Bolsas de piel café");
+  });
+
+  // Reevaluación del 2026-10-02: el título pasaba en plural o en la voz del vendedor.
+  const titleOf = (productName: string, facts: typeof bolsas) =>
+    guardProposal(parseFor({ ...mockSaleProposal(facts), productName }, facts), facts);
+  const jamaica = {
+    ...bolsas,
+    text: "Tengo 20 aguas de jamaica de litro. Me salen en $18 y las vendo a $45.",
+    productName: "aguas de jamaica de litro",
+    quantity: 20,
+    priceCents: 4_500,
+    costCents: 1_800,
+  };
+
+  it.each([
+    ["voice", "Vendo bolsa de piel café"],
+    ["voice", "Tengo bolsas de piel café"],
+    ["voice", "Nuestra bolsa de piel café"],
+    ["stock", "Bolsa de piel café en total"],
+    ["stock", "Lote de bolsa de piel café"],
+    ["stock", "Bolsas de piel café hechas a mano"],
+    ["stock", "Hermosas bolsas de piel café"],
+    ["stock", "Las bolsas de piel café"],
+  ] as const)("un título con «%s» se cambia por el nombre del vendedor: «%s»", (finding, title) => {
+    const { proposal, removed, findings } = titleOf(title, bolsas);
+
+    expect(proposal.productName).toBe("Bolsas de piel café");
+    expect(removed).toBe(1);
+    expect(findings).toEqual([finding]);
+  });
+
+  it("un título en plural de la IA no pasa con 2 piezas o más, aunque el vendedor escriba en plural", () => {
+    const { proposal, findings } = titleOf("Aguas de jamaica", jamaica);
+
+    expect(proposal.productName).toBe("Aguas de jamaica de litro");
+    expect(findings).toEqual(["stock"]);
+    // Con una pieza no hay lote que confundir.
+    const one = { ...jamaica, quantity: 1 };
+    expect(titleOf("Aguas de jamaica", one).proposal.productName).toBe("Aguas de jamaica");
+  });
+
+  it("el nombre del vendedor copiado tal cual es suyo: no cuenta como frase quitada", () => {
+    const { proposal, removed } = titleOf("bolsas de piel café", bolsas);
+
+    expect(proposal.productName).toBe("Bolsas de piel café");
+    expect(removed).toBe(0);
+  });
+
+  it.each([
+    // El plural es del nombre de UN producto, o la palabra termina en «s» y es singular.
+    ["Tenis Nike Air Max 90", "Tenis Nike Air Max 90 blancos"],
+    ["audífonos Sony WH-1000XM4", "Audífonos Sony WH-1000XM4 inalámbricos"],
+    ["botas vaqueras", "Botas vaqueras de piel"],
+    ["AirPods Pro 2", "Nuevos AirPods Pro 2"],
+    ["Cubrebocas KN95", "Cubrebocas KN95 en caja"],
+    ["paraguas plegable", "Paraguas plegable negro"],
+    ["pastel tres leches", "Tres leches de fresa"],
+    ["tenis adidas superstar", "Adidas Superstar blancos"],
+  ])("con 8 piezas de «%s», el título singular «%s» se queda", (productName, title) => {
+    const facts = { ...bolsas, productName, text: productName };
+    const { proposal, removed } = titleOf(title, facts);
+
+    expect(proposal.productName).toBe(title);
+    expect(removed).toBe(0);
   });
 
   it("las marcas con mayúsculas propias no se tocan", () => {
@@ -1029,11 +1201,11 @@ describe("la propuesta simulada sigue las reglas nuevas", () => {
     expect(guarded.proposal).toEqual(proposal);
     for (const text of buyerFacing(proposal)) {
       expect(text).not.toMatch(new RegExp(String.raw`(?<![\d,.$–-])${request.quantity}\s+(?!s\b)`));
-      // Llamados sin género: «Aparta el tuyo» con «Bolsa…» se leía mal (video del 2026-10-02).
-      expect(text).not.toMatch(/el tuyo|la tuya/i);
+      // Llamados sin pronombre: «Bolsa… Aparta el tuyo» y «Pídelo aquí» no concordaban (2026-10-02).
+      expect(text).not.toMatch(/p[ií]delo|el tuyo|la tuya/i);
     }
     expect(proposal.adIdeas).toContain(
-      `¿Buscabas ${proposal.productName}? Precio justo y trato directo. Haz tu pedido aquí.`,
+      `¿Buscabas ${proposal.productName}? Precio justo y trato directo. Aparta aquí.`,
     );
   });
 });

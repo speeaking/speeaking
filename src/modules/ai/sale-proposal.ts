@@ -247,32 +247,187 @@ function isTitleCased(core: string) {
   return letters.slice(1).every((letter) => /\p{Ll}/u.test(letter));
 }
 
+/** Antes de una letra que es nombre, no conjunción: «Vitamina E», «Tipo A». */
+const LETTER_NAMERS = new Set([
+  "vitamina",
+  "vitaminas",
+  "tipo",
+  "talla",
+  "clase",
+  "serie",
+  "letra",
+  "plan",
+  "grado",
+  "nivel",
+  "categoria",
+  "modelo",
+  "version",
+  "linea",
+]);
+
+/**
+ * Marcas conocidas, como se escriben: el vendedor las teclea como sea («tenis nike», «BOCINA JBL»).
+ * Lista corta a propósito; fuera de ella manda lo que escribió el vendedor.
+ */
+const KNOWN_BRANDS = [
+  "Acer",
+  "Adidas",
+  "AirPods",
+  "Apple",
+  "Asus",
+  "Barbie",
+  "Beats",
+  "Bose",
+  "Canon",
+  "Casio",
+  "Converse",
+  "Crocs",
+  "Dell",
+  "Disney",
+  "DualSense",
+  "Fender",
+  "Galaxy",
+  "GoPro",
+  "Hot Wheels",
+  "HP",
+  "Huawei",
+  "IdeaPad",
+  "iPad",
+  "iPhone",
+  "JBL",
+  "Jordan",
+  "Kindle",
+  "Lego",
+  "Lenovo",
+  "Levi's",
+  "Logitech",
+  "MacBook",
+  "Marvel",
+  "Maybelline",
+  "Motorola",
+  "New Balance",
+  "Nike",
+  "Nikon",
+  "Nintendo",
+  "Nivea",
+  "Oster",
+  "PlayStation",
+  "Pokémon",
+  "PS4",
+  "PS5",
+  "Puma",
+  "Redmi",
+  "Reebok",
+  "Ryzen",
+  "Samsung",
+  "Skechers",
+  "Sony",
+  "Stanley",
+  "ThinkPad",
+  "Vans",
+  "Xbox",
+  "Xiaomi",
+  "Yamaha",
+];
+/** Líneas y modelos que se escriben así solo detrás de una marca: «JBL Flip», «Nike Air Max». */
+const KNOWN_LINES = [
+  "Air",
+  "Air Force",
+  "Air Max",
+  "Band",
+  "Buds",
+  "Charge",
+  "Flip",
+  "Go",
+  "Lite",
+  "Max",
+  "Mini",
+  "Plus",
+  "Pro",
+  "Superstar",
+  "Switch",
+  "Ultra",
+  "Watch",
+];
+
+function spellingKey(text: string) {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("es-MX");
+}
+
+const BRAND_SPELLING = new Map(KNOWN_BRANDS.map((brand) => [spellingKey(brand), brand]));
+const LINE_SPELLING = new Map(KNOWN_LINES.map((line) => [spellingKey(line), line]));
+
+/** ¿Es una marca conocida? («Adidas» no es un plural). */
+export function isKnownBrand(word: string) {
+  return BRAND_SPELLING.has(spellingKey(word));
+}
+
+/**
+ * La escritura de las marcas y líneas conocidas, por posición de palabra (`cores`: sin signos
+ * alrededor). Una línea solo cuenta detrás de una marca, de otra línea o del número de modelo que las
+ * sigue («iPhone 17 Pro Max»): la «flip» de «Funda flip» no es de JBL.
+ */
+function knownSpellings(cores: readonly string[]) {
+  const found = new Map<number, string>();
+  let afterBrand = false;
+  for (let index = 0; index < cores.length;) {
+    const one = spellingKey(cores[index]!);
+    const two = index + 1 < cores.length ? `${one} ${spellingKey(cores[index + 1]!)}` : "";
+    const brand = BRAND_SPELLING.get(two) ?? BRAND_SPELLING.get(one);
+    const line = afterBrand ? (LINE_SPELLING.get(two) ?? LINE_SPELLING.get(one)) : undefined;
+    const spelling = brand ?? line;
+    if (spelling) {
+      const parts = spelling.split(" ");
+      parts.forEach((part, offset) => found.set(index + offset, part));
+      index += parts.length;
+      afterBrand = true;
+      continue;
+    }
+    // Un número de modelo («17», «S24», «WH-1000XM4») no separa la marca de su línea.
+    afterBrand &&= /\d/u.test(cores[index]!);
+    index++;
+  }
+  return found;
+}
+
 /**
  * Título de publicación con mayúscula inicial y en minúsculas lo demás (cosmético y determinista,
- * P2): los modelos escribían «Agua de Jamaica de Litro». Si la primera palabra ya trae mayúsculas
+ * P2): los modelos escribían «Agua de Jamaica de Litro». Las marcas conocidas y sus líneas van como
+ * se escriben («tenis nike air max» → «Tenis Nike Air Max»). Si la primera palabra ya trae mayúsculas
  * propias («iPhone», «eBook», «JBL») se respeta tal cual. Después de ella, una palabra en mayúscula de
  * título se pasa a minúsculas, salvo que se escriba así en `sources` (el nombre confirmado y el texto
- * del vendedor: «Yamaha», «Sony»); siglas y mayúsculas propias se respetan. Por omisión, `sources` es
- * el propio título: no cambia sus mayúsculas.
+ * del vendedor: «Yamaha», «Sony») o sea una letra que es nombre («Vitamina E»); siglas y mayúsculas
+ * propias se respetan. Por omisión, `sources` es el propio título: no cambia sus mayúsculas.
  */
 export function listingTitle(
   name: string,
   sources: readonly (string | null | undefined)[] = [name],
 ) {
   const words = name.replace(/\s+/gu, " ").trim().split(" ");
-  const [first = "", ...rest] = words;
-  const head = /\p{Lu}/u.test(first)
-    ? first
-    : first.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase("es-MX"));
+  const cores = words.map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ""));
+  const known = knownSpellings(cores);
   const written = sources.filter(Boolean).join("\n");
-  const tail = rest.map((word) => {
-    const core = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
-    if (!isTitleCased(core)) return word;
-    const escaped = core.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const asWritten = new RegExp(String.raw`(?<![\p{L}\p{N}])${escaped}(?![\p{L}\p{N}])`, "u");
-    return asWritten.test(written) ? word : word.toLocaleLowerCase("es-MX");
-  });
-  return [head, ...tail].join(" ").trim();
+  return words
+    .map((word, index) => {
+      const core = cores[index]!;
+      const spelling = known.get(index);
+      if (spelling) return word.replace(core, spelling);
+      if (index === 0) {
+        return /\p{Lu}/u.test(word)
+          ? word
+          : word.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase("es-MX"));
+      }
+      if (!isTitleCased(core)) return word;
+      const letterName =
+        core.length === 1 &&
+        (index === words.length - 1 || LETTER_NAMERS.has(spellingKey(cores[index - 1]!)));
+      if (letterName) return word;
+      const escaped = core.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const asWritten = new RegExp(String.raw`(?<![\p{L}\p{N}])${escaped}(?![\p{L}\p{N}])`, "u");
+      return asWritten.test(written) ? word : word.toLocaleLowerCase("es-MX");
+    })
+    .join(" ")
+    .trim();
 }
 
 /** Montos que siguen a una palabra clave, en orden. `end`: dónde termina el monto en el texto. */
@@ -321,23 +476,81 @@ function priceAfter(text: string, costEnd: number | undefined) {
 }
 
 /**
+ * Las cantidades con letra («ocho cojines», «Solo quedan tres»), como fragmentos de expresión
+ * regular (con o sin acento). Las usan el lector del texto y el guardián (`output-guard.ts`).
+ */
+export const NUMBER_WORDS: Readonly<Record<number, string>> = {
+  2: "dos",
+  3: "tres",
+  4: "cuatro",
+  5: "cinco",
+  6: "seis",
+  7: "siete",
+  8: "ocho",
+  9: "nueve",
+  10: "diez",
+  11: "once",
+  12: "doce",
+  13: "trece",
+  14: "catorce",
+  15: "quince",
+  16: "diecis[eé]is",
+  17: "diecisiete",
+  18: "dieciocho",
+  19: "diecinueve",
+  20: "veinte",
+  21: "veinti[uú]n[oa]?",
+  22: "veintid[oó]s",
+  23: "veintitr[eé]s",
+  24: "veinticuatro",
+  25: "veinticinco",
+  26: "veintis[eé]is",
+  27: "veintisiete",
+  28: "veintiocho",
+  29: "veintinueve",
+  30: "treinta",
+  40: "cuarenta",
+  50: "cincuenta",
+  100: "cien",
+};
+
+/**
+ * Una cantidad en cifra o con letra, como palabra suelta. «Tres leches» y «cuatro quesos» son el
+ * nombre del producto, no cuántos hay.
+ */
+const COUNT = String.raw`(?:\d{1,5}|${Object.values(NUMBER_WORDS).join("|")})(?![\p{L}\p{N}])(?!\s+(?:leches|quesos)(?!\p{L}))`;
+
+/** El número de una cantidad en cifra o con letra («16», «dieciséis»). */
+function countValue(raw: string) {
+  if (/^\d+$/u.test(raw)) return Number(raw);
+  const entry = Object.entries(NUMBER_WORDS).find(([, word]) =>
+    new RegExp(`^(?:${word})$`, "iu").test(raw),
+  );
+  return entry ? Number(entry[0]) : null;
+}
+
+/**
  * Extrae nombre, cantidad, costo y precio del texto libre del vendedor, SIN IA (determinista).
  * Si un número no aparece, devuelve null: nunca lo inventa. El vendedor confirma todo.
  */
 export function parseSellerText(text: string): ParsedSellerText {
   const clean = text.replace(/\s+/g, " ").trim();
-  const quantityMatch = /(?:tengo|vendo|son|hay)\s+(\d{1,5})\s+/i.exec(clean);
-  const quantity = quantityMatch ? Number(quantityMatch[1]) : null;
+  const quantityMatch = new RegExp(
+    String.raw`(?<!\p{L})(?:tengo|vendo|son|hay)\s+(${COUNT})\s+`,
+    "iu",
+  ).exec(clean);
+  const quantity = quantityMatch ? countValue(quantityMatch[1]!) : null;
 
   const [cost] = amountsAfter(clean, COST_KEYWORDS);
   const costCents = cost?.cents ?? null;
   const priceCents = priceAfter(clean, cost?.end);
 
-  // Nombre: lo que sigue a "tengo 50 / vendo 3 / quiero vender" hasta el primer signo o número.
-  const nameMatch =
-    /(?:tengo|vendo|quiero vender|voy a vender)\s+(?:\d{1,5}\s+)?([^.,;$\n]+?)(?=\s*(?:[.,;]|\s(?:me|y|a|en|por|que|costo|precio)\s|$))/i.exec(
-      clean,
-    );
+  // Nombre: lo que sigue a "tengo 50 / vendo ocho / quiero vender" (sin la cantidad, en cifra o con
+  // letra) hasta el primer signo o número.
+  const nameMatch = new RegExp(
+    String.raw`(?:tengo|vendo|quiero vender|voy a vender)\s+(?:${COUNT}\s+)?([^.,;$\n]+?)(?=\s*(?:[.,;]|\s(?:me|y|a|en|por|que|costo|precio)\s|$))`,
+    "iu",
+  ).exec(clean);
   const productName = (nameMatch?.[1] ?? clean.split(/[.,;]/)[0] ?? "").trim().slice(0, 120);
 
   return { productName, quantity, costCents, priceCents };

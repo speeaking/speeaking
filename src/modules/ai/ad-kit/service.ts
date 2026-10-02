@@ -10,7 +10,7 @@ import { monthStart } from "../budget-ledger";
 import { POLICY_MESSAGES, policyViolation } from "../content-policy";
 import { recordedCost } from "../cost";
 import { AIError } from "../errors";
-import type { GuardFinding } from "../output-guard";
+import { GUARD_FINDINGS, type GuardFinding } from "../output-guard";
 import { reserveAiRequest } from "../reservation";
 import { maybeRedactExpiredAiInputs } from "../retention";
 import { providerFailure, SERVICE_TIMEOUT_MS, withTimeout } from "../service";
@@ -171,7 +171,7 @@ const storedKitSchema = z.object({
   factsHash: z.string(),
   guard: z.object({
     removed: z.int().min(0),
-    findings: z.array(z.enum(["contact", "payment", "urgency", "claim", "number"])),
+    findings: z.array(z.enum(GUARD_FINDINGS)),
   }),
 });
 

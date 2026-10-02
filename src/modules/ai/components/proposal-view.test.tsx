@@ -107,8 +107,45 @@ describe("ProposalView (P2, principio 5, SEC-28)", () => {
       />,
     );
 
-    expect(screen.getByText(/Quitamos 1 frase que la IA no podía respaldar/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Quitamos 1 frase de la IA que no debía publicarse. Motivos: datos de contacto o de pago por fuera; urgencia o escasez inventada.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/CLABE/)).not.toBeInTheDocument();
+  });
+
+  it("dice el motivo real: piezas en existencia o precio de todas, no «cifras distintas» (2026-10-02)", async () => {
+    render(
+      <ProposalView
+        result={await result({ adIdeas: ["Todos a $3,499.", "AirPods Pro 2 a $3,499."] })}
+        onReset={() => {}}
+      />,
+    );
+
+    const notice = screen.getByText(/^Quitamos 1 frase/);
+    expect(notice).toHaveTextContent(
+      "Motivo: las piezas que tienes o un precio que parecía ser por todas.",
+    );
+    expect(notice).not.toHaveTextContent(/cifras distintas/);
+  });
+
+  it("dice el motivo real: la voz del vendedor en la descripción", async () => {
+    render(
+      <ProposalView
+        result={await result({
+          description:
+            "Tenemos AirPods Pro 2 listos para ti. Revisa las fotos y pregunta cualquier detalle antes de comprar.",
+        })}
+        onReset={() => {}}
+      />,
+    );
+
+    const notice = screen.getByText(/^Quitamos 1 frase/);
+    expect(notice).toHaveTextContent(
+      "Motivo: texto en tu voz («tengo», «vendo») en lugar de una descripción del producto.",
+    );
+    expect(notice).not.toHaveTextContent(/cifras distintas/);
   });
 
   it("en el celular «Crear producto…» no se aplasta: solo crece en fila (sm:flex-1), no en columna", async () => {
@@ -142,7 +179,9 @@ describe("ProposalView (P2, principio 5, SEC-28)", () => {
     expect(screen.queryByText("Hipótesis de la IA")).not.toBeInTheDocument();
     expect(screen.queryByText("Nota de la IA:")).not.toBeInTheDocument();
     expect(screen.getAllByText("Ejemplo (IA simulada)").length).toBeGreaterThanOrEqual(4);
-    expect(screen.getByText(/Quitamos 1 frase que no podíamos respaldar/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/^Quitamos 1 frase que no debía publicarse\. Motivos:/),
+    ).toBeInTheDocument();
     // Las cifras siguen siendo las calculadas.
     const budget = screen.getByRole("heading", { name: "Presupuesto inicial" }).closest("section")!;
     expect(within(budget).getByText("$300 al día")).toBeInTheDocument();
