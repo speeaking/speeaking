@@ -22,7 +22,15 @@
 
 # misc
 .DS_Store
+
+# llaves y certificados: nunca se versionan
 *.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
 
 # debug
 npm-debug.log*
@@ -54,3 +62,8 @@ next-env.d.ts
 
 # cliente de Prisma generado (pnpm prisma generate)
 /src/generated/
+
+# estado local de Claude Code (permisos de esta máquina y worktrees de otras sesiones);
+# .claude/launch.json sí se versiona
+.claude/settings.local.json
+.claude/worktrees/
