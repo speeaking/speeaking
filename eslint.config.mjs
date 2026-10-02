@@ -48,6 +48,8 @@ const eslintConfig = defineConfig([
     "blob-report/**",
     "src/generated/**",
     ".data/**",
+    // Worktrees de otras sesiones (copias del repo con su propio .next): no son código de este checkout.
+    ".claude/**",
   ]),
 ]);
 

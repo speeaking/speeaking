@@ -15,11 +15,13 @@ import { listingTitle, type SaleProposal } from "./sale-proposal";
  *
  * - `contact` / `payment`: correos, teléfonos, ligas, usuarios, CLABE o tarjetas, e instrucciones de
  *   pago por fuera («transferencia», «depósito»…). La plataforma cobra dentro de la app.
- * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy», «quedan 5»…); P12.
+ * - `urgency`: urgencia o escasez inventadas («últimas piezas», «solo hoy», «quedan 5», «única pieza
+ *   disponible», «solo queda una»…); P12.
  * - `claim`: afirmaciones que exigen un dato verificable (P4) que no está en los datos: garantía,
  *   originalidad, envío gratis, devoluciones, tiempos de entrega, descuentos… Y en TODO, también en
  *   los consejos para el vendedor, que la plataforma verifica, revisa, certifica o garantiza algo
- *   (`PLATFORM_CLAIM`): no lo hace.
+ *   (`PLATFORM_CLAIM`): no lo hace; o atribuirle al vendedor lo que no escribió («El vendedor menciona
+ *   que es original», `misattributes`).
  * - `number`: montos, piezas o días distintos de los confirmados (P2). En lo que ve quien compra,
  *   además, las piezas en existencia (en cifra o con letra) junto a un precio, aunque vaya en otra
  *   frase del campo («8 bolsas por $1,199» se lee como el precio de las 8), antes de una palabra del
@@ -107,12 +109,32 @@ const NUMBER_WORDS: Readonly<Record<number, string>> = {
   100: "cien",
 };
 
+const ONLY = String.raw`(?:s[oó]lo|solamente|[uú]nicamente|nada\s+m[aá]s)`;
+/**
+ * Una sola pieza («solo queda una», «solo hay 1»), salvo que siga lo que no son existencias: «solo hay
+ * una talla», «solo queda una cosa: elegir tu tono».
+ */
+const ONE = String.raw`(?:una|uno|1)(?![\p{L}\p{N}])(?!\s+(?:talla|medida|tama[nñ]o|color|tono|modelo|versi[oó]n|presentaci[oó]n|forma|manera|cosa|pregunta|duda|opci[oó]n|diferencia)(?![\p{L}\p{N}]))`;
+
 const URGENCY = phrases([
-  String.raw`[uú]ltim[oa]s?\s+(?:\d+\s+)?(?:piezas?|unidades?|oportunidad|d[ií]as?|horas?|disponibles?)`,
-  String.raw`(?:s[oó]lo|solamente)\s+quedan`,
+  String.raw`[uú]ltim[oa]s?\s+(?:\d+\s+)?(?:piezas?|unidad(?:es)?|oportunidad|d[ií]as?|horas?|disponibles?)`,
+  String.raw`${ONLY}\s+(?:(?:me|nos)\s+)?quedan`,
   // «Quedan 5 bolsas», «solo nos quedan tres»: escasez, sea o no la cifra confirmada.
   String.raw`quedan\s+(?:\d+|${Object.values(NUMBER_WORDS).join("|")})`,
-  String.raw`quedan\s+(?:muy\s+)?poc[oa]s`,
+  String.raw`quedan\s+(?:muy\s+)?(?:poc[oa]s|poquit[oa]s)`,
+  // Una sola pieza: el modelo escribió «Única pieza disponible» en el titular con 8 en existencia
+  // (2026-10-02). «La única pieza», «solo queda una», «me queda una sola», «solo hay 1», «la única que
+  // queda». No «pieza única» ni «cada pieza es única» (irrepetible, hecha a mano) ni «cortada en una
+  // única pieza de piel» (hechura), salvo que digan que está disponible.
+  String.raw`(?<!(?<!\p{L})una\s+)[uú]nicas?\s+(?:piezas?|unidad(?:es)?)`,
+  String.raw`[uú]nicas?\s+(?:piezas?|unidad(?:es)?)\s+disponibles?`,
+  String.raw`(?:pieza|unidad)\s+[uú]nica\s+disponible`,
+  String.raw`(?:la|el)\s+[uú]nic[oa]\s+que\s+(?:(?:me|nos)\s+)?(?:queda|hay|tengo|tenemos)`,
+  String.raw`${ONLY}\s+(?:(?:me|nos)\s+)?queda\s+${ONE}`,
+  String.raw`(?:me|nos)\s+quedan?\s+(?:${ONLY}\s+)?(?:${ONE}|poc[oa]s|poquit[oa]s)`,
+  String.raw`queda\s+(?:${ONLY}\s+${ONE}|(?:una|uno|1)\s+sol[oa])`,
+  String.raw`${ONLY}\s+(?:hay|tengo|tenemos|existe)\s+${ONE}`,
+  String.raw`${ONLY}\s+(?:una|uno|1)\s+(?:(?:pieza|unidad)\s+)?disponible`,
   String.raw`se\s+(?:est[aá]n\s+)?acaba(?:n|ndo)?`,
   String.raw`antes\s+de\s+que\s+se\s+acaben?`,
   String.raw`por\s+tiempo\s+limitado`,
@@ -168,6 +190,73 @@ const PLATFORM_CLAIM = phrases([
   // «Con la garantía de speeaking», «el respaldo de la plataforma».
   String.raw`(?:verificaci[oó]n|certificaci[oó]n|garant[ií]a|respaldo|aval)\s+de\s+(?:${PLATFORM})`,
 ]);
+
+const SELLER = String.raw`(?:el\s+vendedor|la\s+vendedora|quien\s+vende)`;
+const SAYS = String.raw`(?:(?:mencion|indic|afirm|asegur|coment|se[nñ]al|confirm|explic|aclar|especific|declar)(?:a|[oó])|dice|dijo|escribe|escribi[oó]|describe|describi[oó])`;
+/**
+ * Le atribuye algo al vendedor: «el vendedor menciona que…», «la vendedora también dice…», «según el
+ * vendedor», «como indica quien vende». No «el vendedor no menciona…» ni «el vendedor puede mostrar…».
+ */
+const ATTRIBUTION = phrases([
+  String.raw`${SELLER}(?:\s+(?:te|nos|le|les|me|tambi[eé]n|ya))*\s+${SAYS}`,
+  String.raw`(?:seg[uú]n|de\s+acuerdo\s+con)\s+${SELLER}`,
+  String.raw`(?:seg[uú]n|como)\s+(?:lo\s+)?(?:que\s+)?${SAYS}\s+${SELLER}`,
+]);
+/**
+ * Dónde termina lo que se le atribuye: otra frase (la pregunta de quien compra), «pero», «aunque»,
+ * «, lo que…», «;» o «:» («El vendedor indica que es de piel, pero pídele la factura»).
+ */
+const CLAUSE_BREAK =
+  /[.!?¿¡…;:()—]|\s[–-]\s|,?\s+(?:pero|aunque|sin\s+embargo|no\s+obstante|sino|as[ií]\s+que|por\s+(?:eso|lo\s+que|lo\s+tanto)|mientras\s+que|y\s+(?:te|le|les))(?![\p{L}\p{N}])|,\s*lo\s+(?:que|cual)(?![\p{L}\p{N}])/iu;
+/**
+ * Lo que solo se le puede atribuir si está en su texto, por concepto: los sinónimos van juntos
+ * («elaborado a mano» por «hechas a mano», «cuero» por «piel»).
+ */
+const ATTRIBUTED_CLAIMS = [
+  "originale?s?|originalidad",
+  String.raw`aut[eé]ntic[oa]s?|autenticidad`,
+  "genuin[oa]s?",
+  String.raw`de\s+marca`,
+  "sellad[oa]s?",
+  String.raw`certificad[oa]s?|certificaci[oó]n`,
+  String.raw`garant[ií]as?|garantizad[oa]s?`,
+  "facturas?",
+  "nuev[oa]s?",
+  String.raw`piel(?:es)?|cuero`,
+  String.raw`a\s+mano|artesanal(?:es|mente)?`,
+  "naturale?s?",
+  "gamuza",
+  "seda",
+  String.raw`algod[oó]n`,
+  "lana",
+  "lino",
+  "mezclilla",
+  "oro",
+  "plata",
+  "acero",
+  "madera",
+  String.raw`bamb[uú]`,
+  String.raw`cer[aá]mica`,
+  "barro",
+  "vidrio",
+].map((alternative) => phrases([alternative]));
+
+/**
+ * ¿Le atribuye al vendedor algo que no escribió? El modelo inventaba «El vendedor menciona que es
+ * original» (2026-10-02) sin «original» en su texto. Contar fielmente lo que sí escribió («El vendedor
+ * indica que es de piel») se queda.
+ */
+function misattributes(text: string, sellerText: string) {
+  if (!ATTRIBUTION.test(text)) return false;
+  const own = normalizeText(sellerText);
+  return text
+    .split(CLAUSE_BREAK)
+    .some(
+      (clause) =>
+        ATTRIBUTION.test(clause) &&
+        ATTRIBUTED_CLAIMS.some((claim) => claim.test(clause) && !claim.test(own)),
+    );
+}
 
 /** Afirmaciones que exigen un dato verificable (P4), por tipo. */
 export type ClaimKind =
@@ -320,6 +409,12 @@ export type TextRules = {
    * voz de quien compra y no cuentan.
    */
   noSellerVoice?: boolean;
+  /**
+   * Lo que escribió el vendedor (su texto y el nombre que confirmó). Con él, una frase que le atribuye
+   * algo que no está ahí se quita («El vendedor menciona que es original»). Sin él (el kit de
+   * anuncios) no se revisan las atribuciones.
+   */
+  sellerText?: string;
 };
 
 /** La primera persona del vendedor, en singular o en plural: sus existencias, su costo o su venta. */
@@ -512,6 +607,8 @@ export function textFindings(
   if (claims.some((kind) => !rules.allowedClaims?.has(kind))) found.add("claim");
   // Nunca respaldada por un dato, ni en los consejos para el vendedor: la plataforma no verifica.
   if (PLATFORM_CLAIM.test(figures)) found.add("claim");
+  // Tampoco se le atribuye al vendedor lo que no escribió, ni en los consejos.
+  if (rules.sellerText !== undefined && misattributes(text, rules.sellerText)) found.add("claim");
   for (const match of figures.matchAll(MONEY)) {
     const cents = match[1] ? toCents(match[1], match[2]) : toCents(match[3]!, match[4]);
     if (!rules.allowedCents.has(cents)) found.add("number");
@@ -616,6 +713,7 @@ export function guardProposal(proposal: SaleProposal, facts: ProposalFacts): Gua
     allowedCents,
     quantity: facts.quantity,
     allowedPercents: percentsIn(facts.text, facts.productName),
+    sellerText: [facts.text ?? "", facts.productName].join("\n"),
   };
   const publish: TextRules = { ...base, claimKinds: PROPOSAL_CLAIMS };
   // Lo que ve quien compra: sin las piezas en existencia (cambian con cada venta y, junto al precio,

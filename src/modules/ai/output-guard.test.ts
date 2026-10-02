@@ -792,6 +792,228 @@ describe("guardProposal: la plataforma no verifica nada (P4)", () => {
   });
 });
 
+describe("guardProposal: escasez falsa (P12, regla 3)", () => {
+  it("quita el caso real: «Única pieza disponible» en el titular con 8 en existencia", () => {
+    // qwen/qwen3.5-9b, sale-proposal@6 (2026-10-02): el titular va grande en el video promocional.
+    const proposal = parseFor(
+      { ...bolsasOutput, headline: "Bolsa de piel café hecha a mano. Única pieza disponible." },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.headline).toBe("Bolsa de piel café hecha a mano.");
+    expect(findings).toContain("urgency");
+  });
+
+  it.each([
+    "Única pieza disponible.",
+    "Única pieza por $1,199.",
+    "Es la única pieza que tengo.",
+    "Una única pieza disponible.",
+    "Pieza única disponible.",
+    "Última pieza.",
+    "Últimas unidades.",
+    "Última unidad disponible.",
+    "Solo queda una.",
+    "Sólo me queda 1.",
+    "Solo nos quedan dos.",
+    "Solo hay una.",
+    "Solo hay 1 disponible.",
+    "Solo tengo una pieza.",
+    "Me queda una sola.",
+    "Queda solo una.",
+    "Quedan pocas.",
+    "Quedan poquitas.",
+    "Es la única que queda.",
+    "Solo una disponible.",
+  ])("quita «%s» de todo: lo publicable y los consejos", (sentence) => {
+    expect(hasUrgency(sentence)).toBe(true);
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        description: `${sentence} Son piezas únicas con un acabado especial.`,
+        adIdeas: [sentence, "Bolsa de piel café a $1,199."],
+        objections: [
+          { objection: "¿Cuántas tienes?", answer: sentence },
+          { objection: "¿Por qué ese precio?", answer: "Explica que cada pieza es hecha a mano." },
+        ],
+      },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.description).toBe("Son piezas únicas con un acabado especial.");
+    expect(guarded.adIdeas).toEqual(["Bolsa de piel café a $1,199."]);
+    expect(guarded.objections.map((item) => item.objection)).toEqual(["¿Por qué ese precio?"]);
+    expect(findings).toContain("urgency");
+  });
+
+  it.each([
+    // «Pieza única» es irrepetible (hecha a mano), no la última disponible.
+    "Pieza única hecha a mano.",
+    "Bolsa de piel café, pieza única hecha a mano.",
+    "Cada pieza es única.",
+    "Una pieza única para tu estilo.",
+    // Hechura: de una sola pieza de piel.
+    "Estilo y artesanía en una sola pieza.",
+    "Cortada en una única pieza de piel.",
+    // «Solo queda…» o «solo hay una…» que no habla de existencias.
+    "Solo queda elegir tu color.",
+    "Solo te queda pedirla.",
+    "Solo queda una cosa: elegir tu tono.",
+    "Solo hay una talla: unitalla.",
+    "¿Y si no me queda?",
+  ])("conserva «%s»", (sentence) => {
+    expect(hasUrgency(sentence)).toBe(false);
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        description: `${sentence} Son piezas únicas con un acabado especial.`,
+        objections: [{ objection: "¿Es de piel?", answer: sentence }],
+      },
+      bolsas,
+    );
+    const { proposal: guarded } = guardProposal(proposal, bolsas);
+
+    expect(guarded.description).toBe(proposal.description);
+    expect(guarded.objections).toEqual(proposal.objections);
+  });
+});
+
+describe("guardProposal: lo que se atribuye al vendedor debe estar en su texto (P4)", () => {
+  // El caso real del 2026-10-02 (qwen/qwen3.5-9b, sale-proposal@6): el vendedor nunca dijo «original».
+  const real =
+    "Al ser una pieza hecha a mano, cada una es única. El vendedor menciona que es original, pero te sugiero pedirle fotos de cerca.";
+  const honest = { objection: "¿Es de piel?", answer: "Muestra de cerca la textura de la piel." };
+  /** Las bolsas, pero el vendedor sí escribió «originales». */
+  const originales = {
+    ...bolsas,
+    text: "Vendo 8 bolsas originales de piel café. Me salen en $650 cada una y quiero venderlas a $1,199.",
+  };
+
+  it("quita el caso real de «Lo que te van a preguntar»", () => {
+    const proposal = parseFor(
+      { ...bolsasOutput, objections: [{ objection: "¿Es original?", answer: real }, honest] },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.objections).toEqual([honest]);
+    expect(findings).toContain("claim");
+  });
+
+  it.each([
+    "El vendedor menciona que es original.",
+    "El vendedor asegura que son auténticas.",
+    "La vendedora dice que es nueva.",
+    "Según el vendedor, tiene garantía.",
+    "Es de marca, según la vendedora.",
+    "El vendedor también comenta que trae factura.",
+    "Quien vende afirma que está sellada.",
+    "El vendedor dijo que es de gamuza.",
+    // «piel» sí la escribió; «original», no.
+    "El vendedor indica que es de piel y original.",
+  ])("quita «%s» (el vendedor no lo escribió) de todo, también de los consejos", (sentence) => {
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        description: `${sentence} Son piezas únicas con un acabado especial.`,
+        objections: [{ objection: "¿Es original?", answer: sentence }, honest],
+        assumptions: [sentence, "Usamos los datos que confirmaste."],
+        budgetRationale: `Empieza con poco y mide. ${sentence}`,
+      },
+      bolsas,
+    );
+    const { proposal: guarded, findings } = guardProposal(proposal, bolsas);
+
+    expect(guarded.description).toBe("Son piezas únicas con un acabado especial.");
+    expect(guarded.objections).toEqual([honest]);
+    expect(guarded.assumptions).toEqual(["Usamos los datos que confirmaste."]);
+    expect(guarded.budgetRationale).toBe("Empieza con poco y mide.");
+    expect(findings).toContain("claim");
+  });
+
+  it.each([
+    // Lo escribió (o su sinónimo: «elaborado a mano» por «hechas a mano»).
+    "El vendedor indica que es de piel.",
+    "La vendedora dice que son hechas a mano.",
+    "El vendedor indica que es un producto elaborado a mano.",
+    // Lo que sigue a «pero» o a «, lo que» ya no se le atribuye.
+    "El vendedor indica que es de piel, pero pídele la factura.",
+    "El vendedor indica que son piezas hechas a mano, lo que implica un proceso artesanal.",
+    // No le atribuye nada.
+    "El vendedor no menciona que sea original: pídele fotos.",
+    "El vendedor puede mostrar el ticket si lo tiene.",
+  ])("conserva «%s» con el texto de las bolsas", (sentence) => {
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        // La pregunta de quien compra («¿Es original?») no es parte de lo que se atribuye.
+        objections: [{ objection: "¿Es original o es de piel?", answer: sentence }],
+        assumptions: [sentence],
+      },
+      bolsas,
+    );
+    const { proposal: guarded } = guardProposal(proposal, bolsas);
+
+    expect(guarded.objections).toEqual(proposal.objections);
+    expect(guarded.assumptions).toEqual(proposal.assumptions);
+  });
+
+  it("«El vendedor indica que es de piel» también se queda en la descripción", () => {
+    const description =
+      "El vendedor indica que es de piel. Son piezas únicas con un acabado especial.";
+    const proposal = parseFor({ ...bolsasOutput, description }, bolsas);
+
+    expect(guardProposal(proposal, bolsas).proposal.description).toBe(description);
+  });
+
+  it("si el vendedor escribió «original», atribuírselo en los consejos es fiel; publicarlo sigue sin respaldo", () => {
+    const sentence = "La vendedora dice que es original.";
+    const proposal = parseFor(
+      {
+        ...bolsasOutput,
+        description: `${sentence} Son piezas únicas con un acabado especial.`,
+        objections: [{ objection: "¿Es original?", answer: sentence }],
+        assumptions: [sentence],
+      },
+      originales,
+    );
+    const { proposal: guarded } = guardProposal(proposal, originales);
+
+    expect(guarded.objections).toEqual(proposal.objections);
+    expect(guarded.assumptions).toEqual(proposal.assumptions);
+    // Lo publicable no repite «original» aunque lo diga el vendedor (regla 10, P4).
+    expect(guarded.description).toBe("Son piezas únicas con un acabado especial.");
+  });
+
+  it("se revisa con el texto del vendedor y el nombre que confirmó; sin texto, solo cuenta el nombre", () => {
+    const rules = {
+      productName: "bolsas de piel café",
+      allowedCents: new Set<number>(),
+      quantity: null,
+      claimKinds: [],
+    };
+    const sentence = "El vendedor menciona que es original.";
+
+    expect(textFindings(sentence, { ...rules, sellerText: bolsas.text })).toEqual(
+      new Set(["claim"]),
+    );
+    expect(textFindings(sentence, { ...rules, sellerText: originales.text }).size).toBe(0);
+    // Sin `sellerText` (p. ej. el kit de anuncios) no se revisan las atribuciones.
+    expect(textFindings(sentence, rules).size).toBe(0);
+
+    const { text: _text, ...withoutText } = originales;
+    const named = { ...withoutText, productName: "bolsas originales de piel" };
+    const proposal = parseFor(
+      { ...bolsasOutput, objections: [{ objection: "¿Es original?", answer: sentence }, honest] },
+      originales,
+    );
+    expect(guardProposal(proposal, named).proposal.objections).toHaveLength(2);
+    expect(guardProposal(proposal, withoutText).proposal.objections).toEqual([honest]);
+  });
+});
+
 describe("la propuesta simulada sigue las reglas nuevas", () => {
   it.each([
     bolsas,

@@ -95,9 +95,10 @@ describe("JoinButton", () => {
     await userEvent.click(screen.getByRole("button", { name: "Unirme a Gaming" }));
 
     expect(toggleMembershipAction).toHaveBeenCalledWith(GAMING, true);
-    expect(
-      await screen.findByRole("button", { name: "Miembro, salir de Gaming" }),
-    ).not.toHaveAttribute("aria-disabled", "true");
+    // El nombre cambia al instante (optimista) y el botón sigue deshabilitado mientras el servidor
+    // confirma: con la máquina cargada `findByRole` lo encontraba antes de la confirmación.
+    const member = await screen.findByRole("button", { name: "Miembro, salir de Gaming" });
+    await waitFor(() => expect(member).not.toHaveAttribute("aria-disabled", "true"));
     expect(toast).not.toHaveBeenCalled();
     expect(toast.dismiss).toHaveBeenCalledTimes(1);
     expect(toast.dismiss).toHaveBeenCalledWith(`membresia-${GAMING}:7`);

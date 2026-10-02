@@ -9,6 +9,8 @@ next-env.d.ts
 AGENTS.md
 .data
 src/generated
+# Worktrees de otras sesiones (copias del repo): no son código de este checkout
+.claude
 
 # Generado por `pnpm tint`
 src/styles/community-tint.css
