@@ -258,7 +258,8 @@ export function ProposalView({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Link
           href={`/studio/productos/nuevo?propuesta=${result.responseId}` as Route}
-          className={buttonVariants({ size: "lg", className: "h-12 flex-1 text-base" })}
+          // Crece solo en fila: en columna (celular) `flex-1` dejaba el botón del alto de su texto.
+          className={buttonVariants({ size: "lg", className: "h-12 text-base sm:flex-1" })}
         >
           <Sparkles data-icon="inline-start" />
           Crear producto con esta propuesta

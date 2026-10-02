@@ -106,4 +106,13 @@ describe("SellWithAiForm: la etiqueta sigue a la propuesta que llegó (ADR-038)"
     expect(screen.getByText("Sube y vende")).not.toHaveClass("bg-ai");
     expect(screen.queryByText(/Piloto/)).not.toBeInTheDocument();
   });
+
+  it("sobre tus números dice la verdad: el costo no se publica ni se manda a la IA (H3)", () => {
+    render(<SellWithAiForm />);
+    expect(
+      screen.getByText(/Tu costo solo lo ves tú: no se publica y no se lo mandamos a la IA/),
+    ).toBeInTheDocument();
+    // Antes decía que la IA usaba «exactamente estos números», justo encima del costo.
+    expect(screen.queryByText(/La IA usa exactamente estos números/)).not.toBeInTheDocument();
+  });
 });

@@ -91,6 +91,14 @@ describe("ProposalView (P2, principio 5, SEC-28)", () => {
     expect(screen.queryByText(/CLABE/)).not.toBeInTheDocument();
   });
 
+  it("en el celular «Crear producto…» no se aplasta: solo crece en fila (sm:flex-1), no en columna", async () => {
+    // En columna, `flex-1` (base 0) le ganaba a `h-12` y el botón quedaba del alto de su texto.
+    render(<ProposalView result={await result()} onReset={() => {}} />);
+    const create = screen.getByRole("link", { name: "Crear producto con esta propuesta" });
+    expect(create.className.split(/\s+/)).not.toContain("flex-1");
+    expect(create).toHaveClass("sm:flex-1", "h-12");
+  });
+
   it("sin nada que quitar no muestra el aviso", async () => {
     render(<ProposalView result={await result()} onReset={() => {}} />);
 

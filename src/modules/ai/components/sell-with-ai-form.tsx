@@ -128,10 +128,10 @@ export function SellWithAiForm({ simulated = false }: { simulated?: boolean }) {
       <section className="flex flex-col gap-4 rounded-3xl border bg-card p-4 md:p-5">
         <div>
           <h2 className="font-heading text-lg font-bold">Confirma tus datos</h2>
+          {/* H3: el costo nunca sale hacia el proveedor de IA (`sellerTextForModel`) ni se publica. */}
           <p className="text-sm text-muted-foreground">
-            {simulated
-              ? "Los detectamos de tu texto. Tu propuesta usa exactamente estos números; nunca se inventan."
-              : "Los detectamos de tu texto. La IA usa exactamente estos números; nunca los inventa."}
+            Los detectamos de tu texto y nunca se inventan. Tu costo solo lo ves tú: no se publica y
+            no se lo mandamos a la IA.
           </p>
         </div>
         <TextField

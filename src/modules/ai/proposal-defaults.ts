@@ -74,7 +74,8 @@ export async function getProposalDefaults(
     proposalId: response.id,
     simulated: simulatedRecord(response.request.provider),
     title: guarded.productName,
-    description: `${guarded.description}\n\n${guarded.valueProposition}`,
+    // Solo la descripción: pegarle la propuesta de valor repetía la misma idea en dos párrafos.
+    description: guarded.description,
     price: pesos(input.data.priceCents),
     cost: pesos(input.data.costCents),
     stock: String(input.data.quantity),

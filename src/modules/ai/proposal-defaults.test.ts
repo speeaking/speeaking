@@ -103,13 +103,22 @@ describe("getProposalDefaults", () => {
 
     expect(defaults).toMatchObject({
       title: "Bolsas de piel café",
-      description:
-        "Son piezas únicas con un acabado especial. Pídelo aquí.\n\nUn producto único con acabado especial.",
+      description: "Son piezas únicas con un acabado especial. Pídelo aquí.",
       postBody: "Bolsa de piel café hecha a mano, única y resistente. Aparta la tuya.",
       price: "1199",
       stock: "8",
     });
     expect(`${defaults?.description} ${defaults?.postBody}`).not.toMatch(/\[costo\]|8 bolsas/);
+  });
+
+  it("la descripción prellenada es la descripción, sin pegarle la propuesta de valor (no se repite)", async () => {
+    db.aIResponse.findFirst.mockResolvedValue(stored("openai_compatible"));
+    const defaults = await getProposalDefaults(RESPONSE, USER);
+    const proposal = withCodeNumbers(mockSaleProposal(input) as object, input) as {
+      valueProposition: string;
+    };
+    expect(defaults?.description).not.toContain(proposal.valueProposition);
+    expect(defaults?.description).not.toContain("\n\n");
   });
 
   it("la foto se prellena solo si es propia, está lista y no es un comprobante de autenticidad", async () => {
