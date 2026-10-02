@@ -69,10 +69,10 @@ describe("onboardingSchema.fromFormData", () => {
 
   // SEC-18
   it.each([
-    ["displayName", "Equipo VendeIA"],
+    ["displayName", "Equipo speeaking"],
     ["displayName", "Soporte técnico"],
     ["username", "equipo.soporte"],
-    ["username", "vendeia.oficial"],
+    ["username", "speeaking.oficial"],
   ])("rechaza %s que suplanta a la plataforma: %s", (field, value) => {
     const entries = base.map(([key, current]): [string, string] => [
       key,

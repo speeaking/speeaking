@@ -14,7 +14,7 @@ const sellerSchema = z.object({
     .trim()
     .min(2, "Escribe el nombre de tu tienda.")
     .max(60, { abort: true })
-    // Una tienda tampoco puede llamarse «Estreno Oficial» o «Soporte» (SEC-18).
+    // Una tienda tampoco puede llamarse «speeaking Oficial» o «Soporte» (SEC-18).
     .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE),
   city: z.string().trim().min(2, "Escribe tu ciudad.").max(60),
   state: z.string().trim().min(2, "Escribe tu estado.").max(60),

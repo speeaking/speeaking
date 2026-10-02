@@ -15,7 +15,7 @@ export type Variant = "control" | "treatment";
 /** Número en [0, 1) derivado de SHA-256(llave + persona). */
 export function assignmentBucket(experimentKey: string, userId: string): number {
   const digest = createHash("sha256")
-    .update(`vendeia:experiment:v1|${experimentKey}|${userId.toLowerCase()}`)
+    .update(`speeaking:experiment:v1|${experimentKey}|${userId.toLowerCase()}`)
     .digest();
   return digest.readUInt32BE(0) / 0x1_0000_0000;
 }

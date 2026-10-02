@@ -2,6 +2,7 @@ import { Camera } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
+import { siteConfig } from "@/config/site";
 import { formatMoney } from "@/lib/format";
 import { SponsorForm } from "@/modules/billing/components/sponsor-form";
 import { TopUpForm } from "@/modules/billing/components/top-up-form";
@@ -90,7 +91,7 @@ export default async function StudioWalletPage() {
         <h2 className="font-heading text-lg font-bold">«Ver cómo me veo» en mis productos</h2>
         <p className="text-sm text-ink-2">
           {stats.trialLeft > 0
-            ? `Estreno pone las primeras ${STORE_TRIAL_TRY_ONS} pruebas de tu tienda (te quedan ${stats.trialLeft}). Después, cada prueba sale de tu saldo.`
+            ? `${siteConfig.name} pone las primeras ${STORE_TRIAL_TRY_ONS} pruebas de tu tienda (te quedan ${stats.trialLeft}). Después, cada prueba sale de tu saldo.`
             : "Ya se usaron las pruebas de cortesía de tu tienda: desde ahora cada prueba sale de tu saldo."}
         </p>
         <SponsorForm

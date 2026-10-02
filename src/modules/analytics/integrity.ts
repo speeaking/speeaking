@@ -191,7 +191,7 @@ export function servedImpressionKey(actor: string, postId: string) {
 /** HMAC corto (128 bits) con el secreto del servidor: sin él no se sabe qué persona ni qué entidad. */
 export function digest(parts: string[]) {
   return createHmac("sha256", env.BETTER_AUTH_SECRET)
-    .update(`vendeia:event-dedupe:v1|${parts.join("|").toLowerCase()}`)
+    .update(`speeaking:event-dedupe:v1|${parts.join("|").toLowerCase()}`)
     .digest("hex")
     .slice(0, 32);
 }

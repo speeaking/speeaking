@@ -3,12 +3,17 @@ import { isPlatformImpersonation, isReservedUsername } from "./reserved-names";
 
 describe("isPlatformImpersonation (SEC-18)", () => {
   it.each([
-    "Equipo Estreno",
-    "estreno",
-    "Estreno Oficial",
-    "Soporte Estreno",
-    "E.s.t.r.e.n.o",
-    "Estrén0",
+    "Equipo speeaking",
+    "speeaking",
+    "Speeaking Oficial",
+    "Soporte Speeaking",
+    "S.p.e.e.a.k.i.n.g",
+    "Spe3aking",
+    "Speeáking",
+    // La marca con una sola «e» junto a un rol (ADR-070).
+    "Equipo Speaking",
+    "Soporte Speaking",
+    "Speaking Oficial",
     "Equipo VendeIA",
     "equipo vendeia",
     "VendeIA",
@@ -87,6 +92,10 @@ describe("isPlatformImpersonation (SEC-18)", () => {
     "¿Qué vende? Ana",
     "佐藤 花子",
     "Иван Петров",
+    // «Speaking» solo, y «estreno» como palabra común (ADR-070).
+    "Public Speaking MX",
+    "Speaking Club",
+    "Ropa de estreno",
   ])("sigue permitiendo %j", (name) => {
     expect(isPlatformImpersonation(name)).toBe(false);
   });
@@ -125,9 +134,13 @@ describe("isReservedUsername (SEC-18)", () => {
     "equipo.soporte",
     "equipo_moda",
     "equipogaming",
+    "speeaking",
+    "speeaking.oficial",
+    "speeaking.mx",
+    "tienda.speeaking",
+    "spe3aking",
+    "speaking",
     "estreno",
-    "estreno.oficial",
-    "tienda.estreno",
     "vendeia",
     "vendeia.oficial",
     "vendeia.mx",
@@ -168,6 +181,8 @@ describe("isReservedUsername (SEC-18)", () => {
     "soya.mx",
     "lalo.lopez",
     "leila_99",
+    "public.speaking",
+    "ropa.de.estreno",
   ])("permite %s", (username) => {
     expect(isReservedUsername(username)).toBe(false);
   });

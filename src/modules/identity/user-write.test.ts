@@ -14,7 +14,7 @@ describe("sanitizeUserWrite", () => {
   it("no deja entrar un correo `.invalid` (cuentas de la plataforma, ADR-066)", () => {
     let thrown: unknown;
     try {
-      sanitizeUserWrite({ name: "Ana", email: "editorial.comida@vendeia.invalid" });
+      sanitizeUserWrite({ name: "Ana", email: "editorial.comida@speeaking.invalid" });
     } catch (error) {
       thrown = error;
     }
@@ -38,7 +38,7 @@ describe("sanitizeUserWrite", () => {
     ["61 caracteres", "a".repeat(61)],
     ["vacío", "   "],
     ["no es texto", 42],
-    ["suplanta a la plataforma (SEC-18)", "Equipo VendeIA"],
+    ["suplanta a la plataforma (SEC-18)", "Equipo speeaking"],
   ])("rechaza un nombre %s", (_label, name) => {
     let thrown: unknown;
     try {

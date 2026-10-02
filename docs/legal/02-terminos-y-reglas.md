@@ -17,8 +17,8 @@
 >   [CORREO DE SOPORTE], [FECHA DE ÚLTIMA ACTUALIZACIÓN]. Agregamos tres que pide la ley o la NMX y
 >   no estaban en la lista: [TELÉFONO DE ATENCIÓN] (LFPC art. 76 BIS fr. III pide «números
 >   telefónicos» [11]), [HORARIO DE ATENCIÓN] (NMX 5.2.1.7 [12]) y [URL DEL FORMULARIO DE AVISOS].
-> - **Nombre.** «Estreno» es provisional (ADR-014) y la búsqueda en el IMPI está pendiente (ADR-033
->   #16).
+> - **Nombre.** «speeaking» es la marca elegida (ADR-070); la búsqueda y el registro en el IMPI están
+>   pendientes (ADR-033 #16).
 
 ---
 
@@ -59,8 +59,8 @@ Publicar una promesa que el producto no cumple sería publicidad engañosa [11, 
 
 ### A1. Quiénes somos y cómo contactarnos
 
-Estreno (nombre provisional) es una plataforma que opera [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE]
-(«Estreno» o «nosotros»), con RFC [RFC] y domicilio en [DOMICILIO PARA OÍR Y RECIBIR
+speeaking (nombre comercial) es una plataforma que opera [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE]
+(«speeaking» o «nosotros»), con RFC [RFC] y domicilio en [DOMICILIO PARA OÍR Y RECIBIR
 NOTIFICACIONES], México.
 
 - **Soporte, quejas y aclaraciones:** [CORREO DE SOPORTE] · [TELÉFONO DE ATENCIÓN] ·
@@ -77,32 +77,32 @@ Todos estos canales son gratuitos.
 > y teléfonos antes de la transacción [11, art. 76 BIS fr. III]. Mecanismos de reclamación sin costo
 > y con domicilio y teléfono [12, 10.1 y 10.2].
 
-### A2. Qué es Estreno y qué no es
+### A2. Qué es speeaking y qué no es
 
-- Estreno es una red social de comunidades donde pequeños vendedores también tienen su tienda. El
+- speeaking es una red social de comunidades donde pequeños vendedores también tienen su tienda. El
   piloto se hace en la Ciudad de México.
-- Estreno pone en contacto a quien compra con quien vende. **No vende** los productos de las
+- speeaking pone en contacto a quien compra con quien vende. **No vende** los productos de las
   tiendas: no es su dueña, no los fabrica, no los guarda ni los envía, y no revisa cada producto
   antes de que se publique.
-- **Durante el piloto, Estreno no cobra ni recibe pagos.** Pagas directamente a quien vende (ver
+- **Durante el piloto, speeaking no cobra ni recibe pagos.** Pagas directamente a quien vende (ver
   A6). Tampoco cobramos comisiones ni cuotas: ni a quien compra ni a quien vende (comisión 0 %). Si
   algún día cobramos algo, te avisaremos antes y te pediremos aceptarlo (ver A20).
-- Las cuentas editoriales de Estreno y el contenido que publicamos para arrancar las comunidades se
+- Las cuentas editoriales de speeaking y el contenido que publicamos para arrancar las comunidades se
   identifican como tales.
 
 > **Fundamento y notas.** La NMX llama «proveedor intermediario» a quien opera el sistema que pone
 > en contacto a terceros proveedores con consumidores, «pudiendo facilitar» el pago o la entrega
-> [12, 3.12 y 3.16]. Estreno encaja aunque no cobre (00 §3.1). Pago directo y comisión 0 %: ADR-033
+> [12, 3.12 y 3.16]. speeaking encaja aunque no cobre (00 §3.1). Pago directo y comisión 0 %: ADR-033
 > #4. Contenido honesto y cuentas editoriales identificadas: principio 5 de
 > `product-principles.md`.
 
 ### A3. Aceptación y documentos que forman este contrato
 
 - Estos términos, las **Reglas de la comunidad** (Parte B) y, si vendes, la **Política para
-  vendedores** (Parte C) forman un solo contrato entre tú y Estreno.
+  vendedores** (Parte C) forman un solo contrato entre tú y speeaking.
 - El **aviso de privacidad** es un documento aparte: explica qué datos tratamos y para qué.
 - Aceptas estos términos al marcar la casilla correspondiente cuando creas tu cuenta. Guardamos qué
-  versión aceptaste y cuándo. Si no estás de acuerdo, no uses Estreno.
+  versión aceptaste y cuándo. Si no estás de acuerdo, no uses speeaking.
 - Puedes consultar en todo momento la versión vigente y las anteriores en `/terminos`.
 
 > **Fundamento y notas.** El contrato electrónico se perfecciona al recibirse la aceptación [27,
@@ -118,7 +118,7 @@ Todos estos canales son gratuitos.
   declaras.
 - Si sabemos que una cuenta es de una persona menor de edad, la cerramos. Madres, padres o tutores
   pueden avisarnos a [CORREO DE SOPORTE].
-- Estreno no permite contenido sexual ni productos para adultos (ver Parte B y C4).
+- speeaking no permite contenido sexual ni productos para adultos (ver Parte B y C4).
 
 > **Fundamento y notas.** La mayoría de edad empieza a los 18 años y los menores tienen incapacidad
 > legal [28, arts. 646 y 450 fr. I]. Advertir cuando la información no sea apta para población
@@ -130,8 +130,8 @@ Todos estos canales son gratuitos.
 ### A5. Tu cuenta y la seguridad
 
 - Usa datos verdaderos. Una cuenta es de una sola persona y no se presta ni se vende.
-- No te hagas pasar por otra persona, por una marca ni por Estreno. Una tienda no puede llamarse
-  «Estreno», «Soporte», «Oficial» ni nada que confunda con nuestro equipo.
+- No te hagas pasar por otra persona, por una marca ni por speeaking. Una tienda no puede llamarse
+  «speeaking», «Soporte», «Oficial» ni nada que confunda con nuestro equipo.
 - Cuida tu contraseña y no la compartas. Si crees que alguien entró a tu cuenta, cámbiala, usa
   «Cerrar sesión en todos los dispositivos» en Ajustes y escríbenos.
 - **Cómo protegemos tu información:** conexión cifrada (HTTPS), contraseñas guardadas con un cifrado
@@ -151,23 +151,23 @@ Todos estos canales son gratuitos.
 
 1. En cada producto ves su precio total, existencias, formas de entrega con su costo y tiempo,
    garantía, devoluciones y los métodos de pago que acepta quien vende.
-2. Haces tu pedido en Estreno. Quien vende ve tu nombre visible y lo que pediste. El lugar, la hora
+2. Haces tu pedido en speeaking. Quien vende ve tu nombre visible y lo que pediste. El lugar, la hora
    y, si hace falta, el domicilio de entrega los acuerdas directamente con quien vende: compártelos
    solo con esa persona y solo para ese pedido. Tú ves en tu pedido los datos de contacto de quien
    vende.
 3. **Pagas directamente a quien vende** con el método que acordaron: efectivo al recoger o contra
-   entrega, o transferencia a la cuenta que aparece **dentro de tu pedido**, entre otros. Estreno no
+   entrega, o transferencia a la cuenta que aparece **dentro de tu pedido**, entre otros. speeaking no
    recibe, no guarda y no puede devolver ese dinero.
-4. Quien vende entrega el producto y los dos confirman el pedido en Estreno.
+4. Quien vende entrega el producto y los dos confirman el pedido en speeaking.
 
-**Lo que significa pagar directo.** El contrato de compraventa es entre tú y quien vende. Estreno no
+**Lo que significa pagar directo.** El contrato de compraventa es entre tú y quien vende. speeaking no
 ofrece protección de pago ni reembolsos, porque el dinero nunca pasa por nosotros. Si algo sale mal,
 sí podemos ayudarte (ver A9): pedirle explicaciones a quien vende, ocultar sus productos, suspender
 su tienda y entregar información a las autoridades cuando la ley lo pida.
 
 **Consejos para comprar seguro:**
 
-- Paga **solo** con los datos que aparecen dentro de tu pedido en Estreno. Nunca con datos que te
+- Paga **solo** con los datos que aparecen dentro de tu pedido en speeaking. Nunca con datos que te
   lleguen por comentarios, por otra app o por teléfono.
 - En tus primeras compras con una tienda, prefiere pagar contra entrega o al recoger, después de
   revisar el producto.
@@ -175,7 +175,7 @@ su tienda y entregar información a las autoridades cuando la ley lo pida.
 - Evita anticipos grandes. Con tiendas nuevas te recomendamos no pasar de **$3,000 MXN** por pedido.
 - Desconfía de precios muy por debajo de lo normal, de la prisa («solo hoy», «último») y de palabras
   como «réplica», «AAA» o «1:1».
-- Nadie de Estreno te pedirá tu contraseña, códigos de verificación ni el NIP de tu tarjeta.
+- Nadie de speeaking te pedirá tu contraseña, códigos de verificación ni el NIP de tu tarjeta.
 - Guarda tu comprobante de pago y la información del pedido.
 - Si algo te parece raro, usa «Reportar».
 
@@ -187,7 +187,7 @@ su tienda y entregar información a las autoridades cuando la ley lo pida.
 > **transferencia** [1, arts. 35 y 36]: va con su cláusula en el aviso de privacidad **[VERIFICAR
 > CON ABOGADO]** qué excepción aplica (00 §2.7). **Hoy no existe el flujo B1** (§0 #4). En el
 > código, el vendedor ve el nombre visible del comprador y lo pedido; el domicilio solo sale del
-> servidor con un pago **real** a través de Estreno, mientras el pedido está pagado, enviado o
+> servidor con un pago **real** a través de speeaking, mientras el pedido está pagado, enviado o
 > entregado, y **el teléfono nunca se comparte** (`commerce/seller-order-dto.ts`). Con pago directo
 > el domicilio no se comparte por la plataforma. El texto coincide con `01-aviso-de-privacidad.md`
 > §8.2. El brief y 00 §2.7 mencionan domicilio y teléfono: si B1 los muestra dentro del pedido,
@@ -195,19 +195,19 @@ su tienda y entregar información a las autoridades cuando la ley lo pida.
 
 ### A7. Qué responde cada quien
 
-| Tema                                                            | Quién responde                                                                                                |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Que el producto sea como se anuncia (datos, fotos, condición)   | **Quien vende.** Estreno muestra los datos como los capturó quien vende y retira lo que incumpla estas reglas |
-| Precio, existencias, entrega y calidad                          | Quien vende                                                                                                   |
-| Garantía, devoluciones, cambios y reclamaciones por el producto | Quien vende, en los términos de la ley (ver A8 y C6)                                                          |
-| Cobro y pago                                                    | Quien compra y quien vende. Estreno no interviene en el dinero                                                |
-| Comprobantes fiscales e impuestos de la venta                   | Quien vende (ver C10)                                                                                         |
-| Uso de los datos del comprador que recibe quien vende           | Quien vende, y solo para entregar ese pedido. Estreno comparte solo lo necesario                              |
-| Funcionamiento, seguridad y confidencialidad de la plataforma   | Estreno                                                                                                       |
-| Canal de quejas gratuito, moderación y sanciones                | Estreno                                                                                                       |
-| Atender órdenes de autoridad                                    | Estreno                                                                                                       |
-| Identificarse                                                   | Estreno en A1; quien vende, con sus datos de contacto dentro del pedido                                       |
-| Pagar lo acordado, dar datos correctos y recibir el pedido      | Quien compra                                                                                                  |
+| Tema                                                            | Quién responde                                                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Que el producto sea como se anuncia (datos, fotos, condición)   | **Quien vende.** speeaking muestra los datos como los capturó quien vende y retira lo que incumpla estas reglas |
+| Precio, existencias, entrega y calidad                          | Quien vende                                                                                                     |
+| Garantía, devoluciones, cambios y reclamaciones por el producto | Quien vende, en los términos de la ley (ver A8 y C6)                                                            |
+| Cobro y pago                                                    | Quien compra y quien vende. speeaking no interviene en el dinero                                                |
+| Comprobantes fiscales e impuestos de la venta                   | Quien vende (ver C10)                                                                                           |
+| Uso de los datos del comprador que recibe quien vende           | Quien vende, y solo para entregar ese pedido. speeaking comparte solo lo necesario                              |
+| Funcionamiento, seguridad y confidencialidad de la plataforma   | speeaking                                                                                                       |
+| Canal de quejas gratuito, moderación y sanciones                | speeaking                                                                                                       |
+| Atender órdenes de autoridad                                    | speeaking                                                                                                       |
+| Identificarse                                                   | speeaking en A1; quien vende, con sus datos de contacto dentro del pedido                                       |
+| Pagar lo acordado, dar datos correctos y recibir el pedido      | Quien compra                                                                                                    |
 
 Nada de lo anterior limita los derechos que te da la Ley Federal de Protección al Consumidor ni la
 responsabilidad que la ley no permite excluir (ver A19).
@@ -217,7 +217,7 @@ responsabilidad que la ley no permite excluir (ver A19).
 > proveedor que cumpla las reglas de información del producto [12, 5.3.6]. No valen las cláusulas
 > que liberan al proveedor de su responsabilidad civil o la trasladan a un tercero [11, art. 90
 > fr. II y III]. **[VERIFICAR CON ABOGADO]:** cómo se reparte la responsabilidad frente al vendedor
-> ocasional y si la PROFECO podría considerar responsable a Estreno (00 §10, pregunta 7).
+> ocasional y si la PROFECO podría considerar responsable a speeaking (00 §10, pregunta 7).
 
 ### A8. Tus derechos como consumidor
 
@@ -285,13 +285,13 @@ producto conforme a la ley civil.
 ### A10. Tu contenido y el permiso que nos das para mostrarlo
 
 - **Lo que publicas es tuyo:** fotos, textos, comentarios, productos y tu perfil.
-- **Permiso (licencia) para Estreno:** al publicar, nos das un permiso **no exclusivo y gratuito**
-  para guardar, mostrar y distribuir tu contenido **dentro de Estreno**, y para adaptarlo en lo
-  técnico (recortar, comprimir o cambiar el formato de las fotos). Como Estreno se puede ver desde
+- **Permiso (licencia) para speeaking:** al publicar, nos das un permiso **no exclusivo y gratuito**
+  para guardar, mostrar y distribuir tu contenido **dentro de speeaking**, y para adaptarlo en lo
+  técnico (recortar, comprimir o cambiar el formato de las fotos). Como speeaking se puede ver desde
   cualquier lugar con internet, el permiso no tiene límite territorial. Dura mientras tu contenido
   esté publicado, más el tiempo necesario para borrarlo de nuestros respaldos y para conservar lo
   que la ley o una investigación nos obliguen a guardar.
-- **Fuera de Estreno** (por ejemplo, en nuestras redes sociales) solo usaremos tu contenido con tu
+- **Fuera de speeaking** (por ejemplo, en nuestras redes sociales) solo usaremos tu contenido con tu
   permiso.
 - **No vendemos tu contenido** ni lo usamos para entrenar modelos de inteligencia artificial. Si
   algún día quisiéramos usar textos reales para evaluar modelos, te pediremos permiso y quitaremos
@@ -312,7 +312,7 @@ producto conforme a la ley civil.
 
 ### A11. Inteligencia artificial: la IA sugiere, tú decides
 
-Estreno tiene herramientas que usan inteligencia artificial (IA):
+speeaking tiene herramientas que usan inteligencia artificial (IA):
 
 - **«Sube y vende»:** a partir de lo que escribes, propone cómo publicar y vender un producto.
 - **«Kit de anuncios»:** redacta textos para compartir tu producto, con sus datos públicos.
@@ -350,7 +350,7 @@ Reglas:
 ### A11 bis. Estilista, «Pruébatelo» y saldo (agregado 2026-09-29)
 
 - **Looks:** sugerencias armadas por código con productos reales de vendedores; cada pieza se compra a
-  quien la vende con las condiciones de su ficha. No son una oferta de Estreno y pueden dejar de
+  quien la vende con las condiciones de su ficha. No son una oferta de speeaking y pueden dejar de
   estar disponibles.
 - **«Pruébatelo»:** imagen generada con IA, orientativa; no garantiza talla, color, caída ni el
   aspecto real; no da derecho a devolución por diferencias con la simulación (aplican las condiciones
@@ -358,7 +358,7 @@ Reglas:
   prohibido subir fotos de terceros.
 - **Quién paga la simulación (actualizado 2026-09-30, ADR-046):** para quien compra es gratis
   siempre. La paga la tienda del producto principal (si activa «Ver cómo me veo», con tope diario)
-  o Estreno en las primeras pruebas de cada tienda; sin ninguna de las dos, la simulación no se
+  o speeaking en las primeras pruebas de cada tienda; sin ninguna de las dos, la simulación no se
   genera y solo se registra, de forma agregada, que alguien quiso probarse el producto.
 - **Saldo de la tienda:** solo las tiendas tienen saldo. Con él pagan cada simulación al precio
   publicado en `/precios` (baja con el uso de la plataforma; nunca por debajo del costo) y los días
@@ -380,7 +380,7 @@ Reglas:
   ADR-069): mientras dure, ninguna de las dos puede escribir en esa conversación ni empezar otra; el
   historial se queda y solo quien bloqueó lo quita. A la otra persona no se le dice que la
   bloquearon.
-- Los pagos se hacen dentro del pedido. Estreno nunca pide depósitos por mensaje y no responde por
+- Los pagos se hacen dentro del pedido. speeaking nunca pide depósitos por mensaje y no responde por
   pagos hechos a cuentas escritas en una conversación.
 - Límites contra el spam: cantidad de mensajes por periodo y de conversaciones nuevas por día.
 
@@ -410,7 +410,7 @@ y los compre. Estas son las reglas:
 5. **Resultados sin datos personales.** Quien publica y la tienda ven, por publicación, cuántas
    visitas al producto, pruebas con «Pruébatelo», productos en el carrito y compras pagadas salieron
    de ella. Son números agregados: nunca ven quién visitó, se probó o compró.
-6. **Estreno no es parte de sus acuerdos.** No negociamos los acuerdos entre quien publica y las
+6. **speeaking no es parte de sus acuerdos.** No negociamos los acuerdos entre quien publica y las
    tiendas, no cobramos ni pagamos comisiones por ellos y no intervenimos en sus pagos. Cada quien
    responde por lo que acuerda, por sus impuestos y por la publicidad que publica, que debe ser
    verdadera.
@@ -429,7 +429,7 @@ y los compre. Estas son las reglas:
 > las publicaciones existentes. Las métricas son conteos por publicación (`creators/metrics.ts`), sin
 > datos de quién. Etapa 1 sin dinero: las comisiones por venta (etapa 2) solo llegan con pagos reales
 > a través de la plataforma y con revisión del abogado y del contador. **[VERIFICAR CON ABOGADO]:**
-> (a) si Estreno, como intermediario que ofrece la herramienta de etiquetado, responde por publicidad
+> (a) si speeaking, como intermediario que ofrece la herramienta de etiquetado, responde por publicidad
 > engañosa de terceros y si basta esta regla más la moderación (A14); (b) si la etiqueta debe decir
 > algo más explícito que «Colaboración» (p. ej. «Publicidad» o «Colaboración pagada»); (c) si conviene
 > conservar la etiqueta aunque la tienda quite el producto (hoy se quita con él; queda la obligación
@@ -440,7 +440,7 @@ y los compre. Estas son las reglas:
 
 ### A11 quinquies. Cuentas editoriales y redacción con IA (agregado 2026-10-01, ADR-066)
 
-- Las cuentas «Equipo Estreno» de cada comunidad son del equipo y se identifican como «Editorial».
+- Las cuentas «Equipo speeaking» de cada comunidad son del equipo y se identifican como «Editorial».
   No son personas reales ni simulan serlo, no reciben mensajes y no se sugieren para seguir.
 - Publican textos redactados con ayuda de inteligencia artificial (preguntas, consejos y fechas del
   calendario) que una persona del equipo revisa, puede corregir y aprueba antes de publicar. Cada
@@ -461,10 +461,10 @@ y los compre. Estas son las reglas:
 ### A12. Personalización, sugerencias y mejoras del producto
 
 - Si **aceptas la personalización** (es opcional), ordenamos tu feed con lo que haces dentro de
-  Estreno. La puedes apagar en Ajustes cuando quieras.
+  speeaking. La puedes apagar en Ajustes cuando quieras.
 - «**Aparecer en sugerencias**» decide si te sugerimos en «Gente de tus comunidades». También se
   apaga en Ajustes.
-- Para mejorar Estreno probamos cambios del producto con grupos de personas (pruebas A/B) y medimos
+- Para mejorar speeaking probamos cambios del producto con grupos de personas (pruebas A/B) y medimos
   con números agregados. Estas pruebas **nunca** deciden sanciones, precios, pagos ni comisiones
   sobre tu cuenta.
 - Los detalles están en el aviso de privacidad.
@@ -475,7 +475,7 @@ y los compre. Estas son las reglas:
 
 ### A13. Lo que no puedes hacer
 
-No puedes usar Estreno para:
+No puedes usar speeaking para:
 
 - publicar o vender algo prohibido por la ley o por la **Política para vendedores** (C4);
 - engañar, estafar o pedir pagos fuera de los datos del pedido;
@@ -484,7 +484,7 @@ No puedes usar Estreno para:
 - infringir marcas, derechos de autor o la imagen de otras personas;
 - crear cuentas falsas, inflar interacciones o manipular reportes, reseñas o métricas;
 - sacar datos de la plataforma con programas automáticos, atacar su seguridad o sobrecargarla;
-- hacerte pasar por otra persona, por una marca o por Estreno.
+- hacerte pasar por otra persona, por una marca o por speeaking.
 
 ### A14. Moderación, sanciones y cómo pedir revisión
 
@@ -536,7 +536,7 @@ No puedes usar Estreno para:
   software o videojuegos.
 - **Si no es de la marca,** publícalo como «genérico» sin usar la marca como si fuera suya.
 - **Aviso de titulares.** Si eres titular de una marca o de derechos de autor (o su representante)
-  y crees que algo en Estreno los infringe, mándanos un aviso con los datos del **anexo 1** por
+  y crees que algo en speeaking los infringe, mándanos un aviso con los datos del **anexo 1** por
   [URL DEL FORMULARIO DE AVISOS] o [CORREO DE SOPORTE].
 - **Qué hacemos:** revisamos el aviso; si procede, retiramos o inhabilitamos el contenido **sin
   demora**, tomamos medidas razonables para que no se vuelva a subir y avisamos a quien lo publicó,
@@ -569,9 +569,9 @@ No puedes usar Estreno para:
   caros y reportes de personas distintas) y, si la activamos, con una señal de IA que solo lee el
   texto público del producto y nunca decide sola.
 - Según el resultado, quien compra puede ver «**Autenticidad sin verificar**», «**Comprobante
-  revisado por Estreno**» o una nota neutral («Revisa: …»).
+  revisado por speeaking**» o una nota neutral («Revisa: …»).
 - Si declaraste que un producto es original, podemos pedirte un comprobante (ver C11).
-- «Comprobante revisado por Estreno» solo significa que nuestro equipo revisó un comprobante de
+- «Comprobante revisado por speeaking» solo significa que nuestro equipo revisó un comprobante de
   compra que envió quien vende para ese artículo. **No es una certificación ni una garantía de
   autenticidad.** Se quita si cambia el artículo o si sube su riesgo.
 - Esta revisión **mide riesgo: no acusa a nadie ni certifica nada.** Ocultar o verificar un producto
@@ -597,7 +597,7 @@ No puedes usar Estreno para:
 
 ### A18. Disponibilidad del servicio
 
-- Estreno está en etapa de **piloto**: puede tener fallas, funciones en prueba y cambios. Cuando
+- speeaking está en etapa de **piloto**: puede tener fallas, funciones en prueba y cambios. Cuando
   podamos, avisaremos antes de un mantenimiento programado.
 - No respondemos por interrupciones que no dependen de nosotros (caso fortuito, fuerza mayor o
   fallas generales de internet o de energía). Si una falla nuestra te causa un daño, respondemos en
@@ -611,15 +611,15 @@ No puedes usar Estreno para:
 
 ### A19. Responsabilidad
 
-- **Estreno responde** por lo que le toca: la información que publica sobre sí misma, la seguridad y
+- **speeaking responde** por lo que le toca: la información que publica sobre sí misma, la seguridad y
   confidencialidad de tus datos, el canal de quejas, la moderación conforme a estas reglas y el
   cumplimiento de órdenes de autoridad.
-- **Estreno no es parte de la compraventa** entre quien compra y quien vende. Por eso no responde
+- **speeaking no es parte de la compraventa** entre quien compra y quien vende. Por eso no responde
   por lo que incumpla quien vende (calidad, entrega, garantía, devoluciones), salvo que el daño se
-  deba a un incumplimiento de Estreno o que la ley disponga otra cosa.
+  deba a un incumplimiento de speeaking o que la ley disponga otra cosa.
 - **Lo que estos términos no limitan:** los derechos que te da la Ley Federal de Protección al
   Consumidor, que no se pueden renunciar; la responsabilidad por dolo; ni la responsabilidad civil de
-  Estreno que la ley no permite excluir.
+  speeaking que la ley no permite excluir.
 
 > **Fundamento y notas.** La LFPC es de orden público [11, art. 1] y no valen las cláusulas que
 > liberan de responsabilidad civil o la trasladan a otro [11, art. 90 fr. II y III]. La
@@ -627,15 +627,15 @@ No puedes usar Estreno para:
 > la responsabilidad civil se puede regular por convenio salvo que la ley disponga otra cosa [28,
 > art. 2117]. **[VERIFICAR CON ABOGADO]:** (a) si conviene un tope de responsabilidad solo frente a
 > vendedores que actúan como negocio (no consumidores); (b) si la frase «no responde por lo que
-> incumpla quien vende» resiste el art. 90 cuando Estreno es proveedor intermediario. No proponemos
+> incumpla quien vende» resiste el art. 90 cuando speeaking es proveedor intermediario. No proponemos
 > topes frente a consumidores.
 
 ### A20. Cambios a estos términos
 
-- Si cambiamos estos términos, te avisaremos dentro de Estreno (un mensaje en la parte de arriba con
+- Si cambiamos estos términos, te avisaremos dentro de speeaking (un mensaje en la parte de arriba con
   la liga y un resumen de los cambios) y por correo si lo tenemos, **al menos 15 días naturales
   antes** de que apliquen.
-- La nueva versión solo te aplica si la aceptas. Si no la aceptas, puedes dejar de usar Estreno y
+- La nueva versión solo te aplica si la aceptas. Si no la aceptas, puedes dejar de usar speeaking y
   pedir el cierre de tu cuenta sin costo. Los pedidos que ya estén en curso siguen con la versión
   con la que se hicieron.
 - Si un cambio lo exige la ley o es urgente por seguridad, puede aplicar antes, y te explicaremos
@@ -669,8 +669,8 @@ No puedes usar Estreno para:
 ### A22. Impuestos
 
 - Cada vendedor es responsable de sus propios impuestos y de emitir los comprobantes fiscales que le
-  correspondan. Estreno no da asesoría fiscal.
-- Durante el piloto Estreno **no retiene impuestos** porque no cobra ni recibe el dinero de las
+  correspondan. speeaking no da asesoría fiscal.
+- Durante el piloto speeaking **no retiene impuestos** porque no cobra ni recibe el dinero de las
   ventas.
 - Si una ley nos obliga a pedir tus datos fiscales o a informar al SAT sobre tus ventas, te avisaremos
   antes, actualizaremos el aviso de privacidad y podría ser un requisito para seguir vendiendo.
@@ -687,7 +687,7 @@ No puedes usar Estreno para:
 - **PROFECO.** Si eres consumidor, puedes presentar una queja ante la Procuraduría Federal del
   Consumidor por escrito, por teléfono o en línea. Teléfono del Consumidor: 55 5568 8722 y
   800 468 8722.
-- **Tribunales.** Para cualquier controversia, tú y Estreno se someten a los tribunales competentes
+- **Tribunales.** Para cualquier controversia, tú y speeaking se someten a los tribunales competentes
   de la Ciudad de México, sin perjuicio de que, si eres consumidor, acudas a la PROFECO o a los
   tribunales que la ley te permita. Nunca te pediremos acudir a tribunales extranjeros.
 - Si una parte de estos términos no fuera válida, el resto sigue vigente.
@@ -702,9 +702,9 @@ No puedes usar Estreno para:
 > Procedimientos Civiles y Familiares) y si conviene someterse expresamente a la PROFECO (obligatorio
 > solo en contratos registrados [11, art. 86]).
 
-### A24. Avisos entre tú y Estreno
+### A24. Avisos entre tú y speeaking
 
-- Te avisamos dentro de Estreno y al correo de tu cuenta.
+- Te avisamos dentro de speeaking y al correo de tu cuenta.
 - Tú nos avisas en los contactos de A1. Para asuntos legales, también en [DOMICILIO PARA OÍR Y
   RECIBIR NOTIFICACIONES].
 
@@ -712,7 +712,7 @@ No puedes usar Estreno para:
 
 ## Parte B. Reglas de la comunidad
 
-Estreno es para descubrir, aprender, conversar y comprar a pequeños vendedores. Estas reglas aplican
+speeaking es para descubrir, aprender, conversar y comprar a pequeños vendedores. Estas reglas aplican
 a todo: perfiles, publicaciones, comentarios, productos, fotos y nombres de tienda. Forman parte de
 los términos.
 
@@ -724,26 +724,26 @@ los términos.
 
 ### B2. Lo que no se permite
 
-| Regla                                   | Ejemplos                                                                                                                                                         | Fundamento                                                                                                                                               |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Violencia y amenazas                    | Amenazar, incitar a la violencia, celebrar ataques, mostrar violencia gráfica o autolesiones                                                                     | Política de Estreno                                                                                                                                      |
-| Discriminación y discurso de odio       | Atacar a alguien por su origen étnico o nacional, género, edad, discapacidad, condición social, salud, religión, opiniones, preferencias sexuales o estado civil | La Constitución prohíbe toda discriminación por esos motivos [38, art. 1o. último párr.]; como regla de contenido, política de Estreno                   |
-| Acoso                                   | Mensajes insistentes no deseados, humillar, exhibir a alguien, organizar ataques                                                                                 | Política de Estreno                                                                                                                                      |
-| Contenido sexual                        | Desnudos, pornografía, servicios sexuales, contenido sexual explícito                                                                                            | Política de Estreno; ofrecer pornografía a menores es delito [41, art. 200]                                                                              |
-| **Contenido sexual con menores**        | Cualquiera, real o simulado, incluido el hecho con IA. Lo reportamos a las autoridades                                                                           | Delito [41, art. 202]                                                                                                                                    |
-| **Contenido íntimo sin consentimiento** | Compartir fotos, videos o audios íntimos de alguien sin su autorización                                                                                          | Delito [41, art. 199 Octies]; retiro por orden del MP o del juez [30, art. 20 Sexies]                                                                    |
-| Datos personales de otros               | Publicar el domicilio, teléfono, identificación oficial o fotos de alguien sin permiso                                                                           | Política de Estreno                                                                                                                                      |
-| Estafas y engaños                       | Pedir pagos o depósitos fuera de los datos del pedido, poner una CLABE en comentarios, ligas falsas, «regalos» a cambio de datos, cobrar y no entregar           | Fraude [41, art. 386]; regla del pedido (plan §7.2)                                                                                                      |
-| Actividad falsa                         | Cuentas falsas, comprar seguidores o «me gusta», reseñas falsas, comentarios repetidos, reportes falsos o en masa                                                | Contenido honesto (principio 5); publicidad veraz [11, art. 32]                                                                                          |
-| Suplantación                            | Hacerte pasar por otra persona, por una marca o por el equipo de Estreno                                                                                         | Política de Estreno; nombres reservados (SEC-18)                                                                                                         |
-| Contenido ajeno sin permiso             | Subir fotos, videos, música o textos de otros sin autorización                                                                                                   | [17, art. 114 Octies]; A15                                                                                                                               |
-| IA engañosa                             | Clonar la voz o la imagen de una persona real sin su permiso; presentar una imagen hecha con IA como foto real del artículo que vendes                           | Imagen y voz de artistas, también en resultados de IA [17, art. 87]; publicidad veraz [11, art. 32]                                                      |
-| Salud engañosa                          | Anunciar suplementos, remedios o cosméticos como cura o tratamiento de una enfermedad                                                                            | La autoridad sanitaria puede asegurar esos productos [37, art. 414 Bis a)]                                                                               |
-| Promover productos prohibidos           | Publicaciones que promuevan drogas, vapeadores o tabaco, aunque no tengan precio                                                                                 | Publicidad de narcóticos: delito [41, art. 194 fr. IV]; vapeadores [37, art. 282 Quater]; tabaco [39, art. 23]                                           |
-| Rifas, sorteos y apuestas               | Rifas, boletos, apuestas o sorteos con premio; también «tandas» (por política)                                                                                   | Los sorteos requieren permiso de la Secretaría de Gobernación [43, arts. 2o.–4o.]; nada de sorteos en el piloto (plan §7.1); tandas: política de Estreno |
-| Publicidad escondida                    | Promocionar algo que te pagaron o te regalaron sin decirlo                                                                                                       | Identifica el contenido pagado con «#Publicidad» durante todo el contenido [14]                                                                          |
+| Regla                                   | Ejemplos                                                                                                                                                         | Fundamento                                                                                                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Violencia y amenazas                    | Amenazar, incitar a la violencia, celebrar ataques, mostrar violencia gráfica o autolesiones                                                                     | Política de speeaking                                                                                                                                      |
+| Discriminación y discurso de odio       | Atacar a alguien por su origen étnico o nacional, género, edad, discapacidad, condición social, salud, religión, opiniones, preferencias sexuales o estado civil | La Constitución prohíbe toda discriminación por esos motivos [38, art. 1o. último párr.]; como regla de contenido, política de speeaking                   |
+| Acoso                                   | Mensajes insistentes no deseados, humillar, exhibir a alguien, organizar ataques                                                                                 | Política de speeaking                                                                                                                                      |
+| Contenido sexual                        | Desnudos, pornografía, servicios sexuales, contenido sexual explícito                                                                                            | Política de speeaking; ofrecer pornografía a menores es delito [41, art. 200]                                                                              |
+| **Contenido sexual con menores**        | Cualquiera, real o simulado, incluido el hecho con IA. Lo reportamos a las autoridades                                                                           | Delito [41, art. 202]                                                                                                                                      |
+| **Contenido íntimo sin consentimiento** | Compartir fotos, videos o audios íntimos de alguien sin su autorización                                                                                          | Delito [41, art. 199 Octies]; retiro por orden del MP o del juez [30, art. 20 Sexies]                                                                      |
+| Datos personales de otros               | Publicar el domicilio, teléfono, identificación oficial o fotos de alguien sin permiso                                                                           | Política de speeaking                                                                                                                                      |
+| Estafas y engaños                       | Pedir pagos o depósitos fuera de los datos del pedido, poner una CLABE en comentarios, ligas falsas, «regalos» a cambio de datos, cobrar y no entregar           | Fraude [41, art. 386]; regla del pedido (plan §7.2)                                                                                                        |
+| Actividad falsa                         | Cuentas falsas, comprar seguidores o «me gusta», reseñas falsas, comentarios repetidos, reportes falsos o en masa                                                | Contenido honesto (principio 5); publicidad veraz [11, art. 32]                                                                                            |
+| Suplantación                            | Hacerte pasar por otra persona, por una marca o por el equipo de speeaking                                                                                       | Política de speeaking; nombres reservados (SEC-18)                                                                                                         |
+| Contenido ajeno sin permiso             | Subir fotos, videos, música o textos de otros sin autorización                                                                                                   | [17, art. 114 Octies]; A15                                                                                                                                 |
+| IA engañosa                             | Clonar la voz o la imagen de una persona real sin su permiso; presentar una imagen hecha con IA como foto real del artículo que vendes                           | Imagen y voz de artistas, también en resultados de IA [17, art. 87]; publicidad veraz [11, art. 32]                                                        |
+| Salud engañosa                          | Anunciar suplementos, remedios o cosméticos como cura o tratamiento de una enfermedad                                                                            | La autoridad sanitaria puede asegurar esos productos [37, art. 414 Bis a)]                                                                                 |
+| Promover productos prohibidos           | Publicaciones que promuevan drogas, vapeadores o tabaco, aunque no tengan precio                                                                                 | Publicidad de narcóticos: delito [41, art. 194 fr. IV]; vapeadores [37, art. 282 Quater]; tabaco [39, art. 23]                                             |
+| Rifas, sorteos y apuestas               | Rifas, boletos, apuestas o sorteos con premio; también «tandas» (por política)                                                                                   | Los sorteos requieren permiso de la Secretaría de Gobernación [43, arts. 2o.–4o.]; nada de sorteos en el piloto (plan §7.1); tandas: política de speeaking |
+| Publicidad escondida                    | Promocionar algo que te pagaron o te regalaron sin decirlo                                                                                                       | Identifica el contenido pagado con «#Publicidad» durante todo el contenido [14]                                                                            |
 
-> **Fundamento y notas.** Las reglas marcadas «Política de Estreno» son decisiones de producto, no
+> **Fundamento y notas.** Las reglas marcadas «Política de speeaking» son decisiones de producto, no
 > obligaciones legales que hayamos verificado. **[VERIFICAR CON ABOGADO]:** que las reglas de
 > contenido no restrinjan de más la libertad de expresión en una red social privada y que la
 > redacción de «discurso de odio» sea suficientemente precisa. Comunidades: no crear comunidades
@@ -754,7 +754,7 @@ los términos.
 
 Si una marca o una tienda te pagó, te regaló el producto o te da una comisión por promocionarlo,
 dilo de forma visible en la publicación, por ejemplo con «#Publicidad», durante todo el contenido.
-Si el producto está en Estreno y lo etiquetas, marca también la casilla «Recibí algo de esta tienda
+Si el producto está en speeaking y lo etiquetas, marca también la casilla «Recibí algo de esta tienda
 por publicarlo»: tu publicación llevará la etiqueta «Colaboración» (A11 quater).
 
 > **Fundamento y notas.** Guía de publicidad para influencers de la PROFECO [14]. La etiqueta
@@ -791,7 +791,7 @@ Si activas «Vender», además de los términos y las Reglas de la comunidad ace
 ### C1. Para vender
 
 - Tener 18 años cumplidos y aceptar esta política.
-- Un nombre de tienda que no confunda (no puede parecer de Estreno ni de una marca que no es tuya).
+- Un nombre de tienda que no confunda (no puede parecer de speeaking ni de una marca que no es tuya).
 - Tu ciudad y estado, y al menos un método de pago que aceptas.
 - Para recibir **transferencias**, un teléfono verificado.
 - Datos de contacto para tus clientes (se muestran dentro de cada pedido, no en público).
@@ -803,7 +803,7 @@ Si activas «Vender», además de los términos y las Reglas de la comunidad ace
 
 ### C2. Tu responsabilidad como vendedor
 
-- **Tú eres quien vende.** El contrato de compraventa es entre tú y quien te compra. Estreno no es
+- **Tú eres quien vende.** El contrato de compraventa es entre tú y quien te compra. speeaking no es
   parte de él.
 - Si vendes de forma habitual, eres **proveedor** para la Ley Federal de Protección al Consumidor y
   tienes sus obligaciones (C6).
@@ -818,7 +818,7 @@ Si activas «Vender», además de los términos y las Reglas de la comunidad ace
 
 ### C3. Publica con la verdad: datos verificables (P4)
 
-Cada producto tiene **datos estructurados** que se muestran tal como los capturas. La IA de Estreno
+Cada producto tiene **datos estructurados** que se muestran tal como los capturas. La IA de speeaking
 no puede afirmar nada que no esté en ellos. Tienen que ser verdad y estar al día:
 
 | Dato                      | Regla                                                                                                                                   |
@@ -868,17 +868,17 @@ No puedes vender, ofrecer ni promover:
 | Bebidas alcohólicas                     | Cerveza, vino, licores y cualquier bebida de 2 % a 55 % de alcohol                                                                                                                 | Prohibido venderlas a menores [37, arts. 217 y 220]; en el piloto no podemos comprobar la edad de quien recibe. **[DECISIÓN DEL FUNDADOR]**; permisos locales **[VERIFICAR CON ABOGADO]**                                                                                               |
 | Animales vivos y especies protegidas    | Perros, gatos y cualquier animal vivo, incluso «en adopción» con cuota; fauna silvestre; marfil, pieles, caparazones y otras partes de especies protegidas                         | Legal procedencia y traslado de fauna silvestre [42, arts. 51, 52 y 55]; tráfico de especies protegidas: delito [41, art. 420 fr. IV]; en la CDMX, restricciones a la venta de animales [46][47][48] **[VERIFICAR CON ABOGADO]**. Todos los animales vivos: **[DECISIÓN DEL FUNDADOR]** |
 | Falsificaciones y piratería             | Réplicas, imitaciones, productos con marca sin permiso; copias no autorizadas de libros, cursos, películas, música, software, videojuegos; cuentas o licencias revendidas          | [16, arts. 386, 387 y 402]; [41, art. 424 bis]; A15                                                                                                                                                                                                                                     |
-| Artículos robados o de origen dudoso    | Lo que no puedas demostrar que es tuyo: autopartes, celulares con reporte de robo, mercancía «caída del camión»                                                                    | Poseer, vender o comerciar a sabiendas con objetos robados es delito cuando su valor pasa el umbral de la ley [41, arts. 368 Bis y 368 Ter]; lo demás, política de Estreno                                                                                                              |
+| Artículos robados o de origen dudoso    | Lo que no puedas demostrar que es tuyo: autopartes, celulares con reporte de robo, mercancía «caída del camión»                                                                    | Poseer, vender o comerciar a sabiendas con objetos robados es delito cuando su valor pasa el umbral de la ley [41, arts. 368 Bis y 368 Ter]; lo demás, política de speeaking                                                                                                            |
 | Contenido y productos sexuales          | Pornografía, servicios sexuales y, en el piloto, juguetes y artículos para adultos                                                                                                 | [41, arts. 200 y 202]; artículos para adultos: **[DECISIÓN DEL FUNDADOR]**                                                                                                                                                                                                              |
 | Partes del cuerpo humano                | Órganos, tejidos, sangre y sus derivados                                                                                                                                           | Prohibido su comercio [37, art. 327]                                                                                                                                                                                                                                                    |
 | Rifas, sorteos y apuestas               | Boletos, rifas y apuestas                                                                                                                                                          | [43, arts. 2o.–4o.]; plan §7.1                                                                                                                                                                                                                                                          |
-| Sustancias peligrosas                   | Plaguicidas, sustancias tóxicas o peligrosas, químicos sin etiqueta                                                                                                                | Requieren registro sanitario [37, art. 376]; política de Estreno                                                                                                                                                                                                                        |
-| Documentos, cuentas y datos             | Identificaciones oficiales, placas, uniformes o insignias oficiales, bases de datos, cuentas de redes, seguidores y reseñas                                                        | Política de Estreno                                                                                                                                                                                                                                                                     |
-| Servicios financieros y dinero          | Préstamos, «tandas», inversiones, criptoactivos, cambio de divisas, tarjetas de regalo y saldo                                                                                     | Política de Estreno                                                                                                                                                                                                                                                                     |
-| Productos retirados o inseguros         | Productos retirados del mercado por la autoridad o con alertas sanitarias o de seguridad                                                                                           | Política de Estreno                                                                                                                                                                                                                                                                     |
+| Sustancias peligrosas                   | Plaguicidas, sustancias tóxicas o peligrosas, químicos sin etiqueta                                                                                                                | Requieren registro sanitario [37, art. 376]; política de speeaking                                                                                                                                                                                                                      |
+| Documentos, cuentas y datos             | Identificaciones oficiales, placas, uniformes o insignias oficiales, bases de datos, cuentas de redes, seguidores y reseñas                                                        | Política de speeaking                                                                                                                                                                                                                                                                   |
+| Servicios financieros y dinero          | Préstamos, «tandas», inversiones, criptoactivos, cambio de divisas, tarjetas de regalo y saldo                                                                                     | Política de speeaking                                                                                                                                                                                                                                                                   |
+| Productos retirados o inseguros         | Productos retirados del mercado por la autoridad o con alertas sanitarias o de seguridad                                                                                           | Política de speeaking                                                                                                                                                                                                                                                                   |
 
 > **Fundamento y notas.** La lista no es exhaustiva: también está prohibido todo lo que prohíba la
-> ley aunque no aparezca aquí. Las filas con «Política de Estreno» o **[DECISIÓN DEL FUNDADOR]** no
+> ley aunque no aparezca aquí. Las filas con «Política de speeaking» o **[DECISIÓN DEL FUNDADOR]** no
 > las exige una ley que hayamos verificado; el piloto las prohíbe para reducir riesgo y porque no
 > podemos verificar la edad ni permisos. **Animales en la CDMX:** según fuentes secundarias, la ley
 > local prohíbe vender animales en mercados públicos, vía pública, vehículos y tiendas (art. 28 Bis)
@@ -910,9 +910,9 @@ No puedes vender, ofrecer ni promover:
 > establecimientos que determine la Secretaría de Salud [37, art. 200 Bis]. **[VERIFICAR CON
 > ABOGADO]:** qué permisos, avisos o reglas de etiquetado aplican a quien cocina en casa y vende por
 > internet en la CDMX. Excepción de perecederos pagados de contado [11, art. 51]. Alérgenos: política
-> de Estreno. **Suplementos y cosméticos:** [37, arts. 376 y 414 Bis a)]. **Servicios:** información
+> de speeaking. **Suplementos y cosméticos:** [37, arts. 376 y 414 Bis a)]. **Servicios:** información
 > mínima de servicios [12, 5.3.2.2]; qué servicios requieren cédula profesional **[VERIFICAR CON
-> ABOGADO]**. **Juguetes y fan art:** política de Estreno; licencia de personajes **[VERIFICAR CON
+> ABOGADO]**. **Juguetes y fan art:** política de speeaking; licencia de personajes **[VERIFICAR CON
 > ABOGADO]**. **Robo:** [41, art. 368 Bis].
 
 ### C6. Garantías, devoluciones y cambios
@@ -952,7 +952,7 @@ No puedes vender, ofrecer ni promover:
 
 ### C7. Cobros directos y seguridad
 
-- **Tú cobras.** Estreno no recibe, no retiene y no reparte el dinero de tus ventas.
+- **Tú cobras.** speeaking no recibe, no retiene y no reparte el dinero de tus ventas.
 - **Tus datos de pago solo van dentro del pedido**, nunca en público. No pongas tu CLABE ni frases
   como «deposítame» en comentarios o publicaciones: los retiramos.
 - **Confirma el pago en la app de tu banco**, no con una captura de pantalla: hay comprobantes
@@ -972,7 +972,7 @@ No puedes vender, ofrecer ni promover:
 
 ### C8. Los datos de tus clientes
 
-- Por Estreno ves el nombre visible de quien te compra y lo que pidió. Lo que te comparta para
+- Por speeaking ves el nombre visible de quien te compra y lo que pidió. Lo que te comparta para
   acordar la entrega (domicilio, teléfono) es **solo para entregar ese pedido**.
 - No los uses para otra cosa: ni publicidad, ni listas de contactos, ni pasarlos a otras personas.
   Si quieres mandar promociones, pide antes su permiso fuera del pedido y respeta si dice que no.
@@ -998,14 +998,14 @@ aclaraciones. Al activar «Vender» aceptas que se muestren así.
 ### C10. Tus impuestos
 
 - **Tus impuestos son tu responsabilidad**, igual que emitir las facturas o comprobantes que te
-  correspondan. Estreno no te asesora en esto: consulta a un contador.
-- En el piloto Estreno **no retiene** impuestos de tus ventas, porque no cobra ni recibe el dinero.
+  correspondan. speeaking no te asesora en esto: consulta a un contador.
+- En el piloto speeaking **no retiene** impuestos de tus ventas, porque no cobra ni recibe el dinero.
 - Si la ley llegara a obligarnos a pedirte tu RFC u otros datos fiscales o bancarios, o a informar al
   SAT sobre tus ventas, te avisaremos antes y podría ser un requisito para seguir vendiendo.
 
 > **Fundamento y notas.** 00 §5.2. Retenciones solo cuando la plataforma cobra [20, art. 18-J fr. II;
 > 21, art. 113-A; 22, art. 25 fr. VI y IX]. La informativa mensual pediría RFC, CURP, domicilio
-> fiscal, institución financiera y CLABE de cada vendedor [20, art. 18-J fr. III] si Estreno
+> fiscal, institución financiera y CLABE de cada vendedor [20, art. 18-J fr. III] si speeaking
 > quedara dentro del art. 18-B, que exige cobrar una contraprestación [20, art. 18-B] **[VERIFICAR
 > CON CONTADOR]**.
 
@@ -1025,7 +1025,7 @@ aclaraciones. Al activar «Vender» aceptas que se muestren así.
    pueden adjuntar a publicaciones ni productos. Guardamos el historial de lo que enviaste para poder
    revisar qué vio el equipo al decidir.
 6. **Una persona del equipo decide:** si el comprobante corresponde, el producto muestra «Comprobante
-   revisado por Estreno»; si no, te pediremos corregir a «genérico» o lo ocultaremos.
+   revisado por speeaking»; si no, te pediremos corregir a «genérico» o lo ocultaremos.
 7. **El sello se pierde** si cambias qué vendes (título, etiquetas, categoría o condición) o si sube el
    riesgo del producto (por ejemplo, un precio mucho más bajo).
 8. El sello **no es una certificación** ni una garantía de autenticidad.
@@ -1088,7 +1088,7 @@ respeta las garantías y devoluciones de lo que ya vendiste.
   publicación cuando quieras, sin dar razones, y marcar como «Colaboración» la que tenga un acuerdo
   contigo. Apagar el ajuste solo impide etiquetas nuevas.
 - Si das algo a cambio de una publicación (dinero, producto, comisión o descuento), el acuerdo es
-  entre tú y quien publica: Estreno no es parte, no cobra ni paga comisiones y no interviene en los
+  entre tú y quien publica: speeaking no es parte, no cobra ni paga comisiones y no interviene en los
   pagos. Asegúrate de que la publicación lleve «Colaboración» (A11 quater): la publicidad que
   encargas también es tu responsabilidad.
 - Lo que se vende desde una publicación es una venta tuya, con tus condiciones (C2 a C6).
@@ -1152,13 +1152,13 @@ o un mecanismo alterno de solución dentro de 15 días hábiles.
 3. **Transferencia al vendedor:** ¿qué excepción del art. 36 de la LFPDPPP aplica a los datos del
    comprador y qué redacción lleva la cláusula? (A6, C8)
 4. **Reparto de responsabilidad:** ¿cómo se reparte frente al vendedor ocasional? ¿La PROFECO podría
-   considerar responsable a Estreno como intermediario? (A7)
+   considerar responsable a speeaking como intermediario? (A7)
 5. **Vendedor ocasional:** ¿cuándo deja de ser «proveedor» (LFPC art. 2 fr. II)? ¿Aplica el Código
    Civil Federal o el de la CDMX a sus vicios ocultos? (A8, C6)
 6. **Ventas por plataforma y revocación:** ¿son «ventas fuera del establecimiento» (LFPC arts.
    51–56)? ¿Cómo aplica a recoger en persona? (A8, C6)
 7. **Perecederos:** ¿aplica la excepción del art. 51 a la comida vendida por la plataforma? (A8, C6)
-8. **Licencia de contenido:** redacción, duración y si el uso promocional fuera de Estreno necesita
+8. **Licencia de contenido:** redacción, duración y si el uso promocional fuera de speeaking necesita
    permiso aparte. (A10)
 9. **Revisión humana de la leyenda de riesgo:** ¿cae en el art. 26 fr. II de la LFPDPPP? ¿Basta la
    revisión a petición? (A16)
@@ -1191,7 +1191,7 @@ o un mecanismo alterno de solución dentro de 15 días hábiles.
 26. **Datos de quien manda un aviso de derechos:** compartirlos con quien publicó. (Anexo 1)
 27. **Calificaciones y opiniones** (NMX 5.3.3): ¿son exigibles antes de abrir? (§0 #17)
 28. **Teléfonos de la PROFECO y 911:** confirmar que siguen vigentes al publicar. (A23, B4)
-29. **Colaboraciones:** responsabilidad de Estreno por la publicidad de terceros que se etiqueta en
+29. **Colaboraciones:** responsabilidad de speeaking por la publicidad de terceros que se etiqueta en
     la plataforma; texto de la etiqueta («Colaboración» o algo más explícito); si se conserva cuando
     la tienda quita el producto; pantalla completa; uso de la marca y las fotos de la tienda.
     (A11 quater, C16)

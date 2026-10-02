@@ -29,7 +29,7 @@ type ThemedTone = Record<Theme, Tone>;
 
 const same = (tone: Tone): ThemedTone => ({ light: tone, dark: tone });
 
-/** Tonos de la receta. Los valores salen de la paleta aprobada (palette.md, «Rosa Mexicano»). */
+/** Tonos de la receta (ADR-027): luminosidad y croma fijos; el tono lo pone cada comunidad. */
 export const TONES = {
   /** Texto, kicker y enlaces sobre `--card`, `--background`, `--secondary` o `soft`. */
   text: { light: { l: 0.52, c: 0.2 }, dark: { l: 0.82, c: 0.15 } },
@@ -121,8 +121,8 @@ export const UTILITIES: Record<string, { description: string; declarations: Decl
   },
 };
 
-/** Tono por omisión si nadie define `--hue`: el rosa mexicano de la marca. */
-export const DEFAULT_HUE = 358.9;
+/** Tono por omisión si nadie define `--hue`: el violeta de la marca (ADR-070). */
+export const DEFAULT_HUE = 294.9;
 const STEP = 15;
 const SAFETY = 0.002;
 

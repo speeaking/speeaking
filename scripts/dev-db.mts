@@ -3,7 +3,7 @@
  * los binarios instalados en el sistema. No toca el servicio de PostgreSQL existente.
  *
  *   pnpm db:setup   genera secretos locales, crea el clúster (si no existe), lo inicia, crea la base
- *                   `vendeia` y escribe DATABASE_URL en .env con una contraseña aleatoria
+ *                   `speeaking` y escribe DATABASE_URL en .env con una contraseña aleatoria
  *   pnpm db:start   inicia el clúster
  *   pnpm db:stop    detiene el clúster
  *   pnpm db:status  muestra si está corriendo
@@ -20,8 +20,8 @@ const dataDir = join(root, ".data", "postgres");
 const logFile = join(root, ".data", "postgres.log");
 const envFile = join(root, ".env");
 const port = Number(process.env.DEV_DB_PORT ?? 5434);
-const dbName = "vendeia";
-const dbUser = "vendeia";
+const dbName = "speeaking";
+const dbUser = "speeaking";
 const NEWLINE = String.fromCharCode(10);
 
 function pgBin(tool: string) {
@@ -115,7 +115,7 @@ function setup() {
     const conf = join(dataDir, "postgresql.conf");
     const extra = [
       "",
-      "# vendeia (scripts/dev-db.mts)",
+      "# speeaking (scripts/dev-db.mts)",
       `port = ${port}`,
       "listen_addresses = 'localhost'",
       // UTC: con la zona de Windows, el adaptador de Prisma guardaba las fechas desfasadas (ADR-028).

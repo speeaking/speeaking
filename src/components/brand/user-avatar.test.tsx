@@ -4,7 +4,7 @@ import { hueFromText, RESERVED_AVATAR_HUES, UserAvatar } from "./user-avatar";
 
 describe("UserAvatar", () => {
   it("usa las iniciales de las dos primeras palabras con letras", () => {
-    const { container } = render(<UserAvatar name="Humor · Equipo VendeIA" seed="x" />);
+    const { container } = render(<UserAvatar name="Humor · Equipo speeaking" seed="x" />);
 
     expect(container.textContent).toBe("HE");
   });

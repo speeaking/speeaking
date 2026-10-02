@@ -21,18 +21,18 @@
 }
 
 /*
- * Identidad «rosa mexicano» (ADR-027) en uso sereno (ADR-042): superficies blancas sobre gris
- * frío, tinta casi negra y el rosa mexicano #E4007C como acento de marca, igual en claro y en
- * oscuro; solo la acción principal de cada pantalla, los enlaces y la marca lo llevan. El modo
- * oscuro es negro puro. Los estados positivos usan el verde `success`; las acciones secundarias
- * («Unirme», «Ver producto») son grises con tinta. Sin lima (retirada con la IA como distintivo),
- * sin turquesa, crema, café ni halos de fondo. Evita el azul de Facebook, el cian/magenta de
- * TikTok y el amarillo de Mercado Libre.
+ * Identidad speeaking (ADR-070) en uso sereno (ADR-042): superficies blancas sobre gris frío,
+ * tinta navy de la marca y el violeta eléctrico #8B3DFF como acento, igual en claro y en oscuro;
+ * solo la acción principal de cada pantalla, los enlaces y la marca lo llevan. El modo oscuro es
+ * negro puro. El cian de la marca va solo en el isotipo y en gráficas: como texto sobre blanco
+ * queda en 1.9:1. Los estados positivos usan el verde `success`; las acciones secundarias
+ * («Unirme», «Ver producto») son grises con tinta. Sin halos ni degradados de fondo.
  *
  * Los nombres son los de shadcn/ui, más estos propios:
- *   primary-soft / primary-text   fondo rosa suave y texto rosa AA (enlaces, precios, «Unirme»)
- *   primary-strong                rosa más oscuro, igual en ambos temas: hover del botón y texto
- *                                 rosa sobre blanco fijo (blanco encima 6.1:1)
+ *   brand-violet / -cyan / -navy  colores fijos del isotipo (iguales en ambos temas)
+ *   primary-soft / primary-text   fondo violeta suave y texto violeta AA (enlaces, precios, «Unirme»)
+ *   primary-strong                violeta más oscuro, igual en ambos temas: hover del botón y texto
+ *                                 violeta sobre blanco fijo (blanco encima 6.6:1)
  *   ink-2                         texto secundario más oscuro que muted-foreground
  *   line-strong                   bordes marcados
  *   glass                         barras translúcidas con backdrop-blur
@@ -46,6 +46,9 @@
   --tracking-display: -0.028em;
   --tracking-heading: -0.02em;
   --tracking-title: -0.012em;
+  --color-brand-violet: var(--brand-violet);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-navy: var(--brand-navy);
   --color-success: var(--success);
   --color-primary-soft: var(--primary-soft);
   --color-primary-strong: var(--primary-strong);
@@ -147,49 +150,53 @@
 /* Claro. Hex aproximado en comentario; contraste medido con src/lib/color.ts. */
 :root {
   --radius: 20px;
+  /* Marca (ADR-070): los mismos en claro y en oscuro. */
+  --brand-violet: oklch(0.575 0.263 294.9); /* #8B3DFF */
+  --brand-cyan: oklch(0.783 0.135 210.1); /* #00CFE8 */
+  --brand-navy: oklch(0.207 0.052 272.9); /* #10152F */
   --background: oklch(0.975 0.003 270); /* #F6F7F9 */
-  --foreground: oklch(0.17 0.01 285); /* #0F0F14 */
+  --foreground: oklch(0.207 0.052 272.9); /* #10152F navy de la marca · 17.9:1 en blanco */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.01 285);
+  --card-foreground: oklch(0.207 0.052 272.9);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0.01 285);
-  --primary: oklch(0.596 0.242 358.9); /* #E4007C · blanco encima 4.58:1 */
+  --popover-foreground: oklch(0.207 0.052 272.9);
+  --primary: oklch(0.575 0.263 294.9); /* #8B3DFF · blanco encima 4.99:1 */
   --primary-foreground: oklch(1 0 0);
-  --primary-strong: oklch(0.525 0.213 358.9); /* #C00168 · hover; blanco encima 6.1:1 */
-  --primary-soft: oklch(0.955 0.025 355); /* #FFEAF1 */
-  --primary-text: oklch(0.54 0.215 358.5); /* #C60C6D · 5.7:1 en blanco, 4.9:1 en primary-soft */
+  --primary-strong: oklch(0.51 0.254 292.4); /* #7329E6 · hover; blanco encima 6.6:1 */
+  --primary-soft: oklch(0.949 0.029 301); /* #F1EAFF */
+  --primary-text: oklch(0.491 0.241 292.6); /* #6D28D9 · 7.1:1 en blanco, 6.1:1 en primary-soft */
   --secondary: oklch(0.955 0.004 275); /* #EFF0F3 */
-  --secondary-foreground: oklch(0.17 0.01 285);
+  --secondary-foreground: oklch(0.207 0.052 272.9);
   --muted: oklch(0.955 0.004 275);
-  --muted-foreground: oklch(0.49 0.014 275); /* #5E6069 · 5.5:1 incluso sobre muted */
+  --muted-foreground: oklch(0.517 0.034 266.1); /* #5F687C · gris frío; 4.9:1 incluso sobre muted */
   --accent: oklch(0.925 0.006 275); /* #E5E6EA · hover de menús */
-  --accent-foreground: oklch(0.17 0.01 285);
-  --ink-2: oklch(0.36 0.012 280); /* #3C3D43 */
-  --destructive: oklch(0.53 0.2 29); /* #C51F17 · rojo, lejos del rosa */
+  --accent-foreground: oklch(0.207 0.052 272.9);
+  --ink-2: oklch(0.369 0.038 260.5); /* #344054 · 9.2:1 sobre muted */
+  --destructive: oklch(0.53 0.2 29); /* #C51F17 · rojo, lejos del violeta */
   --success: oklch(0.5 0.13 150); /* #137738 · 5.7:1 en blanco, 4.6:1 sobre success/10 */
   --border: oklch(0.92 0.004 275); /* #E4E4E7 */
   --input: oklch(0.87 0.006 275); /* = line-strong: más definición en campos sobre blanco */
   --line-strong: oklch(0.87 0.006 275); /* #D3D4D8 */
   --glass: oklch(1 0 0 / 86%);
   /* Anillo de foco SÓLIDO (ring-ring, outline-ring): al 50 % quedaba en 2.4:1 (1.8:1 en oscuro). */
-  --ring: oklch(0.596 0.242 358.9); /* 4.3:1 en el lienzo, 4.6:1 en blanco y en negro */
-  --chart-1: oklch(0.596 0.242 358.9);
+  --ring: oklch(0.575 0.263 294.9); /* 4.65:1 en el lienzo, 5:1 en blanco, 4.2:1 en negro */
+  --chart-1: oklch(0.575 0.263 294.9);
   --chart-2: oklch(0.7 0.17 50);
   --chart-3: oklch(0.62 0.15 150);
-  --chart-4: oklch(0.55 0.2 290);
-  --chart-5: oklch(0.36 0.012 280);
+  --chart-4: oklch(0.547 0.093 210.4); /* #0A7F8F · el cian de la marca, oscurecido: 4.7:1 */
+  --chart-5: oklch(0.369 0.038 260.5);
   --sidebar: oklch(0.975 0.003 270);
-  --sidebar-foreground: oklch(0.17 0.01 285);
-  --sidebar-primary: oklch(0.596 0.242 358.9);
+  --sidebar-foreground: oklch(0.207 0.052 272.9);
+  --sidebar-primary: oklch(0.575 0.263 294.9);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.925 0.006 275);
-  --sidebar-accent-foreground: oklch(0.17 0.01 285);
+  --sidebar-accent-foreground: oklch(0.207 0.052 272.9);
   --sidebar-border: oklch(0.92 0.004 275);
-  --sidebar-ring: oklch(0.596 0.242 358.9);
+  --sidebar-ring: oklch(0.575 0.263 294.9);
 }
 
 /*
- * Oscuro: negro puro (OLED), tarjetas #101012 y el mismo rosa.
+ * Oscuro: negro puro (OLED), tarjetas #101012 y el mismo violeta.
  * Un bloque de tinta (IA, beneficio) lleva `className="dark bg-card text-foreground"`: es una isla
  * oscura con sus propios tokens, tinta en claro y tarjeta normal en oscuro. Nunca `bg-foreground`
  * para bloques grandes: en oscuro se vuelve un bloque blanco.
@@ -201,11 +208,11 @@
   --card-foreground: oklch(0.97 0.003 285);
   --popover: oklch(0.175 0.004 285);
   --popover-foreground: oklch(0.97 0.003 285);
-  --primary: oklch(0.596 0.242 358.9);
+  --primary: oklch(0.575 0.263 294.9);
   --primary-foreground: oklch(1 0 0);
-  --primary-strong: oklch(0.525 0.213 358.9);
-  --primary-soft: oklch(0.29 0.1 358); /* #4F0D2B */
-  --primary-text: oklch(0.76 0.155 356); /* #FC84B4 · 8.2:1 en card */
+  --primary-strong: oklch(0.51 0.254 292.4);
+  --primary-soft: oklch(0.269 0.102 293.1); /* #2A1752 */
+  --primary-text: oklch(0.724 0.165 297.8); /* #B38CFF · 7.3:1 en card, 6:1 en primary-soft */
   --secondary: oklch(0.235 0.005 285); /* #1E1E20 */
   --secondary-foreground: oklch(0.97 0.003 285);
   --muted: oklch(0.235 0.005 285);
@@ -219,20 +226,20 @@
   --input: oklch(1 0 0 / 17%);
   --line-strong: oklch(1 0 0 / 17%);
   --glass: oklch(0 0 0 / 78%);
-  --ring: oklch(0.596 0.242 358.9);
-  --chart-1: oklch(0.596 0.242 358.9);
+  --ring: oklch(0.575 0.263 294.9); /* 4.2:1 en negro, 3.8:1 en card */
+  --chart-1: oklch(0.575 0.263 294.9);
   --chart-2: oklch(0.76 0.14 55);
   --chart-3: oklch(0.78 0.17 150);
-  --chart-4: oklch(0.72 0.14 290);
+  --chart-4: oklch(0.783 0.135 210.1); /* #00CFE8 · 10:1 en card */
   --chart-5: oklch(0.7 0.01 285);
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(0.97 0.003 285);
-  --sidebar-primary: oklch(0.596 0.242 358.9);
+  --sidebar-primary: oklch(0.575 0.263 294.9);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.28 0.006 285);
   --sidebar-accent-foreground: oklch(0.97 0.003 285);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.596 0.242 358.9);
+  --sidebar-ring: oklch(0.575 0.263 294.9);
 }
 
 @layer base {

@@ -1,29 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NAV_COOKIE } from "@/components/layout/nav-cookie";
 import { siteConfig } from "@/config/site";
+import { WELCOME_COOKIE } from "@/modules/feed/welcome";
+import { AUTH_COOKIE_PREFIX } from "@/modules/identity/constants";
 
 export const metadata: Metadata = { title: "Cookies" };
 
 // BORRADOR: requiere revisión legal antes del lanzamiento público. Es el inventario REAL del código
 // (docs/legal/00-marco-legal-2026.md §2.6): si se agrega una cookie, un almacenamiento o un proveedor
 // externo, se actualiza aquí antes de publicarlo.
-export const COOKIES_NOTICE_UPDATED = "2026-09-30";
+export const COOKIES_NOTICE_UPDATED = "2026-10-01";
 
 const COOKIES = [
   {
-    name: "vendeia… (sesión)",
+    name: `${AUTH_COOKIE_PREFIX}… (sesión)`,
     purpose: "Mantener tu sesión abierta y proteger tu cuenta.",
     duration: "Hasta 30 días sin usar la cuenta; se borra al cerrar sesión.",
     kind: "Necesaria",
   },
   {
-    name: "estreno-nav",
+    name: NAV_COOKIE,
     purpose: "Recordar si plegaste la columna izquierda en escritorio.",
     duration: "1 año.",
     kind: "Preferencia",
   },
   {
-    name: "vendeia_bienvenida",
+    name: WELCOME_COOKIE,
     purpose: "Mostrar una sola vez el mensaje de bienvenida al terminar tu perfil.",
     duration: "10 minutos.",
     kind: "Preferencia",

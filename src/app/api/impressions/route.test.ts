@@ -25,7 +25,7 @@ vi.mock("@/server/env", () => ({
     BETTER_AUTH_SECRET: "s".repeat(32),
     TRUSTED_PROXY_HOPS: 0,
     NODE_ENV: "test",
-    APP_URL: "https://vendeia.example",
+    APP_URL: "https://speeaking.example",
   },
 }));
 
@@ -44,7 +44,7 @@ function request(body: unknown, init: { headers?: Record<string, string | null> 
   };
   const headers = new Headers();
   for (const [name, value] of Object.entries(merged)) if (value !== null) headers.set(name, value);
-  return new Request("https://vendeia.example/api/impressions", {
+  return new Request("https://speeaking.example/api/impressions", {
     method: "POST",
     body: text,
     headers,
@@ -163,7 +163,7 @@ describe("POST /api/impressions (T5)", () => {
       const response = await POST(
         request(
           { items: [item] },
-          { headers: { "sec-fetch-site": null, origin: "https://vendeia.example" } },
+          { headers: { "sec-fetch-site": null, origin: "https://speeaking.example" } },
         ),
       );
       expect(response.status).toBe(200);
@@ -172,9 +172,9 @@ describe("POST /api/impressions (T5)", () => {
 
     it.each([
       ["otro sitio", "https://otro.example"],
-      ["subdominio", "https://tienda.vendeia.example"],
-      ["otro esquema", "http://vendeia.example"],
-      ["otro puerto", "https://vendeia.example:8443"],
+      ["subdominio", "https://tienda.speeaking.example"],
+      ["otro esquema", "http://speeaking.example"],
+      ["otro puerto", "https://speeaking.example:8443"],
       ["origen opaco", "null"],
     ])("%s: 403 sin tocar la base", async (_label, origin) => {
       const response = await POST(
@@ -190,7 +190,7 @@ describe("POST /api/impressions (T5)", () => {
       const response = await POST(
         request(
           { items: [item] },
-          { headers: { "sec-fetch-site": "same-site", origin: "https://vendeia.example" } },
+          { headers: { "sec-fetch-site": "same-site", origin: "https://speeaking.example" } },
         ),
       );
       expect(response.status).toBe(403);

@@ -121,7 +121,7 @@ describe("Cookies", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Cookies" })).toBeInTheDocument();
     expect(document.body).toHaveTextContent(`actualizado el ${COOKIES_NOTICE_UPDATED}`);
-    for (const name of ["vendeia… (sesión)", "estreno-nav", "vendeia_bienvenida"]) {
+    for (const name of ["speeaking… (sesión)", "speeaking-nav", "speeaking_bienvenida"]) {
       expect(screen.getByRole("cell", { name })).toBeInTheDocument();
     }
     expect(document.body).toHaveTextContent("No hay cookies de terceros, ni de publicidad");

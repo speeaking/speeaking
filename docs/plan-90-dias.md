@@ -39,7 +39,7 @@ fundador lo apruebe. Cada cambio se hará por fases y pasará `pnpm check`, `pnp
    mascotas. Reclutamos en persona y 1 a 1. Los compradores llegan sobre todo por el link que cada
    vendedor manda por WhatsApp.
 5. **Cobro en el piloto.** El comprador paga directo al vendedor (transferencia o contra entrega),
-   Estreno no toca el dinero y la comisión es 0 %. Los pagos reales llegan después del visto bueno
+   speeaking no toca el dinero y la comisión es 0 %. Los pagos reales llegan después del visto bueno
    fiscal; no son meta de estos 90 días.
 6. **Metas del escenario base [supuesto]:**
    - vendedores activados: 15 al día 30, 55–60 al día 60 y 100 al día 90;
@@ -841,7 +841,7 @@ fundamenta.
 | Decisiones automatizadas                                         | LFPDPPP art. 26 fr. II [33]                                                                                                                                         | Solo una persona suspende cuentas; hay apelación; la IA solo oculta de forma provisional lo grave                                                                                                                                                                                                                                                             | Siempre                                              |
 | Vulneración de datos                                             | LFPDPPP art. 19                                                                                                                                                     | Procedimiento de una página (4.1)                                                                                                                                                                                                                                                                                                                             | Antes del primer despliegue público                  |
 | Nuevos usos de datos (evaluación de IA, cookie de origen, `?r=`) | LFPDPPP (finalidades)                                                                                                                                               | Agregarlos al aviso; quitar datos personales de los textos de evaluación                                                                                                                                                                                                                                                                                      | Antes de usarlos                                     |
-| Retenciones si Estreno cobra por cuenta del vendedor             | LIF 2026 art. 25 fr. VI y IX: ISR de 2.5 % a personas físicas y morales, 20 % sin RFC; IVA según LIVA 18-J [29][31]                                                 | En el piloto (B1) no se cobra por cuenta de nadie. Preguntas para el contador: ¿aplican las obligaciones de información del art. 18-J fr. III de la LIVA?, ¿aplica el art. 30-B del CFF (acceso del SAT en tiempo real, vigente desde el 1 de abril de 2026 según fuentes secundarias [32])?, ¿hay un «servicio digital» gravado con comisión 0 %?            | Semanas 1–4                                          |
+| Retenciones si speeaking cobra por cuenta del vendedor           | LIF 2026 art. 25 fr. VI y IX: ISR de 2.5 % a personas físicas y morales, 20 % sin RFC; IVA según LIVA 18-J [29][31]                                                 | En el piloto (B1) no se cobra por cuenta de nadie. Preguntas para el contador: ¿aplican las obligaciones de información del art. 18-J fr. III de la LIVA?, ¿aplica el art. 30-B del CFF (acceso del SAT en tiempo real, vigente desde el 1 de abril de 2026 según fuentes secundarias [32])?, ¿hay un «servicio digital» gravado con comisión 0 %?            | Semanas 1–4                                          |
 | Alimentos y sorteos                                              | Normativa sanitaria; posibles permisos para sorteos                                                                                                                 | Los alimentos son responsabilidad del vendedor (abogado); nada de sorteos en el piloto                                                                                                                                                                                                                                                                        | Semana 2                                             |
 
 ### 7.2 Pagos (modo B1: «cobro directo del vendedor»)
@@ -851,7 +851,7 @@ fundamenta.
 - El método de pago es un **dato P4 estructurado**. Los datos bancarios solo aparecen **dentro del
   pedido**, nunca en público.
 - El filtro sigue bloqueando CLABE o «deposítame» en comentarios y publicaciones.
-- El aviso dice «Paga solo con los datos de tu pedido» (no «Nunca pagues fuera de Estreno», que sería
+- El aviso dice «Paga solo con los datos de tu pedido» (no «Nunca pagues fuera de speeaking», que sería
   falso en B1).
 - La transferencia solo se habilita para vendedores con **teléfono verificado**.
 - Nuevo estado **«Esperando pago al vendedor»**, con vigencia según el método: 48 h para transferencia y

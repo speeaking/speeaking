@@ -1,4 +1,4 @@
-const PLACEHOLDER_ORIGIN = "http://vendeia.local";
+const PLACEHOLDER_ORIGIN = "http://speeaking.local";
 // Una ruta que empieza con `//` o `/\` es una referencia de red: el navegador la resuelve como
 // `https://otro.com`.
 const NETWORK_PATH = /^\/[/\\]/;

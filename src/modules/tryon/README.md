@@ -14,7 +14,7 @@ productos, generada por el proveedor de imágenes (`server/providers/image`). Ba
   desde Ajustes. Máximo 5 fotos vivas.
 - **Quién paga (`funding.ts`): la tienda, nunca quien compra.** Orden: la tienda del producto
   principal si tiene «Ver cómo me veo» activo, saldo y tope del día → las pruebas de cortesía de esa
-  tienda (`STORE_TRIAL_TRY_ONS`, las paga Estreno) → nada: el botón explica que la tienda no tiene
+  tienda (`STORE_TRIAL_TRY_ONS`, las paga speeaking) → nada: el botón explica que la tienda no tiene
   pruebas activas y registra la demanda (`TRY_ON_REQUESTED`) que el vendedor ve en `/studio/saldo`.
   El cobro y la fila del resultado van en la misma transacción que la reserva de la solicitud de
   IA; si el proveedor falla, se devuelve. `TryOnResult.sellerId` guarda la tienda del producto

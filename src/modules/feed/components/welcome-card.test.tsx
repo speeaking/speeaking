@@ -13,7 +13,7 @@ const moment = {
 };
 
 beforeEach(() => {
-  document.cookie = "vendeia_bienvenida=1; path=/";
+  document.cookie = "speeaking_bienvenida=1; path=/";
 });
 
 describe("WelcomeCard", () => {
@@ -36,11 +36,11 @@ describe("WelcomeCard", () => {
 
   it("al cerrarla borra la cookie de bienvenida (no vuelve a aparecer)", async () => {
     render(<WelcomeCard moment={moment} />);
-    expect(document.cookie).toContain("vendeia_bienvenida=1");
+    expect(document.cookie).toContain("speeaking_bienvenida=1");
 
     await userEvent.click(screen.getByRole("button", { name: "Cerrar bienvenida" }));
 
-    expect(document.cookie).not.toContain("vendeia_bienvenida=1");
+    expect(document.cookie).not.toContain("speeaking_bienvenida=1");
   });
 
   it("se puede cerrar y el foco pasa al siguiente control", async () => {

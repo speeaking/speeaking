@@ -159,7 +159,7 @@ describe.skipIf(!databaseUrl)("borrar mi cuenta contra PostgreSQL (ADR-048)", ()
       where: { id: sellerUser },
       select: { email: true, name: true, profile: true, sellerProfile: true },
     });
-    expect(user.email).toBe(`eliminada-${sellerUser}@estreno.invalid`);
+    expect(user.email).toBe(`eliminada-${sellerUser}@speeaking.invalid`);
     expect(user.name).toBe("Cuenta eliminada");
     expect(user.profile).toBeNull();
     expect(user.sellerProfile).toMatchObject({

@@ -32,7 +32,7 @@ export type AdKitProduct = {
 };
 
 /**
- * ¿Se puede decir «original» fuera de Estreno (P14)? Solo si el vendedor lo declara y la revisión de
+ * ¿Se puede decir «original» fuera de speeaking (P14)? Solo si el vendedor lo declara y la revisión de
  * autenticidad no lo tiene «sin verificar»: con el comprobante pedido (NEEDS_PROOF), enviado sin
  * revisar (PROOF_SUBMITTED) o rechazado (REJECTED), la ficha dice «Autenticidad sin verificar» y un
  * anuncio no puede prometer lo contrario. `facts.authenticityClaim` es el `claim` de la ficha
@@ -50,7 +50,7 @@ export function mayClaimOriginal(facts: ProductFacts): boolean {
 /**
  * `authenticityClaim` del kit a partir de lo que ve quien compra (`buyerAuthenticityOf`): el mismo
  * `claim` de la ficha, salvo que lo declarado lleve una nota de riesgo («Revisa: …», riesgo medio).
- * Un anuncio sale de Estreno sin esa nota, así que ahí «original» solo va con lo declarado de riesgo
+ * Un anuncio sale de speeaking sin esa nota, así que ahí «original» solo va con lo declarado de riesgo
  * bajo (o sin revisión todavía) o con el comprobante revisado (falla cerrada, P14).
  */
 export function adKitAuthenticityClaim(

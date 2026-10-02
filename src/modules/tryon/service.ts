@@ -262,7 +262,7 @@ const resultSelect = {
   aiRequest: { select: { provider: true } },
 } as const;
 
-/** Pruebas de cortesía ya usadas por una tienda (las paga Estreno; no vencen por mes). */
+/** Pruebas de cortesía ya usadas por una tienda (las paga speeaking; no vencen por mes). */
 async function storeTrialUsed(sellerId: string) {
   return db.tryOnResult.count({
     where: { sellerId, funding: "PLATFORM", status: { in: ["PENDING", "READY"] } },

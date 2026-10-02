@@ -84,9 +84,9 @@ describe("«original» en el kit de anuncios según la revisión de autenticidad
       const product = withReview(status);
       expect(mayClaimOriginal(product.facts)).toBe(true);
       expect(allowedClaimsFor(product).has("authenticity")).toBe(true);
-      // Nunca una certificación: la frase es la declaración del vendedor, sin sello de VendeIA.
+      // Nunca una certificación: la frase es la declaración del vendedor, sin sello de speeaking.
       expect(factLines(product)).toContain(ORIGINAL_LINE);
-      expect(factLines(product).join(" ")).not.toMatch(/VendeIA|revisad|certific|garant/i);
+      expect(factLines(product).join(" ")).not.toMatch(/speeaking|revisad|certific|garant/i);
     }
   });
 
@@ -118,7 +118,7 @@ describe("«original» en el kit de anuncios según la revisión de autenticidad
     for (const status of ["NEEDS_PROOF", "PROOF_SUBMITTED"] as const) {
       const now = withReview(status);
       const current = guardAdCopy(stored, now);
-      const texts = composeAdKit(current.copy, now, "https://vendeia.mx").map((v) => v.text);
+      const texts = composeAdKit(current.copy, now, "https://speeaking.com").map((v) => v.text);
 
       expect(texts.join("\n")).not.toMatch(/original/i);
       expect(current.copy.instagram.hashtags).toEqual(["jordan"]);

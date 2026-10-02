@@ -7,10 +7,10 @@ import type { PaymentMethod } from "../../src/generated/prisma/enums";
  * máquina (`isProductionTarget`); en cualquier otra base no existe.
  *
  * Son valores de prueba: no los uses en ningún otro servicio. El área del equipo (/admin) se abre
- * con `pnpm make-admin prueba@estreno.test`, el único camino que da ese rol.
+ * con `pnpm make-admin prueba@speeaking.test`, el único camino que da ese rol.
  */
 export const testAccount = {
-  email: "prueba@estreno.test",
+  email: "prueba@speeaking.test",
   password: "prueba-local-2026",
   /** Se lee como nombre de pila en el inicio: «¿Qué quieres compartir, Alex?». */
   name: "Alex Prueba",

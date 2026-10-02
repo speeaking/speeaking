@@ -32,7 +32,7 @@ export function consentBannerTitle(documents: readonly PendingLegalDocument[]) {
  */
 export function dismissKey(documents: readonly PendingLegalDocument[]) {
   const versions = documents.map((document) => `${document.type}@${document.version}`).join(",");
-  return `vendeia.consent-refresh:${versions}`;
+  return `speeaking.consent-refresh:${versions}`;
 }
 
 /**

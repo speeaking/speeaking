@@ -19,7 +19,7 @@ function AdKit({ initial }: { initial: AdKitView }) {
 
 const PRODUCT_ID = "0199a000-0000-7000-8000-000000000001";
 const url = (channel: string) =>
-  `https://vendeia.mx/producto/audifonos-abc123?ref=compartir&canal=${channel}`;
+  `https://speeaking.com/producto/audifonos-abc123?ref=compartir&canal=${channel}`;
 
 const withKit: AdKitView = {
   product: {

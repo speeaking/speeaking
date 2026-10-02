@@ -3,6 +3,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
+import { siteConfig } from "@/config/site";
 import { StoreCollaborationList } from "@/modules/creators/components/collaboration-list";
 import { CollaborationToggle } from "@/modules/creators/components/collaboration-toggle";
 import { PostMetricsList } from "@/modules/creators/components/post-metrics";
@@ -53,8 +54,8 @@ export default async function StudioCollaborationsPage() {
             decir «Colaboración». Puedes marcarla desde aquí.
           </li>
           <li>
-            Estreno todavía no cobra ni reparte comisiones: cualquier acuerdo es entre tú y quien
-            publica.
+            {siteConfig.name} todavía no cobra ni reparte comisiones: cualquier acuerdo es entre tú
+            y quien publica.
           </li>
         </ul>
         <Link

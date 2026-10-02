@@ -18,7 +18,7 @@ import { TopBar } from "./top-bar";
  * - Móvil: barra superior compacta, contenido y barra inferior.
  * - Escritorio: barra superior y rejilla 232 / 680 / 320 alineadas. Menos de 1280 px oculta la
  *   columna derecha; menos de 1024 px reduce la izquierda a íconos, y en escritorio la persona la
- *   pliega con el botón de arriba (ADR-046; cookie `estreno-nav`).
+ *   pliega con el botón de arriba (ADR-046; cookie `speeaking-nav`).
  * - Página ancha (ADR-065): si el contenido trae `data-page-wide` (el perfil), las dos columnas
  *   laterales se ocultan y el contenido se centra a 992 px, como un perfil de Facebook. Es CSS
  *   (`:has`): la página lo pide con el atributo, sin otro layout ni otra ruta.

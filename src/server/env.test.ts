@@ -5,7 +5,7 @@ import { LocalStorageProvider } from "./providers/storage/local-storage";
 import { S3StorageProvider } from "./providers/storage/s3-storage";
 
 const valid = {
-  DATABASE_URL: "postgresql://u:p@localhost:5434/vendeia",
+  DATABASE_URL: "postgresql://u:p@localhost:5434/speeaking",
   BETTER_AUTH_SECRET: "x".repeat(32),
 };
 
@@ -15,8 +15,8 @@ describe("serverEnvSchema", () => {
   });
 
   it("acepta URLs https", () => {
-    expect(serverEnvSchema.parse({ ...valid, APP_URL: "https://vendeia.mx" }).APP_URL).toBe(
-      "https://vendeia.mx",
+    expect(serverEnvSchema.parse({ ...valid, APP_URL: "https://speeaking.com" }).APP_URL).toBe(
+      "https://speeaking.com",
     );
   });
 
@@ -24,7 +24,7 @@ describe("serverEnvSchema", () => {
     expect(serverEnvSchema.safeParse({ ...valid, APP_URL: "javascript:alert(1)" }).success).toBe(
       false,
     );
-    expect(serverEnvSchema.safeParse({ ...valid, APP_URL: "ftp://vendeia.mx" }).success).toBe(
+    expect(serverEnvSchema.safeParse({ ...valid, APP_URL: "ftp://speeaking.com" }).success).toBe(
       false,
     );
   });
@@ -50,8 +50,8 @@ describe("serverEnvSchema", () => {
   describe("producción cifrada (SEC-21)", () => {
     const production = {
       NODE_ENV: "production",
-      APP_URL: "https://vendeia.mx",
-      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      APP_URL: "https://speeaking.com",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
       BETTER_AUTH_SECRET: "x".repeat(32),
       ALLOW_SIMULATED_PAYMENTS: "true",
       ALLOW_SIMULATED_AI: "true",
@@ -72,12 +72,15 @@ describe("serverEnvSchema", () => {
     });
 
     it("rechaza APP_URL http fuera de loopback y una base remota sin sslmode", () => {
-      expect(issues({ ...production, APP_URL: "http://vendeia.mx" })).toEqual(["APP_URL"]);
+      expect(issues({ ...production, APP_URL: "http://speeaking.com" })).toEqual(["APP_URL"]);
       expect(
-        issues({ ...production, DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia" }),
+        issues({ ...production, DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking" }),
       ).toEqual(["DATABASE_URL"]);
       expect(
-        issues({ ...production, DATABASE_URL: "postgresql://u:p@db.vendeia.mx/v?sslmode=disable" }),
+        issues({
+          ...production,
+          DATABASE_URL: "postgresql://u:p@db.speeaking.com/v?sslmode=disable",
+        }),
       ).toEqual(["DATABASE_URL"]);
     });
 
@@ -86,7 +89,7 @@ describe("serverEnvSchema", () => {
         issues({
           ...production,
           APP_URL: "http://localhost:3000",
-          DATABASE_URL: "postgresql://u:p@localhost:5434/vendeia",
+          DATABASE_URL: "postgresql://u:p@localhost:5434/speeaking",
         }),
       ).toEqual([]);
       expect(issues({ ...production, APP_URL: "http://127.0.0.1:3000" })).toEqual([]);
@@ -97,7 +100,7 @@ describe("serverEnvSchema", () => {
         issues({
           ...production,
           NODE_ENV: "development",
-          APP_URL: "http://vendeia.test",
+          APP_URL: "http://speeaking.test",
           DATABASE_URL: "postgresql://u:p@db/x",
         }),
       ).toEqual([]);
@@ -107,8 +110,8 @@ describe("serverEnvSchema", () => {
   describe("pagos simulados (SEC-01)", () => {
     const production = {
       NODE_ENV: "production",
-      APP_URL: "https://vendeia.mx",
-      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      APP_URL: "https://speeaking.com",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
       BETTER_AUTH_SECRET: "x".repeat(32),
     };
     // Solo los problemas de pagos: otras reglas de producción se prueban aparte.
@@ -259,8 +262,8 @@ describe("serverEnvSchema", () => {
   describe("IA simulada en producción (espejo de SEC-01)", () => {
     const production = {
       NODE_ENV: "production",
-      APP_URL: "https://vendeia.mx",
-      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      APP_URL: "https://speeaking.com",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
       BETTER_AUTH_SECRET: "x".repeat(32),
       ALLOW_SIMULATED_PAYMENTS: "true",
       CRON_SECRET: "c".repeat(32),
@@ -326,7 +329,7 @@ describe("serverEnvSchema", () => {
         aiIssues({
           ...production,
           APP_URL: "http://localhost:3000",
-          DATABASE_URL: "postgresql://u:p@localhost:5434/vendeia",
+          DATABASE_URL: "postgresql://u:p@localhost:5434/speeaking",
         }),
       ).toEqual(["ALLOW_SIMULATED_AI"]);
     });
@@ -359,8 +362,8 @@ describe("serverEnvSchema", () => {
   describe("secreto de las tareas programadas", () => {
     const production = {
       NODE_ENV: "production",
-      APP_URL: "https://vendeia.mx",
-      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      APP_URL: "https://speeaking.com",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
       BETTER_AUTH_SECRET: "x".repeat(32),
       ALLOW_SIMULATED_PAYMENTS: "true",
     };
@@ -391,14 +394,14 @@ describe("serverEnvSchema", () => {
     const r2 = {
       STORAGE_DRIVER: "s3",
       S3_ENDPOINT: "https://0123456789abcdef.r2.cloudflarestorage.com",
-      S3_BUCKET: "vendeia-media",
+      S3_BUCKET: "speeaking-media",
       S3_ACCESS_KEY_ID: "a".repeat(32),
       S3_SECRET_ACCESS_KEY: secret,
     };
     const production = {
       NODE_ENV: "production",
-      APP_URL: "https://vendeia.mx",
-      DATABASE_URL: "postgresql://u:p@db.vendeia.mx:5432/vendeia?sslmode=require",
+      APP_URL: "https://speeaking.com",
+      DATABASE_URL: "postgresql://u:p@db.speeaking.com:5432/speeaking?sslmode=require",
       BETTER_AUTH_SECRET: "x".repeat(32),
       ALLOW_SIMULATED_PAYMENTS: "true",
       ALLOW_SIMULATED_AI: "true",
@@ -448,7 +451,7 @@ describe("serverEnvSchema", () => {
       const env = serverEnvSchema.parse({ ...production, ...r2 });
       expect(s3StorageConfig(env)).toEqual({
         endpoint: r2.S3_ENDPOINT,
-        bucket: "vendeia-media",
+        bucket: "speeaking-media",
         region: "auto",
         accessKeyId: r2.S3_ACCESS_KEY_ID,
         secretAccessKey: secret,
@@ -477,7 +480,7 @@ describe("serverEnvSchema", () => {
       for (const endpoint of [
         "http://0123456789abcdef.r2.cloudflarestorage.com",
         "https://u:p@0123456789abcdef.r2.cloudflarestorage.com",
-        "https://0123456789abcdef.r2.cloudflarestorage.com/vendeia-media",
+        "https://0123456789abcdef.r2.cloudflarestorage.com/speeaking-media",
         "https://0123456789abcdef.r2.cloudflarestorage.com/?x=1",
         "ftp://0123456789abcdef.r2.cloudflarestorage.com",
         "no es url",
@@ -492,7 +495,7 @@ describe("serverEnvSchema", () => {
 
     it("rechaza drivers desconocidos, buckets y regiones inválidos y llaves cortas", () => {
       expect(storageIssues({ ...valid, STORAGE_DRIVER: "r2" })).toEqual(["STORAGE_DRIVER"]);
-      for (const bucket of ["Vendeia", "ve", "vendeia.media", "-vendeia", "v".repeat(64)]) {
+      for (const bucket of ["Speeaking", "ve", "speeaking.media", "-speeaking", "v".repeat(64)]) {
         expect(storageIssues({ ...valid, ...r2, S3_BUCKET: bucket })).toEqual(["S3_BUCKET"]);
       }
       expect(storageIssues({ ...valid, ...r2, S3_REGION: "US East" })).toEqual(["S3_REGION"]);

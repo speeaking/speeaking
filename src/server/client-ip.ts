@@ -33,7 +33,7 @@ import { env } from "./env";
  */
 
 /** Cabecera interna con la IP ya resuelta; solo la escriben `withClientIpHeader`/`withClientIpRequest`. */
-export const CLIENT_IP_HEADER = "x-vendeia-client-ip";
+export const CLIENT_IP_HEADER = "x-speeaking-client-ip";
 
 /**
  * `advanced.ipAddress` de Better Auth: lee únicamente la IP resuelta por esta política. Sin proxies de

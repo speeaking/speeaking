@@ -45,7 +45,7 @@ describe("signUpSchema", () => {
 
   // Los correos `.invalid` son de las cuentas de la plataforma (ADR-066): registrarse con uno
   // ocuparía la cuenta editorial de una comunidad antes de que exista.
-  it.each(["editorial.comida@vendeia.invalid", "Eliminada-1@ESTRENO.INVALID ", "x@invalid"])(
+  it.each(["editorial.comida@speeaking.invalid", "Eliminada-1@SPEEAKING.INVALID ", "x@invalid"])(
     "rechaza el correo reservado %s",
     (email) => {
       const result = signUpSchema.safeParse({ ...validSignUp, email });
@@ -55,9 +55,9 @@ describe("signUpSchema", () => {
   );
 
   it("isReservedEmail solo marca el dominio .invalid", () => {
-    expect(isReservedEmail("a@vendeia.invalid")).toBe(true);
+    expect(isReservedEmail("a@speeaking.invalid")).toBe(true);
     expect(isReservedEmail("a@invalid.mx")).toBe(false);
-    expect(isReservedEmail("prueba@estreno.test")).toBe(false);
+    expect(isReservedEmail("prueba@speeaking.test")).toBe(false);
     expect(isReservedEmail("ana@example.com")).toBe(false);
   });
 
@@ -77,7 +77,7 @@ describe("signUpSchema", () => {
   });
 
   // SEC-18
-  it.each(["Equipo VendeIA", "Soporte", "vende ia"])(
+  it.each(["Equipo speeaking", "Soporte", "vende ia"])(
     "rechaza nombres que suplantan a la plataforma: %s",
     (name) => {
       const result = signUpSchema.safeParse({ ...validSignUp, name });
@@ -152,7 +152,7 @@ describe("usernameSchema", () => {
     // SEC-18: prefijos y segmentos reservados, sin importar mayúsculas.
     "Equipo.Soporte",
     "equipo.gaming",
-    "vendeia.oficial",
+    "speeaking.oficial",
     "Soporte_MX",
     "tienda.oficial",
   ])("rechaza %s", (value) => {

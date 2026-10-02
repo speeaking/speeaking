@@ -32,7 +32,7 @@ describe("deleteStoredMedia", () => {
   let storage: LocalStorageProvider;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "vendeia-variants-"));
+    root = await mkdtemp(join(tmpdir(), "speeaking-variants-"));
     storage = new LocalStorageProvider(root);
   });
 

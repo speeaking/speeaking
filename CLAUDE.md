@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Estreno — guía para agentes
+# speeaking — guía para agentes
 
 - Lee `docs/product-principles.md` y `docs/architecture.md` antes de cambiar código.
 - Reglas obligatorias: la IA redacta y el código calcula (P2); datos verificables estructurados (P4);

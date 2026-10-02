@@ -11,7 +11,7 @@ import {
   setUserRole,
 } from "./grant";
 
-const LOCAL_DB = "postgresql://u:p@localhost:5434/vendeia";
+const LOCAL_DB = "postgresql://u:p@localhost:5434/speeaking";
 const USER_ID = "0199a000-0000-7000-8000-000000000001";
 
 describe("parseMakeAdminArgs", () => {

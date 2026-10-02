@@ -9,8 +9,7 @@ import { env } from "@/server/env";
 
 export const metadata: Metadata = {
   title: "Apoya el proyecto",
-  description:
-    "Estreno es un proyecto independiente hecho en México. Qué cuesta mantenerlo, de dónde sale el dinero y en qué se usa.",
+  description: `${siteConfig.name} es un proyecto independiente hecho en México. Qué cuesta mantenerlo, de dónde sale el dinero y en qué se usa.`,
 };
 
 /**
@@ -29,7 +28,7 @@ export default function SupportPage() {
   ];
   const uses = [
     "Primero, que la plataforma siga encendida: servidores, base de datos y fotos.",
-    "Después, las pruebas de cortesía: cada tienda nueva estrena con 10 pruebas que paga Estreno.",
+    `Después, las pruebas de cortesía: cada tienda nueva estrena con 10 pruebas que paga ${siteConfig.name}.`,
     "Lo que sobre, en desarrollo: mensajes, avisos, búsqueda por foto y mejor IA.",
   ];
   return (

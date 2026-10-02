@@ -81,7 +81,7 @@ describe("readVariant con el almacenamiento local", () => {
   let storage: LocalStorageProvider;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "vendeia-delivery-"));
+    root = await mkdtemp(join(tmpdir(), "speeaking-delivery-"));
     storage = new LocalStorageProvider(root);
     await storage.put(KEY, photo);
   });

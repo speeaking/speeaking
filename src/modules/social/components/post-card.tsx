@@ -230,7 +230,7 @@ function CommunityChip({ community }: { community: Community }) {
 }
 
 /**
- * Cabecera. Cuenta editorial: empieza por la comunidad (su avatar con el sello de Estreno, su nombre
+ * Cabecera. Cuenta editorial: empieza por la comunidad (su avatar con el sello de speeaking, su nombre
  * y la insignia «Editorial» en su color) y debajo el equipo y la hora. Personas y tiendas: su
  * avatar y nombre, «Tienda» si venden, y la comunidad como chip pequeño.
  */
@@ -923,8 +923,8 @@ export function PostCard({
   const theater = layout === "theater" && expanded && (cover !== undefined || Boolean(post.video));
 
   // Portada: foto a la izquierda (300 px, como la maqueta) y titular, texto y conversación a la
-  // derecha. Tarjeta blanca: la foto pone el color (paleta rosa mexicano; `community-soft` es solo
-  // para selección). En móvil, la foto arriba en 16:11 para que el titular quede a la vista.
+  // derecha. Tarjeta blanca: la foto pone el color (`community-soft` es solo para selección). En
+  // móvil, la foto arriba en 16:11 para que el titular quede a la vista.
   if (variant === "cover" && community && cover && !isSale) {
     const { headline, rest } = extractHeadline(post.body);
     return (

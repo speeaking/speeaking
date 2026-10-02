@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { siteConfig } from "@/config/site";
 import type { AITask } from "@/server/providers/ai/types";
 import { DRAFT_KIND_LABELS, type DraftKind, TOPIC_MAX_CHARS } from "./brief";
 
@@ -28,7 +29,7 @@ export type EditorialDraftInput = {
 const editorialDraftOutput = z.object({ body: z.string().min(1).max(1500) });
 export type EditorialDraftOutput = z.infer<typeof editorialDraftOutput>;
 
-const SYSTEM = `Escribes publicaciones para la cuenta del equipo de una comunidad de Estreno, una red social de México. Tu texto es un BORRADOR: una persona del equipo lo revisa antes de publicarlo. Reglas:
+const SYSTEM = `Escribes publicaciones para la cuenta del equipo de una comunidad de ${siteConfig.name}, una red social de México. Tu texto es un BORRADOR: una persona del equipo lo revisa antes de publicarlo. Reglas:
 1. Español de México, de tú, con tono cercano y natural. No suenes a anuncio ni a marca.
 2. De 2 a 4 oraciones, máximo 450 caracteres. Termina con una pregunta concreta que invite a comentar.
 3. No inventes hechos: nada de noticias, estadísticas, cifras, precios, porcentajes, estudios ni nombres de personas reales. Si el encargo trae una fecha o un tema, usa solo lo que dice el encargo.
@@ -83,7 +84,7 @@ function mockBody(input: EditorialDraftInput): string {
 
 export const editorialDraftTask: AITask<EditorialDraftInput, EditorialDraftOutput> = {
   task: "editorial_draft",
-  promptVersion: "editorial@1",
+  promptVersion: "editorial@2",
   format: "json",
   schemaName: "editorial_draft",
   output: editorialDraftOutput,

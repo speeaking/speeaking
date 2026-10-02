@@ -141,7 +141,7 @@ describe("answerQuickQuestion (P4: solo datos verificables)", () => {
     const reviewed = answer("VERIFIED_BY_ADMIN");
     expect(reviewed.text).toBe(reviewed.view.detail);
     expect(reviewed.text).toBe(
-      "El vendedor declara que es original y el equipo de Estreno revisó su comprobante de compra. No es una certificación ni una garantía de autenticidad.",
+      "El vendedor declara que es original y el equipo de speeaking revisó su comprobante de compra. No es una certificación ni una garantía de autenticidad.",
     );
 
     // Sin revisión o sin riesgo: lo declarado, como siempre.

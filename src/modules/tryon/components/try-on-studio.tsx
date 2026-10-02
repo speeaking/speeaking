@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MediaDTO } from "@/modules/catalog/dto";
@@ -28,7 +29,7 @@ export type StudioProduct = {
 
 /**
  * Estudio de Pruébatelo: 1) tu foto, 2) qué te pruebas (hasta 4 prendas), 3) generar. Una sola
- * acción principal. Dice antes quién paga la prueba: la tienda de la prenda principal o Estreno;
+ * acción principal. Dice antes quién paga la prueba: la tienda de la prenda principal o speeaking;
  * quien compra, nunca (ADR-046).
  */
 export function TryOnStudio({
@@ -70,7 +71,7 @@ export function TryOnStudio({
     status === "sponsored"
       ? "Esta prueba es cortesía de la tienda: para ti es gratis."
       : status === "trial"
-        ? "Esta prueba es cortesía de Estreno: para ti es gratis."
+        ? `Esta prueba es cortesía de ${siteConfig.name}: para ti es gratis.`
         : "La tienda de la prenda principal todavía no activa «Ver cómo me veo». Le avisamos que quisiste probártela.";
 
   return (

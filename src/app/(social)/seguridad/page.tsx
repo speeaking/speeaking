@@ -6,8 +6,7 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Seguridad y privacidad",
-  description:
-    "Qué datos pide Estreno, cómo los guarda y qué puedes borrar. Explicado sin letra chica.",
+  description: `Qué datos pide ${siteConfig.name}, cómo los guarda y qué puedes borrar. Explicado sin letra chica.`,
 };
 
 /**
@@ -29,7 +28,7 @@ export default function SecurityPage() {
     {
       icon: ShieldCheck,
       title: "Ninguna tarjeta pasa por aquí",
-      text: "Los pagos van con un proveedor de pagos; Estreno nunca ve ni guarda números de tarjeta. En esta etapa los pagos y las recargas son simulados y no se cobra nada.",
+      text: `Los pagos van con un proveedor de pagos; ${siteConfig.name} nunca ve ni guarda números de tarjeta. En esta etapa los pagos y las recargas son simulados y no se cobra nada.`,
     },
     {
       icon: Trash2,

@@ -10,7 +10,7 @@ describe("LocalStorageProvider", () => {
   let storage: LocalStorageProvider;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "vendeia-storage-"));
+    root = await mkdtemp(join(tmpdir(), "speeaking-storage-"));
     storage = new LocalStorageProvider(root);
   });
 

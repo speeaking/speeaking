@@ -139,7 +139,7 @@ describe("toPublicProduct (el costo nunca llega al navegador)", () => {
     it("comprobante revisado: el texto aprobado (no es garantía), igual que el detalle de la ficha", () => {
       const { dto, answer } = withCheck("VERIFIED_BY_ADMIN");
       expect(dto.facts.authenticityClaim).toBe("reviewed");
-      expect(dto.authenticityReview.label).toBe("Comprobante revisado por Estreno");
+      expect(dto.authenticityReview.label).toBe("Comprobante revisado por speeaking");
       expect(answer).toBe(dto.authenticityReview.detail);
       expect(answer).toMatch(/No es una certificación ni una garantía/);
     });

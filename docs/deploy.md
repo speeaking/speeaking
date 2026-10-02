@@ -1,6 +1,6 @@
 # Despliegue en producción: Vercel + Neon + Cloudflare R2
 
-Guía paso a paso para poner Estreno en internet (decisión ADR-033 #10 y ADR-040). Está escrita para
+Guía paso a paso para poner speeaking en internet (decisión ADR-033 #10 y ADR-040). Está escrita para
 hacerse desde el navegador y una terminal, sin conocimientos de servidores. Tiempo estimado: 2 a 3
 horas la primera vez.
 
@@ -15,7 +15,7 @@ horas la primera vez.
 | **Dominio** + GitHub | Tu dirección web; el código privado de donde Vercel publica | —                                                                                                                           |
 
 **Antes de empezar.** Una tarjeta **tuya** (ADR-033 #7 y #8: nada se gasta en automático sin ella),
-tu correo, y la terminal abierta en la carpeta del proyecto (`E:\vendeia`). Guarda cada secreto en un
+tu correo, y la terminal abierta en la carpeta del proyecto (`E:\speeaking`). Guarda cada secreto en un
 gestor de contraseñas (Bitwarden, 1Password…); **nunca** en un archivo del proyecto, un chat o un
 correo.
 
@@ -25,8 +25,8 @@ correo.
 ## 1. Subir el código a GitHub (repositorio privado)
 
 1. Crea una cuenta en <https://github.com/signup> y activa la verificación en dos pasos.
-2. **New repository** → nombre `vendeia` → **Private** → sin README ni `.gitignore` → **Create**.
-3. En la terminal, dentro de `E:\vendeia`:
+2. **New repository** → nombre `speeaking` → **Private** → sin README ni `.gitignore` → **Create**.
+3. En la terminal, dentro de `E:\speeaking`:
 
    ```
    git ls-files | findstr /R "^\.env"
@@ -37,7 +37,7 @@ correo.
 4. Conecta y sube (cambia `<tu-usuario>`):
 
    ```
-   git remote add origin https://github.com/<tu-usuario>/vendeia.git
+   git remote add origin https://github.com/<tu-usuario>/speeaking.git
    git push -u origin main
    ```
 
@@ -92,7 +92,7 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
 1. Cuenta en <https://dash.cloudflare.com/sign-up> → **R2 Object Storage** → activa R2 (pide un medio
    de pago aunque uses solo la capa gratuita).
 2. **Create bucket**:
-   - Nombre: `vendeia-media`.
+   - Nombre: `speeaking-media`.
    - Location: **Automatic** con sugerencia **Eastern North America (ENAM)** (cerca de Vercel y Neon).
      La ubicación **no se puede cambiar** después
      ([ubicación](https://developers.cloudflare.com/r2/reference/data-location/)).
@@ -104,7 +104,7 @@ deben terminar en `?sslmode=require` (la app rechaza una base remota sin TLS).
 4. **Token**: R2 object storage → **Account Details** → **API Tokens** → **Manage** → **Create Account
    API token** (el de cuenta sigue vivo aunque cambien los usuarios; el de usuario muere con él):
    - Permisos: **Object Read & Write**.
-   - Buckets: **solo `vendeia-media`** (no «todos los buckets»).
+   - Buckets: **solo `speeaking-media`** (no «todos los buckets»).
    - Copia de inmediato **Access Key ID**, **Secret Access Key** (se muestra **una sola vez**) y el
      endpoint `https://<id-de-cuenta>.r2.cloudflarestorage.com`
      ([tokens](https://developers.cloudflare.com/r2/api/tokens/)).
@@ -123,7 +123,7 @@ Un video pesa hasta 50 MB y Vercel corta toda petición de más de 4.5 MB: el na
 bucket necesita una regla de CORS; sin ella la subida falla, por eso los videos vienen apagados en
 producción hasta que la pongas:
 
-1. R2 → `vendeia-media` → **Settings** → **CORS Policy** → **Add CORS policy** y pega (con tu
+1. R2 → `speeaking-media` → **Settings** → **CORS Policy** → **Add CORS policy** y pega (con tu
    dominio; agrega también el `*.vercel.app` del proyecto si quieres probar ahí):
 
    ```json
@@ -168,7 +168,7 @@ Dos opciones para el piloto cerrado (ADR-038):
   1. Cuenta en <https://openrouter.ai> → **Credits** (<https://openrouter.ai/settings/credits>): carga
      saldo (p. ej. US$10; tope del plan: US$50 al mes, ADR-033 #6). OpenRouter cobra una comisión de
      plataforma del 5.5 % en pago por uso ([precios](https://openrouter.ai/pricing)).
-  2. **Keys** (<https://openrouter.ai/settings/keys>) → **Create key** → nombre `vendeia-produccion` →
+  2. **Keys** (<https://openrouter.ai/settings/keys>) → **Create key** → nombre `speeaking-produccion` →
      **Credit limit: 50** con reinicio **mensual** si la pantalla lo ofrece → copia la llave
      (`sk-or-…`). Al llegar al límite, OpenRouter rechaza las llamadas sin cobrarlas
      ([límites](https://openrouter.ai/docs/api_reference/limits)).
@@ -185,7 +185,7 @@ Dos opciones para el piloto cerrado (ADR-038):
 
 ## 6 bis. Entrar con Google (opcional, ADR-049)
 
-1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «Estreno» (es lo que la
+1. En Google Cloud → APIs y servicios → Pantalla de consentimiento: nombre «speeaking» (es lo que la
    gente ve en «Ir a …» al entrar), correo de contacto, dominio del sitio; alcance solo `email` y
    `profile`. Mientras la app esté en modo «Prueba», solo entran los correos listados en «Usuarios
    de prueba»; para abrirla a cualquiera hay que publicarla (con esos dos alcances no pide
@@ -203,7 +203,7 @@ Dos opciones para el piloto cerrado (ADR-038):
 ## 7. Importar el proyecto en Vercel
 
 1. Vercel → **Add New… → Project** → **Import Git Repository** → autoriza la app de GitHub **solo**
-   para el repositorio `vendeia`.
+   para el repositorio `speeaking`.
 2. Vercel detecta Next.js. **No cambies** Build Command ni Install Command: `vercel.json` ya dice
    `pnpm vercel-build` (compila y, solo en producción, aplica las migraciones).
 3. Antes de **Deploy**, abre **Environment Variables** y carga la tabla del paso 8 (entorno
@@ -233,7 +233,7 @@ Si falta o está mal alguna, el build falla y dice **cuál** (nunca su valor).
 | `TRUSTED_PROXY_HOPS`           | `1` (Vercel pone la IP real del cliente)                           | No      | Sí en Vercel                                                   |
 | `STORAGE_DRIVER`               | `s3`                                                               | No      | Sí                                                             |
 | `S3_ENDPOINT`                  | `https://<id-de-cuenta>.r2.cloudflarestorage.com` (sin ruta)       | No      | Sí                                                             |
-| `S3_BUCKET`                    | `vendeia-media`                                                    | No      | Sí                                                             |
+| `S3_BUCKET`                    | `speeaking-media`                                                  | No      | Sí                                                             |
 | `S3_REGION`                    | `auto`                                                             | No      | No (por omisión `auto`)                                        |
 | `S3_ACCESS_KEY_ID`             | Paso 4                                                             | Sí      | Sí                                                             |
 | `S3_SECRET_ACCESS_KEY`         | Paso 4                                                             | Sí      | Sí                                                             |
@@ -290,7 +290,7 @@ En producción, el seed crea **solo** categorías, comunidades y ajustes por omi
 contenido editorial y los vendedores de demostración (`prisma/seed.ts`). Es idempotente: repetirlo no
 duplica nada ni cambia los ajustes que ya editaste en `/admin`.
 
-En PowerShell, dentro de `E:\vendeia` (usa la cadena **directa** de Neon; se borra al cerrar la
+En PowerShell, dentro de `E:\speeaking` (usa la cadena **directa** de Neon; se borra al cerrar la
 terminal):
 
 ```
@@ -308,7 +308,7 @@ Remove-Item Env:DATABASE_URL, Env:NODE_ENV
 
 **Contenido editorial** (ADR-033 #11 y ADR-066): con IA real, la operación diaria deja cada mañana un
 borrador por comunidad en `/admin/redaccion`; tú lo ajustas y lo publicas (sale como «Equipo
-Estreno», marcado «Editorial» y «Con ayuda de IA») o lo descartas. Nada se publica solo. La cuenta
+speeaking», marcado «Editorial» y «Con ayuda de IA») o lo descartas. Nada se publica solo. La cuenta
 editorial de cada comunidad se crea al publicar su primer borrador. Fotos, solo con licencia.
 **Nunca** se corre `pnpm seed:photos` ni el seed de desarrollo contra producción.
 
@@ -357,7 +357,7 @@ lugar de R2 (borrarían filas y dejarían los archivos en el bucket) y `db:migra
 - [ ] Con IA real: genera una propuesta en «Sube y vende» y revisa el gasto en `/admin/ia` y en
       OpenRouter.
 - [ ] Redacción: en `/admin/redaccion` toca «Pedir borrador» para una comunidad, ajústalo y
-      publícalo; en la comunidad debe salir de «Equipo Estreno» con «Editorial» y «Con ayuda de IA».
+      publícalo; en la comunidad debe salir de «Equipo speeaking» con «Editorial» y «Con ayuda de IA».
 
 ## 14. Respaldos
 
@@ -421,7 +421,7 @@ completo está en `docs/legal/00-marco-legal-2026.md` (§2.7, encargados y trans
   Vercel Inc. (funciones en `iad1` y registros), Neon/Databricks (base en `aws-us-east-1`),
   Cloudflare Inc. (fotos, bucket con sugerencia ENAM) y, con IA real, OpenRouter Inc. y el proveedor
   del modelo al que enruta. Estas regiones son las que fija esta guía: confírmalas en cada consola.
-- Son **encargados** (tratan datos por cuenta de Estreno): mandarles datos no es una transferencia,
+- Son **encargados** (tratan datos por cuenta de speeaking): mandarles datos no es una transferencia,
   pero la relación debe constar en un contrato de encargo. El aviso de privacidad de la app promete
   nombrarlos con su país: antes del primer vendedor real hay que completar «Encargados y
   transferencias» y el proveedor de IA en `src/app/(legal)/privacidad/page.tsx` y subir

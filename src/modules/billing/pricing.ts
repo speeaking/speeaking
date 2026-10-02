@@ -9,7 +9,7 @@
 export const PRICING_VERSION = "2026-09-29b";
 
 /**
- * Pruebas de cortesía por tienda (las paga Estreno): con ellas «Ver cómo me veo» funciona desde el
+ * Pruebas de cortesía por tienda (las paga speeaking): con ellas «Ver cómo me veo» funciona desde el
  * primer día en cualquier tienda y quien vende ve el resultado antes de poner saldo. Se cuentan por
  * tienda, no por producto ni por persona.
  */

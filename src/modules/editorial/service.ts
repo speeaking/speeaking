@@ -22,7 +22,7 @@ import { type EditorialDraftInput, editorialDraftTask, RECENT_EXCERPT_CHARS } fr
 
 /**
  * Redacción diaria (ADR-066). Cada día la IA redacta un borrador por comunidad para su cuenta
- * editorial («Equipo Estreno») y una persona del equipo decide qué se publica: nada sale sin su
+ * editorial («Equipo speeaking») y una persona del equipo decide qué se publica: nada sale sin su
  * aprobación. Contenido honesto (ADR-018): la cuenta se identifica como editorial, el texto lleva la
  * marca de IA y aquí nunca se crean usuarios, comentarios, reacciones ni seguidores.
  */

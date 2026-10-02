@@ -3,7 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { Client } from "@/modules/platform/client";
 
 /**
- * La cuenta editorial de una comunidad (ADR-018, ADR-066): «Equipo Estreno», identificada como
+ * La cuenta editorial de una comunidad (ADR-018, ADR-066): «Equipo speeaking», identificada como
  * «Cuenta editorial» en su perfil y en cada publicación. Es de la plataforma: no tiene contraseña
  * (nadie puede iniciar sesión con ella), su correo usa el dominio reservado `.invalid` y su usuario
  * `equipo.<comunidad>` está reservado para que nadie más lo ocupe (`identity/reserved-names.ts`).
@@ -12,9 +12,9 @@ import type { Client } from "@/modules/platform/client";
  */
 export function editorialAccount(community: { slug: string; name: string }) {
   return {
-    email: `editorial.${community.slug}@vendeia.invalid`,
+    email: `editorial.${community.slug}@speeaking.invalid`,
     username: `equipo.${community.slug}`,
-    // La comunidad ya se muestra junto al autor, así que la cuenta se llama solo «Equipo Estreno».
+    // La comunidad ya se muestra junto al autor, así que la cuenta se llama solo «Equipo speeaking».
     name: `Equipo ${siteConfig.name}`,
     bio: `Cuenta editorial de la comunidad ${community.name}. Contenido creado por el equipo con ayuda de IA.`,
   };

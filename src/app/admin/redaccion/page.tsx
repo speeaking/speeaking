@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { siteConfig } from "@/config/site";
 import { formatCount, formatRelativeTime } from "@/lib/format";
 import { getAdminViewer, requireAdmin } from "@/modules/admin/guard";
 import { DRAFT_KIND_LABELS } from "@/modules/editorial/brief";
@@ -61,7 +62,7 @@ export default async function EditorialDeskPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Redacción"
-        description="La IA redacta y tú publicas. Cada publicación sale como «Equipo Estreno», marcada como cuenta editorial y hecha con ayuda de IA."
+        description={`La IA redacta y tú publicas. Cada publicación sale como «Equipo ${siteConfig.name}», marcada como cuenta editorial y hecha con ayuda de IA.`}
         className="px-0"
       />
 

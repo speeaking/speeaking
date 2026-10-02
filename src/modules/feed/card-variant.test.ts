@@ -137,8 +137,8 @@ describe("extractHeadline", () => {
   });
 
   it("los puntos de precios, dominios o números no cortan la oración", () => {
-    expect(extractHeadline("Cuesta $1.5 mil en vendeia.mx hoy. Corre por él.").headline).toBe(
-      "Cuesta $1.5 mil en vendeia.mx hoy.",
+    expect(extractHeadline("Cuesta $1.5 mil en speeaking.com hoy. Corre por él.").headline).toBe(
+      "Cuesta $1.5 mil en speeaking.com hoy.",
     );
     // «1.» no es un titular.
     expect(extractHeadline("1. Compra harina. 2. Hornea.").headline).toBeNull();

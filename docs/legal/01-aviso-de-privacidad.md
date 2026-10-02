@@ -1,7 +1,7 @@
-# Aviso de privacidad de Estreno: integral, simplificado y cookies (borrador)
+# Aviso de privacidad de speeaking: integral, simplificado y cookies (borrador)
 
 > **BORRADOR PARA REVISIÓN LEGAL. NO PUBLICAR TAL CUAL.** Este texto lo preparó el equipo técnico
-> el 2026-09-26 a partir del código de Estreno y de las fuentes de la Parte F. **No es asesoría
+> el 2026-09-26 a partir del código de speeaking y de las fuentes de la Parte F. **No es asesoría
 > legal.** Un abogado mexicano debe revisarlo antes de publicarlo en `/privacidad`.
 >
 > - **Base:** `docs/legal/00-marco-legal-2026.md` (marco legal) y el código en `main` a esta fecha.
@@ -64,7 +64,7 @@
 
 ## Parte A. Aviso de privacidad integral
 
-**Aviso de privacidad integral de Estreno**
+**Aviso de privacidad integral de speeaking**
 
 Última actualización: [FECHA DE ÚLTIMA ACTUALIZACIÓN] · Versión: [VERSIÓN, igual a
 `LEGAL_VERSIONS.privacyNotice`]
@@ -83,14 +83,14 @@ claro, escríbenos a [CORREO DE PRIVACIDAD].
 - Tú decides en Ajustes si personalizamos tu feed y si apareces en sugerencias.
 - Usamos un proveedor de inteligencia artificial en Estados Unidos solo para los textos de venta
   que tú pides y para una revisión opcional de autenticidad. La IA nunca decide sola ni sanciona.
-- Estreno no cobra ni recibe el dinero de tus compras: pagas directo a la tienda.
+- speeaking no cobra ni recibe el dinero de tus compras: pagas directo a la tienda.
 
 ### 1. Quién es responsable de tus datos
 
 | Dato                             | Valor                                                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Responsable                      | [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE]                                                                                       |
-| Nombre comercial                 | Estreno (nombre provisional)                                                                                                  |
+| Nombre comercial                 | speeaking (registro de la marca ante el IMPI pendiente)                                                                       |
 | RFC                              | [RFC]                                                                                                                         |
 | Domicilio                        | [DOMICILIO PARA OÍR Y RECIBIR NOTIFICACIONES] (calle, número, colonia, alcaldía o municipio, código postal, ciudad y entidad) |
 | Departamento de datos personales | [NOMBRE DE LA PERSONA O ÁREA DE DATOS PERSONALES], [CORREO DE PRIVACIDAD]                                                     |
@@ -105,12 +105,12 @@ claro, escríbenos a [CORREO DE PRIVACIDAD].
 
 ### 2. Solo para mayores de 18 años
 
-Estreno es para personas de 18 años o más. Al crear tu cuenta confirmas que tienes 18 años o más.
+speeaking es para personas de 18 años o más. Al crear tu cuenta confirmas que tienes 18 años o más.
 **[REQUIERE CAMBIO EN CÓDIGO: casilla obligatoria «Tengo 18 años o más» en el registro]**
 
 No recabamos a sabiendas datos de menores de edad. Si sabemos que una cuenta es de una persona
 menor, la desactivamos y borramos sus datos, salvo lo que la ley nos obligue a conservar. Si crees
-que una persona menor usa Estreno, avísanos a [CORREO DE SOPORTE].
+que una persona menor usa speeaking, avísanos a [CORREO DE SOPORTE].
 
 > **Nota interna.** La mayoría de edad y la capacidad para contratar están en el Código Civil
 > Federal (ver `00`, §2.13). Qué nivel de verificación basta: **[VERIFICAR CON ABOGADO]**.
@@ -120,7 +120,7 @@ que una persona menor usa Estreno, avísanos a [CORREO DE SOPORTE].
 Los obtenemos de cuatro fuentes:
 
 - de ti, cuando los escribes o los subes;
-- de tu navegador, cuando usas Estreno;
+- de tu navegador, cuando usas speeaking;
 - de otras personas usuarias, por ejemplo cuando alguien reporta tu publicación o te hace un
   pedido;
 - de nosotros mismos, por ejemplo el nivel de riesgo que calculamos para un producto.
@@ -134,7 +134,7 @@ otras empresas.
    función de un solo sentido: nadie del equipo la puede ver.
 2. **Perfil:** nombre de usuario, nombre visible y, si los agregas, biografía, foto, ciudad y estado.
 3. **Lo que nos dices al registrarte:**
-   - qué quieres hacer en Estreno (por ejemplo, comprar o vender);
+   - qué quieres hacer en speeaking (por ejemplo, comprar o vender);
    - al menos 3 comunidades;
    - las marcas que te gustan;
    - qué buscas ahora y, si quieres, hasta cuánto quieres gastar (presupuesto).
@@ -145,7 +145,7 @@ otras empresas.
    - la dirección IP y el tipo de navegador o dispositivo de cada sesión;
    - la IP (o la red, en IPv6), para limitar intentos repetidos de inicio de sesión, registro,
      publicación y otras acciones.
-6. **Tu actividad dentro de Estreno** (ver §6):
+6. **Tu actividad dentro de speeaking** (ver §6):
    - qué publicaciones te mostramos y cuáles aparecieron en tu pantalla;
    - clics, búsquedas, me gusta, guardados, comentarios, a quién sigues y «No me interesa»;
    - cuándo compartes y por qué canal;
@@ -164,7 +164,7 @@ otras empresas.
 - **Carrito y pedidos:** productos, cantidades, precios, forma de entrega, método de pago que
   elegiste, total, estado y fechas.
 
-**No recabamos números de tarjeta, cuentas bancarias ni CLABE.** Estreno no cobra ni recibe el
+**No recabamos números de tarjeta, cuentas bancarias ni CLABE.** speeaking no cobra ni recibe el
 dinero de tus compras: pagas directo a la tienda.
 
 Si registras un domicilio o un teléfono de otra persona (por ejemplo, de quien recibe), asegúrate de
@@ -191,7 +191,7 @@ que esté de acuerdo.
 
 No te pedimos datos personales sensibles. Son los que pueden revelar, por ejemplo, origen étnico,
 estado de salud, creencias religiosas, opiniones políticas o preferencia sexual [1, art. 2 fr. VI].
-Las comunidades de Estreno no tratan esos temas.
+Las comunidades de speeaking no tratan esos temas.
 
 Te pedimos no escribir datos sensibles, tuyos ni de nadie, en publicaciones, comentarios, reportes o
 «Sube y vende».
@@ -227,7 +227,7 @@ En tus comprobantes, tapa los datos de pago que no hagan falta, como los número
 
 #### 4.1 Finalidades necesarias
 
-Son las que dan origen a tu relación con Estreno. Sin ellas no podemos darte el servicio:
+Son las que dan origen a tu relación con speeaking. Sin ellas no podemos darte el servicio:
 
 1. **Cuenta y seguridad:** crear, mantener y proteger tu cuenta; iniciar y cerrar sesiones; mostrarte
    dónde está abierta tu cuenta.
@@ -256,13 +256,13 @@ Son las que dan origen a tu relación con Estreno. Sin ellas no podemos darte el
 #### 4.2 Finalidades secundarias (puedes negarte)
 
 No son necesarias para el servicio. Puedes negarte o cambiar de opinión cuando quieras, y seguir
-usando Estreno [2, arts. 14 y 42]:
+usando speeaking [2, arts. 14 y 42]:
 
 | #   | Finalidad                                                                                                                                         | Cómo decides                                                                                                                                                                                                                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | S1  | **Personalizar tu feed y tus recomendaciones con tu actividad** (productos que viste, abriste, guardaste o agregaste al carrito, y tus búsquedas) | En el registro eliges «Sí» o «No», sin respuesta marcada de antemano **[REQUIERE CAMBIO EN CÓDIGO]**. Después, en Ajustes → «Personalizar mi feed». Si la desactivas, también desligamos de tu cuenta la actividad anterior. |
 | S2  | **Sugerirte personas para seguir y sugerir tu perfil a otras personas** («Gente de tus comunidades»)                                              | Ajustes → «Aparecer en sugerencias». Si no te interesa una persona, toca «Quitar».                                                                                                                                           |
-| S3  | **Medir y mejorar Estreno con tu actividad ligada a tu cuenta**, incluidas las pruebas de cambios al feed (§6.3)                                  | Va junto con S1: si desactivas la personalización, tu actividad deja de ligarse a tu cuenta y no se usa para medir pruebas.                                                                                                  |
+| S3  | **Medir y mejorar speeaking con tu actividad ligada a tu cuenta**, incluidas las pruebas de cambios al feed (§6.3)                                | Va junto con S1: si desactivas la personalización, tu actividad deja de ligarse a tu cuenta y no se usa para medir pruebas.                                                                                                  |
 
 También puedes negarte a cualquiera de estas finalidades escribiendo a [CORREO DE PRIVACIDAD].
 
@@ -319,7 +319,7 @@ También puedes negarte a cualquiera de estas finalidades escribiendo a [CORREO 
 
 ### 6. Personalización, pruebas y decisiones automatizadas
 
-Algunas cosas de Estreno las decide un programa sin que una persona las revise antes. Aquí te
+Algunas cosas de speeaking las decide un programa sin que una persona las revise antes. Aquí te
 decimos cuáles, con qué datos y qué puedes hacer [2, art. 112].
 
 Ninguna de ellas cierra tu cuenta, te sanciona ni decide sobre tus pagos. Eso lo decide siempre una
@@ -618,12 +618,12 @@ terceros. Si agregamos uno, lo nombraremos aquí antes de activarlo.
 
 #### 8.2 Transferencias a otras personas o empresas
 
-| Quién recibe                                                                                                        | Qué datos                                                                                                                                                                                                                         | Para qué                                      | ¿Necesita tu consentimiento?                                                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **La tienda a la que le compras** (en México)                                                                       | Tu nombre visible, qué pediste, cantidades, total y forma de entrega. Si el pago se confirma a través de Estreno, también el domicilio de entrega, **sin tu teléfono**, solo mientras el pedido está pagado, enviado o entregado. | Preparar y entregar tu pedido                 | No: es necesaria para el contrato que celebras con la tienda y para darte el servicio [1, art. 36 fr. IV y VII] **[VERIFICAR CON ABOGADO cuál aplica]** |
-| **Autoridades competentes** (por ejemplo, fiscalías, jueces, SAT, IMPI, PROFECO o la autoridad de datos personales) | Los datos que ordene la ley o el mandamiento                                                                                                                                                                                      | Cumplir la ley o una orden fundada y motivada | No [1, art. 36 fr. I, V y VI; art. 9 fr. VII]                                                                                                           |
+| Quién recibe                                                                                                        | Qué datos                                                                                                                                                                                                                           | Para qué                                      | ¿Necesita tu consentimiento?                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **La tienda a la que le compras** (en México)                                                                       | Tu nombre visible, qué pediste, cantidades, total y forma de entrega. Si el pago se confirma a través de speeaking, también el domicilio de entrega, **sin tu teléfono**, solo mientras el pedido está pagado, enviado o entregado. | Preparar y entregar tu pedido                 | No: es necesaria para el contrato que celebras con la tienda y para darte el servicio [1, art. 36 fr. IV y VII] **[VERIFICAR CON ABOGADO cuál aplica]** |
+| **Autoridades competentes** (por ejemplo, fiscalías, jueces, SAT, IMPI, PROFECO o la autoridad de datos personales) | Los datos que ordene la ley o el mandamiento                                                                                                                                                                                        | Cumplir la ley o una orden fundada y motivada | No [1, art. 36 fr. I, V y VI; art. 9 fr. VII]                                                                                                           |
 
-**Mientras Estreno no procese pagos** (hoy pagas directo a la tienda), la tienda solo ve tu nombre
+**Mientras speeaking no procese pagos** (hoy pagas directo a la tienda), la tienda solo ve tu nombre
 visible y lo que pediste. La entrega la acuerdas directamente con ella.
 
 La tienda que recibe tus datos asume las mismas obligaciones que nosotros y solo puede usarlos para
@@ -706,7 +706,7 @@ respalde, si hace falta [1, art. 30].
 #### 10.4 Cómo comprobamos que eres tú
 
 - **Con tu cuenta:** si escribes desde el correo de tu cuenta, te pediremos confirmar la solicitud
-  desde tu sesión en Estreno o con un código que te enviemos. Con eso damos por acreditada tu
+  desde tu sesión en speeaking o con un código que te enviemos. Con eso damos por acreditada tu
   identidad **[VERIFICAR CON ABOGADO]**. No te pedimos una identificación oficial si no hace falta.
 - **Si no puedes entrar a tu cuenta, o si actúa un representante:** te pediremos una copia de una
   identificación oficial vigente. Puedes tapar los datos que no sirven para identificarte (por
@@ -718,7 +718,7 @@ respalde, si hace falta [1, art. 30].
 
 > **Nota interna.** El Reglamento admite como acreditación la copia de identificación con cotejo del
 > original, los instrumentos electrónicos que identifiquen «fehacientemente» y los mecanismos de
-> autenticación «previamente establecidos por el responsable» [2, art. 89 fr. I]. Estreno no conoce
+> autenticación «previamente establecidos por el responsable» [2, art. 89 fr. I]. speeaking no conoce
 > la identidad civil de nadie (el nombre es libre), así que controlar la cuenta es la prueba más
 > fuerte que tenemos. Pedir identificaciones a todos crearía una base de datos más riesgosa.
 
@@ -851,7 +851,7 @@ Protegemos tus datos con medidas administrativas, técnicas y físicas [1, art. 
 - quienes tratan datos por nuestra cuenta tienen deber de confidencialidad [1, art. 20].
 
 **Si hay una vulneración de seguridad** que afecte de forma significativa tus derechos patrimoniales
-o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de Estreno. Te diremos:
+o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de speeaking. Te diremos:
 
 - qué pasó;
 - qué datos se vieron comprometidos;
@@ -865,17 +865,17 @@ o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de Estre
 
 ### 13. Cookies y almacenamiento en tu navegador
 
-Estreno **no usa cookies de publicidad ni de rastreo**, ni píxeles, ni herramientas de analítica o
+speeaking **no usa cookies de publicidad ni de rastreo**, ni píxeles, ni herramientas de analítica o
 publicidad de otras empresas. Las fuentes tipográficas se sirven desde nuestro propio sitio.
 
 Esto es todo lo que guardamos en tu navegador:
 
-| Nombre                                                                            | Tipo                                            | Para qué                                                                                                   | Duración                                          | ¿Necesaria?                            |
-| --------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------- |
-| `vendeia.session_token` (en conexiones seguras: `__Secure-vendeia.session_token`) | Cookie propia                                   | Mantener tu sesión abierta y proteger tu cuenta                                                            | Hasta 30 días sin uso; se renueva al usar Estreno | Sí. Sin ella no puedes iniciar sesión. |
-| `vendeia_bienvenida`                                                              | Cookie propia                                   | Mostrar una sola vez el mensaje de bienvenida al terminar tu registro. No te identifica.                   | 10 minutos, o hasta que cierres el mensaje        | No es esencial; no guarda datos tuyos. |
-| `theme`                                                                           | Almacenamiento local (`localStorage`)           | Recordar si prefieres el tema claro u oscuro. No se nos envía.                                             | Hasta que lo borres                               | Preferencia                            |
-| `vendeia.consent-refresh:…` y `vendeia:gente-de-tus-comunidades:cerrado`          | Almacenamiento de la pestaña (`sessionStorage`) | Recordar que ocultaste el aviso de documentos actualizados o las sugerencias de personas. No se nos envía. | Se borra al cerrar la pestaña                     | Preferencia                            |
+| Nombre                                                                                | Tipo                                            | Para qué                                                                                                   | Duración                                            | ¿Necesaria?                            |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------- |
+| `speeaking.session_token` (en conexiones seguras: `__Secure-speeaking.session_token`) | Cookie propia                                   | Mantener tu sesión abierta y proteger tu cuenta                                                            | Hasta 30 días sin uso; se renueva al usar speeaking | Sí. Sin ella no puedes iniciar sesión. |
+| `speeaking_bienvenida`                                                                | Cookie propia                                   | Mostrar una sola vez el mensaje de bienvenida al terminar tu registro. No te identifica.                   | 10 minutos, o hasta que cierres el mensaje          | No es esencial; no guarda datos tuyos. |
+| `theme`                                                                               | Almacenamiento local (`localStorage`)           | Recordar si prefieres el tema claro u oscuro. No se nos envía.                                             | Hasta que lo borres                                 | Preferencia                            |
+| `speeaking.consent-refresh:…` y `speeaking:gente-de-tus-comunidades:cerrado`          | Almacenamiento de la pestaña (`sessionStorage`) | Recordar que ocultaste el aviso de documentos actualizados o las sugerencias de personas. No se nos envía. | Se borra al cerrar la pestaña                       | Preferencia                            |
 
 **Medición de lo que aparece en tu pantalla.** No es una cookie, pero es una tecnología que recaba
 datos de forma automática:
@@ -903,7 +903,7 @@ borras la cookie de sesión, se cierra tu sesión.
 >   personalización). Por eso proponemos el aviso visible de la Parte B.3 y una opción para no
 >   medir.
 > - Nombres verificados en el código:
->   - la cookie de sesión la crea Better Auth con el prefijo `vendeia` (`auth.ts`); `useSecureCookies`
+>   - la cookie de sesión la crea Better Auth con el prefijo `speeaking` (`auth.ts`); `useSecureCookies`
 >     agrega `__Secure-` en https;
 >   - el tema usa la llave por omisión de `next-themes`.
 > - **[VERIFICAR]** en el navegador de producción que no haya otras cookies (p. ej., de Vercel).
@@ -913,12 +913,12 @@ borras la cookie de sesión, se cierra tu sesión.
 - **Dónde:** publicamos cada cambio en esta página, con su fecha, su versión y un recuadro «Qué
   cambió en esta versión».
 - **Si tienes cuenta:**
-  - verás un mensaje en la parte de arriba de Estreno: «Actualizamos el aviso de privacidad. Revisa
+  - verás un mensaje en la parte de arriba de speeaking: «Actualizamos el aviso de privacidad. Revisa
     los cambios», con la liga;
   - al tocar «Aceptar», registramos la versión que viste y la fecha;
   - si tocas «Ocultar», el mensaje se esconde solo en esa pestaña y vuelve a aparecer hasta que lo
     aceptes;
-  - el mensaje no te impide usar Estreno.
+  - el mensaje no te impide usar speeaking.
 - **Cambios que necesitan tu consentimiento:** te daremos un aviso nuevo y te pediremos permiso
   expreso, con una casilla sin marcar, **antes** de aplicarlos. Son estos:
   - una finalidad nueva que lo requiera;
@@ -962,13 +962,13 @@ abrir otra página. Los datos se recaban por medios electrónicos, así que el a
 simplificada: con las fracciones I a IV del art. 15 y el sitio del integral [1, art. 16 fr. II]. Se
 entrega antes de obtener los datos [3, Decimosegundo fr. I].
 
-> **Aviso de privacidad simplificado.** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE] («Estreno»), con
+> **Aviso de privacidad simplificado.** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE] («speeaking»), con
 > domicilio en [DOMICILIO PARA OÍR Y RECIBIR NOTIFICACIONES], es responsable de tus datos
 > personales.
 >
 > **Qué datos tratamos:** tu nombre, correo y contraseña; los datos técnicos de tu conexión (IP y
 > navegador); lo que nos digas en el registro (comunidades, marcas, qué buscas y, si quieres, tu
-> presupuesto); tu actividad y tu contenido en Estreno; y, si compras o vendes, tu domicilio de
+> presupuesto); tu actividad y tu contenido en speeaking; y, si compras o vendes, tu domicilio de
 > entrega, tu teléfono y los datos de tus productos y pedidos. No te pedimos datos sensibles.
 >
 > **Para qué (necesarias):** crear y proteger tu cuenta; operar la red y las compras y ventas;
@@ -996,7 +996,7 @@ entrega antes de obtener los datos [3, Decimosegundo fr. I].
 **Elección en el paso 3 del registro** (finalidad secundaria S1), sin respuesta marcada:
 
 > **¿Personalizamos tu feed con lo que haces aquí?** Usaríamos los productos que ves, guardas o
-> agregas al carrito y lo que buscas, solo dentro de Estreno, nunca datos de otras apps. Si eliges
+> agregas al carrito y lo que buscas, solo dentro de speeaking, nunca datos de otras apps. Si eliges
 > «No», tu actividad se guarda sin ligarla a tu cuenta. Lo cambias cuando quieras en Ajustes.
 > ( ) Sí, personaliza ( ) No, gracias
 
@@ -1016,8 +1016,8 @@ consentimiento expreso:
 | Dónde                                              | Texto propuesto                                                                                                                                                                                        | Tipo                                                                                           |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | Presupuesto (registro, paso 3)                     | «Opcional. Solo lo usamos para marcarte los productos que caben en tu presupuesto. Nadie más lo ve y lo puedes borrar en Ajustes.»                                                                     | Consentimiento expreso por signo inequívoco, o casilla aparte **[VERIFICAR CON ABOGADO]**      |
-| Subir comprobante de compra                        | ☐ «Autorizo a Estreno a guardar estas fotos en privado para revisar la autenticidad de este producto. Solo las vemos el equipo y yo. Taparé los datos de pago que no hagan falta.»                     | Consentimiento expreso, casilla sin marcar **[REQUIERE CAMBIO EN CÓDIGO]**                     |
-| Checkout, domicilio                                | «La tienda verá tu nombre visible y lo que pediste. Si el pago se confirma en Estreno, también el domicilio de entrega, sin tu teléfono.» ☐ «Guardar este domicilio para mis próximas compras.»        | Informativo + elección de guardar [4, 8.1 c)] **[REQUIERE CAMBIO EN CÓDIGO]**                  |
+| Subir comprobante de compra                        | ☐ «Autorizo a speeaking a guardar estas fotos en privado para revisar la autenticidad de este producto. Solo las vemos el equipo y yo. Taparé los datos de pago que no hagan falta.»                   | Consentimiento expreso, casilla sin marcar **[REQUIERE CAMBIO EN CÓDIGO]**                     |
+| Checkout, domicilio                                | «La tienda verá tu nombre visible y lo que pediste. Si el pago se confirma en speeaking, también el domicilio de entrega, sin tu teléfono.» ☐ «Guardar este domicilio para mis próximas compras.»      | Informativo + elección de guardar [4, 8.1 c)] **[REQUIERE CAMBIO EN CÓDIGO]**                  |
 | «Sube y vende» y kit de anuncios                   | «Lo que escribas lo procesa un proveedor de inteligencia artificial en Estados Unidos, sin tus datos de contacto ni el costo. No escribas datos personales de nadie. Borramos tu texto a los 90 días.» | Informativo (encargado, §7)                                                                    |
 | Reportar                                           | «Quien publica no sabrá quién lo reportó. No escribas datos personales de nadie.»                                                                                                                      | Informativo                                                                                    |
 | Activar tienda                                     | «El nombre de tu tienda y la ciudad y el estado de tus productos serán públicos. Tu domicilio nunca se publica.»                                                                                       | Informativo                                                                                    |
@@ -1028,7 +1028,7 @@ consentimiento expreso:
 **Dónde va:** en el pie de página y una vez en la primera visita, sin bloquear la navegación. No es
 un aviso de consentimiento de cookies: no usamos cookies que no sean necesarias.
 
-> Estreno solo usa la cookie necesaria para tu sesión. Para saber qué se ve de verdad, tu navegador
+> speeaking solo usa la cookie necesaria para tu sesión. Para saber qué se ve de verdad, tu navegador
 > nos avisa qué publicaciones aparecen en tu pantalla; si no tienes cuenta o no activaste la
 > personalización, lo guardamos sin ligarlo a ti. No hay rastreadores ni publicidad de otras
 > empresas. [No medir] · [Aviso de privacidad]
@@ -1112,9 +1112,9 @@ Todos están fuera de México (§8.1).
 
 | Hecho del aviso                                                                                | Código                                                                                                                         |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Sesión de 30 días que se renueva cada día; cookies con prefijo `vendeia` y `Secure` en https   | `src/server/auth.ts` (`expiresIn`, `updateAge`, `cookiePrefix`, `useSecureCookies`)                                            |
+| Sesión de 30 días que se renueva cada día; cookies con prefijo `speeaking` y `Secure` en https | `src/server/auth.ts` (`expiresIn`, `updateAge`, `cookiePrefix`, `useSecureCookies`)                                            |
 | Verificación de correo apagada; router HTTP de Better Auth cerrado                             | `src/server/auth.ts` (`requireEmailVerification: false`, `disabledPaths`)                                                      |
-| Cookie `vendeia_bienvenida` de 10 min                                                          | `src/modules/feed/welcome.ts`, `src/modules/identity/onboarding-actions.ts`                                                    |
+| Cookie `speeaking_bienvenida` de 10 min                                                        | `src/modules/feed/welcome.ts`, `src/modules/identity/onboarding-actions.ts`                                                    |
 | Tema en `localStorage` (next-themes)                                                           | `src/components/theme/theme-provider.tsx`                                                                                      |
 | «Ocultar» en `sessionStorage`                                                                  | `identity/components/consent-banner.tsx` (`dismissKey`), `discovery/components/people-suggestions-view.tsx` (`CLOSED_KEY`)     |
 | Sin terceros en el navegador; fuentes propias                                                  | `src/lib/csp.ts` (`connect-src 'self'`, `font-src 'self'`), `package.json`                                                     |
@@ -1173,7 +1173,7 @@ Todos están fuera de México (§8.1).
 | 1   | Datos que recibe la tienda | «el nombre de quien recibe, el domicilio de entrega y el teléfono del pedido»          | Nombre **visible** del comprador; domicilio solo con pago real y pedido vigente; **teléfono nunca** | Sigue al código (§8.2)                             |
 | 2   | Exportar y borrar          | «Desde Ajustes podrás descargar y eliminar tus datos»                                  | No existe (SEC-26); Ajustes dice «Muy pronto»                                                       | Por correo mientras tanto (§10.2)                  |
 | 3   | Texto de IA                | «a los 90 días lo borramos por completo»                                               | Se redacta la **entrada**; quedan el registro de uso y el resultado                                 | Lo dice así (§7.4)                                 |
-| 4   | Cookies                    | «solo la cookie de sesión y las necesarias»; la tarea decía cookies de tema y de aviso | Sesión + `vendeia_bienvenida`; el tema y los «Ocultar» son `localStorage` y `sessionStorage`        | Tabla real (§13)                                   |
+| 4   | Cookies                    | «solo la cookie de sesión y las necesarias»; la tarea decía cookies de tema y de aviso | Sesión + `speeaking_bienvenida`; el tema y los «Ocultar» son `localStorage` y `sessionStorage`      | Tabla real (§13)                                   |
 | 5   | Pruebas A/B                | El grupo solo se menciona con la personalización activada                              | Se asigna grupo a toda cuenta con sesión; solo se **mide** con la personalización                   | Lo dice (§6.3)                                     |
 | 6   | Marcas                     | «Gustos que tú declaras: comunidades, marcas…» como insumo de personalización          | Las marcas no se usan                                                                               | Nota de minimización (Parte C, fila 6)             |
 | 7   | Personalización            | «Puedes desactivar…» (opt-out)                                                         | Casilla **marcada** por omisión                                                                     | Elección sin preselección [REQUIERE CÓDIGO]        |

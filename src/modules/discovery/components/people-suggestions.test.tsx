@@ -112,7 +112,7 @@ describe("PeopleSuggestions", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Cerrar sugerencias de personas" }));
     expect(screen.queryByRole("region", { name: "Gente de tus comunidades" })).toBeNull();
-    expect(window.sessionStorage.getItem("vendeia:gente-de-tus-comunidades:cerrado")).toBe("1");
+    expect(window.sessionStorage.getItem("speeaking:gente-de-tus-comunidades:cerrado")).toBe("1");
 
     // Otra página de la misma sesión del navegador: sigue cerrado.
     unmount();

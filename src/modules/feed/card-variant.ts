@@ -75,7 +75,7 @@ export function pickCardVariants(items: readonly VariantInput[]): CardVariant[] 
 
 /**
  * Primera oración: termina en . ! ? o … (con comillas o paréntesis de cierre) seguidos de un
- * espacio o del final. "$1.5" o "vendeia.mx" no la cortan porque no llevan espacio después.
+ * espacio o del final. "$1.5" o "speeaking.com" no la cortan porque no llevan espacio después.
  */
 const FIRST_SENTENCE = /^[\s\S]*?[.!?…]+["'”’»)]*(?=\s|$)/;
 

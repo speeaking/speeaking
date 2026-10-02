@@ -1,5 +1,5 @@
 /** Prefijo de las cookies de sesión (lo usa también `proxy.ts`). */
-export const AUTH_COOKIE_PREFIX = "vendeia";
+export const AUTH_COOKIE_PREFIX = "speeaking";
 
 /**
  * Versiones de los documentos legales. Al cambiar un documento, sube su versión: el consentimiento
@@ -30,7 +30,8 @@ export const LEGAL_VERSIONS = {
   // sigues cuenta como señal sin decir quién (ADR-030, SEC-17; SEC-34 pedía subirla).
   discoverability: "2026-09-26",
   // Texto del consentimiento para usar la foto de la persona en «Pruébatelo» (ADR-045).
-  tryOn: "2026-09-29",
+  // 2026-10-01: el nombre de la plataforma pasa a speeaking (ADR-070).
+  tryOn: "2026-10-01",
 } as const;
 
 /** Rutas que requieren sesión (verificación optimista en `proxy.ts`; la real, en el servidor). */

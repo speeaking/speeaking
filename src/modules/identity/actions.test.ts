@@ -124,22 +124,22 @@ describe("signInAction", () => {
   it("pasa a Better Auth la IP resuelta, nunca la que manda el cliente", async () => {
     mocks.request.headers = new Headers({
       "x-forwarded-for": "198.51.100.7",
-      "x-vendeia-client-ip": "198.51.100.8",
+      "x-speeaking-client-ip": "198.51.100.8",
     });
     await expect(signInAction({}, signInForm())).rejects.toThrow("redirect:/");
 
     const sent = mocks.auth.api.signInEmail.mock.calls[0]?.[0].headers as Headers;
-    expect(sent.get("x-vendeia-client-ip")).toBeNull();
+    expect(sent.get("x-speeaking-client-ip")).toBeNull();
 
     mocks.env.TRUSTED_PROXY_HOPS = 1;
     mocks.request.headers = new Headers({
       "x-forwarded-for": "1.2.3.4, 203.0.113.9",
-      "x-vendeia-client-ip": "198.51.100.8",
+      "x-speeaking-client-ip": "198.51.100.8",
     });
     await expect(signInAction({}, signInForm())).rejects.toThrow("redirect:/");
 
     const behindProxy = mocks.auth.api.signInEmail.mock.calls[1]?.[0].headers as Headers;
-    expect(behindProxy.get("x-vendeia-client-ip")).toBe("203.0.113.9");
+    expect(behindProxy.get("x-speeaking-client-ip")).toBe("203.0.113.9");
   });
 });
 
@@ -154,7 +154,7 @@ describe("signUpAction", () => {
   });
 
   it("valida antes de contar: un formulario inválido no gasta intentos", async () => {
-    const state = await signUpAction({}, signUpForm({ name: "Equipo VendeIA" }));
+    const state = await signUpAction({}, signUpForm({ name: "Equipo speeaking" }));
 
     expect(state.fieldErrors?.name).toEqual(["Ese nombre está reservado. Elige otro."]);
     expect(mocks.limits.limitSignUp).not.toHaveBeenCalled();

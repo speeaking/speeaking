@@ -1,10 +1,11 @@
+import { siteConfig } from "@/config/site";
 import type { AIFunding } from "@/generated/prisma/enums";
 
 /**
  * Quién paga una prueba de «Ver cómo me veo» (ADR-046, docs/modelo-de-ingresos.md §3.2). Quien
  * compra nunca paga: quien gana con la venta es quien paga. En este orden:
  * 1. la tienda del producto principal, si tiene «Ver cómo me veo» activo, saldo y tope del día;
- * 2. las pruebas de cortesía de esa tienda (las paga Estreno; `STORE_TRIAL_TRY_ONS` por tienda,
+ * 2. las pruebas de cortesía de esa tienda (las paga speeaking; `STORE_TRIAL_TRY_ONS` por tienda,
  *    con el tope diario global del subsidio que revisa el guardián).
  * Es una lista de opciones a intentar: si una falla al reservar (sin saldo, tope agotado), se pasa
  * a la siguiente. Sin ninguna, el botón sigue ahí pero explica que la tienda no tiene pruebas y la
@@ -64,7 +65,7 @@ export function describeFunding(funding: AIFunding): string {
     case "SELLER_PAID":
       return "Cortesía de la tienda";
     case "PLATFORM":
-      return "Cortesía de Estreno";
+      return `Cortesía de ${siteConfig.name}`;
     // Ya no se cobra a quien compra; queda por las pruebas anteriores al cambio (ADR-046).
     case "USER_PAID":
       return "Pagada con saldo";

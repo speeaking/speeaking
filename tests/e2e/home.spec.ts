@@ -22,7 +22,7 @@ test.describe("inicio: visitante", () => {
     await page.goto("/");
     // Dentro de <main>: la columna derecha también tiene un bloque «Patrocinado».
     const carousel = page.getByRole("main").getByRole("region", {
-      name: /^(Lo más vendido|Populares|Nuevo en Estreno|De tus comunidades|Según tu búsqueda)$/,
+      name: /^(Lo más vendido|Populares|Nuevo en speeaking|De tus comunidades|Según tu búsqueda)$/,
     });
     await expect(carousel).toBeVisible();
     await expect(carousel.getByRole("link", { name: "Ver todo" })).toHaveAttribute(
@@ -112,7 +112,7 @@ test.describe("inicio: visitante", () => {
     await page.locator(OPEN_POST).first().click();
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
 
-    const prompt = page.getByRole("region", { name: /^Únete a .+ en Estreno$/ });
+    const prompt = page.getByRole("region", { name: /^Únete a .+ en speeaking$/ });
     await expect(prompt).toBeVisible();
     await expect(prompt.getByRole("link", { name: "Crear cuenta gratis" })).toHaveAttribute(
       "href",

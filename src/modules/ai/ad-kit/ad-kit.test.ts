@@ -148,7 +148,7 @@ describe("composeAdKit", () => {
   it("arma las 4 variantes con el precio VIGENTE, los datos y la liga con atribución", () => {
     const { copy } = guardAdCopy(honest, product);
     const current = { ...product, priceCents: 79_900 };
-    const variants = composeAdKit(copy, current, "https://vendeia.mx");
+    const variants = composeAdKit(copy, current, "https://speeaking.com");
 
     expect(variants.map((variant) => variant.channel)).toEqual([
       "whatsapp",
@@ -163,7 +163,7 @@ describe("composeAdKit", () => {
     expect(whatsapp!.text).toContain("+ $99 de envío a todo México · 3 a 5 días");
     expect(
       whatsapp!.text.endsWith(
-        "https://vendeia.mx/producto/audifonos-anc-abc123?ref=compartir&canal=whatsapp",
+        "https://speeaking.com/producto/audifonos-anc-abc123?ref=compartir&canal=whatsapp",
       ),
     ).toBe(true);
     expect(facebook!.shareUrl).toContain("canal=facebook");
@@ -182,15 +182,15 @@ describe("composeAdKit", () => {
       },
       product,
     );
-    const [whatsapp, , instagram] = composeAdKit(copy, product, "https://vendeia.mx");
+    const [whatsapp, , instagram] = composeAdKit(copy, product, "https://speeaking.com");
     expect(whatsapp!.text).toContain("\n\n$899 · Nuevo · + $99 de envío a todo México");
     expect(instagram!.text).toContain("\n\n$899 · Nuevo · ");
     expect(whatsapp!.text.match(/\$899/g)).toHaveLength(1);
   });
 
   it("la liga escapa el slug", () => {
-    expect(productShareUrl("https://vendeia.mx", "a b", "headline")).toBe(
-      "https://vendeia.mx/producto/a%20b?ref=compartir&canal=headline",
+    expect(productShareUrl("https://speeaking.com", "a b", "headline")).toBe(
+      "https://speeaking.com/producto/a%20b?ref=compartir&canal=headline",
     );
   });
 });

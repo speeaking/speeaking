@@ -1,5 +1,5 @@
 /**
- * Nombres que suplantan a la plataforma (SEC-18): nadie más puede llamarse «Equipo VendeIA»,
+ * Nombres que suplantan a la plataforma (SEC-18): nadie más puede llamarse «Equipo speeaking»,
  * «Soporte» o `equipo.gaming`. Las cuentas editoriales reales las crea el seed directo en la base,
  * sin pasar por estos esquemas.
  *
@@ -12,10 +12,11 @@
 
 /**
  * Marcas de la plataforma: ninguna puede aparecer en un nombre (tampoco «Vende IA» o «vende_ia»).
- * «Estreno» es la marca vigente (ADR-041); «VendeIA» fue el nombre provisional y sigue reservado
- * para que nadie ocupe el hueco.
+ * «speeaking» es la marca vigente (ADR-070); «VendeIA» fue el nombre provisional y sigue reservado
+ * para que nadie ocupe el hueco. «Estreno» (ADR-041) ya no está: es una palabra común («Ropa de
+ * estreno») y nunca salió al público; solo queda reservado el usuario exacto `estreno`.
  */
-const BRANDS = ["estreno", "vendeia"] as const;
+const BRANDS = ["speeaking", "vendeia"] as const;
 
 /** Palabras de rol: un nombre formado solo por ellas («Soporte técnico») suplanta a la plataforma. */
 const ROLE_WORDS = new Set([
@@ -81,6 +82,8 @@ const RESERVED_USERNAMES = new Set([
   "studio",
   "api",
   "media",
+  "speeaking",
+  "speaking",
   "vendeia",
   "estreno",
   "equipo",
@@ -192,6 +195,8 @@ const CONTEXT_WORDS = new Set([
   "tecnica",
   "tecnicos",
   "general",
+  // La marca escrita con una sola «e»: «Equipo Speaking» suplanta; «Public Speaking» no (ADR-070).
+  "speaking",
   "oficiales",
   "equipos",
   "contacto",

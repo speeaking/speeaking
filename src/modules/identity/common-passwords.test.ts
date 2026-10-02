@@ -31,6 +31,7 @@ describe("isCommonPassword (SEC-30)", () => {
     "Mexico2026!",
     "chivas12345",
     "vendeia2026",
+    "speeaking2026",
     "bienvenido1",
     "123456789a",
   ])("rechaza %j", (password) => {

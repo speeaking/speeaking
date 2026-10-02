@@ -4,4 +4,4 @@
  * cliente la escribe en `shell-frame.tsx`; un valor exportado desde un módulo de cliente le llegaría
  * al servidor como referencia, no como texto.
  */
-export const NAV_COOKIE = "estreno-nav";
+export const NAV_COOKIE = "speeaking-nav";

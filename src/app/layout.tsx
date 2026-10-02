@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Figtree, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Sora } from "next/font/google";
 import { headers } from "next/headers";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 import { env } from "@/server/env";
 import "./globals.css";
 
-// Titulares: Plus Jakarta Sans (variable, 200–800; usamos 400–800). Texto: Figtree.
-const display = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-display" });
-const body = Figtree({ subsets: ["latin"], variable: "--font-body" });
+// Marca (ADR-070): logotipo y titulares en Sora (variable, 100–800); texto en Inter.
+const display = Sora({ subsets: ["latin"], variable: "--font-display" });
+const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.APP_URL),
@@ -19,7 +19,8 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   applicationName: siteConfig.name,
   appleWebApp: { capable: true, title: siteConfig.name, statusBarStyle: "default" },
-  icons: { apple: "/icons/apple-touch-icon.png" },
+  // Los íconos los anuncia Next desde src/app (favicon.ico, icon.svg, apple-icon.png): declarar
+  // `icons` aquí tapaba el de la pestaña.
 };
 
 export const viewport: Viewport = {

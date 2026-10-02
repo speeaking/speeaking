@@ -18,13 +18,13 @@ test("las páginas de seguridad y apoyo son públicas y se enlazan desde el regi
   );
 
   await page.goto("/apoya");
-  await expect(page.getByRole("heading", { level: 1, name: /Apoya a Estreno/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /Apoya a speeaking/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Qué cuesta mantenerlo/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "De dónde sale el dinero" })).toBeVisible();
 
   await page.goto("/cookies");
   await expect(page.getByRole("heading", { level: 1, name: "Cookies" })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "estreno-nav" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "speeaking-nav" })).toBeVisible();
 
   await page.goto("/registro");
   await expect(page.getByRole("link", { name: "Cómo cuidamos tus datos" })).toHaveAttribute(

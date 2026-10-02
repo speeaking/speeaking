@@ -1,4 +1,4 @@
-# Marco legal aplicable a Estreno (México, septiembre de 2026)
+# Marco legal aplicable a speeaking (México, septiembre de 2026)
 
 > **BORRADOR DE INVESTIGACIÓN. NO ES ASESORÍA LEGAL NI FISCAL.** Este documento reúne el marco
 > legal que encontramos y leímos el 2026-09-26 para preparar el aviso de privacidad, los términos y
@@ -24,7 +24,7 @@
 
 ## 0. Resumen ejecutivo
 
-1. **Datos personales (lo más urgente).** Estreno es «responsable» bajo la nueva LFPDPPP (DOF
+1. **Datos personales (lo más urgente).** speeaking es «responsable» bajo la nueva LFPDPPP (DOF
    20-03-2025) [1]. La autoridad ya no es el INAI: es la **Secretaría Anticorrupción y Buen
    Gobierno** (SABG) [1, art. 2 fr. XV]. El reglamento nuevo **no se ha publicado**. El de 2011
    sigue publicado como vigente [3] y, según una fuente secundaria, aplica en lo que no contradiga
@@ -57,7 +57,7 @@
 
    Las cláusulas que sometan al consumidor a tribunales extranjeros o permitan cambiar el contrato
    de forma unilateral no son válidas [11, art. 90]. El **vendedor** también es consumidor del
-   servicio de Estreno para presentar queja y conciliar ante la PROFECO [11, art. 2 fr. I] (3.1).
+   servicio de speeaking para presentar queja y conciliar ante la PROFECO [11, art. 2 fr. I] (3.1).
 
 3. **Propiedad intelectual.** Vender falsificaciones es infracción administrativa y delito [16,
    arts. 386 y 402]. El IMPI puede ordenar a **terceros** (una plataforma) suspender, bloquear o
@@ -70,7 +70,7 @@
    - **Duda principal:** la obligación **informativa mensual** aplica «aun cuando no hayan efectuado
      el cobro» [20, art. 18-J fr. III], y el acceso del SAT en tiempo real (CFF 30-B, vigente desde
      el 01-04-2026) [23] también.
-   - **Por qué podría no aplicar:** las dos dependen de que Estreno preste un «servicio digital de
+   - **Por qué podría no aplicar:** las dos dependen de que speeaking preste un «servicio digital de
      intermediación» del art. 18-B, que exige que **se cobre una contraprestación** [20, art. 18-B].
      Con 0 % y sin cuotas hay un argumento fuerte de que no aplican **[VERIFICAR CON CONTADOR]**.
    - **Lo que lo activa:** cobrar cualquier cosa (comisión, «Impulsar» de P12, suscripción) activaría
@@ -110,29 +110,29 @@ la sección 11). Cambios en este documento:
 
 ---
 
-## 1. Hechos de Estreno verificados en el código (2026-09-26)
+## 1. Hechos de speeaking verificados en el código (2026-09-26)
 
 Lo que dicen los documentos **y el código**. Donde no coinciden, lo señalamos.
 
-| Tema                         | Lo que hay hoy                                                                                                                                                                                                                                                                                                                                                                                                               | Dónde                                                                                             |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Cuentas                      | Correo y contraseña (Better Auth). Sesión de 30 días que se renueva cada día. Verificación de correo apagada hasta tener proveedor de correo.                                                                                                                                                                                                                                                                                | `src/server/auth.ts`                                                                              |
-| Aceptación                   | Casilla obligatoria **sin marcar**: «Acepto los términos y el aviso de privacidad». Se registran `TERMS` y `PRIVACY_NOTICE` con versión y fecha. Si cambia una versión, aparece un aviso de re-aceptación.                                                                                                                                                                                                                   | `identity/components/sign-up-form.tsx`, `identity/actions.ts`, `consent-banner.tsx`               |
-| **Mayoría de edad**          | **No hay control de edad** ni casilla de 18+ en el código, y los términos no piden edad. El plan lo tiene como pendiente («Ola 0»). **Discrepancia con «usuarios 18+».**                                                                                                                                                                                                                                                     | búsqueda en `src/`; `docs/plan-90-dias.md` §7.1                                                   |
-| Onboarding                   | Objetivos, comunidades, marcas, qué busca y presupuesto máximo **opcional** (en centavos, hasta 10 millones de pesos).                                                                                                                                                                                                                                                                                                       | `identity/onboarding-schema.ts`                                                                   |
-| **Personalización**          | La casilla «Personalizar mi feed con mi actividad aquí» viene **marcada por omisión** (`defaultChecked`; en la base, `personalizationEnabled @default(true)`). Se desactiva en Ajustes y la desactivación desliga también la actividad anterior (ADR-030).                                                                                                                                                                   | `onboarding-form.tsx` l. 360–373; `prisma/schema.prisma` l. 156                                   |
-| Sugerencias                  | «Aparecer en sugerencias» está **activado por omisión** (`discoverable @default(true)`); se apaga en Ajustes.                                                                                                                                                                                                                                                                                                                | `schema.prisma` l. 160; aviso actual                                                              |
-| Analítica                    | Solo propia: impresiones servidas y **visibles** (≥ 50 % en pantalla durante ≥ 1 s), clics, búsquedas, me gusta, guardados, visitas a producto y carrito. Sin persona, los eventos son anónimos (hora truncada).                                                                                                                                                                                                             | ADR-030, ADR-037, aviso actual                                                                    |
-| **Terceros en el navegador** | **Ninguno.** La CSP solo permite scripts con nonce del propio origen y `connect-src 'self'`. Entre las dependencias no hay SDK de analítica ni de anuncios.                                                                                                                                                                                                                                                                  | `src/lib/csp.ts`, `package.json`                                                                  |
-| **Cookies y almacenamiento** | **Cookies:** (a) las de sesión de Better Auth, con prefijo `vendeia` y `Secure` en https; (b) `vendeia_bienvenida` (10 min, `SameSite=Lax`), que solo muestra el mensaje de bienvenida. **No son cookies:** el **tema** lo guarda `next-themes` en `localStorage`; el «Ocultar» del aviso de consentimiento y el de las sugerencias van en `sessionStorage`. **Discrepancia:** la tarea decía «cookies» de tema y de banner. | `auth.ts`, `feed/welcome.ts`, `onboarding-actions.ts`, `theme-provider.tsx`, `consent-banner.tsx` |
-| Fotos                        | Se vuelven a codificar a WebP; eso **quita EXIF, XMP e ICC, incluido el GPS**.                                                                                                                                                                                                                                                                                                                                               | `media/image-processing.ts` l. 92                                                                 |
-| Comprobantes                 | Fotos de comprobante privadas (solo las ven el vendedor y el equipo), nunca publicadas; se guarda el historial de envíos.                                                                                                                                                                                                                                                                                                    | `trust/README.md`, `trust/proof-media.ts`                                                         |
-| Riesgo de falsificación      | Reglas deterministas: precio contra la mediana, palabras de imitación con marca, tienda nueva, reportes. El resultado es un nivel de riesgo y una **leyenda que ve quien compra** («Autenticidad sin verificar», «Revisa: …»). Hay una señal de IA opcional (apagada por omisión, peso máximo 0.15). **Ocultar o verificar lo hace siempre una persona.**                                                                    | `trust/README.md`, ADR-036                                                                        |
-| IA                           | Vía API compatible con OpenAI (p. ej. OpenRouter). El adaptador ya manda `provider: { data_collection: "deny" }` (excluye proveedores que guardan o entrenan) **pero no `zdr: true`**. La entrada se guarda sin datos de contacto; **a los 90 días** se reemplaza por `{ redacted: true }` (tarea diaria).                                                                                                                   | `src/server/providers/ai/openai-compatible.ts` l. 72–78; `ai/retention.ts`; ADR-031               |
-| CEO-IA                       | Métricas agregadas y experimentos A/B con asignación determinista por cuenta (`assignVariant(experimento, userId)`). Solo cuentan personas con sesión y personalización activa. Pagos, precios, comisiones y gasto quedan fuera de su alcance.                                                                                                                                                                               | `ceo/experiments.ts`, `ceo/metrics.ts`, ADR-033, ADR-037                                          |
-| Pagos                        | La plataforma **no procesa ni retiene dinero** (ADR-033 #4). El checkout usa un proveedor simulado que en producción falla cerrado (ADR-032). Comisión `platformFeeBps: 0` (configurable hasta 20 %; cambiarla es decisión humana de riesgo alto).                                                                                                                                                                           | `commerce/fees.ts`, ADR-032, ADR-033                                                              |
-| ARCO                         | **No hay** exportación, borrado de cuenta ni canal ARCO (SEC-26, pendiente). El aviso promete «podrás descargar y eliminar».                                                                                                                                                                                                                                                                                                 | `docs/security/auditoria-2026-09-26.md`                                                           |
-| Infraestructura prevista     | Vercel, Neon Postgres, Cloudflare R2, proveedor de IA por API y Resend o SES para correo (ADR-033 #10; `architecture.md`). **No verificamos regiones**: la de cada servicio se confirma en su configuración y en su contrato **[VERIFICAR]**.                                                                                                                                                                                | ADR-033, `architecture.md`                                                                        |
+| Tema                         | Lo que hay hoy                                                                                                                                                                                                                                                                                                                                                                                                                   | Dónde                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Cuentas                      | Correo y contraseña (Better Auth). Sesión de 30 días que se renueva cada día. Verificación de correo apagada hasta tener proveedor de correo.                                                                                                                                                                                                                                                                                    | `src/server/auth.ts`                                                                              |
+| Aceptación                   | Casilla obligatoria **sin marcar**: «Acepto los términos y el aviso de privacidad». Se registran `TERMS` y `PRIVACY_NOTICE` con versión y fecha. Si cambia una versión, aparece un aviso de re-aceptación.                                                                                                                                                                                                                       | `identity/components/sign-up-form.tsx`, `identity/actions.ts`, `consent-banner.tsx`               |
+| **Mayoría de edad**          | **No hay control de edad** ni casilla de 18+ en el código, y los términos no piden edad. El plan lo tiene como pendiente («Ola 0»). **Discrepancia con «usuarios 18+».**                                                                                                                                                                                                                                                         | búsqueda en `src/`; `docs/plan-90-dias.md` §7.1                                                   |
+| Onboarding                   | Objetivos, comunidades, marcas, qué busca y presupuesto máximo **opcional** (en centavos, hasta 10 millones de pesos).                                                                                                                                                                                                                                                                                                           | `identity/onboarding-schema.ts`                                                                   |
+| **Personalización**          | La casilla «Personalizar mi feed con mi actividad aquí» viene **marcada por omisión** (`defaultChecked`; en la base, `personalizationEnabled @default(true)`). Se desactiva en Ajustes y la desactivación desliga también la actividad anterior (ADR-030).                                                                                                                                                                       | `onboarding-form.tsx` l. 360–373; `prisma/schema.prisma` l. 156                                   |
+| Sugerencias                  | «Aparecer en sugerencias» está **activado por omisión** (`discoverable @default(true)`); se apaga en Ajustes.                                                                                                                                                                                                                                                                                                                    | `schema.prisma` l. 160; aviso actual                                                              |
+| Analítica                    | Solo propia: impresiones servidas y **visibles** (≥ 50 % en pantalla durante ≥ 1 s), clics, búsquedas, me gusta, guardados, visitas a producto y carrito. Sin persona, los eventos son anónimos (hora truncada).                                                                                                                                                                                                                 | ADR-030, ADR-037, aviso actual                                                                    |
+| **Terceros en el navegador** | **Ninguno.** La CSP solo permite scripts con nonce del propio origen y `connect-src 'self'`. Entre las dependencias no hay SDK de analítica ni de anuncios.                                                                                                                                                                                                                                                                      | `src/lib/csp.ts`, `package.json`                                                                  |
+| **Cookies y almacenamiento** | **Cookies:** (a) las de sesión de Better Auth, con prefijo `speeaking` y `Secure` en https; (b) `speeaking_bienvenida` (10 min, `SameSite=Lax`), que solo muestra el mensaje de bienvenida. **No son cookies:** el **tema** lo guarda `next-themes` en `localStorage`; el «Ocultar» del aviso de consentimiento y el de las sugerencias van en `sessionStorage`. **Discrepancia:** la tarea decía «cookies» de tema y de banner. | `auth.ts`, `feed/welcome.ts`, `onboarding-actions.ts`, `theme-provider.tsx`, `consent-banner.tsx` |
+| Fotos                        | Se vuelven a codificar a WebP; eso **quita EXIF, XMP e ICC, incluido el GPS**.                                                                                                                                                                                                                                                                                                                                                   | `media/image-processing.ts` l. 92                                                                 |
+| Comprobantes                 | Fotos de comprobante privadas (solo las ven el vendedor y el equipo), nunca publicadas; se guarda el historial de envíos.                                                                                                                                                                                                                                                                                                        | `trust/README.md`, `trust/proof-media.ts`                                                         |
+| Riesgo de falsificación      | Reglas deterministas: precio contra la mediana, palabras de imitación con marca, tienda nueva, reportes. El resultado es un nivel de riesgo y una **leyenda que ve quien compra** («Autenticidad sin verificar», «Revisa: …»). Hay una señal de IA opcional (apagada por omisión, peso máximo 0.15). **Ocultar o verificar lo hace siempre una persona.**                                                                        | `trust/README.md`, ADR-036                                                                        |
+| IA                           | Vía API compatible con OpenAI (p. ej. OpenRouter). El adaptador ya manda `provider: { data_collection: "deny" }` (excluye proveedores que guardan o entrenan) **pero no `zdr: true`**. La entrada se guarda sin datos de contacto; **a los 90 días** se reemplaza por `{ redacted: true }` (tarea diaria).                                                                                                                       | `src/server/providers/ai/openai-compatible.ts` l. 72–78; `ai/retention.ts`; ADR-031               |
+| CEO-IA                       | Métricas agregadas y experimentos A/B con asignación determinista por cuenta (`assignVariant(experimento, userId)`). Solo cuentan personas con sesión y personalización activa. Pagos, precios, comisiones y gasto quedan fuera de su alcance.                                                                                                                                                                                   | `ceo/experiments.ts`, `ceo/metrics.ts`, ADR-033, ADR-037                                          |
+| Pagos                        | La plataforma **no procesa ni retiene dinero** (ADR-033 #4). El checkout usa un proveedor simulado que en producción falla cerrado (ADR-032). Comisión `platformFeeBps: 0` (configurable hasta 20 %; cambiarla es decisión humana de riesgo alto).                                                                                                                                                                               | `commerce/fees.ts`, ADR-032, ADR-033                                                              |
+| ARCO                         | **No hay** exportación, borrado de cuenta ni canal ARCO (SEC-26, pendiente). El aviso promete «podrás descargar y eliminar».                                                                                                                                                                                                                                                                                                     | `docs/security/auditoria-2026-09-26.md`                                                           |
+| Infraestructura prevista     | Vercel, Neon Postgres, Cloudflare R2, proveedor de IA por API y Resend o SES para correo (ADR-033 #10; `architecture.md`). **No verificamos regiones**: la de cada servicio se confirma en su configuración y en su contrato **[VERIFICAR]**.                                                                                                                                                                                    | ADR-033, `architecture.md`                                                                        |
 
 ---
 
@@ -175,7 +175,7 @@ Lo que dicen los documentos **y el código**. Donde no coinciden, lo señalamos.
 
 ### 2.3 Consentimiento y tipos de datos
 
-| Regla                                                                                                                                                            | Fundamento              | Qué significa para Estreno                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Regla                                                                                                                                                            | Fundamento              | Qué significa para speeaking                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | El consentimiento es «libre, específico e informado». El tácito vale por regla general: se pone el aviso a disposición y la persona no se opone.                 | [1, arts. 2 fr. IV y 7] | Cuenta, perfil y uso de la plataforma: basta el tácito o la relación jurídica [1, art. 9 fr. IV].                                                                                                                                                                                                                                                                                                                                |
 | **Los datos financieros o patrimoniales requieren consentimiento expreso**, salvo las excepciones de los arts. 9 y 36.                                           | [1, art. 7 párr. 5]     | Posibles casos: (a) el **presupuesto** del onboarding; (b) el **costo privado** del producto si el vendedor es persona física; (c) los **comprobantes** (tickets o facturas con nombre, RFC o dígitos de tarjeta); (d) a futuro, la CLABE del vendedor. (b) podría caber en la excepción del art. 9 fr. IV (necesario para el servicio). Para (a) y (c) recomendamos una casilla expresa sin marcar **[VERIFICAR CON ABOGADO]**. |
@@ -254,7 +254,7 @@ niegue a las finalidades que no dan origen a la relación jurídica [3, art. 14]
   - informar cómo revocarlo [12].
 - **NMX 8.1 b):** es **buena práctica** que las opciones de privacidad vengan en la opción más
   protectora por omisión [12].
-- **Impacto en Estreno:**
+- **Impacto en speeaking:**
   - la casilla de personalización **marcada por omisión** choca con el Décimo fr. IV y con la NMX
     5.4.1. **Recomendación:** dejarla **sin marcar**, o convertirla en una elección explícita
     («Sí, personaliza» / «No, gracias») sin respuesta preseleccionada;
@@ -268,9 +268,9 @@ Inventario real (sección 1) y lo que conviene decir:
 
 | Mecanismo                                               | Tipo                         | ¿Técnicamente necesario?                   | Qué decir                                                                                                                |
 | ------------------------------------------------------- | ---------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Cookies de sesión de Better Auth (`vendeia…`)           | Cookie propia                | Sí                                         | Mantener la sesión y proteger la cuenta; duran hasta 30 días sin uso.                                                    |
-| `vendeia_bienvenida`                                    | Cookie propia, 10 min        | No es esencial, pero no identifica a nadie | Muestra un mensaje de bienvenida una vez.                                                                                |
-| `estreno-nav`                                           | Cookie propia, 1 año         | Preferencia                                | Recuerda si la columna izquierda está plegada (ADR-047). Inventario público en `/cookies` (ADR-053).                     |
+| Cookies de sesión de Better Auth (`speeaking…`)         | Cookie propia                | Sí                                         | Mantener la sesión y proteger la cuenta; duran hasta 30 días sin uso.                                                    |
+| `speeaking_bienvenida`                                  | Cookie propia, 10 min        | No es esencial, pero no identifica a nadie | Muestra un mensaje de bienvenida una vez.                                                                                |
+| `speeaking-nav`                                         | Cookie propia, 1 año         | Preferencia                                | Recuerda si la columna izquierda está plegada (ADR-047). Inventario público en `/cookies` (ADR-053).                     |
 | Tema (`localStorage` de next-themes)                    | Almacenamiento local         | Preferencia                                | Guarda claro u oscuro en tu navegador; no se nos envía.                                                                  |
 | «Ocultar» del aviso y de sugerencias (`sessionStorage`) | Almacenamiento de la pestaña | Preferencia                                | Se borra al cerrar la pestaña.                                                                                           |
 | Registro de impresiones visibles (JS propio → servidor) | Recolección automática       | No (medición)                              | Ya descrito en «Publicaciones que ves en pantalla». Se limita con la personalización. Lineamiento Trigésimo Primero [4]. |
@@ -308,15 +308,15 @@ analítica externa o un proveedor de pagos es un encargado nuevo, cambia el avis
   fr. IV (contrato en interés del titular) y fr. VII (relación jurídica entre el responsable y el
   titular).
 
-**Mapa de Estreno**
+**Mapa de speeaking**
 
-| Receptor                                                                                 | Figura probable                                                             | Qué hacer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel (alojamiento), Neon (base de datos), Cloudflare R2 (fotos), Resend o SES (correo) | Encargados, probablemente fuera de México **[VERIFICAR región]**            | Contrato o DPA de cada uno que cumpla los arts. 50–55 del Reglamento, sobre todo el 52 (nube por adhesión). Nombrarlos por categoría (o por nombre) y país en el aviso: no es obligatorio para encargados [3, art. 53], pero da transparencia.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **OpenRouter, Inc.** (EE. UU.) → proveedores de modelos                                  | Encargado; los proveedores de modelos son **subencargados**                 | Datos verificados: sus términos incorporan un **DPA** para uso comercial [33]; el DPA avisa con 30 días los subencargados nuevos **excepto los proveedores de modelos**; hospeda en GCP en EE. UU.; notifica incidentes en 72 h; su política de retención cero (ZDR) borra la carga útil al terminar la solicitud [34]. Su política de privacidad (act. 31-08-2026) dice que no entrena con entradas ni salidas; cada proveedor de modelo tiene su propia política [35]. **Acción:** aceptar el DPA; documentar la autorización general de subencargados (Reglamento art. 55); mandar también `zdr: true` [36]; nombrarlo en el aviso con su país. Sus términos piden **18 años** para usar el servicio y se rigen por las leyes de Nueva York [33]. |
-| **Vendedor** que recibe nombre, domicilio de entrega y teléfono del comprador            | **Transferencia** a un tercero (el vendedor no actúa por cuenta de Estreno) | Cláusula de transferencia en el aviso. Excepción probable: art. 36 fr. IV o VII **[VERIFICAR CON ABOGADO]**. Comunicar al vendedor el aviso y sus obligaciones [1, art. 35]; en los términos del vendedor, obligarlo a usar esos datos **solo** para entregar el pedido. El vendedor queda como responsable de lo que recibe.                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Comprador que ve el domicilio y el teléfono del vendedor (LFPC 76 BIS fr. III)           | Transferencia de datos del vendedor                                         | Consentimiento o información en los términos del vendedor; mostrarlos en la confirmación del pedido, no en público (plan §7.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Autoridades (SAT, IMPI, Ministerio Público, jueces)                                      | Transferencia por ley o por mandato                                         | Excepciones del art. 9 fr. VII y del art. 36 fr. I y V [1].                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Receptor                                                                                 | Figura probable                                                               | Qué hacer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel (alojamiento), Neon (base de datos), Cloudflare R2 (fotos), Resend o SES (correo) | Encargados, probablemente fuera de México **[VERIFICAR región]**              | Contrato o DPA de cada uno que cumpla los arts. 50–55 del Reglamento, sobre todo el 52 (nube por adhesión). Nombrarlos por categoría (o por nombre) y país en el aviso: no es obligatorio para encargados [3, art. 53], pero da transparencia.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **OpenRouter, Inc.** (EE. UU.) → proveedores de modelos                                  | Encargado; los proveedores de modelos son **subencargados**                   | Datos verificados: sus términos incorporan un **DPA** para uso comercial [33]; el DPA avisa con 30 días los subencargados nuevos **excepto los proveedores de modelos**; hospeda en GCP en EE. UU.; notifica incidentes en 72 h; su política de retención cero (ZDR) borra la carga útil al terminar la solicitud [34]. Su política de privacidad (act. 31-08-2026) dice que no entrena con entradas ni salidas; cada proveedor de modelo tiene su propia política [35]. **Acción:** aceptar el DPA; documentar la autorización general de subencargados (Reglamento art. 55); mandar también `zdr: true` [36]; nombrarlo en el aviso con su país. Sus términos piden **18 años** para usar el servicio y se rigen por las leyes de Nueva York [33]. |
+| **Vendedor** que recibe nombre, domicilio de entrega y teléfono del comprador            | **Transferencia** a un tercero (el vendedor no actúa por cuenta de speeaking) | Cláusula de transferencia en el aviso. Excepción probable: art. 36 fr. IV o VII **[VERIFICAR CON ABOGADO]**. Comunicar al vendedor el aviso y sus obligaciones [1, art. 35]; en los términos del vendedor, obligarlo a usar esos datos **solo** para entregar el pedido. El vendedor queda como responsable de lo que recibe.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Comprador que ve el domicilio y el teléfono del vendedor (LFPC 76 BIS fr. III)           | Transferencia de datos del vendedor                                           | Consentimiento o información en los términos del vendedor; mostrarlos en la confirmación del pedido, no en público (plan §7.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Autoridades (SAT, IMPI, Ministerio Público, jueces)                                      | Transferencia por ley o por mandato                                           | Excepciones del art. 9 fr. VII y del art. 36 fr. I y V [1].                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### 2.8 Derechos ARCO (y lo que no existe: portabilidad)
 
@@ -370,7 +370,7 @@ comportamiento** [1, art. 26 fr. II].
   **aplicarlos en código** antes de publicarlos. Referencias:
   - contabilidad fiscal propia: **5 años** [23, art. 30];
   - comerciantes: mensajes de datos con contratos, **10 años** [27, art. 49]; aplica a la aceptación
-    de términos si Estreno es comerciante **[VERIFICAR CON ABOGADO]**.
+    de términos si speeaking es comerciante **[VERIFICAR CON ABOGADO]**.
 - **IA:** 90 días y después `{ redacted: true }` (`ai/retention.ts`), con la tarea diaria
   programada en el hosting. Confirmar que corre en producción.
 
@@ -433,7 +433,7 @@ intención [1, art. 60].
     proveedores con consumidores, «pudiendo facilitar» el pago o la entrega;
   - define al **Tercero proveedor** (3.16): el vendedor.
 
-  Estreno encaja como proveedor intermediario aunque no cobre.
+  speeaking encaja como proveedor intermediario aunque no cobre.
 
 - **Es una Norma Mexicana, no una NOM.** La LFPC dice que quien vende por medios electrónicos «se
   guiará» por ella [11, art. 76 BIS 1]. Qué tan obligatoria es en la práctica **[VERIFICAR CON
@@ -442,11 +442,11 @@ intención [1, art. 60].
 
 ### 3.2 Obligaciones del art. 76 BIS (reformado DOF 12-12-2025) [11]
 
-| Fr.              | Obligación                                                                                                                                                                    | Estreno                                                                                                                       |
+| Fr.              | Obligación                                                                                                                                                                    | speeaking                                                                                                                     |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | I                | Usar la información del consumidor de forma confidencial; no pasarla a otros proveedores ajenos a la transacción sin autorización expresa                                     | El comprador solo se comparte con el vendedor de **su** pedido. «Gente de tus comunidades» no comparte datos con proveedores. |
 | II               | Seguridad y confidencialidad, e informar sus características antes de la transacción                                                                                          | Sección de seguridad en los términos o el aviso.                                                                              |
-| III              | **Antes** de la transacción: domicilio físico, teléfonos y medios de reclamación                                                                                              | De **Estreno** ([DOMICILIO…], [CORREO DE SOPORTE]) y del **vendedor** (en la confirmación del pedido; plan §7.1).             |
+| III              | **Antes** de la transacción: domicilio físico, teléfonos y medios de reclamación                                                                                              | De **speeaking** ([DOMICILIO…], [CORREO DE SOPORTE]) y del **vendedor** (en la confirmación del pedido; plan §7.1).           |
 | IV               | Evitar prácticas engañosas; cumplir las reglas de información y publicidad                                                                                                    | Datos P4, guardián de la IA, «Creado con ayuda de IA».                                                                        |
 | V                | Informar términos, condiciones, costos, cargos adicionales y formas de pago                                                                                                   | Métodos de pago como dato P4; «Paga solo con los datos de tu pedido» (plan §7.2).                                             |
 | VI               | Respetar la cantidad y calidad pedidas y la decisión de **no recibir avisos comerciales**                                                                                     | Baja de correos de marketing en un clic.                                                                                      |
@@ -523,13 +523,13 @@ intención [1, art. 60].
 
 ### 3.7 Pago directo (modo del piloto)
 
-- **Cómo funciona:** con pago directo, Estreno no cobra ni custodia fondos (ADR-033). El contrato de
+- **Cómo funciona:** con pago directo, speeaking no cobra ni custodia fondos (ADR-033). El contrato de
   compraventa es entre el comprador y el vendedor. La plataforma sigue con sus deberes de
   información, confidencialidad, seguridad y reclamación como intermediario [11, art. 76 BIS; 12].
 - **En los términos:**
   - quién es la parte vendedora;
-  - que Estreno no recibe el pago;
-  - qué hace Estreno ante un problema («Tengo un problema», plazos);
+  - que speeaking no recibe el pago;
+  - qué hace speeaking ante un problema («Tengo un problema», plazos);
   - que la responsabilidad no puede excluirse más allá de lo que permite el art. 90 **[VERIFICAR
     CON ABOGADO]**.
 
@@ -558,7 +558,7 @@ intención [1, art. 60].
   - quien las solicita debe identificar los bienes, los establecimientos o las **plataformas
     digitales** donde ocurre la violación (art. 345 fr. III);
   - incumplirlas se sanciona con las fr. I o III del art. 388.
-- **Consecuencia para Estreno:**
+- **Consecuencia para speeaking:**
   - la plataforma puede recibir órdenes del IMPI y debe cumplirlas de inmediato;
   - la LFPPI **no trae un «puerto seguro»** para intermediarios equivalente al de derechos de autor
     **[VERIFICAR CON ABOGADO]**;
@@ -571,7 +571,7 @@ intención [1, art. 60].
     - reportes;
   - no certificar autenticidad (ya se hace).
 - **Nombre y marca propia:** la búsqueda en el IMPI antes de salir de los 15 vendedores fundadores
-  (ADR-033 #16) evita infringir el art. 386 fr. XVII o XVIII con el nombre Estreno.
+  (ADR-033 #16) evita infringir el art. 386 fr. XVII o XVIII con el nombre speeaking.
 
 ### 4.2 Derechos de autor del contenido de usuarios (LFDA, última reforma DOF 14-05-2026) [17]
 
@@ -595,13 +595,13 @@ intención [1, art. 60].
   - la Segunda Sala de la SCJN resolvió (AD 6/2025, 14-07-2025) que lo generado **exclusivamente**
     por IA no se protege por derecho de autor, y que la intervención humana significativa sí puede
     protegerse [19] (secundaria);
-  - consecuencia para los términos: Estreno no promete derechos exclusivos sobre los textos de IA; el
+  - consecuencia para los términos: speeaking no promete derechos exclusivos sobre los textos de IA; el
     vendedor los revisa y edita;
   - la reforma del 14-05-2026 exige consentimiento expreso para usar la imagen o la voz de artistas,
     **incluidos los resultados de IA** [17, art. 87]. Prohibir en las reglas de contenido los clones
     de voz o imagen sin permiso.
 - **Licencia de contenido:** los términos necesitan una licencia **no exclusiva** del usuario a
-  Estreno para alojar, mostrar y adaptar (formatos, recortes) su contenido mientras esté publicado.
+  speeaking para alojar, mostrar y adaptar (formatos, recortes) su contenido mientras esté publicado.
   Redacción: **[VERIFICAR CON ABOGADO]**.
 
 ---
@@ -630,7 +630,7 @@ intención [1, art. 60].
    Confianza **alta**, pero **[VERIFICAR CON CONTADOR]**.
 2. **Obligación informativa mensual (18-J fr. III) y acceso en tiempo real (CFF 30-B): dudosa.**
    - **En contra:** la informativa aplica aunque no se cobre.
-   - **A favor:** ambas presuponen que Estreno presta el servicio del **art. 18-B fr. II**, y ese
+   - **A favor:** ambas presuponen que speeaking presta el servicio del **art. 18-B fr. II**, y ese
      artículo y el criterio 40/IVA/N exigen que **se cobre una contraprestación**. Con 0 % y sin
      cuotas, el argumento para que **no aplique** es sólido.
    - **Riesgos del argumento:**
@@ -639,7 +639,7 @@ intención [1, art. 60].
 
    **[VERIFICAR CON CONTADOR]**. Conviene una consulta o una opinión escrita antes del vendedor 11.
 
-3. **Qué cambia al cobrar:** si Estreno cobra cualquier cosa por intermediar (comisión, «Impulsar»
+3. **Qué cambia al cobrar:** si speeaking cobra cualquier cosa por intermediar (comisión, «Impulsar»
    de P12, suscripción o destacados), casi seguro entra al régimen:
    - IVA y CFDI por su servicio;
    - IVA por separado o «IVA incluido» en los precios de los vendedores (18-J fr. I);
@@ -662,7 +662,7 @@ intención [1, art. 60].
 
 ### 5.3 Preguntas para el contador
 
-1. Con comisión 0 %, sin cuotas y con pago directo, ¿Estreno presta el servicio del art. 18-B fr. II?
+1. Con comisión 0 %, sin cuotas y con pago directo, ¿speeaking presta el servicio del art. 18-B fr. II?
    ¿Aplican el 1o.-A BIS, la informativa del 18-J fr. III, la regla 12.2.7 y el CFF 30-B?
 2. ¿Conviene una consulta al SAT (CFF art. 34) o basta una opinión escrita?
 3. Al activar P12 (cobro por resultados o saldo prepagado), ¿qué obligaciones nacen y desde cuándo?
@@ -690,7 +690,7 @@ intención [1, art. 60].
   NOM-151 fija cómo [27, art. 49]. La **NOM-151-SCFI-2016** (DOF 30-03-2017) regula la
   **constancia de conservación**, que solo emite un prestador de servicios de certificación
   acreditado, con sellos de tiempo, y vale al menos 10 años [29].
-- **Estreno hoy:** casilla obligatoria sin marcar, más un registro `Consent` con tipo, versión y
+- **speeaking hoy:** casilla obligatoria sin marcar, más un registro `Consent` con tipo, versión y
   fecha, más re-aceptación al cambiar la versión. **Refuerzos sugeridos:**
   - guardar el **texto exacto** (o su hash) de cada versión publicada;
   - no permitir que se edite una versión ya aceptada;
@@ -737,12 +737,12 @@ intención [1, art. 60].
 
 Lo que deben traer los términos, con su fundamento:
 
-1. **Identificación de Estreno:** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE], [RFC], [DOMICILIO PARA
+1. **Identificación de speeaking:** [NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE], [RFC], [DOMICILIO PARA
    OÍR Y RECIBIR NOTIFICACIONES], [CORREO DE SOPORTE] [12, 5.2.1.1; 11, art. 76 BIS fr. III].
 2. **Edad mínima de 18 años** [28, arts. 450 y 646].
-3. **Papel de Estreno como intermediario** y reparto de responsabilidades con el vendedor [12, 4.4
+3. **Papel de speeaking como intermediario** y reparto de responsabilidades con el vendedor [12, 4.4
    y 5.1.7], sin excluir lo que la LFPC no permite [11, art. 90 fr. II y III].
-4. **Pago directo:** Estreno no cobra ni recibe el pago; qué hace ante un problema; tope recomendado
+4. **Pago directo:** speeaking no cobra ni recibe el pago; qué hace ante un problema; tope recomendado
    (ADR-033 #15).
 5. **Derechos del consumidor:** garantía de 90 días si se ofrece [11, art. 77]; revocación de 5 días
    cuando aplique [11, art. 56]; devoluciones y cambios [12, 11].
@@ -763,7 +763,7 @@ Lo que deben traer los términos, con su fundamento:
 
 ---
 
-## 9. Mapa: obligaciones por funcionalidad de Estreno
+## 9. Mapa: obligaciones por funcionalidad de speeaking
 
 | Funcionalidad                                      | Obligación principal                                                                                                     | Estado (2026-09-26)                                 | Acción                                                                                   | Cuándo                                     |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------ |

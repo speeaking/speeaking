@@ -52,7 +52,7 @@ const provider = vi.hoisted(() => ({
 }));
 /** Entorno del servidor (ADR-038): se cambia por prueba para simular producción o el piloto. */
 const env = vi.hoisted(() => ({
-  APP_URL: "https://vendeia.mx",
+  APP_URL: "https://speeaking.com",
   NODE_ENV: "test" as string,
   ALLOW_SIMULATED_AI: false,
 }));
@@ -337,7 +337,7 @@ describe("generateAdKit", () => {
     expect(view.kit?.variants).toHaveLength(4);
     expect(view.kit?.variants[0]?.text).toContain("$899");
     expect(view.kit?.variants[0]?.text).toContain(
-      "https://vendeia.mx/producto/audifonos-abc123?ref=compartir&canal=whatsapp",
+      "https://speeaking.com/producto/audifonos-abc123?ref=compartir&canal=whatsapp",
     );
     expect(view.kit?.stale).toBe(false);
   });

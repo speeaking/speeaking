@@ -16,7 +16,7 @@ const base: FundingContext = {
 };
 
 describe("quién paga una prueba (ADR-046): la tienda, nunca quien compra", () => {
-  it("primero la tienda con saldo y tope; después las pruebas de cortesía de Estreno", () => {
+  it("primero la tienda con saldo y tope; después las pruebas de cortesía de speeaking", () => {
     expect(fundingOptions(base).map((option) => option.funding)).toEqual([
       "SELLER_PAID",
       "PLATFORM",
@@ -49,7 +49,7 @@ describe("quién paga una prueba (ADR-046): la tienda, nunca quien compra", () =
 
   it("describe cada financiamiento para la persona", () => {
     expect(describeFunding("SELLER_PAID")).toBe("Cortesía de la tienda");
-    expect(describeFunding("PLATFORM")).toBe("Cortesía de Estreno");
+    expect(describeFunding("PLATFORM")).toBe("Cortesía de speeaking");
     expect(describeFunding("USER_PAID")).toBe("Pagada con saldo");
   });
 });

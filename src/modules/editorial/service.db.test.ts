@@ -232,7 +232,7 @@ describe.skipIf(!databaseUrl)("redacción diaria contra PostgreSQL", () => {
       status: "PENDING",
       provider: "mock",
       model: "mock",
-      promptVersion: "editorial@1",
+      promptVersion: "editorial@2",
       topic: null,
       reviewedById: null,
       postId: null,
@@ -368,7 +368,7 @@ describe.skipIf(!databaseUrl)("redacción diaria contra PostgreSQL", () => {
     expect(post.author.accounts).toHaveLength(0);
     expect(post.author.profile).toMatchObject({
       username: account.username,
-      displayName: "Equipo Estreno",
+      displayName: "Equipo speeaking",
       isEditorial: true,
       role: "USER",
     });
@@ -434,7 +434,7 @@ describe.skipIf(!databaseUrl)("redacción diaria contra PostgreSQL", () => {
           body: "Borrador para una comunidad con la cuenta ocupada.",
           provider: "mock",
           model: "mock",
-          promptVersion: "editorial@1",
+          promptVersion: "editorial@2",
         },
         select: { id: true },
       });
@@ -488,7 +488,7 @@ describe.skipIf(!databaseUrl)("redacción diaria contra PostgreSQL", () => {
           body: `Borrador viejo del ${day} para la comunidad de prueba.`,
           provider: "mock",
           model: "mock",
-          promptVersion: "editorial@1",
+          promptVersion: "editorial@2",
         },
         select: { id: true },
       });

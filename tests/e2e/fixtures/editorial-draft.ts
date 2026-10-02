@@ -31,7 +31,7 @@ async function main() {
         body,
         provider: "mock",
         model: "mock",
-        promptVersion: "editorial@1",
+        promptVersion: "editorial@2",
       },
       select: { id: true },
     });

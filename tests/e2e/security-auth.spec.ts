@@ -135,7 +135,7 @@ test.describe("guardia de Studio en el servidor", () => {
   }) => {
     // El proxy solo revisa que exista la cookie (optimista); la barrera real es la página.
     await context.addCookies([
-      { name: "vendeia.session_token", value: "inventada", domain: "localhost", path: "/" },
+      { name: "speeaking.session_token", value: "inventada", domain: "localhost", path: "/" },
     ]);
     await page.goto("/studio/analitica");
     await expect(page).toHaveURL(/\/entrar\?next=%2Fstudio%2Fanalitica/);
@@ -191,7 +191,7 @@ test.describe("registro", () => {
     page,
   }) => {
     const user = fixUser();
-    await fillSignUp(page, { ...user, name: "Equipo VendeIA", password: "Contraseña2026!" });
+    await fillSignUp(page, { ...user, name: "Equipo speeaking", password: "Contraseña2026!" });
 
     await expect(page.getByText("Ese nombre está reservado. Elige otro.")).toBeVisible();
     await expect(page.getByText(/Esa contraseña es muy común/)).toBeVisible();
@@ -210,7 +210,7 @@ test.describe("registro", () => {
     const user = fixUser();
     await register(page, user);
 
-    await page.getByLabel("¿Cómo te llamas?").fill("Soporte VendeIA");
+    await page.getByLabel("¿Cómo te llamas?").fill("Soporte speeaking");
     await completeOnboarding(page, { ...user, username: "equipo.soporte" });
 
     // El servidor rechaza los dos y el formulario vuelve al paso 1 para corregirlos.

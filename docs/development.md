@@ -11,7 +11,7 @@
 
 ```bash
 pnpm install          # también genera el cliente de Prisma (postinstall)
-pnpm db:setup         # clúster PostgreSQL 17 propio + base "vendeia" + secretos en .env
+pnpm db:setup         # clúster PostgreSQL 17 propio + base "speeaking" + secretos en .env
 pnpm db:migrate       # aplica las migraciones
 pnpm db:seed          # categorías, comunidades y contenido/demos de desarrollo
 pnpm dev
@@ -21,27 +21,42 @@ pnpm dev
 clúster en `.data/postgres` (puerto 5434) y escribe `DATABASE_URL` y `BETTER_AUTH_SECRET` en `.env`
 con valores aleatorios. Nunca imprime secretos. Después de reiniciar la computadora: `pnpm db:start`.
 
+### Mover o renombrar la carpeta del proyecto
+
+La base de desarrollo vive dentro del proyecto (`.data/postgres`), así que la carpeta se mueve
+completa. En Windows:
+
+1. Cierra todo lo que use la carpeta: el servidor de desarrollo, Prisma Studio, el editor y Claude
+   Code.
+2. Detén la base: `pnpm db:stop`.
+3. Cambia el nombre de la carpeta en el Explorador (por ejemplo, `E:\vendeia` → `E:\speeaking`).
+4. En una terminal dentro de la carpeta nueva, borra lo que guarda rutas de la carpeta anterior y
+   reinstala: `Remove-Item -Recurse -Force node_modules, .next` y después `pnpm install`. En Windows,
+   pnpm enlaza las dependencias con rutas absolutas. El almacén de pnpm ya tiene los paquetes, así
+   que la instalación tarda poco.
+5. `pnpm db:start` y `pnpm dev`.
+
 ## Scripts
 
-| Script              | Qué hace                                               |
-| ------------------- | ------------------------------------------------------ |
-| `pnpm dev`          | Servidor de desarrollo (Turbopack)                     |
-| `pnpm build`        | Build de producción                                    |
-| `pnpm typecheck`    | Genera tipos de rutas y ejecuta `tsc --noEmit`         |
-| `pnpm lint`         | ESLint (incluye reglas con información de tipos)       |
-| `pnpm format`       | Formatea con Prettier (`format:check` solo verifica)   |
-| `pnpm test`         | Vitest: proyectos `unit` (Node) y `components` (jsdom) |
-| `pnpm test:e2e`     | Playwright: perfiles `mobile` y `desktop`              |
-| `pnpm check`        | typecheck + lint + formato + pruebas unitarias         |
-| `pnpm db:setup`     | Crea/inicia la base de desarrollo y los secretos       |
-| `pnpm db:start`     | Inicia el clúster (`db:stop`, `db:status`)             |
-| `pnpm db:migrate`   | `prisma migrate dev`                                   |
-| `pnpm db:seed`      | Datos iniciales (idempotente)                          |
-| `pnpm db:studio`    | Explorador visual de la base (Prisma Studio)           |
-| `pnpm db:clean-e2e` | Borra las cuentas y datos que crean las pruebas E2E    |
-| `pnpm icons`        | Regenera los íconos de la PWA desde la marca           |
-| `pnpm tint`         | Regenera el CSS del tinte por comunidad (ADR-027)      |
-| `pnpm seed:photos`  | Descarga las fotos con licencia de la semilla          |
+| Script              | Qué hace                                                   |
+| ------------------- | ---------------------------------------------------------- |
+| `pnpm dev`          | Servidor de desarrollo (Turbopack)                         |
+| `pnpm build`        | Build de producción                                        |
+| `pnpm typecheck`    | Genera tipos de rutas y ejecuta `tsc --noEmit`             |
+| `pnpm lint`         | ESLint (incluye reglas con información de tipos)           |
+| `pnpm format`       | Formatea con Prettier (`format:check` solo verifica)       |
+| `pnpm test`         | Vitest: proyectos `unit` (Node) y `components` (jsdom)     |
+| `pnpm test:e2e`     | Playwright: perfiles `mobile` y `desktop`                  |
+| `pnpm check`        | typecheck + lint + formato + pruebas unitarias             |
+| `pnpm db:setup`     | Crea/inicia la base de desarrollo y los secretos           |
+| `pnpm db:start`     | Inicia el clúster (`db:stop`, `db:status`)                 |
+| `pnpm db:migrate`   | `prisma migrate dev`                                       |
+| `pnpm db:seed`      | Datos iniciales (idempotente)                              |
+| `pnpm db:studio`    | Explorador visual de la base (Prisma Studio)               |
+| `pnpm db:clean-e2e` | Borra las cuentas y datos que crean las pruebas E2E        |
+| `pnpm icons`        | Regenera los íconos (PWA, pestaña e iPhone) desde la marca |
+| `pnpm tint`         | Regenera el CSS del tinte por comunidad (ADR-027)          |
+| `pnpm seed:photos`  | Descarga las fotos con licencia de la semilla              |
 
 ### Operación y equipo
 
@@ -114,7 +129,7 @@ terminada, cuatro comunidades y una tienda activa. Su correo y su contraseña es
 `prisma/seed/test-account.ts` (valores de prueba: no los uses en otro servicio). Solo existe en una
 base de esta máquina: el seed la omite en producción y contra cualquier servidor remoto, y si ya
 existe no la toca. Para que también vea `/admin`, dale el rol con
-`pnpm make-admin prueba@estreno.test`.
+`pnpm make-admin prueba@speeaking.test`.
 
 También puedes crear tu cuenta en `/registro` (en desarrollo el límite de registros por minuto es
 holgado). Para entrar a `/admin`, termina la bienvenida y date el rol con

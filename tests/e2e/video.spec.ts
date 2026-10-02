@@ -19,7 +19,7 @@ test("publicar un video corto: se sube, el servidor lo revisa y se reproduce en 
   await expect(page.getByText("Video listo para publicar.")).toBeAttached();
   await expect(page.getByText("0:02")).toBeVisible();
 
-  await page.getByLabel("¿Qué quieres compartir?").fill("Mi primer video en Estreno");
+  await page.getByLabel("¿Qué quieres compartir?").fill("Mi primer video en speeaking");
   await page.getByRole("button", { name: "Publicar" }).click();
   await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
 

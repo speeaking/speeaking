@@ -280,7 +280,7 @@ async function seedDemoSellers(
   let created = 0;
   for (const seller of demoSellers) {
     const user = await upsertUser(db, {
-      email: `${seller.username}@vendeia.invalid`,
+      email: `${seller.username}@speeaking.invalid`,
       name: seller.displayName,
       username: seller.username,
       bio: "Cuenta de demostración: productos y datos ficticios para probar la plataforma.",

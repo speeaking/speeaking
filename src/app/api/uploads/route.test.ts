@@ -223,7 +223,7 @@ describe("POST /api/uploads", () => {
   });
 
   it("miles de partes diminutas se rechazan sin pasar por el parser de formData (hilo principal)", async () => {
-    const boundary = "----vendeia";
+    const boundary = "----speeaking";
     const parts = Array.from(
       { length: 20_000 },
       (_, index) =>

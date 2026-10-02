@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 import { PeopleSuggestions } from "@/modules/discovery/components/people-suggestions";
 import { Composer } from "@/modules/feed/components/composer";
 import { type FeedSlot, FeedList } from "@/modules/feed/components/feed-list";
@@ -90,7 +91,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       <>
         {cuenta === "eliminada" && !viewer ? (
           <p role="status" className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border">
-            Tu cuenta se eliminó. Gracias por probar Estreno; aquí estaremos si vuelves.
+            Tu cuenta se eliminó. Gracias por probar {siteConfig.name}; aquí estaremos si vuelves.
           </p>
         ) : null}
         {viewer ? (

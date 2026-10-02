@@ -80,7 +80,7 @@ test.describe("estilista", () => {
       .not.toBe(before);
 
     // «Ver cómo me veo» desde la ficha, en un solo paso (ADR-046): la foto, el consentimiento y
-    // la simulación aparecen en el mismo diálogo. La prueba la paga la tienda (semilla) o Estreno;
+    // la simulación aparecen en el mismo diálogo. La prueba la paga la tienda (semilla) o speeaking;
     // quien compra, nunca.
     // Llegar con ?probar=1 (desde una tarjeta del feed o de Comprar) abre el diálogo solo.
     await page.goto("/producto/camisa-blanca-vestir-demo?probar=1");
@@ -90,7 +90,7 @@ test.describe("estilista", () => {
       .getByLabel("Elegir imágenes")
       .setInputFiles({ name: "yo.png", mimeType: "image/png", buffer: TINY_PNG });
     await expect(dialog.locator('input[name="mediaId"]')).toHaveCount(1);
-    await dialog.getByRole("checkbox", { name: /Acepto que Estreno use esta foto/ }).check();
+    await dialog.getByRole("checkbox", { name: /Acepto que speeaking use esta foto/ }).check();
     await dialog.getByRole("button", { name: "Ver cómo me veo" }).click();
     await expect(dialog.getByRole("heading", { name: "Así podrías verte" })).toBeVisible({
       timeout: 60_000,
@@ -98,7 +98,7 @@ test.describe("estilista", () => {
     await expect(
       dialog.getByRole("img", { name: /Simulación de cómo podría verse/ }),
     ).toBeVisible();
-    await expect(dialog.getByText(/Cortesía de (la tienda|Estreno)/)).toBeVisible();
+    await expect(dialog.getByText(/Cortesía de (la tienda|speeaking)/)).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Comprar ahora" })).toBeVisible();
     // «Agrégale…»: complementos reales de otros huecos.
     await expect(dialog.getByRole("heading", { name: /Agrégale/ })).toBeVisible();
@@ -114,7 +114,7 @@ test.describe("estilista", () => {
     await page.getByRole("article").first().getByRole("link", { name: "Pruébatelo" }).click();
     await expect(page).toHaveURL(/\/probar\?look=/);
     await expect(page.getByRole("list", { name: "Tus fotos" }).getByRole("button")).toHaveCount(1);
-    await expect(page.getByText(/cortesía de (la tienda|Estreno)/)).toBeVisible();
+    await expect(page.getByText(/cortesía de (la tienda|speeaking)/)).toBeVisible();
 
     // La foto es privada: aparece en Ajustes con su fecha de borrado.
     await page.goto("/ajustes");

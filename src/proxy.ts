@@ -56,7 +56,7 @@ export const config = {
     // `/media` (tiene su propia CSP de sandbox) y los prefetch de `next/link`, que no son documentos.
     {
       source:
-        "/((?!api/|_next/static|_next/image|media/|favicon\\.ico|icon\\.svg|icons/|brand/|manifest\\.webmanifest).*)",
+        "/((?!api/|_next/static|_next/image|media/|favicon\\.ico|icon\\.svg|apple-icon\\.png|icons/|brand/|manifest\\.webmanifest).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

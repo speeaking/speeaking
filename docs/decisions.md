@@ -448,13 +448,13 @@ pedido pasa a pagado solo por webhook con firma verificada, nunca por una acció
 
 ## Decisiones de marca, diseño sereno, estilista y autofinanciamiento (2026-09-29)
 
-| #       | Decisión                                                                                                             | Estado   |
-| ------- | -------------------------------------------------------------------------------------------------------------------- | -------- |
-| ADR-041 | Marca **Estreno** (sin «IA» en el nombre); «Sube y vende» para la función del vendedor; ADR-014 reemplazada          | Aceptada |
-| ADR-042 | Diseño sereno: una sola acción principal por pantalla, color solo como acento, tintes de comunidad suaves            | Aceptada |
-| ADR-043 | Núcleo de IA: funciones como módulos con bandera, proveedor de imágenes por interfaz, caché, cuotas por función      | Aceptada |
-| ADR-044 | Autofinanciamiento: saldo en pesos, precio comunitario por volumen, pruebas gratis con tope, patrocinio del vendedor | Aceptada |
-| ADR-045 | «Pruébatelo»: la foto es de la persona; consentimiento explícito, privada, 30 días, borrable; siempre «simulación»   | Aceptada |
+| #       | Decisión                                                                                                             | Estado                        |
+| ------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| ADR-041 | Marca **Estreno** (sin «IA» en el nombre); «Sube y vende» para la función del vendedor; ADR-014 reemplazada          | Marca reemplazada por ADR-070 |
+| ADR-042 | Diseño sereno: una sola acción principal por pantalla, color solo como acento, tintes de comunidad suaves            | Aceptada                      |
+| ADR-043 | Núcleo de IA: funciones como módulos con bandera, proveedor de imágenes por interfaz, caché, cuotas por función      | Aceptada                      |
+| ADR-044 | Autofinanciamiento: saldo en pesos, precio comunitario por volumen, pruebas gratis con tope, patrocinio del vendedor | Aceptada                      |
+| ADR-045 | «Pruébatelo»: la foto es de la persona; consentimiento explícito, privada, 30 días, borrable; siempre «simulación»   | Aceptada                      |
 
 ## ADR-033 · Decisiones del piloto (delegadas por el fundador)
 
@@ -1020,7 +1020,7 @@ se perderían.
 - **Salida de datos y fotos:** si las fotos pasan de ≈ 100 GB o las lecturas de R2 de 10 millones al
   mes, poner una CDN delante de `/media` (con la purga y la clave de caché de ADR-039).
 
-## ADR-041 · Marca «Estreno» y «Sube y vende»
+## ADR-041 · Marca «Estreno» y «Sube y vende» (la marca, reemplazada por ADR-070)
 
 **Contexto.** El fundador reportó (2026-09-29) que el nombre provisional «VendeIA» provoca burlas por
 el simple hecho de llevar «IA», y que la plataforma debe transmitir confianza. La marca estaba
@@ -2006,3 +2006,60 @@ De sus opciones, aquí aplican pocas: no hay cifrado de extremo a extremo, estil
 `BLOCKED`; `getThread` dice `blocked` (`byMe`, `byThem` o nada). `ReportDialog` se separó de
 `ReportButton` para abrirlo desde un menú. Pruebas contra PostgreSQL (nadie de fuera bloquea, ninguna
 escribe, solo quien bloqueó quita), de componentes y E2E (bloquear desde el recuadro).
+
+## ADR-070 · speeaking: nombre, logotipo, colores y tipografía
+
+**Contexto.** El fundador entregó la marca nueva (2026-10-01): «speeaking», donde las dos caras del
+logotipo son las «ee» de la palabra; el lema «Where conversations come to life.»; la paleta violeta
+eléctrico #8B3DFF, cian tecnológico #00CFE8, navy profundo #10152F, blanco y gris frío #667085; Sora
+SemiBold para el logotipo y los titulares, e Inter para el texto. Pidió cambiar el nombre en todo el
+proyecto, incluida la carpeta. Reemplaza a «Estreno» (ADR-041) antes del lanzamiento, cuando el
+cambio sale barato: no hay usuarios, dominio, tiendas ni redes a las que avisar.
+
+**Decisión.**
+
+- **Nombre:** «speeaking», en minúsculas como en el logotipo, también al empezar una frase. Vive en
+  `siteConfig.name`. Lema en español: «Donde las conversaciones cobran vida.»
+- **Isotipo:** dos globos de diálogo con cara: el violeta habla y el cian escucha. Es una versión
+  vectorial provisional hecha a partir de la hoja de marca, hasta tener el SVG del diseñador. La boca
+  del globo violeta es redonda y no en cuña, para no recordar a Pac-Man (marca de Bandai Namco).
+- **Logotipo:** «sp», las dos caras en lugar de las «ee» y «aking», en Sora 600. Donde no cabe (la
+  columna plegada de escritorio, el sello de las cuentas editoriales) va solo el isotipo.
+- **Color:** el violeta lleva la acción principal, los enlaces y el foco (blanco encima 5:1). Como
+  texto se usa #6D28D9 en claro (7.1:1 en blanco) y #B38CFF en oscuro (7.3:1). El navy #10152F es la
+  tinta del texto en claro y el fondo de los íconos de la app. El texto secundario usa el gris frío
+  #5F687C: el #667085 de la hoja queda en 4.4:1 sobre gris y no pasa AA. El cian va solo en el
+  isotipo y en gráficas, porque como texto sobre blanco queda en 1.9:1. El modo oscuro sigue en
+  negro puro (ADR-042).
+- **Tipografía:** Sora en el logotipo y los titulares, Inter en el texto, ambas con `next/font`.
+- **Nombres internos:** también cambian, porque antes de lanzar no hay sesiones ni datos de nadie
+  que cuidar: el paquete, la base de desarrollo (base y rol `speeaking`), las cookies
+  (`speeaking.session_token`, `speeaking-nav`, `speeaking_bienvenida`), la cabecera interna de IP,
+  las claves del navegador, las semillas de los hashes (deduplicado de eventos y experimentos) y los
+  dominios reservados (`@speeaking.invalid`, `@speeaking.test`). Una migración pasa a esos dominios
+  los correos internos que ya existían y renombra a «Equipo speeaking» las cuentas editoriales.
+- **Marcas reservadas (SEC-18):** «speeaking» no puede aparecer en ningún nombre. Tampoco se permiten
+  «Equipo Speaking» o «Soporte Speaking», escritos con una sola «e». «Speaking» por sí solo sí se
+  permite, como en «Public Speaking MX». «vendeia» sigue reservada. «estreno» queda reservada solo
+  como usuario exacto (`@estreno`): es una palabra común, como en «Ropa de estreno», y nunca fue una
+  marca pública.
+- **No cambian:** el historial de decisiones, las maquetas de `docs/design/` y el reporte de
+  seguridad del 2026-09-26 conservan los nombres que tenían en su fecha.
+
+**Consecuencias.**
+
+- Componentes: `BrandMark` y `BrandFaces` en `brand-mark.tsx`, y `Wordmark` y `Logo` (con
+  `collapsible`) en `logo.tsx`.
+- Colores: tokens `brand-*` en `globals.css`; el tono por omisión de las comunidades pasa a violeta
+  (`pnpm tint`).
+- Íconos: regenerados sobre navy (`pnpm icons`). La pestaña no mostraba ícono: `metadata.icons`
+  del layout tapaba el `icon.svg`. Ahora Next los anuncia por convención de archivos desde `src/app`
+  (`favicon.ico`, `icon.svg` y `apple-icon.png`).
+- Versiones: sube la del consentimiento de «Pruébatelo» (2026-10-01) y la del prompt de la redacción
+  (`editorial@2`), porque cambia su texto. Sube también la fecha de la página de cookies.
+- Pendiente del fundador:
+  - el SVG final del diseñador;
+  - la búsqueda y el registro en el IMPI (clases 9, 35, 38, 42 y 45);
+  - el dominio;
+  - renombrar el repositorio de GitHub;
+  - mover la carpeta a `E:\speeaking` (pasos en `docs/development.md`).

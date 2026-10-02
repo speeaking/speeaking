@@ -91,7 +91,7 @@ export async function deleteAccount(
     await tx.user.update({
       where: { id: userId },
       data: {
-        email: `eliminada-${userId}@estreno.invalid`,
+        email: `eliminada-${userId}@speeaking.invalid`,
         name: "Cuenta eliminada",
         emailVerified: false,
         image: null,

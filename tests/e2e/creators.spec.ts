@@ -113,6 +113,6 @@ test("la sección de creadores es pública: explica cómo funciona e invita a cr
   await expect(page.getByRole("region", { name: "Cómo funciona" })).toContainText(
     "Quien te ve se lo prueba y lo compra",
   );
-  await expect(page.getByText(/Estreno todavía no paga ni cobra comisiones/)).toBeVisible();
+  await expect(page.getByText(/speeaking todavía no paga ni cobra comisiones/)).toBeVisible();
   await expect(page.getByRole("main").getByRole("link", { name: "Crear cuenta" })).toBeVisible();
 });

@@ -108,7 +108,7 @@ Pagos, precios, comisiones y gasto quedan fuera de su alcance.
 
 ## Sprint 5 — Estilista, Pruébatelo y autofinanciamiento ✅ (2026-09-29)
 
-Marca **Estreno** (ADR-041), diseño sereno (ADR-042), núcleo de IA con banderas (ADR-043), saldo y
+Marca **Estreno** (ADR-041; hoy speeaking, ADR-070), diseño sereno (ADR-042), núcleo de IA con banderas (ADR-043), saldo y
 precio comunitario (ADR-044) y Pruébatelo con privacidad de fotos (ADR-045). Detalle del cobro en
 [`modelo-de-ingresos.md`](modelo-de-ingresos.md).
 
@@ -137,7 +137,7 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Entregable                                                                                                                                                    | Estado     |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | «Ver cómo me veo» en un paso desde la ficha: foto, simulación, comprar y «Agrégale…» en un diálogo                                                            | ✅         |
-| Quien vende paga: tienda → cortesía de Estreno (10 por tienda) → demanda registrada; saldo solo de tiendas                                                    | ✅         |
+| Quien vende paga: tienda → cortesía de speeaking (10 por tienda) → demanda registrada; saldo solo de tiendas                                                  | ✅         |
 | Recargas Arranque / Impulso / Tienda pro; `/studio/saldo` con pruebas, demanda y movimientos                                                                  | ✅         |
 | Producto destacado: días desde el saldo, bloque «Patrocinado» en la columna derecha, ficha y Comprar                                                          | ✅         |
 | Columna izquierda plegable (escritorio)                                                                                                                       | ✅         |
@@ -161,10 +161,11 @@ una prenda, la columna derecha es publicidad y cada beneficio para tiendas se co
 | Página de cookies y pie legal también en teléfono (ADR-053)                                                                                                        | ✅                                                                                               |
 | Visor al abrir una publicación con fotos o video: imagen ajustada a la ventana y comentarios al lado en escritorio; sin feed dentro de la capa (ADR-064)           | ✅                                                                                               |
 | Perfil ancho en escritorio como Facebook: sin columnas laterales, portada ancha y accesos a vender («Panel») y comprar («Mis compras», «Ver tienda») (ADR-065)     | ✅                                                                                               |
-| Redacción diaria: la IA deja un borrador por comunidad para «Equipo Estreno» y el equipo lo publica desde /admin/redaccion; nada sale sin aprobación (ADR-066)     | ✅                                                                                               |
+| Redacción diaria: la IA deja un borrador por comunidad para «Equipo speeaking» y el equipo lo publica desde /admin/redaccion; nada sale sin aprobación (ADR-066)   | ✅                                                                                               |
 | Videos sin ubicación ni datos del teléfono: el navegador los quita antes de subir y el servidor no publica un video que los traiga (ADR-067)                       | ✅                                                                                               |
 | Avisos, mensajes y «Crear» se abren ahí mismo: recuadro en escritorio, panel desde abajo en teléfono; la publicación se escribe encima del feed (ADR-068)          | ✅                                                                                               |
 | Opciones de la conversación al tocar a la persona: ver perfil, bloquear mensajes y reportar (ADR-069)                                                              | ✅                                                                                               |
+| Marca speeaking: nombre, logotipo con las dos caras, violeta y navy, Sora e Inter, íconos nuevos y nombres internos (ADR-070)                                      | ✅ (SVG final del diseñador, dominio e IMPI ⏳)                                                  |
 | Creadores, etapa 1: recomendar productos de tiendas que lo aceptan, «Colaboración» declarada, del video a probárselo y comprar, métricas por publicación (ADR-063) | ✅                                                                                               |
 | Videos cortos: hasta 60 s, subidos directo a R2 sin transcodificar; en el feed sin sonido y sin gastar datos con ahorro (ADR-062)                                  | ✅                                                                                               |
 | Buscar con una foto: el modelo describe la ropa y los objetos, la plataforma busca productos reales; la foto no se guarda (ADR-061)                                | ✅                                                                                               |

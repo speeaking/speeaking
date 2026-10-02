@@ -71,7 +71,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
             : "Encuentra comunidades, publicaciones y productos."
         }
         actions={
-          // Búsqueda por foto (ADR-061): la ropa o los objetos de una foto, parecidos en Estreno.
+          // Búsqueda por foto (ADR-061): la ropa o los objetos de una foto, parecidos en speeaking.
           <Link href="/buscar/foto" className={buttonVariants({ variant: "outline" })}>
             <Camera data-icon="inline-start" />
             Con foto

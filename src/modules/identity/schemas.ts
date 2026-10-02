@@ -14,7 +14,7 @@ const email = z.string().trim().toLowerCase().pipe(z.email("Escribe un correo v�
 /**
  * Correos del dominio reservado `.invalid` (RFC 6761: ningún buzón real puede existir ahí). La
  * plataforma los usa para sus propias cuentas sin inicio de sesión: las editoriales
- * (`editorial.<comunidad>@vendeia.invalid`, ADR-066) y las eliminadas (`eliminada-…@estreno.invalid`).
+ * (`editorial.<comunidad>@speeaking.invalid`, ADR-066) y las eliminadas (`eliminada-…@speeaking.invalid`).
  * Nadie puede registrarse con uno: ocuparía la cuenta editorial de una comunidad antes de que exista.
  */
 export function isReservedEmail(value: string): boolean {
@@ -88,6 +88,6 @@ export const usernameSchema = z
         /^[a-z0-9](?:[a-z0-9._]*[a-z0-9])?$/,
         "Solo letras sin acento, números, punto y guion bajo; sin empezar ni terminar en punto.",
       )
-      // Rutas propias y suplantación de la plataforma (`equipo.*`, `vendeia.*`, `soporte`…, SEC-18).
+      // Rutas propias y suplantación de la plataforma (`equipo.*`, `speeaking.*`, `soporte`…, SEC-18).
       .refine((value) => !isReservedUsername(value), "Ese nombre de usuario no está disponible."),
   );

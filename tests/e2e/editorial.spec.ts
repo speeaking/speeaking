@@ -73,7 +73,7 @@ test("el equipo ajusta y publica un borrador como la cuenta editorial, y descart
   const article = page.getByRole("article").filter({ hasText: edited }).first();
   await expect(article).toBeVisible();
   await expect(article.getByText("Editorial", { exact: true })).toBeVisible();
-  await expect(article.getByRole("link", { name: "Equipo Estreno" })).toBeVisible();
+  await expect(article.getByRole("link", { name: "Equipo speeaking" })).toBeVisible();
   await expect(article.getByText("Con ayuda de IA")).toBeVisible();
   await expect(article.getByRole("link", { name: "Comida" }).first()).toBeVisible();
 

@@ -13,7 +13,7 @@ export type CommunityAvatarSize = keyof typeof SIZES;
 
 /**
  * Avatar de comunidad: su emoji sobre su color (`community-tile`), en un cuadrado redondeado como
- * ícono de app. `editorial` agrega el sello de Estreno para las cuentas del equipo.
+ * ícono de app. `editorial` agrega el sello de speeaking (el isotipo) para las cuentas del equipo.
  *
  * Accesibilidad: el emoji nunca se lee. Si el nombre de la comunidad ya está visible junto al
  * avatar, usa `decorative` para que el lector de pantalla no lo repita; si no, el avatar se

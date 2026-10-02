@@ -138,6 +138,7 @@ const COMMON_BASES = new Set([
   "jessica",
   "charlie",
   "vendeia",
+  "speeaking",
 ]);
 
 const LEET: Record<string, string> = {

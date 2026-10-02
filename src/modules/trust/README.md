@@ -15,7 +15,7 @@ actualizada en su lugar).
   (≥ 0.3) / HIGH (≥ 0.6). Si cambian pesos o reglas, sube `RULES_VERSION` (hoy `v2`).
 - `status.ts`: estado de la revisión al reevaluar (las decisiones del equipo no se deshacen solas) y
   lo que ve quien compra (`buyerAuthenticityView`: «Autenticidad sin verificar», «Comprobante
-  revisado por VendeIA», nota neutral). «Comprobante revisado» se pierde si el vendedor cambia QUÉ
+  revisado por speeaking», nota neutral). «Comprobante revisado» se pierde si el vendedor cambia QUÉ
   vende (título, etiquetas, categoría o condición: `listingChanged`, lo calcula
   `catalog/service.ts`, que además lo baja a AUTO_CLEAR en la misma transacción de la edición:
   falla cerrada si la reevaluación de después falla) o si al reevaluar sube el puntaje (p. ej. un

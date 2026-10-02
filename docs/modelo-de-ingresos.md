@@ -86,7 +86,7 @@ y costos fijos repartidos entre más tiendas = precio más bajo para todas.
 ### 3.2 Quién paga cada prueba (en este orden)
 
 1. **La tienda del producto principal**, si tiene «Ver cómo me veo» activo, saldo y tope del día.
-2. **Las pruebas de cortesía de esa tienda**: Estreno pone las primeras **10 pruebas de cada tienda**
+2. **Las pruebas de cortesía de esa tienda**: speeaking pone las primeras **10 pruebas de cada tienda**
    (`STORE_TRIAL_TRY_ONS`), para que el botón funcione desde el primer día y quien vende vea el
    resultado antes de poner saldo. Costo máximo del subsidio: 10 × $1.26 = **$12.60 MXN por tienda,
    una sola vez**; con 100 tiendas, $1,260. Sale del presupuesto de IA (`ai.budget`) y tiene su
@@ -242,7 +242,7 @@ primer día, como las de la tabla.
 | Neon (base de datos)                                 | $0 hasta 0.5 GB; después, desde ≈ US$19     |
 | Cloudflare R2 (fotos y videos)                       | $0 hasta 10 GB; después, US$0.015 por GB    |
 | Correo transaccional                                 | $0 hasta 3,000 correos al mes               |
-| Dominio estreno.mx                                   | ≈ $40 MXN (≈ $500 MXN al año)               |
+| Dominio speeaking.mx                                 | ≈ $40 MXN (≈ $500 MXN al año)               |
 | **Total al arrancar**                                | **≈ $400 MXN al mes**                       |
 
 **Punto de equilibrio:** unos 27 días de destacado al mes, o unas 180 pruebas pagadas de «Ver cómo me

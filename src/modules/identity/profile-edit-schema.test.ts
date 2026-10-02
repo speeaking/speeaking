@@ -33,7 +33,7 @@ describe("parseProfileEdit (ADR-058)", () => {
 
   it("rechaza un nombre corto, uno que suplanta a la plataforma y una presentación larga", () => {
     expect(parseProfileEdit(form({ displayName: "A" })).success).toBe(false);
-    expect(parseProfileEdit(form({ displayName: "Equipo Estreno" })).success).toBe(false);
+    expect(parseProfileEdit(form({ displayName: "Equipo speeaking" })).success).toBe(false);
     expect(
       parseProfileEdit(form({ displayName: "Ana", bio: "x".repeat(PROFILE_BIO_MAX + 1) })).success,
     ).toBe(false);

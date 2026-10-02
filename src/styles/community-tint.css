@@ -8,7 +8,7 @@
 
 /* Fondo saturado para el emoji de la comunidad (sin texto encima). */
 @utility community-tile {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
   --_c-tile: calc(
     0.03593
@@ -49,7 +49,7 @@
 
 /* Texto en el color de la comunidad; AA sobre card, background, secondary y soft. */
 @utility community-text {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_c-text: calc(
     0.2
     - 0.0002261 * max(0, var(--_h) - 15)
@@ -101,7 +101,7 @@
 
 /* Tinta profunda con un toque del tono, para titulares. */
 @utility community-ink {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_c-ink: calc(
     0.035
     - 0.000071 * max(0, var(--_h) - 165)
@@ -134,7 +134,7 @@
 
 /* Superficie suave con tinta profunda (selección, franjas). */
 @utility community-soft {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_c-soft: calc(
     0.01638
     - 0.0000882 * var(--_h)
@@ -206,7 +206,7 @@
 
 /* Fondo vivo para barras, reglas e indicadores (sin texto encima). */
 @utility community-bar {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
   --_c-bar: calc(
     0.13
@@ -233,7 +233,7 @@
 
 /* Borde en el color vivo de la comunidad (estado seleccionado). */
 @utility community-border {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
   --_c-bar: calc(
     0.13
@@ -260,7 +260,7 @@
 
 /* Bloque de color con texto: vivo con tinta negra en claro, profundo en oscuro. */
 @utility community-block {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_lift: calc(max(0, cos(calc((var(--_h) - 90) * 2deg))) * clamp(0, 180 - var(--_h), 1));
   --_c-block: calc(
     0.02184
@@ -303,7 +303,7 @@
 
 /* Texto secundario dentro de community-block. */
 @utility community-block-muted {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   color: oklch(0.3 0.02 285);
   &:is(.dark *) {
     color: oklch(0.78 0.01 285);
@@ -312,7 +312,7 @@
 
 /* Cartel: bloque de tinta con el tono y texto blanco. */
 @utility community-poster {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   background-color: oklch(0.19 0.015 var(--_h));
   color: oklch(0.98 0 0);
   &:is(.dark *) {
@@ -341,7 +341,7 @@
 
 /* Kicker claro dentro de community-poster. */
 @utility community-lite {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_c-lite: calc(
     0.09264
     - 0.0004725 * var(--_h)
@@ -392,7 +392,7 @@
 
 /* Avatar de persona sin foto: fondo y texto del tono en --hue. */
 @utility avatar-tint {
-  --_h: var(--hue, 358.9);
+  --_h: var(--hue, 294.9);
   --_c-avatar: calc(
     0.10609
     - 0.0005054 * var(--_h)

@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import type { ProductCardDTO } from "@/modules/catalog/queries";
 
 /**
@@ -28,7 +29,7 @@ export type ProductTier = {
 export type FeedProductItemDTO = { product: ProductCardDTO; sponsored: boolean };
 
 export type FeedProductsDTO = {
-  /** «Según tu búsqueda», «De tus comunidades», «Lo más vendido», «Populares», «Nuevo en Estreno». */
+  /** «Según tu búsqueda», «De tus comunidades», «Lo más vendido», «Populares», «Nuevo en speeaking». */
   title: string;
   /** La razón, escrita: «“lentes de sol” hasta $800», «En los últimos 30 días»… */
   reason: string;
@@ -43,7 +44,7 @@ const TIER_COPY: Record<ProductTierKind, { title: string; reason: string }> = {
   communities: { title: "De tus comunidades", reason: "Lo que venden donde participas" },
   bestSellers: { title: "Lo más vendido", reason: "En los últimos 30 días" },
   popular: { title: "Populares", reason: "Lo más visto esta semana" },
-  newest: { title: "Nuevo en Estreno", reason: "Recién publicado" },
+  newest: { title: `Nuevo en ${siteConfig.name}`, reason: "Recién publicado" },
 };
 
 /** Orden fijo de los respaldos; cada página empieza en uno distinto para no repetir el mismo tramo. */

@@ -38,10 +38,7 @@ export default function TermsPage() {
           </li>
         </ul>
       </section>
-      <p>
-        Al usar {siteConfig.name} (nombre provisional) aceptas estas reglas básicas de convivencia y
-        comercio.
-      </p>
+      <p>Al usar {siteConfig.name} aceptas estas reglas básicas de convivencia y comercio.</p>
 
       <h2>Contenido</h2>
       <ul>

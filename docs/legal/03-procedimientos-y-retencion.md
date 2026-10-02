@@ -1,7 +1,7 @@
-# Procedimientos internos de datos personales y contenidos (Estreno, septiembre de 2026)
+# Procedimientos internos de datos personales y contenidos (speeaking, septiembre de 2026)
 
 > **BORRADOR INTERNO PARA REVISIÓN LEGAL. NO ES ASESORÍA LEGAL NI FISCAL.** Este documento propone
-> los procedimientos que Estreno necesita antes de abrir al público: conservación de datos, derechos
+> los procedimientos que speeaking necesita antes de abrir al público: conservación de datos, derechos
 > ARCO, vulneraciones de seguridad, retiro de contenidos, registro de encargados y los pendientes
 > legales del fundador. **Todo debe revisarlo un abogado mexicano (y la parte fiscal, un contador)
 > antes de aplicarse o publicarse.** Lo marcado **[VERIFICAR CON ABOGADO]** o **[VERIFICAR CON
@@ -42,7 +42,7 @@
    moderación** (propuesta: 2 años).
 3. Cómo **verificar la identidad** en una solicitud ARCO sin pedir copias de identificación de más
    (3.6).
-4. Si Estreno adopta un procedimiento de **aviso y retiro para marcas** aunque la ley no lo exija
+4. Si speeaking adopta un procedimiento de **aviso y retiro para marcas** aunque la ley no lo exija
    (5.4).
 5. **SAS o persona física** como responsable durante el piloto (7.1).
 
@@ -98,8 +98,8 @@ Lo que hace hoy el código respecto a conservar, borrar y entregar datos. Revisa
   - daños por infracciones de propiedad industrial: **2 años** desde que el IMPI declara la infracción
     [5, art. 399].
 
-  **Cuál aplica a cada dato de Estreno es la pregunta principal para el abogado.** Depende de si
-  Estreno es «comerciante» y de si su relación con quien usa la plataforma es de consumo, civil o
+  **Cuál aplica a cada dato de speeaking es la pregunta principal para el abogado.** Depende de si
+  speeaking es «comerciante» y de si su relación con quien usa la plataforma es de consumo, civil o
   mercantil **[VERIFICAR CON ABOGADO]**.
 
 ### 2.2 Cómo leer las tablas
@@ -144,15 +144,15 @@ Lo que hace hoy el código respecto a conservar, borrar y entregar datos. Revisa
 ### 2.5 Comercio: carrito, domicilios y pedidos
 
 Hoy la plataforma no cobra ni retiene dinero y el pago es directo al vendedor (ADR-033). Los pedidos
-no son contabilidad de Estreno mientras la comisión sea 0 % **[VERIFICAR CON CONTADOR]**.
+no son contabilidad de speeaking mientras la comisión sea 0 % **[VERIFICAR CON CONTADOR]**.
 
-| Dato (tabla)                                                                                       | Hoy                                                                                 | Plazo propuesto                                                                                                                                                                                                                                       | Al vencer                                              | Fundamento                                                                                                 |
-| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Carrito (`carts`, `cart_items`)                                                                    | Cascada con la cuenta                                                               | Mientras exista la cuenta; vaciar un carrito sin cambios en **180 días** (propuesta)                                                                                                                                                                  | Suprimir                                               | Minimización [1, art. 12]                                                                                  |
-| Domicilios guardados (`addresses`: nombre, teléfono, domicilio)                                    | Sin borrado por la persona                                                          | Mientras la persona los tenga guardados                                                                                                                                                                                                               | Suprimir                                               | [1, arts. 10 y 24]                                                                                         |
-| Copia del domicilio en el pedido (`orders.shippingAddress`)                                        | Se borra al cancelarse o vencer el pedido (SEC-08); sin plazo después de la entrega | Cancelado o vencido: ya se borra. Entregado: **90 días** después de la entrega (propuesta: cubre la garantía mínima de 90 días desde la entrega, si se ofrece [3, art. 77], y la atención de quejas del botón «Tengo un problema» que prevé el plan). | Suprimir la copia; el pedido se queda sin domicilio    | [1, arts. 10 y 12]; [3, art. 77] **[VERIFICAR CON ABOGADO]**                                               |
-| Pedido sin datos de contacto (`orders`, `order_items`: productos, montos, fechas, estado, cuentas) | Se borraría con la cuenta del comprador (cascada)                                   | **5 años** desde el pedido (propuesta). Cubre la prescripción de 1 año de la LFPC y deja margen por si el SAT o un cobro futuro lo vuelven documentación fiscal.                                                                                      | Anonimizar (quitar la cuenta del comprador) o suprimir | [3, art. 14]; [8, art. 30]; si Estreno es comerciante, [9, art. 38] **[VERIFICAR CON ABOGADO Y CONTADOR]** |
-| Checkouts y pagos (`checkouts`, `payments`, `payment_events`)                                      | Simulados; los checkouts sin pagar vencen solos                                     | Mismo plazo que el pedido. Cuando haya pagos reales: el que fije el contador (5 años fiscales o 10 mercantiles).                                                                                                                                      | Suprimir                                               | [8, art. 30]; [9, arts. 38 y 46] **[VERIFICAR CON CONTADOR]**                                              |
+| Dato (tabla)                                                                                       | Hoy                                                                                 | Plazo propuesto                                                                                                                                                                                                                                       | Al vencer                                              | Fundamento                                                                                                   |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Carrito (`carts`, `cart_items`)                                                                    | Cascada con la cuenta                                                               | Mientras exista la cuenta; vaciar un carrito sin cambios en **180 días** (propuesta)                                                                                                                                                                  | Suprimir                                               | Minimización [1, art. 12]                                                                                    |
+| Domicilios guardados (`addresses`: nombre, teléfono, domicilio)                                    | Sin borrado por la persona                                                          | Mientras la persona los tenga guardados                                                                                                                                                                                                               | Suprimir                                               | [1, arts. 10 y 24]                                                                                           |
+| Copia del domicilio en el pedido (`orders.shippingAddress`)                                        | Se borra al cancelarse o vencer el pedido (SEC-08); sin plazo después de la entrega | Cancelado o vencido: ya se borra. Entregado: **90 días** después de la entrega (propuesta: cubre la garantía mínima de 90 días desde la entrega, si se ofrece [3, art. 77], y la atención de quejas del botón «Tengo un problema» que prevé el plan). | Suprimir la copia; el pedido se queda sin domicilio    | [1, arts. 10 y 12]; [3, art. 77] **[VERIFICAR CON ABOGADO]**                                                 |
+| Pedido sin datos de contacto (`orders`, `order_items`: productos, montos, fechas, estado, cuentas) | Se borraría con la cuenta del comprador (cascada)                                   | **5 años** desde el pedido (propuesta). Cubre la prescripción de 1 año de la LFPC y deja margen por si el SAT o un cobro futuro lo vuelven documentación fiscal.                                                                                      | Anonimizar (quitar la cuenta del comprador) o suprimir | [3, art. 14]; [8, art. 30]; si speeaking es comerciante, [9, art. 38] **[VERIFICAR CON ABOGADO Y CONTADOR]** |
+| Checkouts y pagos (`checkouts`, `payments`, `payment_events`)                                      | Simulados; los checkouts sin pagar vencen solos                                     | Mismo plazo que el pedido. Cuando haya pagos reales: el que fije el contador (5 años fiscales o 10 mercantiles).                                                                                                                                      | Suprimir                                               | [8, art. 30]; [9, arts. 38 y 46] **[VERIFICAR CON CONTADOR]**                                                |
 
 ### 2.6 Actividad y analítica
 
@@ -203,7 +203,7 @@ hace falta.
 | ---------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------- |
 | Cubetas de límites de frecuencia (`rate_limit_buckets`, `rate_limits`) | Se borran al vencer (ventana máxima de 7 días en el código) | Igual que hoy                                                                                                                          | Suprimir               | Seguridad [1, art. 18]                                        |
 | Bitácora de tareas (`job_runs`)                                        | Sin datos personales                                        | **1 año** (propuesta)                                                                                                                  | Suprimir               | —                                                             |
-| Libro de la plataforma (`platform_ledger_entries`)                     | Costos de IA e infraestructura                              | **5 años** (fiscal) o **10 años** si Estreno es comerciante                                                                            | Suprimir               | [8, art. 30]; [9, arts. 38 y 46] **[VERIFICAR CON CONTADOR]** |
+| Libro de la plataforma (`platform_ledger_entries`)                     | Costos de IA e infraestructura                              | **5 años** (fiscal) o **10 años** si speeaking es comerciante                                                                          | Suprimir               | [8, art. 30]; [9, arts. 38 y 46] **[VERIFICAR CON CONTADOR]** |
 | Registros de ejecución de Vercel (ruta, parámetros, navegador, estado) | Plan Pro: 1 día; con Observability Plus: 30 días [18]       | Lo que da el plan Pro, sin Observability Plus salvo necesidad. **Regla:** nunca escribir datos personales en `console.*` ni en la URL. | Los borra Vercel       | [18]; minimización [1, art. 12]                               |
 | Registros del proveedor de correo                                      | Sin proveedor                                               | El que fije su contrato **[VERIFICAR al contratar]**                                                                                   | Los borra el proveedor | [23]                                                          |
 
@@ -211,8 +211,8 @@ hace falta.
 
 | Mecanismo                                               | Duración                                           | Nota                              |
 | ------------------------------------------------------- | -------------------------------------------------- | --------------------------------- |
-| Cookies de sesión de Better Auth (prefijo `vendeia`)    | Hasta 30 días sin uso                              | Técnicamente necesarias [00 §2.6] |
-| `vendeia_bienvenida`                                    | 10 minutos                                         | Solo muestra la bienvenida        |
+| Cookies de sesión de Better Auth (prefijo `speeaking`)  | Hasta 30 días sin uso                              | Técnicamente necesarias [00 §2.6] |
+| `speeaking_bienvenida`                                  | 10 minutos                                         | Solo muestra la bienvenida        |
 | Tema (`localStorage`, next-themes)                      | Hasta que la persona borre los datos del navegador | No se envía al servidor           |
 | «Ocultar» del aviso y de sugerencias (`sessionStorage`) | Hasta cerrar la pestaña                            | No se envía al servidor           |
 
@@ -366,7 +366,7 @@ finalidad o un encargado. Un cambio que afecte el aviso sube `LEGAL_VERSIONS.pri
 | Ampliar un plazo                                      | Una vez, por un periodo igual, con justificación notificada **dentro** del plazo original                     | [1, art. 31]; [2, art. 97]                     |
 | **Meta interna**                                      | Responder en **10 días hábiles** y ejecutar en **5**                                                          | Propuesta                                      |
 | Si la persona no queda conforme o no recibe respuesta | Puede pedir protección a la SABG dentro de los 15 días siguientes a la respuesta, o desde que venció el plazo | [1, art. 40]                                   |
-| La SABG da traslado a Estreno                         | **15 días** para responder, ofrecer pruebas y manifestar lo que convenga; **5** para alegatos                 | [1, art. 40]                                   |
+| La SABG da traslado a speeaking                       | **15 días** para responder, ofrecer pruebas y manifestar lo que convenga; **5** para alegatos                 | [1, art. 40]                                   |
 | Resolución de la SABG                                 | **50 días**, ampliable una vez                                                                                | [1, art. 42]                                   |
 
 ### 3.5 Paso a paso
@@ -394,7 +394,7 @@ autenticación ya establecidos por el responsable [2, art. 89 fr. I]. Si la soli
 canal de atención, la identidad se acredita con los medios que el responsable usa para identificar
 a sus clientes, siempre que la garanticen [2, art. 91].
 
-**Propuesta para Estreno** (minimiza datos; **[VERIFICAR CON ABOGADO]** que basta):
+**Propuesta para speeaking** (minimiza datos; **[VERIFICAR CON ABOGADO]** que basta):
 
 | Caso                                                                        | Cómo se verifica                                                                                                                                                                                          |
 | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -409,7 +409,7 @@ identificación en la base de datos de la app.
 
 ### 3.7 Cómo se atiende cada derecho hoy (a mano)
 
-| Derecho o solicitud                                           | Qué hacer en Estreno                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Derecho o solicitud                                           | Qué hacer en speeaking                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Acceso** [1, arts. 22 y 32]                                 | Consulta de sólo lectura de todas las tablas de la sección 2 con el `userId`, incluida `analytics_events`, más la lista de fotos. Entregar un archivo legible (JSON y un resumen en español) **sin** hash de contraseña, tokens ni secretos, y **sin** datos de terceros (p. ej., quién reportó a esa persona) [1, art. 33 fr. III]. Explicar los códigos y siglas [2, art. 98]. Agregar las condiciones del tratamiento con la liga al aviso [1, art. 22]. |
 | **Rectificación** [1, arts. 23 y 30]                          | La mayoría se corrige en Ajustes o en Studio. Si no, corregir en la base con la documentación que la sustente [2, art. 104]. Avisar a los vendedores que recibieron el dato (plantilla P11) [1, art. 24 párr. 4].                                                                                                                                                                                                                                           |
@@ -417,18 +417,18 @@ identificación en la base de datos de la app.
 | **Oposición** [1, art. 26]                                    | Personalización: `setPersonalization(false)` (desliga toda la actividad previa). «Aparecer en sugerencias»: `setDiscoverable(false)`. Correos de marketing: baja. No procede contra un tratamiento exigido por ley [1, art. 26].                                                                                                                                                                                                                            |
 | **Oposición a una decisión automatizada** [1, art. 26 fr. II] | Si un vendedor se opone a la leyenda de riesgo de falsificación, una persona del equipo revisa el caso a mano y decide; se anota en la bitácora de moderación. Ver [00 §2.9].                                                                                                                                                                                                                                                                               |
 | **Revocación del consentimiento** [1, art. 7]                 | Los mismos interruptores de Ajustes; cada cambio queda en `user_consents`.                                                                                                                                                                                                                                                                                                                                                                                  |
-| **Información de mercadotecnia** [3, art. 16]                 | Si Estreno usa datos con fines de mercadotecnia, cualquiera puede preguntar si tenemos información suya, con quién la compartimos y qué recomendaciones se hicieron. Se responde en **30 días** y se corrige en otros 30. Se atiende con este mismo procedimiento.                                                                                                                                                                                          |
+| **Información de mercadotecnia** [3, art. 16]                 | Si speeaking usa datos con fines de mercadotecnia, cualquiera puede preguntar si tenemos información suya, con quién la compartimos y qué recomendaciones se hicieron. Se responde en **30 días** y se corrige en otros 30. Se atiende con este mismo procedimiento.                                                                                                                                                                                        |
 
 ### 3.8 Negativas y excepciones
 
 - **Causas para negar** [1, art. 33]:
   - la persona o su representante no están acreditados;
-  - los datos no están en poder de Estreno;
+  - los datos no están en poder de speeaking;
   - se lesionan derechos de un tercero;
   - hay un impedimento legal o una resolución de autoridad;
   - la rectificación, cancelación u oposición ya se hizo.
 - **Negativa parcial:** se atiende lo que sí procede [1, art. 33].
-- **No se cancela** cuando aplica el art. 25 [1]; en Estreno, lo más común será un pedido en curso o
+- **No se cancela** cuando aplica el art. 25 [1]; en speeaking, lo más común será un pedido en curso o
   una retención legal (2.14).
 - **Siempre se responde,** aunque no haya datos de la persona [2, art. 98]. Si quien recibe la
   solicitud no es el responsable, basta decirlo [1, art. 32].
@@ -438,7 +438,7 @@ identificación en la base de datos de la app.
 ### 3.9 Casos especiales
 
 - **Datos que tiene un vendedor.** El vendedor que recibió nombre, domicilio y teléfono en un pedido
-  es un tercero que recibió una transferencia [00 §2.7]. Estreno atiende lo que está en su poder y
+  es un tercero que recibió una transferencia [00 §2.7]. speeaking atiende lo que está en su poder y
   avisa al vendedor de la rectificación o cancelación [1, art. 24 párr. 4]. Si la persona quiere
   ejercer derechos frente al vendedor, se le dan los datos de contacto que el vendedor autorizó.
 - **Solicitudes masivas o abusivas:** no hay en la ley una causa de negativa por «abuso»; se
@@ -607,7 +607,7 @@ puede preferir «usted». Cambiar lo que va entre corchetes.
 >
 > Por un pedido del [FECHA] recibiste el nombre, domicilio o teléfono de [NOMBRE DE LA PERSONA
 > COMPRADORA]. Esa persona ejerció su derecho de [RECTIFICACIÓN: el dato correcto es … / CANCELACIÓN]
-> ante Estreno. Como indican los términos para vendedores, te pedimos
+> ante speeaking. Como indican los términos para vendedores, te pedimos
 > [CORREGIRLO / BORRARLO] de tus registros (chats, libretas, hojas de cálculo) salvo que lo necesites
 > para cumplir una obligación legal, y confirmarnos por este medio.
 
@@ -651,7 +651,7 @@ puede preferir «usted». Cambiar lo que va entre corchetes.
 cobros, extorsión) o la persona (acoso, exposición del domicilio, daño a la reputación)
 **[VERIFICAR CON ABOGADO]**.
 
-| Nivel            | Ejemplos en Estreno                                                                                                                                                                                           | ¿Aviso a las personas?                |
+| Nivel            | Ejemplos en speeaking                                                                                                                                                                                         | ¿Aviso a las personas?                |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | **S1 · Crítico** | Acceso no autorizado confirmado a la base; fuga de domicilios y teléfonos de pedidos; fotos de comprobantes expuestas; secretos de producción publicados (`BETTER_AUTH_SECRET`, `DATABASE_URL`, llaves de R2) | Sí, casi seguro                       |
 | **S2 · Alto**    | Toma de varias cuentas; una foto privada accesible para otra persona; un encargado avisa de una vulneración que incluye nuestros datos                                                                        | Probable: decidir con el abogado      |
@@ -738,7 +738,7 @@ app, rotar lo que tuviera guardado y revisar los accesos recientes.
 
 **Plantilla V1 · Aviso de vulneración**
 
-> Asunto: Aviso importante sobre la seguridad de tus datos en Estreno
+> Asunto: Aviso importante sobre la seguridad de tus datos en speeaking
 >
 > Hola, [NOMBRE]:
 >
@@ -749,11 +749,11 @@ app, rotar lo que tuviera guardado y revisar los accesos recientes.
 > [ACCIÓN INMEDIATA].
 >
 > **Qué datos tuyos se vieron afectados.** [LISTA EXACTA: nombre, domicilio de entrega, teléfono,
-> fotos de comprobantes…]. [Lo que NO se afectó: p. ej., tu contraseña no se guarda en texto y Estreno
+> fotos de comprobantes…]. [Lo que NO se afectó: p. ej., tu contraseña no se guarda en texto y speeaking
 > no guarda datos de tarjetas.]
 >
 > **Qué te recomendamos hacer.** [RECOMENDACIONES CONCRETAS: desconfía de llamadas o mensajes que
-> digan venir de Estreno y te pidan pagos o códigos; cambia tu contraseña si la usas en otros
+> digan venir de speeaking y te pidan pagos o códigos; cambia tu contraseña si la usas en otros
 > sitios…].
 >
 > **Qué hicimos.** [ACCIONES CORRECTIVAS INMEDIATAS: cerramos el acceso, cambiamos todas las
@@ -827,7 +827,7 @@ Plazo: 2.8.
     - el mismo artículo prevé pedir la **conservación inmediata** de datos hasta por 90 días a los
       sujetos obligados de la ley de telecomunicaciones [7, art. 303].
 
-    Si Estreno es un «proveedor de servicios de aplicaciones y contenidos» para estos efectos:
+    Si speeaking es un «proveedor de servicios de aplicaciones y contenidos» para estos efectos:
     **[VERIFICAR CON ABOGADO]**.
 
   - **Datos personales:** entregarlos a una autoridad sin consentimiento cabe cuando hay orden
@@ -871,7 +871,7 @@ Plazo: 2.8.
    no fija horas). Se usa «ocultar» en `/admin/moderacion`, que deja la bitácora.
 3. **Avisar a la persona usuaria** con el motivo y cómo presentar un contra-aviso (plantilla R2).
 4. **Contra-aviso:** la persona demuestra titularidad o autorización, o justifica el uso en una
-   limitación o excepción de la ley. Estreno informa al titular original y **restaura** el contenido,
+   limitación o excepción de la ley. speeaking informa al titular original y **restaura** el contenido,
    salvo que el titular inicie un procedimiento judicial o administrativo, una denuncia penal o un
    mecanismo alterno de solución de controversias en **15 días hábiles** desde que se le informó [4,
    art. 114 Octies fr. III].
@@ -883,7 +883,7 @@ Plazo: 2.8.
 
 La ley no trae para marcas un procedimiento de aviso y retiro como el de derechos de autor [00 §4.1]
 **[VERIFICAR CON ABOGADO]**. El borrador de términos ya promete aplicar a marcas «el mismo
-procedimiento» (02, A15). Tiene sentido: el IMPI puede ordenar a Estreno retirar contenidos [5, art.
+procedimiento» (02, A15). Tiene sentido: el IMPI puede ordenar a speeaking retirar contenidos [5, art.
 344 fr. VII] y el procedimiento encaja con P14 (riesgo, nunca acusar).
 
 1. **Qué debe traer el aviso** (además del anexo 1 de 02):
@@ -903,7 +903,7 @@ procedimiento» (02, A15). Tiene sentido: el IMPI puede ordenar a Estreno retira
    acredite, dentro de **15 días hábiles**, que inició un procedimiento ante el IMPI o un juez, una
    denuncia o un mecanismo alterno. Es el mismo plazo de derechos de autor, adoptado de forma
    voluntaria (02, A15).
-6. **Decide una persona, nunca la IA** (ADR-036). Estreno no resuelve si hubo infracción: eso le toca
+6. **Decide una persona, nunca la IA** (ADR-036). speeaking no resuelve si hubo infracción: eso le toca
    al IMPI o a un juez. Se informa a ambas partes de esa vía.
 7. **Reincidencia:** aplicar 5.8.
 
@@ -927,7 +927,7 @@ procedimiento» (02, A15). Tiene sentido: el IMPI puede ordenar a Estreno retira
 | ¿Es un documento escrito de una autoridad identificable, con número, firma y fecha?                   | No se entrega. Se pide por escrito.                                              |
 | ¿Se pudo confirmar por un canal oficial independiente que la autoridad lo emitió?                     | No se entrega hasta confirmarlo.                                                 |
 | ¿Está **fundado y motivado** y la autoridad es competente [1, art. 9 fr. VII]?                        | Consultar al abogado antes de responder.                                         |
-| Si pide **comunicaciones privadas**, ¿trae autorización de un juez federal [7, art. 291]?             | No se entrega. Hoy Estreno no tiene mensajes directos.                           |
+| Si pide **comunicaciones privadas**, ¿trae autorización de un juez federal [7, art. 291]?             | No se entrega. Hoy speeaking no tiene mensajes directos.                         |
 | Si pide **datos conservados**, ¿trae orden del juez de control o es el caso urgente del art. 303 [7]? | Consultar al abogado.                                                            |
 | ¿Pide solo lo necesario (cuentas, fechas, tipo de dato concretos)?                                    | Entregar solo lo que pide; si es desproporcionado, el abogado pide que se acote. |
 
@@ -1022,7 +1022,7 @@ la cuenta de inmediato. Lo que este procedimiento agrega para aplicarla:
 >
 > [TITULAR], que tiene registrada la marca [MARCA] ante el IMPI, nos avisó que tu producto
 > «[TÍTULO]» podría no ser original. Lo revisamos y, por ahora, dejamos de mostrarlo. **No te
-> estamos acusando:** Estreno no decide si hubo una infracción; eso le corresponde al IMPI o a un
+> estamos acusando:** speeaking no decide si hubo una infracción; eso le corresponde al IMPI o a un
 > juez.
 >
 > Qué puedes hacer:
@@ -1206,7 +1206,7 @@ decidir antes del vendedor 11).
 | 7   | **Plan de vulneraciones** (sección 4): hoja de contactos y simulacro.                                                                                                                                                                                                                      | P0        | Antes del primer despliegue público    | 1          |
 | 8   | **Conservación:** tareas T1–T8 (2.13) antes de publicar los plazos en el aviso.                                                                                                                                                                                                            | P0        | Olas 0–1                               | Desarrollo |
 | 9   | **Canal de avisos de infracción** y política de reincidentes publicada en los términos (sección 5).                                                                                                                                                                                        | P0        | Antes de abrir                         | 1          |
-| 10  | **Búsqueda en el IMPI** del nombre «Estreno» y variantes: Acervo de Marcas y MARCia; clases en ClasNiza. Clases probables: servicios de mercado en línea, software y redes sociales en línea **[VERIFICAR CON ABOGADO las clases exactas]** [14].                                          | P1        | Día 21 (ADR-033 #16)                   | —          |
+| 10  | **Búsqueda en el IMPI** del nombre «speeaking» y variantes: Acervo de Marcas y MARCia; clases en ClasNiza. Clases probables: servicios de mercado en línea, software y redes sociales en línea **[VERIFICAR CON ABOGADO las clases exactas]** [14].                                        | P1        | Día 21 (ADR-033 #16)                   | —          |
 | 11  | **Solicitud de registro de marca** si la búsqueda sale limpia: en línea, **$2,695.18 + IVA por clase**, vigencia de **10 años**, trámite de **4 a 6 meses** según el IMPI [14]. El plan citaba $2,994.62 + IVA de una fuente secundaria; confirmar la tarifa vigente al pagar.             | P1        | Después de 10                          | 10         |
 | 12  | **Descuento de 90 % del IMPI** para personas de 12 a 29 años nacidas en México: campaña «Marcas para el Bienestar 2026-III Jóvenes», del 5 al 16 de octubre de 2026, con autorización de la secretaría de desarrollo económico del estado [15]. Solo si el fundador cumple los requisitos. | P1        | 5–16 de octubre de 2026                | 10         |
 | 13  | **Decidir la entidad** (7.1) con el contador; si es SAS: denominación, e.firma de accionistas, constitución en línea, RFC de la SAS, cuenta bancaria, y nuevo aviso y términos con la SAS como responsable.                                                                                | P1        | Decisión día 25; antes del vendedor 11 | 1, 3       |
@@ -1220,7 +1220,7 @@ decidir antes del vendedor 11).
 1. Persona física en el piloto: ¿qué régimen y qué actividad registrar, si la plataforma no cobra
    nada todavía?
 2. ¿Los pedidos entre compradores y vendedores deben conservarse como documentación fiscal de
-   Estreno aunque no pasen por ella? (2.5)
+   speeaking aunque no pasen por ella? (2.5)
 3. ¿Qué plazo de conservación aplica al libro de la plataforma y a los costos de IA? (2.9)
 4. SAS: ¿conviene el RESICO de personas morales? ¿Qué cambia al rebasar el tope de la SAS?
 5. Gastos en dólares con proveedores extranjeros (Vercel, Neon, Cloudflare, OpenRouter): ¿qué
@@ -1234,10 +1234,10 @@ decidir antes del vendedor 11).
    vulneraciones)? ¿Las remisiones a la numeración de la ley de 2010 se leen como proponemos (p. ej.,
    «art. 32» → art. 31)? (3.1, 6.1)
 2. **Periodo de bloqueo** tras cancelar una cuenta: ¿10 años (Código de Comercio arts. 49 y 1047), 1
-   año (LFPC art. 14) u otro? ¿Estreno es «comerciante» para el art. 49? (2.1, 2.3)
+   año (LFPC art. 14) u otro? ¿speeaking es «comerciante» para el art. 49? (2.1, 2.3)
 3. ¿Se puede conservar, bloqueada, la **prueba de aceptación de términos** tras cancelar la cuenta?
    ¿Cuánto tiempo? ¿Basta un hash del correo? (2.3)
-4. **Pedidos:** ¿5 años sin datos de contacto es razonable? ¿Qué plazo aplica si Estreno no es parte
+4. **Pedidos:** ¿5 años sin datos de contacto es razonable? ¿Qué plazo aplica si speeaking no es parte
    de la compraventa? (2.5)
 5. **Copia del domicilio en el pedido:** ¿90 días después de la entrega es suficiente? (2.5)
 6. **Costo privado del vendedor:** ¿es dato patrimonial que pide consentimiento expreso? (2.4)
@@ -1253,16 +1253,16 @@ decidir antes del vendedor 11).
     (5.3)
 13. **Marcas:** ¿conviene aplicarles de forma voluntaria el aviso, contra-aviso y plazo de 15 días
     hábiles de derechos de autor, como ya promete el borrador de términos? ¿Retirar un producto por
-    un aviso de marca expone a Estreno frente al vendedor? (5.4)
+    un aviso de marca expone a speeaking frente al vendedor? (5.4)
 14. **Órdenes del IMPI:** ¿cómo validar su autenticidad? ¿Se puede avisar al vendedor? (5.5)
-15. **Autoridades penales:** ¿Estreno es «proveedor de servicios de aplicaciones y contenidos» para
+15. **Autoridades penales:** ¿speeaking es «proveedor de servicios de aplicaciones y contenidos» para
     el art. 303 del CNPP? ¿Debe conservar datos 90 días si se lo piden? ¿Puede avisar a la persona
     usuaria? (5.1, 5.6)
 16. **No hay ley general** de responsabilidad de plataformas por contenido de usuarios: confirmarlo.
     (5.1)
 17. **Contratos de encargado de adhesión y extranjeros:** ¿cumplen el art. 52 del Reglamento? ¿Qué
     hacer con los huecos de 6.3 (p. ej., Vercel no dice nada de solicitudes de autoridades)? (6.3)
-18. **Clases de Niza** para registrar «Estreno». (7.2 #10)
+18. **Clases de Niza** para registrar «speeaking». (7.2 #10)
 19. **Cambio de responsable** de la persona física a la SAS: ¿cómo se pasan las bases de datos y qué
     se avisa a las personas usuarias? (7.1)
 20. **Sanciones de vendedores:** ¿se puede conservar el dato de que existió una suspensión después de

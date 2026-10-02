@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 import { ProductCard } from "@/modules/catalog/components/product-card";
 import { listCollaborationProducts } from "@/modules/catalog/queries";
 import { CreatorPostList } from "@/modules/creators/components/collaboration-list";
@@ -14,8 +15,7 @@ import { getViewer } from "@/modules/identity/session";
 
 export const metadata: Metadata = {
   title: "Creadores",
-  description:
-    "Recomienda productos de las tiendas de Estreno en tus fotos y videos: quien te ve se los prueba y los compra.",
+  description: `Recomienda productos de las tiendas de ${siteConfig.name} en tus fotos y videos: quien te ve se los prueba y los compra.`,
 };
 
 const STEPS = [
@@ -55,7 +55,7 @@ export default async function CreatorsPage() {
     <>
       <PageHeader
         title="Creadores"
-        description="Recomienda productos de las tiendas de Estreno en tus fotos y videos."
+        description={`Recomienda productos de las tiendas de ${siteConfig.name} en tus fotos y videos.`}
       />
       <div className="flex flex-col gap-8 px-4 pb-8 md:px-0">
         <section aria-labelledby="creadores-como" className="flex flex-col gap-3">
@@ -80,9 +80,9 @@ export default async function CreatorsPage() {
           <p className="flex items-start gap-2 rounded-2xl bg-secondary px-4 py-3 text-sm">
             <Handshake aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             <span>
-              Estreno todavía no paga ni cobra comisiones: si acuerdas algo con una tienda, es entre
-              ustedes. Si recibes algo por publicar (pago, producto o comisión), márcalo como
-              colaboración: la ley pide que la publicidad se identifique.
+              {siteConfig.name} todavía no paga ni cobra comisiones: si acuerdas algo con una
+              tienda, es entre ustedes. Si recibes algo por publicar (pago, producto o comisión),
+              márcalo como colaboración: la ley pide que la publicidad se identifique.
             </span>
           </p>
         </section>

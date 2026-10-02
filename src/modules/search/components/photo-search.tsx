@@ -5,6 +5,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 import { shrinkImage } from "@/lib/upload-image";
 import { cn } from "@/lib/utils";
 import { SIMULATED_OUTPUT_LABEL } from "@/modules/ai/tasks/simulation";
@@ -32,7 +33,7 @@ async function shrink(file: File): Promise<Blob> {
 
 /**
  * Buscar por foto (ADR-061): eliges una foto (de la galería o la cámara), vemos qué ropa u objetos
- * hay y te mostramos parecidos de verdad en Estreno. La foto no se guarda y nunca se reconoce a
+ * hay y te mostramos parecidos de verdad en speeaking. La foto no se guarda y nunca se reconoce a
  * nadie: eso se dice antes de elegirla.
  */
 export function PhotoSearch() {
@@ -90,7 +91,8 @@ export function PhotoSearch() {
             {preview ? "¿Otra foto?" : "Sube la foto de algo que te gustó"}
           </p>
           <p className="text-sm text-muted-foreground">
-            Un outfit, unos tenis, una lámpara: buscamos parecidos en las tiendas de Estreno.
+            Un outfit, unos tenis, una lámpara: buscamos parecidos en las tiendas de{" "}
+            {siteConfig.name}.
           </p>
         </div>
         <Button type="button" onClick={() => inputRef.current?.click()} disabled={pending}>
@@ -184,8 +186,8 @@ export function PhotoSearch() {
             </ul>
           ) : current ? (
             <p className="rounded-2xl bg-secondary px-4 py-3 text-sm">
-              Todavía no hay nada parecido a «{current.label}» en las tiendas de Estreno. Prueba con
-              otra cosa de tu foto o con otra foto.
+              Todavía no hay nada parecido a «{current.label}» en las tiendas de {siteConfig.name}.
+              Prueba con otra cosa de tu foto o con otra foto.
             </p>
           ) : null}
         </section>

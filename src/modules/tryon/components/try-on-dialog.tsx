@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { siteConfig } from "@/config/site";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addToCartAction, buyNowAction } from "@/modules/commerce/actions";
@@ -32,7 +33,7 @@ export type DialogProduct = { id: string; slug: string; title: string; priceCent
 /**
  * «Ver cómo me veo» (ADR-046): desde la ficha de una prenda, sube tu foto (o elige una guardada),
  * un botón, y la simulación aparece aquí mismo. Después: comprar, agregarle piezas que la
- * completan o probar otra foto. Quien compra nunca paga: la prueba la pone la tienda o Estreno.
+ * completan o probar otra foto. Quien compra nunca paga: la prueba la pone la tienda o speeaking.
  */
 export function TryOnDialog({
   product,
@@ -139,7 +140,7 @@ export function TryOnDialog({
               ? `${TRY_ON_DISCLAIMER} ${describeFunding(result.funding)}; solo tú la ves.`
               : funded
                 ? `Con tu foto y esta prenda armamos una simulación con IA. Es gratis para ti: la pone ${
-                    status === "sponsored" ? "la tienda" : "Estreno"
+                    status === "sponsored" ? "la tienda" : siteConfig.name
                   }.`
                 : "Esta tienda todavía no activa «Ver cómo me veo»."}
           </DialogDescription>

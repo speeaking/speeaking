@@ -33,12 +33,12 @@ export function onboardingPath({ join, next }: { join: readonly string[]; next: 
 export function unwrapOnboardingNext(next: string): { join: string[]; next: string } | null {
   const safe = safeRedirectPath(next, "");
   if (!safe) return null;
-  const url = new URL(safe, "http://vendeia.local");
+  const url = new URL(safe, "http://speeaking.local");
   if (url.pathname !== "/bienvenida") return null;
   const inner = safeRedirectPath(url.searchParams.get("next"), "");
   return {
     join: parseJoinSlugs(url.searchParams.getAll(JOIN_PARAM)),
     // Nunca de vuelta al onboarding (evita ciclos).
-    next: inner && new URL(inner, "http://vendeia.local").pathname !== "/bienvenida" ? inner : "",
+    next: inner && new URL(inner, "http://speeaking.local").pathname !== "/bienvenida" ? inner : "",
   };
 }

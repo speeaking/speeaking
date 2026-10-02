@@ -1,6 +1,6 @@
 # Principios de producto
 
-> **Estreno** es la marca de la plataforma (ADR-041; dominio e IMPI pendientes). «Sube y vende» es la
+> **speeaking** es la marca de la plataforma (ADR-070; dominio e IMPI pendientes). «Sube y vende» es la
 > función para vendedores y «Pruébatelo», «Crea mi look» y «Completa mi look» las de compra asistida.
 > Mercado inicial: México (MXN, es-MX).
 
@@ -195,7 +195,7 @@ decimos «falso» ni «certificado».
    - **Reportar** en productos y publicaciones (posible falsificación, estafa, prohibido, spam,
      ofensivo, otro): con límite de frecuencia, uno por persona y objetivo, anónimo para el vendedor.
    - **Cola del equipo** en `/admin/moderacion`: revisar el comprobante («Comprobante revisado por
-     Estreno», que dice explícitamente que no es certificación ni garantía), rechazar la
+     speeaking», que dice explícitamente que no es certificación ni garantía), rechazar la
      declaración (queda genérico), ocultar, restaurar y descartar reportes. Todo queda en la
      bitácora con quién lo hizo. Oculto = fuera del feed, la búsqueda, Comprar, «similares»,
      Guardados, los perfiles y su página (salvo su dueño y el equipo).

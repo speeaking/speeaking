@@ -279,7 +279,7 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
       </div>
 
       <div className={cn(shellGrid, "hidden h-16 items-center md:grid")}>
-        <Logo className="justify-self-center nav-open:justify-self-start [&>span]:hidden nav-open:[&>span]:inline" />
+        <Logo collapsible className="justify-self-center nav-open:justify-self-start" />
         {/* En xl este contenedor desaparece y sus hijos ocupan las columnas 2 y 3 de la rejilla. */}
         <div className="flex min-w-0 items-center gap-3 xl:contents">
           <Suspense fallback={<div className="h-11 min-w-0 flex-1 rounded-full bg-secondary" />}>

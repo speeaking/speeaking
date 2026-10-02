@@ -72,10 +72,9 @@ export default function PrivacyNoticePage() {
         </ul>
       </section>
       <p>
-        {siteConfig.name} (nombre provisional) es responsable del tratamiento de tus datos
-        personales conforme a la Ley Federal de Protección de Datos Personales en Posesión de los
-        Particulares. Los datos del responsable y del domicilio se completarán antes del
-        lanzamiento.
+        {siteConfig.name} es responsable del tratamiento de tus datos personales conforme a la Ley
+        Federal de Protección de Datos Personales en Posesión de los Particulares. Los datos del
+        responsable y del domicilio se completarán antes del lanzamiento.
       </p>
 
       <h2>Datos que tratamos</h2>

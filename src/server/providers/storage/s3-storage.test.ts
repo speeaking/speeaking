@@ -17,7 +17,7 @@ import { InvalidStorageKeyError } from "./types";
 
 const config: S3StorageConfig = {
   endpoint: "https://0123456789abcdef.r2.cloudflarestorage.com",
-  bucket: "vendeia-media",
+  bucket: "speeaking-media",
   region: "auto",
   accessKeyId: "a".repeat(32),
   secretAccessKey: "secreto-de-prueba-".repeat(4),
@@ -78,7 +78,7 @@ describe("S3StorageProvider (R2) con el cliente del SDK", () => {
     expect(requests).toHaveLength(1);
     const [request] = requests;
     expect(request?.method).toBe("PUT");
-    expect(`${request?.hostname}${request?.path}`).toContain("vendeia-media");
+    expect(`${request?.hostname}${request?.path}`).toContain("speeaking-media");
     expect(request?.path.endsWith("/images/2026/09/foto.webp")).toBe(true);
     expect(header(request, "content-type")).toBe("image/webp");
     expect(header(request, "content-length")).toBe(String(data.length));

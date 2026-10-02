@@ -104,7 +104,7 @@ describe("LocalVideoStore (desarrollo)", () => {
 describe("S3VideoStore (R2)", () => {
   const config = {
     endpoint: "https://cuenta.r2.cloudflarestorage.com",
-    bucket: "vendeia-media",
+    bucket: "speeaking-media",
     region: "auto",
     accessKeyId: "llave-de-prueba",
     secretAccessKey: "secreto-de-prueba",
@@ -119,7 +119,7 @@ describe("S3VideoStore (R2)", () => {
 
     // Con la ruta: el origen es el de `S3_ENDPOINT`, el único que permite la CSP.
     expect(url.origin).toBe("https://cuenta.r2.cloudflarestorage.com");
-    expect(url.pathname).toBe(`/vendeia-media/${KEY}`);
+    expect(url.pathname).toBe(`/speeaking-media/${KEY}`);
     expect(url.searchParams.get("X-Amz-SignedHeaders")?.split(";")).toEqual(
       expect.arrayContaining(["content-length", "content-type", "host"]),
     );

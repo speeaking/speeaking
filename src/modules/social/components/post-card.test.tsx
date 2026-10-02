@@ -404,7 +404,7 @@ describe("PostCard: cabecera", () => {
           author: {
             ...post().author,
             username: "equipo.gaming",
-            displayName: "Equipo VendeIA",
+            displayName: "Equipo speeaking",
             isEditorial: true,
           },
         })}
@@ -414,13 +414,13 @@ describe("PostCard: cabecera", () => {
     const top = header();
     expect(within(top).getByRole("link", { name: "Gaming" })).toHaveAttribute("href", "/c/gaming");
     expect(within(top).getByText("Editorial")).toBeInTheDocument();
-    expect(within(top).getByRole("link", { name: "Equipo VendeIA" })).toHaveAttribute(
+    expect(within(top).getByRole("link", { name: "Equipo speeaking" })).toHaveAttribute(
       "href",
       "/u/equipo.gaming",
     );
     expect(within(top).getByText("Con ayuda de IA")).toBeInTheDocument();
     expect(within(top).queryByText("EV")).not.toBeInTheDocument();
-    expect(screen.getByRole("article", { name: "Gaming Equipo VendeIA" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Gaming Equipo speeaking" })).toBeInTheDocument();
   });
 
   it("sin IA no dice «Con ayuda de IA»", () => {
@@ -752,7 +752,7 @@ describe("PostCard: variantes", () => {
   const editorial = {
     ...post().author,
     username: "equipo.gaming",
-    displayName: "Equipo VendeIA",
+    displayName: "Equipo speeaking",
     isEditorial: true,
   };
 

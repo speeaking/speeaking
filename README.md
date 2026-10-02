@@ -1,9 +1,9 @@
-# Estreno
+# speeaking
 
-Red social de entretenimiento y descubrimiento donde el comercio aparece de forma natural. Lema:
-«Descubre, pruébatelo, estrena». Para quien compra: «Dime qué necesitas y te ayudo a encontrarlo,
-combinarlo y verlo puesto». Para quien vende: «Sube una foto, pon tu precio y te ayudamos a
-presentarlo y a encontrar compradores».
+Red social de conversación y descubrimiento donde el comercio aparece de forma natural. Lema:
+«Donde las conversaciones cobran vida». Para quien compra: «Dime qué necesitas y te ayudo a
+encontrarlo, combinarlo y verlo puesto». Para quien vende: «Sube una foto, pon tu precio y te
+ayudamos a presentarlo y a encontrar compradores».
 
 - **Mercado inicial:** México (MXN), piloto en la Ciudad de México.
 - **Estado:** MVP 0.1 — Sprint 1 completo, núcleo de compra del Sprint 2 y primera versión de la
@@ -24,12 +24,13 @@ presentarlo y a encontrar compradores».
   y comprar el look.
 - «Ver cómo me veo»: desde la ficha de una prenda, subir tu foto (privada, con consentimiento, se
   borra a los 30 días) y ver la simulación en un diálogo, con «Comprar ahora» y «Agrégale…» para
-  completar el look; gratis para quien compra: la paga la tienda (saldo con tope diario) o Estreno en
-  las primeras pruebas de cada tienda (`/precios`).
+  completar el look; gratis para quien compra: la paga la tienda (saldo con tope diario) o speeaking
+  en las primeras pruebas de cada tienda (`/precios`).
 - Tiendas: saldo con recargas Arranque, Impulso y Tienda pro, «Ver cómo me veo» activo y producto
   destacado por día, que sale como «Patrocinado» en la columna derecha, en las fichas y en Comprar.
 - Mensajes privados: escribirle a alguien desde su perfil o preguntarle a una tienda desde un
-  producto; no leídos en la barra superior y reporte desde el hilo.
+  producto; la bandeja y la conversación se abren ahí mismo desde la barra superior, y desde el
+  hilo se puede ver el perfil, bloquear los mensajes o reportar.
 - Confianza: `/seguridad` explica qué se guarda y cómo, `/apoya` qué cuesta el proyecto y cómo
   apoyarlo (liga externa opcional, `SUPPORT_URL`), y la cuenta se borra completa desde Ajustes.
 - Entrar con Google (opcional): con `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` aparece «Continuar

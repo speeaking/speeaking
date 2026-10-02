@@ -372,8 +372,8 @@ La respuesta es el resumen de cada paso (sin datos personales).
   un archivo que solo lea el usuario del cron (nunca en la línea del crontab ni en el repositorio):
 
   ```
-  # /etc/cron.d/vendeia (el servidor en UTC)
-  15 7 * * * vendeia curl -fsS -X POST -H "Authorization: Bearer $(cat /etc/vendeia/cron-secret)" https://<dominio>/api/cron/daily -o /dev/null
+  # /etc/cron.d/speeaking (el servidor en UTC)
+  15 7 * * * speeaking curl -fsS -X POST -H "Authorization: Bearer $(cat /etc/speeaking/cron-secret)" https://<dominio>/api/cron/daily -o /dev/null
   ```
 
   `pnpm ops:daily` también sirve en el mismo servidor de la app (usa `DATABASE_URL` y el
@@ -516,7 +516,7 @@ Tienda  ──▶ /studio/saldo (saldo, «Ver cómo me veo» activo, recargas) �
   correo/usuario (mejor que una cubeta compartida que bloquearía a todos). Con N, la IP es la N-ésima
   entrada desde la derecha (lo que agregaron los N proxies); cadena más corta o valor inválido → sin
   IP. Solo es seguro si el origen no se alcanza sin pasar por esos proxies. Better Auth usa la misma
-  IP: lee solo `x-vendeia-client-ip` (`authIpAddressOptions`), que `withClientIpHeader` y
+  IP: lee solo `x-speeaking-client-ip` (`authIpAddressOptions`), que `withClientIpHeader` y
   `withClientIpRequest` reescriben siempre (descartan el valor del cliente) antes de `auth.api.*` y del
   handler de `/api/auth`. En producción se avisa una vez en el log si no hay IP confiable.
 - Variables de entorno validadas al arrancar; los errores nunca imprimen valores (prueba incluida).

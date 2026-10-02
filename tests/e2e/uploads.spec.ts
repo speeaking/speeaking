@@ -73,7 +73,7 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
     const headers = {
       Cookie: cookie,
       Origin: baseURL!,
-      "Content-Type": "multipart/form-data; boundary=----vendeia",
+      "Content-Type": "multipart/form-data; boundary=----speeaking",
     };
 
     // 200 MB en stream (Transfer-Encoding: chunked). Antes se leía completo (~800 MB de RAM) → 422.
@@ -111,7 +111,7 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
     expect(notAForm.status()).toBe(415);
 
     // ~6 MB de partes diminutas: el parser de formData las recorría en el hilo principal (~0.3 s).
-    const boundary = "----vendeia";
+    const boundary = "----speeaking";
     const parts = Array.from(
       { length: 100_000 },
       (_, index) =>

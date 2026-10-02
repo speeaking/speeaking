@@ -6,7 +6,7 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 /**
- * «Apoya a Estreno» (ADR-048): mientras el proyecto se formaliza, quien quiera puede apoyarlo con
+ * «Apoya a speeaking» (ADR-048): mientras el proyecto se formaliza, quien quiera puede apoyarlo con
  * una liga externa de pago. El dinero nunca pasa por la plataforma; aquí solo hay una liga y la
  * página /apoya que explica en qué se usa.
  */

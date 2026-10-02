@@ -19,7 +19,7 @@ una persona del equipo decide qué se publica. Nada sale sin aprobación.
   veces, como la cuenta editorial y con `isAiGenerated`), `discardDraft` y `getDesk`. Todo lo del
   equipo pasa por `assertAdmin`. Sin modelo de verdad (producción con el simulador) o con
   `editorialDesk` apagado, no redacta.
-- **La cuenta editorial** (`account.ts`): «Equipo Estreno», `equipo.<comunidad>`, correo `.invalid`
+- **La cuenta editorial** (`account.ts`): «Equipo speeaking», `equipo.<comunidad>`, correo `.invalid`
   y sin contraseña; la misma del seed. En producción se crea al publicar el primer borrador. Solo se
   publica con una cuenta de perfil editorial y sin forma de iniciar sesión
   (`EditorialAccountConflictError`); nadie puede registrarse con un correo `.invalid`

@@ -27,7 +27,7 @@ export type PeopleSuggestionsVariant = "rail" | "feed";
 
 const TITLE = "Gente de tus comunidades";
 /** El carrusel del feed se puede cerrar y no vuelve en la misma sesión del navegador. */
-const CLOSED_KEY = "vendeia:gente-de-tus-comunidades:cerrado";
+const CLOSED_KEY = "speeaking:gente-de-tus-comunidades:cerrado";
 
 type Kept = ReadonlyMap<string, { person: PersonSuggestionDTO; index: number }>;
 
