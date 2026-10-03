@@ -1268,6 +1268,8 @@ model Checkout {
   totalCents    Int
   currency      String         @default("MXN") @db.Char(3)
   paymentMethod PaymentMethod
+  /// Retirado del historial personal del comprador; el registro de pago se conserva.
+  buyerHiddenAt DateTime?      @db.Timestamptz(3)
   expiresAt     DateTime       @db.Timestamptz(3)
   createdAt     DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime       @updatedAt @db.Timestamptz(3)
@@ -1417,7 +1419,8 @@ model PlatformLedgerEntry {
 
 /// Conversación entre dos personas. Los ids van ordenados (`userAId` < `userBId`) para que cada par
 /// tenga una sola conversación. `aReadAt`/`bReadAt`: hasta cuándo leyó cada quien (no leídos =
-/// mensajes del otro después de esa fecha). Sin borrado lógico: al borrar la cuenta se van en cascada.
+/// mensajes del otro después de esa fecha). Cada quien puede limpiar su historial; al borrar la
+/// cuenta, la conversación se elimina en cascada.
 model Conversation {
   id            String    @id @default(uuid(7)) @db.Uuid
   userAId       String    @db.Uuid
@@ -1426,6 +1429,9 @@ model Conversation {
   userB         User      @relation("conversationsAsB", fields: [userBId], references: [id], onDelete: Cascade)
   aReadAt       DateTime? @db.Timestamptz(3)
   bReadAt       DateTime? @db.Timestamptz(3)
+  /// Cada participante puede borrar su historial sin tocar el de la otra persona.
+  aClearedAt    DateTime? @db.Timestamptz(3)
+  bClearedAt    DateTime? @db.Timestamptz(3)
   lastMessageAt DateTime  @default(now()) @db.Timestamptz(3)
   createdAt     DateTime  @default(now()) @db.Timestamptz(3)
 

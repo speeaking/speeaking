@@ -6,9 +6,13 @@ export type CommentDTO = {
   body: string;
   createdAt: string;
   author: { username: string; displayName: string; avatarUrl: string | null };
+  canDelete?: boolean;
 };
 
-export async function listComments(postId: string): Promise<CommentDTO[]> {
+export async function listComments(
+  postId: string,
+  viewerId: string | null = null,
+): Promise<CommentDTO[]> {
   const rows = await db.comment.findMany({
     where: { postId, status: "PUBLISHED" },
     orderBy: { createdAt: "asc" },
@@ -17,6 +21,7 @@ export async function listComments(postId: string): Promise<CommentDTO[]> {
       id: true,
       body: true,
       createdAt: true,
+      authorId: true,
       author: {
         select: { profile: { select: { username: true, displayName: true, avatarUrl: true } } },
       },
@@ -30,6 +35,7 @@ export async function listComments(postId: string): Promise<CommentDTO[]> {
             body: row.body,
             createdAt: row.createdAt.toISOString(),
             author: row.author.profile,
+            canDelete: row.authorId === viewerId,
           },
         ]
       : [],

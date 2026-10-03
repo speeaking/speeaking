@@ -1,0 +1,2 @@
+ALTER TABLE "checkouts" ADD COLUMN "buyerHiddenAt" TIMESTAMPTZ(3);
+ALTER TABLE "conversations" ADD COLUMN "aClearedAt" TIMESTAMPTZ(3), ADD COLUMN "bClearedAt" TIMESTAMPTZ(3);

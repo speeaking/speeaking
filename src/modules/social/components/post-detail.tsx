@@ -55,7 +55,7 @@ export async function PostDetail({
   const postPath = `/p/${post.id}`;
   const community = post.community;
   const [comments, more] = await Promise.all([
-    listComments(post.id),
+    listComments(post.id, viewerId),
     community && !layer ? getMoreFromCommunity(community.slug, post.id, viewerId) : null,
   ]);
   // En el visor, lo que sigue a la publicación va dentro de ella (su columna derecha).

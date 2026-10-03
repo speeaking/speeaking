@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ReportDialog } from "@/modules/trust/components/report-button";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { setMessagesBlockedAction } from "../actions";
 import type { PersonDTO, ThreadBlock } from "../service";
 
@@ -150,6 +151,15 @@ export function ConversationMenu({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      {!inPanel ? (
+        <RemoveContentButton
+          kind="conversation"
+          id={conversationId}
+          label="Eliminar conversación"
+          compact
+          description="Se borrará tu historial con esta persona. La otra persona conserva su copia. Si vuelven a escribir, verás los mensajes nuevos."
+        />
+      ) : null}
       {inPanel ? null : (
         <ReportDialog
           open={reportOpen}

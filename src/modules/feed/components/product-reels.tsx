@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Play, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,15 +13,31 @@ import type { FeedProductsDTO } from "../product-carousel-compose";
 
 /**
  * La vitrina breve del inicio: conserva el gesto horizontal de los reels, pero cada pieza abre un
- * producto de una tienda. Se alimenta del mismo bloque curado del feed, así que no expone artículos
- * ocultos, sin existencias ni de la propia persona.
+ * producto de una tienda. Usa una selección independiente del feed y muestra también los productos
+ * propios publicados, siempre con existencias y visibles para la comunidad.
  */
 export function ProductReels({ block }: { block: FeedProductsDTO | null | undefined }) {
   const headingId = useId();
   const listId = useId();
   const listRef = useRef<HTMLUListElement>(null);
   const edges = useScrollEdges(listRef, block?.items.length ?? 0);
-  if (!block) return null;
+  if (!block || block.items.length === 0)
+    return (
+      <section
+        aria-labelledby={headingId}
+        className="border-b bg-card px-4 py-4 md:rounded-3xl md:border"
+      >
+        <h2 id={headingId} className="font-heading text-base font-bold">
+          Reels de productos
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Aquí verás los productos publicados por las tiendas de la comunidad.
+        </p>
+        <Link href="/comprar" className="mt-2 inline-flex text-sm font-medium text-primary-text">
+          Explorar tiendas
+        </Link>
+      </section>
+    );
 
   return (
     <section aria-labelledby={headingId} className="border-b bg-card py-3 md:rounded-3xl md:border">
@@ -29,7 +45,7 @@ export function ProductReels({ block }: { block: FeedProductsDTO | null | undefi
         <div className="min-w-0">
           <h2 id={headingId} className="flex items-center gap-2 font-heading text-base font-bold">
             <span className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Play aria-hidden="true" className="size-3.5 fill-current" />
+              <ShoppingBag aria-hidden="true" className="size-3.5" />
             </span>
             Reels de productos
           </h2>
@@ -72,10 +88,10 @@ export function ProductReels({ block }: { block: FeedProductsDTO | null | undefi
         className="mt-3 scrollbar-none flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1"
       >
         {block.items.map(({ product, sponsored }) => (
-          <li key={product.id} className="w-[118px] shrink-0 snap-start sm:w-[142px]">
+          <li key={product.id} className="w-[132px] shrink-0 snap-start sm:w-[156px]">
             <Link
               href={`/producto/${product.slug}?from=reels` as Route}
-              className="group relative flex aspect-[9/14] overflow-hidden rounded-2xl bg-muted shadow-sm ring-1 ring-foreground/10"
+              className="group relative flex aspect-[3/5] overflow-hidden rounded-2xl bg-muted shadow-sm ring-1 ring-foreground/10"
               aria-label={`Ver producto: ${product.title}`}
             >
               {product.image ? (
@@ -83,7 +99,7 @@ export function ProductReels({ block }: { block: FeedProductsDTO | null | undefi
                   src={product.image.url}
                   alt=""
                   fill
-                  sizes="(max-width: 640px) 118px, 142px"
+                  sizes="(max-width: 640px) 132px, 156px"
                   {...blurPlaceholder(product.image)}
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />

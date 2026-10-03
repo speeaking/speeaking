@@ -18,7 +18,7 @@ export default async function CommentsLayerPage({ params }: { params: Promise<{ 
   const viewer = await getViewer();
   const post = await loadPost(id, viewer?.userId ?? null);
   if (!post) return null;
-  const comments = await listComments(post.id);
+  const comments = await listComments(post.id, viewer?.userId ?? null);
   const { likes, comments: total, reactions } = post.stats;
 
   return (

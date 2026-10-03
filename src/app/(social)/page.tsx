@@ -11,7 +11,7 @@ import { type FeedSlot, FeedList } from "@/modules/feed/components/feed-list";
 import { ProductReels } from "@/modules/feed/components/product-reels";
 import { VisitorJoinCard } from "@/modules/feed/components/visitor-join-card";
 import { WelcomeCard } from "@/modules/feed/components/welcome-card";
-import { getHomeFirstPage } from "@/modules/feed/first-page";
+import { getHomeFirstPage, getHomeProductReels } from "@/modules/feed/first-page";
 import { firstNameOf, getJoinableCommunities, getWelcomeMoment } from "@/modules/feed/home";
 import { trackImpressions } from "@/modules/feed/impressions";
 import { WELCOME_COOKIE } from "@/modules/feed/welcome";
@@ -32,8 +32,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   // La primera página está en caché por request: la columna derecha la usa para no repetir en
   // «Lo que buscas» un producto que ya está aquí.
-  const [page, joinable, moment] = await Promise.all([
+  const [page, reels, joinable, moment] = await Promise.all([
     getHomeFirstPage(viewerId),
+    getHomeProductReels(viewerId),
     viewer ? Promise.resolve([]) : getJoinableCommunities(),
     welcome && viewerId && profile ? getWelcomeMoment(viewerId, profile.displayName) : null,
   ]);
@@ -65,7 +66,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   return (
     // Lo que la persona comparte, una vitrina breve de productos y el feed. La vitrina
-    // reutiliza el bloque de productos curado para que no cambie sus reglas de visibilidad.
+    // usa una selección independiente que también funciona con catálogos pequeños.
     <div className="flex flex-col md:gap-4">
       <h1 className="sr-only">Inicio</h1>
       <>
@@ -84,7 +85,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           needsOnboarding={Boolean(viewer) && !onboarded}
         />
       </>
-      <ProductReels block={page.products} />
+      <ProductReels block={reels} />
       <div>
         <FeedList
           initialPage={page}

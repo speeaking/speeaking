@@ -15,6 +15,7 @@ import { availableDeliveryMethods, orderShippingCents } from "@/modules/commerce
 import { CartLineControls } from "@/modules/commerce/components/cart-line-controls";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireViewer } from "@/modules/identity/session";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { removedHiddenNotice } from "./notice";
 
 export const metadata: Metadata = { title: "Carrito" };
@@ -50,7 +51,13 @@ export default async function CartPage() {
 
   return (
     <>
-      <PageHeader title="Carrito" description="Un pedido por vendedor; pagas todo junto." />
+      <PageHeader
+        title="Carrito"
+        description="Un pedido por vendedor; pagas todo junto."
+        actions={
+          lines.length ? <RemoveContentButton kind="cart" id="all" label="Vaciar" /> : undefined
+        }
+      />
       {removedNotice ? (
         <p
           role="status"

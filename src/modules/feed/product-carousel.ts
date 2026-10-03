@@ -119,23 +119,28 @@ async function intentTier(viewerId: string, now: Date): Promise<ProductTier | nu
  * El carrusel de una página del inicio (ADR-051). `pageIndex` 0 es la primera página: ahí (y cada
  * tres páginas) van los patrocinados; los respaldos rotan y se desplazan por página para que al
  * seguir bajando no se repita lo mismo. `exclude`: slugs de productos que ya están en esa página.
- * Nunca productos de la propia persona.
+ * Excluye los productos propios salvo en la vitrina superior (`includeOwn`).
  */
 export async function pickFeedProducts({
   viewerId,
   pageIndex,
   exclude,
+  minimumItems,
+  includeOwn = false,
   now = new Date(),
 }: {
   viewerId: string | null;
   pageIndex: number;
   exclude: ReadonlySet<string>;
+  minimumItems?: number;
+  includeOwn?: boolean;
   now?: Date;
 }): Promise<FeedProductsDTO | null> {
   const page = Math.max(0, Math.floor(pageIndex));
+  const excludeUserId = includeOwn ? null : viewerId;
   const [sponsored, personal] = await Promise.all([
     page % SPONSORED_EVERY_PAGES === 0
-      ? listFeaturedProducts({ limit: FEED_SPONSORED_MAX, excludeUserId: viewerId, now }).catch(
+      ? listFeaturedProducts({ limit: FEED_SPONSORED_MAX, excludeUserId, now }).catch(
           () => [] as ProductCardDTO[],
         )
       : Promise.resolve([] as ProductCardDTO[]),
@@ -154,7 +159,7 @@ export async function pickFeedProducts({
   const tiers = personal ? [personal, ...fallbacks] : fallbacks;
 
   const wanted = [...new Set(tiers.flatMap((tier) => tier.ids))].slice(0, TIER_POOL * 3);
-  const cards = await productCardsByIds(wanted, ["ACTIVE"], { excludeUserId: viewerId });
+  const cards = await productCardsByIds(wanted, ["ACTIVE"], { excludeUserId });
   const searchHref =
     personal?.kind === "intent" && personal.reason
       ? `/comprar?q=${encodeURIComponent(personal.reason.replace(/^“([^”]*)”.*$/, "$1"))}`
@@ -165,6 +170,7 @@ export async function pickFeedProducts({
     cards: new Map(cards.map((card) => [card.id, card])),
     exclude,
     searchHref,
+    minimumItems,
   });
 }
 

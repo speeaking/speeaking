@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/server/db";
+import type { Prisma } from "@/generated/prisma/client";
 import { cleanMessageBody, conversationPair, hasUnread, sideOf } from "./pair";
 
 /**
@@ -122,9 +123,24 @@ export async function getOrCreateConversation(viewerId: string, otherUserId: str
 }
 
 /** Bandeja: conversaciones de la persona, la más reciente primero, con su último mensaje. */
+function inboxWhere(viewerId: string): Prisma.ConversationWhereInput {
+  return {
+    OR: [
+      {
+        userAId: viewerId,
+        OR: [{ aClearedAt: null }, { aClearedAt: { lt: db.conversation.fields.lastMessageAt } }],
+      },
+      {
+        userBId: viewerId,
+        OR: [{ bClearedAt: null }, { bClearedAt: { lt: db.conversation.fields.lastMessageAt } }],
+      },
+    ],
+  };
+}
+
 export async function listConversations(viewerId: string): Promise<ConversationSummaryDTO[]> {
   const rows = await db.conversation.findMany({
-    where: { OR: [{ userAId: viewerId }, { userBId: viewerId }] },
+    where: inboxWhere(viewerId),
     orderBy: { lastMessageAt: "desc" },
     take: 50,
     select: {
@@ -160,7 +176,7 @@ export async function listConversations(viewerId: string): Promise<ConversationS
 /** Conversaciones con mensajes sin leer (para el globo de la barra superior). */
 export async function countUnreadConversations(viewerId: string): Promise<number> {
   const rows = await db.conversation.findMany({
-    where: { OR: [{ userAId: viewerId }, { userBId: viewerId }] },
+    where: inboxWhere(viewerId),
     select: {
       userAId: true,
       userBId: true,
@@ -194,19 +210,23 @@ export async function getThread(
       userBId: true,
       aReadAt: true,
       bReadAt: true,
+      aClearedAt: true,
+      bClearedAt: true,
       userA: { select: personSelect },
       userB: { select: personSelect },
-      messages: {
-        orderBy: { createdAt: "asc" },
-        take: 200,
-        select: { id: true, body: true, senderId: true, createdAt: true },
-      },
     },
   });
   if (!row) return null;
   const side = sideOf(row, viewerId);
-  const [blocked] = await Promise.all([
+  const clearedAt = row.userAId === viewerId ? row.aClearedAt : row.bClearedAt;
+  const [blocked, messages] = await Promise.all([
     blockBetween(viewerId, side.otherUserId),
+    db.message.findMany({
+      where: { conversationId: row.id, ...(clearedAt ? { createdAt: { gt: clearedAt } } : {}) },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: { id: true, body: true, senderId: true, createdAt: true },
+    }),
     db.conversation.update({
       where: { id: row.id },
       data: { [side.readField]: now },
@@ -216,7 +236,7 @@ export async function getThread(
   return {
     id: row.id,
     other: toPerson(side.otherUserId === row.userAId ? row.userA : row.userB),
-    messages: row.messages.map((message) => ({
+    messages: messages.reverse().map((message) => ({
       id: message.id,
       body: message.body,
       mine: message.senderId === viewerId,

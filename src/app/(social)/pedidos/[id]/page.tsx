@@ -14,6 +14,7 @@ import {
 } from "@/modules/commerce/labels";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireViewer } from "@/modules/identity/session";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { db } from "@/server/db";
 import { isSimulatedPayment } from "@/server/providers/payments";
 
@@ -32,7 +33,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/pedidos/[i
   await expireStaleCheckouts(new Date(), viewer.userId);
   if (!z.uuid().safeParse(id).success) notFound();
   const checkout = await db.checkout.findFirst({
-    where: { id, buyerId: viewer.userId },
+    where: { id, buyerId: viewer.userId, buyerHiddenAt: null },
     select: {
       status: true,
       totalCents: true,
@@ -66,6 +67,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/pedidos/[i
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 md:px-0">
+      <div className="flex justify-end">
+        <RemoveContentButton
+          kind="purchase"
+          id={id}
+          label="Eliminar de mi historial"
+          description="Esta compra dejará de aparecer en tu historial. Si tiene una entrega pendiente, seguirá su curso. El vendedor conserva el comprobante."
+        />
+      </div>
       <div className="flex flex-col items-center gap-2 rounded-3xl border bg-card p-6 text-center">
         <Icon className={paid ? "size-10 text-success" : "size-10 text-muted-foreground"} />
         <h1 className="text-2xl font-extrabold">

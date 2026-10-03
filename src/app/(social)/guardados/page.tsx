@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { ProductCard } from "@/modules/catalog/components/product-card";
 import { requireViewer } from "@/modules/identity/session";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { productCardsByIds } from "@/modules/search/queries";
 import { PostCard } from "@/modules/social/components/post-card";
 import { hydratePosts } from "@/modules/social/post-queries";
@@ -49,7 +50,18 @@ export default async function SavedPage() {
 
   return (
     <>
-      <PageHeader title="Guardados" description="Lo que guardaste, lo más reciente primero." />
+      <PageHeader
+        title="Guardados"
+        description="Lo que guardaste, lo más reciente primero."
+        actions={
+          <RemoveContentButton
+            kind="saved"
+            id="all"
+            label="Vaciar"
+            description="Se quitarán todos los elementos de tus guardados. Las publicaciones y productos originales seguirán disponibles."
+          />
+        }
+      />
       {posts.length > 0 && products.length > 0 ? (
         <nav aria-label="Secciones de guardados" className="mb-5 flex gap-2 px-4 md:px-0">
           <a href="#publicaciones" className={chip}>

@@ -237,7 +237,7 @@ export function MessagesPanel({
         </InboxNotice>
       ) : ready ? (
         <div className="flex min-h-full flex-col justify-end bg-background px-3 py-3">
-          <ThreadMessages messages={ready.messages} />
+          <ThreadMessages messages={ready.messages} allowRemoval={false} />
           <div ref={endRef} />
         </div>
       ) : (

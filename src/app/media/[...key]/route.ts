@@ -41,7 +41,7 @@ const DEGRADED_CACHE = "no-store";
  * P14). Solo se sirve lo que tiene fila en `media` y está lista:
  * - Adjunta a una publicación PUBLICADA (sin producto o con su producto visible) o a un producto
  *   VISIBLE → pública, con caché de una hora (`PUBLIC_CACHE`). Los productos visibles cuentan en
- *   cualquier estado: el Studio muestra los pausados o archivados.
+ *   estados ACTIVE, PAUSED y SOLD_OUT. Las fotos de productos retirados son privadas para su dueño.
  * - Adjunta solo a productos ocultos por moderación (o a sus publicaciones) → solo para su dueño y
  *   sin caché; 404 para los demás. El equipo (ADMIN) también ve las del producto oculto (para
  *   revisarlo), no las que están únicamente en su publicación.
@@ -147,7 +147,7 @@ async function isPubliclyAttached(mediaId: string) {
       select: { mediaId: true },
     }),
     db.productMedia.findFirst({
-      where: { mediaId, product: VISIBLE_PRODUCT },
+      where: { mediaId, product: { ...VISIBLE_PRODUCT, status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } } },
       select: { mediaId: true },
     }),
     // Foto de perfil o portada de alguien (ADR-058): llaves únicas, una consulta con índice.

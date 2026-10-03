@@ -192,6 +192,9 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
         <MenuLink href="/pedidos" icon={ReceiptText}>
           Mis pedidos
         </MenuLink>
+        <MenuLink href="/ajustes/contenido" icon={Settings}>
+          Mi contenido
+        </MenuLink>
         <MenuLink href="/ajustes" icon={Settings}>
           Ajustes
         </MenuLink>

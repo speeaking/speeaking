@@ -40,6 +40,17 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="Ajustes" description="Tu cuenta y tu privacidad." />
+      <div className="mb-4 px-4 md:px-0">
+        <Link
+          href="/ajustes/contenido"
+          className="flex flex-col gap-1 rounded-3xl border bg-card p-4 hover:bg-secondary"
+        >
+          <span className="font-heading text-lg font-semibold">Mi contenido</span>
+          <span className="text-sm text-muted-foreground">
+            Elimina publicaciones, comentarios y productos, o quita compras de tu historial.
+          </span>
+        </Link>
+      </div>
       <div className="flex flex-col gap-4 px-4 md:px-0">
         <section className="flex flex-col gap-3 rounded-3xl border bg-card p-4">
           <h2 className="flex items-center gap-2 font-heading text-lg font-bold">

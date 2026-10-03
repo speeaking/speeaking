@@ -24,3 +24,17 @@ export const getHomeFirstPage = cache(async (viewerId: string | null): Promise<F
   });
   return { ...page, products };
 });
+
+/** La vitrina superior también se muestra con un producto y puede repetir lo del feed. */
+export const getHomeProductReels = cache(async (viewerId: string | null) => {
+  return pickFeedProducts({
+    viewerId,
+    pageIndex: 0,
+    exclude: new Set(),
+    minimumItems: 1,
+    includeOwn: true,
+  }).catch((error: unknown) => {
+    console.error("[feed] no se pudo cargar la vitrina de productos", error);
+    return null;
+  });
+});

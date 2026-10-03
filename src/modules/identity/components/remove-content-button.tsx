@@ -13,54 +13,66 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { deletePostAction } from "../delete-post-action";
+import { removeOwnContentAction } from "../content-removal-actions";
+import type { OwnContentKind } from "../content-removal-types";
 
-export function PostOwnerMenu({
-  postId,
-  hasProduct,
-  onDeleted,
+export function RemoveContentButton({
+  kind,
+  id,
+  label = "Eliminar",
+  description,
+  onRemoved,
+  compact = false,
 }: {
-  postId: string;
-  hasProduct: boolean;
-  onDeleted: () => void;
+  kind: OwnContentKind;
+  id: string | string[];
+  label?: string;
+  description?: string;
+  onRemoved?: () => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
-  const [pending, startTransition] = useTransition();
+  const [pending, start] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
   function remove() {
     setError(undefined);
-    startTransition(async () => {
+    start(async () => {
       try {
-        const result = await deletePostAction(postId);
+        const result = await removeOwnContentAction(kind, id);
         if (!result.ok) {
           setError(result.error);
           return;
         }
         setOpen(false);
-        onDeleted();
-        toast.success("Publicación eliminada");
-        if (pathname === `/p/${postId}`) router.replace("/");
+        onRemoved?.();
+        toast.success(
+          kind === "purchase" ? "Compra eliminada de tu historial" : "Contenido eliminado",
+        );
+        if (kind === "purchase" && pathname === `/pedidos/${id}`) router.replace("/pedidos");
+        if (kind === "conversation") router.replace("/mensajes");
         router.refresh();
       } catch {
-        setError("No pudimos eliminarla. Intenta de nuevo.");
+        setError("No pudimos completar la acción. Intenta de nuevo.");
       }
     });
   }
   return (
     <>
       <Button
+        type="button"
         variant="ghost"
-        size="sm"
-        className="shrink-0 text-muted-foreground"
+        size={compact ? "icon" : "sm"}
+        className="shrink-0 text-muted-foreground hover:text-destructive"
+        aria-label={label}
         onClick={() => {
           setError(undefined);
           setOpen(true);
         }}
       >
         <Trash2 className="size-4" />
-        <span>Eliminar</span>
+        {compact ? null : label}
       </Button>
       <Dialog
         open={open}
@@ -70,11 +82,10 @@ export function PostOwnerMenu({
       >
         <DialogContent showCloseButton={!pending}>
           <DialogHeader>
-            <DialogTitle>¿Eliminar esta publicación?</DialogTitle>
+            <DialogTitle>{label}</DialogTitle>
             <DialogDescription>
-              Dejará de aparecer en tu perfil y en las comunidades. Esta acción no se puede
-              deshacer.
-              {hasProduct ? " El producto seguirá disponible en la tienda del vendedor." : ""}
+              {description ??
+                "Este contenido dejará de aparecer. Esta acción no se puede deshacer."}
             </DialogDescription>
           </DialogHeader>
           {error ? (
@@ -83,12 +94,11 @@ export function PostOwnerMenu({
             </p>
           ) : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+            <Button variant="outline" disabled={pending} onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={remove} disabled={pending}>
-              <Trash2 />
-              {pending ? "Eliminando…" : "Eliminar publicación"}
+            <Button variant="destructive" disabled={pending} onClick={remove}>
+              {pending ? "Eliminando…" : "Confirmar eliminación"}
             </Button>
           </DialogFooter>
         </DialogContent>

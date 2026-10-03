@@ -35,6 +35,7 @@ export type NotificationRow = {
 };
 
 export type NotificationItem = {
+  ids?: string[];
   key: string;
   type: NotificationKind;
   /** Quiénes, del más reciente al más antiguo y sin repetir. */
@@ -126,6 +127,7 @@ export function groupNotifications(
     ].slice(0, 3);
     return {
       key,
+      ids: group.map((row) => row.id),
       type: first.type,
       actors,
       at: first.createdAt,

@@ -23,6 +23,7 @@ import { STATUS_LABELS } from "@/modules/catalog/dto";
 import { listSellerProducts } from "@/modules/catalog/queries";
 import { toggleTargetFor } from "@/modules/catalog/status";
 import { SellerActivation } from "@/modules/identity/components/seller-activation";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { isFeatureOn } from "@/modules/ai/features-store";
 import {
@@ -237,6 +238,12 @@ export default async function StudioProductsPage({ searchParams }: PageProps<"/s
                     productId={product.id}
                     slug={product.slug}
                     title={product.title}
+                  />
+                  <RemoveContentButton
+                    kind="product"
+                    id={product.id}
+                    label="Eliminar producto"
+                    description="Este producto se retirará de tu tienda y sus publicaciones propias. Las compras ya realizadas conservarán su comprobante."
                   />
                 </div>
               </li>

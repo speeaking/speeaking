@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { requireOnboardedViewer } from "@/modules/identity/session";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { MarkNotificationsRead } from "@/modules/notifications/components/mark-read";
 import { NotificationList } from "@/modules/notifications/components/notification-list";
 import { groupNotifications } from "@/modules/notifications/group";
@@ -21,7 +22,14 @@ export default async function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-2 pb-8">
-      <PageHeader title="Avisos" />
+      <PageHeader
+        title="Avisos"
+        actions={
+          items.length ? (
+            <RemoveContentButton kind="notifications" id="all" label="Borrar todos" />
+          ) : undefined
+        }
+      />
       <MarkNotificationsRead unread={unread} />
       {items.length === 0 ? (
         <div className="px-4 md:px-0">

@@ -69,6 +69,7 @@ export function composeFeedProducts({
   cards,
   exclude,
   size = FEED_PRODUCTS_SIZE,
+  minimumItems = FEED_PRODUCTS_MIN,
   searchHref = "/comprar",
 }: {
   sponsored: readonly ProductCardDTO[];
@@ -77,6 +78,7 @@ export function composeFeedProducts({
   cards: ReadonlyMap<string, ProductCardDTO>;
   exclude: ReadonlySet<string>;
   size?: number;
+  minimumItems?: number;
   /** «Ver todo» de la intención (p. ej. `/comprar?q=lentes`); los demás tramos van a Comprar. */
   searchHref?: string;
 }): FeedProductsDTO | null {
@@ -102,7 +104,7 @@ export function composeFeedProducts({
     if (items.length >= size) break;
   }
 
-  if (items.length < FEED_PRODUCTS_MIN) return null;
+  if (items.length < minimumItems) return null;
   if (!lead) {
     return {
       title: "Patrocinado",

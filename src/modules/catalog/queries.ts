@@ -323,7 +323,7 @@ export async function listCategories() {
 /** Productos del vendedor CON su costo y economía unitaria (solo para su dueño, P2). */
 export async function listSellerProducts(sellerId: string) {
   const rows = await db.product.findMany({
-    where: { sellerId },
+    where: { sellerId, status: { not: "ARCHIVED" } },
     orderBy: { createdAt: "desc" },
     select: {
       ...cardSelect,

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   MessageCircle,
   Package,
@@ -12,6 +15,7 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { reactionMeta, type ReactionKind } from "@/modules/social/reactions";
 import { type NotificationItem, type NotificationKind, notificationSentence } from "../group";
 
@@ -43,16 +47,18 @@ function Badge({ item }: { item: NotificationItem }) {
   );
 }
 
-function Row({ item }: { item: NotificationItem }) {
+function Row({ item, allowRemoval }: { item: NotificationItem; allowRemoval: boolean }) {
+  const [removed, setRemoved] = useState(false);
   const { who, what } = notificationSentence(item);
   const first = item.actors[0];
   const quote = item.type === "COMMENT" ? item.commentExcerpt : item.postExcerpt;
+  if (removed) return null;
   return (
-    <li>
+    <li className="flex items-start gap-1">
       <Link
         href={item.href as Route}
         className={cn(
-          "flex items-start gap-3 rounded-2xl px-3 py-3 transition-colors hover:bg-secondary",
+          "flex min-w-0 flex-1 items-start gap-3 rounded-2xl px-3 py-3 transition-colors hover:bg-secondary",
           item.unread && "bg-accent/40",
         )}
       >
@@ -91,6 +97,15 @@ function Row({ item }: { item: NotificationItem }) {
           </span>
         ) : null}
       </Link>
+      {allowRemoval && item.ids?.length ? (
+        <RemoveContentButton
+          kind="notification"
+          id={item.ids}
+          compact
+          label="Eliminar aviso"
+          onRemoved={() => setRemoved(true)}
+        />
+      ) : null}
     </li>
   );
 }
@@ -103,9 +118,11 @@ function Row({ item }: { item: NotificationItem }) {
 export function NotificationList({
   items,
   idPrefix = "avisos",
+  allowRemoval = true,
 }: {
   items: readonly NotificationItem[];
   idPrefix?: string;
+  allowRemoval?: boolean;
 }) {
   const fresh = items.filter((item) => item.unread);
   const earlier = items.filter((item) => !item.unread);
@@ -118,7 +135,7 @@ export function NotificationList({
           </h2>
           <ul className="flex flex-col">
             {fresh.map((item) => (
-              <Row key={item.key} item={item} />
+              <Row key={item.key} item={item} allowRemoval={allowRemoval} />
             ))}
           </ul>
         </section>
@@ -130,7 +147,7 @@ export function NotificationList({
           </h2>
           <ul className="flex flex-col">
             {earlier.map((item) => (
-              <Row key={item.key} item={item} />
+              <Row key={item.key} item={item} allowRemoval={allowRemoval} />
             ))}
           </ul>
         </section>

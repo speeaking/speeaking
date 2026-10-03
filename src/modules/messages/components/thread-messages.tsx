@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import type { MessageDTO } from "../service";
 
 const timeFormat = new Intl.DateTimeFormat("es-MX", {
@@ -14,18 +18,22 @@ const timeFormat = new Intl.DateTimeFormat("es-MX", {
 export function ThreadMessages({
   messages,
   className,
+  allowRemoval = true,
 }: {
   messages: readonly MessageDTO[];
   className?: string;
+  allowRemoval?: boolean;
 }) {
+  const [removed, setRemoved] = useState<string[]>([]);
+  const visibleMessages = messages.filter((message) => !removed.includes(message.id));
   return (
     <ol aria-label="Mensajes" className={cn("flex flex-col gap-2", className)}>
-      {messages.length === 0 ? (
+      {visibleMessages.length === 0 ? (
         <li className="py-8 text-center text-sm text-muted-foreground">
           Aquí empieza su conversación. Solo ustedes dos la ven.
         </li>
       ) : (
-        messages.map((message) => (
+        visibleMessages.map((message) => (
           <li
             key={message.id}
             className={cn("flex max-w-[85%] flex-col", message.mine ? "self-end" : "self-start")}
@@ -38,12 +46,27 @@ export function ThreadMessages({
             >
               {message.body}
             </p>
-            <time
-              dateTime={message.at}
-              className={cn("mt-0.5 text-[11px] text-muted-foreground", message.mine && "self-end")}
-            >
-              {timeFormat.format(new Date(message.at))}
-            </time>
+            <div className={cn("flex items-center gap-1", message.mine && "self-end")}>
+              <time
+                dateTime={message.at}
+                className={cn(
+                  "mt-0.5 text-[11px] text-muted-foreground",
+                  message.mine && "self-end",
+                )}
+              >
+                {timeFormat.format(new Date(message.at))}
+              </time>
+              {message.mine && allowRemoval ? (
+                <RemoveContentButton
+                  kind="message"
+                  id={message.id}
+                  compact
+                  label="Eliminar mi mensaje"
+                  description="Tu mensaje se eliminará de esta conversación para ambas personas."
+                  onRemoved={() => setRemoved((current) => [...current, message.id])}
+                />
+              ) : null}
+            </div>
           </li>
         ))
       )}

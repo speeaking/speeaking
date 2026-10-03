@@ -84,7 +84,7 @@ export function NotificationsPanel({
         </InboxNotice>
       ) : (
         <div className="p-1.5">
-          <NotificationList items={load.items} idPrefix="recuadro-avisos" />
+          <NotificationList items={load.items} idPrefix="recuadro-avisos" allowRemoval={false} />
         </div>
       )}
     </InboxSurface>

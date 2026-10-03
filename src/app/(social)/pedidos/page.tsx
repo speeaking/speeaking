@@ -7,6 +7,7 @@ import { formatMoney, formatRelativeTime } from "@/lib/format";
 import { buyerStatusLabel } from "@/modules/commerce/labels";
 import { expireStaleCheckouts } from "@/modules/commerce/checkout";
 import { requireViewer } from "@/modules/identity/session";
+import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Mis pedidos" };
@@ -15,7 +16,7 @@ export default async function MyOrdersPage() {
   const viewer = await requireViewer("/pedidos");
   await expireStaleCheckouts(new Date(), viewer.userId);
   const checkouts = await db.checkout.findMany({
-    where: { buyerId: viewer.userId },
+    where: { buyerId: viewer.userId, buyerHiddenAt: null },
     orderBy: { createdAt: "desc" },
     take: 30,
     select: {
@@ -52,27 +53,36 @@ export default async function MyOrdersPage() {
             );
             const sellers = checkout.orders.map((order) => order.seller.displayName);
             return (
-              <Link
-                key={checkout.id}
-                href={`/pedidos/${checkout.id}` as Route}
-                className="flex flex-col gap-1 rounded-3xl border bg-card p-4 hover:bg-secondary"
-              >
-                <span className="flex justify-between text-sm">
-                  <span className="font-semibold">{status}</span>
-                  <span className="text-muted-foreground">
-                    {formatRelativeTime(checkout.createdAt)}
+              <article key={checkout.id} className="flex flex-col rounded-3xl border bg-card">
+                <Link
+                  href={`/pedidos/${checkout.id}` as Route}
+                  className="flex flex-col gap-1 rounded-t-3xl p-4 hover:bg-secondary"
+                >
+                  <span className="flex justify-between text-sm">
+                    <span className="font-semibold">{status}</span>
+                    <span className="text-muted-foreground">
+                      {formatRelativeTime(checkout.createdAt)}
+                    </span>
                   </span>
-                </span>
-                <span className="line-clamp-1 text-sm text-muted-foreground">
-                  {items.map((item) => `${item.quantity} × ${item.titleSnapshot}`).join(", ")}
-                </span>
-                <span className="line-clamp-1 text-xs text-muted-foreground">
-                  De {sellers.join(", ")}
-                </span>
-                <span className="font-heading text-lg font-bold">
-                  {formatMoney(checkout.totalCents)}
-                </span>
-              </Link>
+                  <span className="line-clamp-1 text-sm text-muted-foreground">
+                    {items.map((item) => `${item.quantity} × ${item.titleSnapshot}`).join(", ")}
+                  </span>
+                  <span className="line-clamp-1 text-xs text-muted-foreground">
+                    De {sellers.join(", ")}
+                  </span>
+                  <span className="font-heading text-lg font-bold">
+                    {formatMoney(checkout.totalCents)}
+                  </span>
+                </Link>
+                <div className="flex justify-end border-t px-2 py-1">
+                  <RemoveContentButton
+                    kind="purchase"
+                    id={checkout.id}
+                    label="Eliminar de mi historial"
+                    description="Esta compra dejará de aparecer en tu historial. Si tiene una entrega pendiente, seguirá su curso. El vendedor conserva el comprobante."
+                  />
+                </div>
+              </article>
             );
           })
         )}
