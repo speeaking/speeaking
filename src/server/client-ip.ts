@@ -82,7 +82,19 @@ export function withClientIpHeader(headers: Headers): Headers {
 
 /** La misma petición (cuerpo incluido) con las cabeceras de `withClientIpHeader`. */
 export function withClientIpRequest(request: Request): Request {
-  return new Request(request, { headers: withClientIpHeader(request.headers) });
+  // Vercel entrega un Request envuelto. Pasarlo como primer argumento al constructor nativo
+  // de Node 24 intenta leer su campo privado #state y falla antes de procesar el callback.
+  // Reconstruir desde la URL usa la interfaz pública, sin depender de la clase de ese objeto.
+  const init: RequestInit & { duplex?: "half" } = {
+    method: request.method,
+    headers: withClientIpHeader(request.headers),
+  };
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = request.body;
+    // Node requiere duplex al reenviar un ReadableStream; el cuerpo sigue sin consumirse aquí.
+    if (init.body) init.duplex = "half";
+  }
+  return new Request(request.url, init);
 }
 
 /**
