@@ -32,6 +32,9 @@ Guías oficiales: [Next.js](https://resend.com/docs/send-with-nextjs),
   se consume de forma atómica y solo funciona una vez. Las rutas HTTP de contraseña de Better Auth
   permanecen cerradas: se usan acciones del servidor con validación y límites por IP, correo y token.
 - El formulario de solicitud responde igual para correos registrados y no registrados.
+- El envío usa `after` de Next.js: continúa después de la respuesta, con la función de Vercel activa
+  hasta terminar. El tiempo del proveedor de correo no revela si la cuenta existe. Los fallos se
+  registran sin destinatarios ni tokens.
 - Al cambiar la contraseña se invalidan todas las sesiones y el correo queda verificado por haber
   abierto el enlace enviado a su buzón. La persona vuelve a entrar con la nueva contraseña.
 - Sin `RESEND_API_KEY` y `EMAIL_FROM` el envío se informa como no disponible; no se simulan correos.

@@ -14,7 +14,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: env.EMAIL_FROM,
+      from: `speeaking <${env.EMAIL_FROM}>`,
       to: [email],
       subject: "Recupera tu contraseña de speeaking",
       text: `Recibimos una solicitud para cambiar tu contraseña de speeaking.\n\nAbre este enlace para elegir una nueva contraseña:\n${url.href}\n\nEl enlace caduca en una hora y solo puede usarse una vez. Si no lo solicitaste, ignora este correo.`,

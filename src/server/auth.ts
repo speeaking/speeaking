@@ -2,6 +2,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { after } from "next/server";
 import { siteConfig } from "@/config/site";
 import { AUTH_COOKIE_PREFIX } from "@/modules/identity/constants";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/modules/identity/schemas";
@@ -51,7 +52,15 @@ export const auth = betterAuth({
             user: { email: string };
             token: string;
           }) => {
-            await sendPasswordResetEmail(user.email, token);
+            // Next mantiene viva la función de Vercel hasta terminar el envío, después de responder.
+            // Así el tiempo de la API de correo no permite distinguir cuentas existentes.
+            after(async () => {
+              try {
+                await sendPasswordResetEmail(user.email, token);
+              } catch {
+                console.error("[identity] falló el envío del correo de recuperación");
+              }
+            });
           },
           onPasswordReset: async ({ user }: { user: { id: string } }) => {
             // El enlace enviado al buzón acredita su propiedad. Esto permite después enlazar Google

@@ -308,8 +308,8 @@ dirección: con `contacto@<tu-dominio>` basta.
   [precios](https://workspace.google.com/intl/es-419/pricing.html)). No uses Gmail «Enviar como» con
   un SMTP externo: Google lo retira en enero de 2027
   ([aviso](https://support.google.com/mail/answer/17101213?hl=es-419)).
-- La app hoy no manda correos (la verificación de correo está apagada), así que no hace falta Resend
-  todavía.
+- **Recuperar contraseña:** configura `RESEND_API_KEY` y `EMAIL_FROM` con un dominio verificado en
+  Resend, y vuelve a desplegar. Pasos y variables en [Recuperación de contraseña](password-recovery.md).
 
 ## 10. Primer despliegue y migraciones
 
