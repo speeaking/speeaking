@@ -66,7 +66,16 @@ export function pageMetadata({
   noIndex?: boolean;
 }): Metadata {
   const url = absoluteUrl(path);
-  const images = image ? [{ ...image, url: absoluteUrl(image.url) }] : undefined;
+  const images = image
+    ? [{ ...image, url: absoluteUrl(image.url) }]
+    : [
+        {
+          url: absoluteUrl("/opengraph-image"),
+          width: 1200,
+          height: 630,
+          alt: `${siteConfig.name}: ${siteConfig.tagline}`,
+        },
+      ];
   return {
     title,
     description: snippet(description),
@@ -79,13 +88,13 @@ export function pageMetadata({
       type: "website",
       siteName: siteConfig.name,
       locale: "es_MX",
-      ...(images ? { images } : {}),
+      images,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: snippet(description),
-      ...(images ? { images } : {}),
+      images,
     },
   };
 }
