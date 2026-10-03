@@ -39,6 +39,7 @@ export const SOCIAL_LIMITS = {
     { scope: "comment", subject: "user", limit: 30, windowSeconds: HOUR },
   ],
   like: [{ scope: "like", subject: "user", limit: 300, windowSeconds: HOUR }],
+  deletePost: [{ scope: "post.delete", subject: "user", limit: 60, windowSeconds: HOUR }],
   save: [{ scope: "save", subject: "user", limit: 300, windowSeconds: HOUR }],
   // Seguir y unirse revalidan todo el layout social: cada llamada cuesta un render completo.
   follow: [

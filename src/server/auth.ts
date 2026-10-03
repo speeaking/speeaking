@@ -9,6 +9,7 @@ import { sanitizeUserWrite } from "@/modules/identity/user-write";
 import { authIpAddressOptions } from "./client-ip";
 import { db } from "./db";
 import { env } from "./env";
+import { passwordRecoveryEnabled, sendPasswordResetEmail } from "./providers/email";
 
 const DAY = 60 * 60 * 24;
 // Estricto en producción; holgado en desarrollo y pruebas (la suite E2E corre en paralelo desde
@@ -39,6 +40,26 @@ export const auth = betterAuth({
     autoSignIn: true,
     // Verificación de correo: se activa al conectar el EmailProvider real (ver docs/roadmap.md).
     requireEmailVerification: false,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+    ...(passwordRecoveryEnabled()
+      ? {
+          sendResetPassword: async ({
+            user,
+            token,
+          }: {
+            user: { email: string };
+            token: string;
+          }) => {
+            await sendPasswordResetEmail(user.email, token);
+          },
+          onPasswordReset: async ({ user }: { user: { id: string } }) => {
+            // El enlace enviado al buzón acredita su propiedad. Esto permite después enlazar Google
+            // sin desactivar la exigencia de correo local verificado de Better Auth.
+            await db.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+          },
+        }
+      : {}),
   },
   session: {
     expiresIn: 30 * DAY,

@@ -11,6 +11,7 @@ import { auth } from "@/server/auth";
 import { clientIp, withClientIpHeader } from "@/server/client-ip";
 import { limitOrError, rateLimit, rateLimitKey } from "@/server/rate-limit";
 import { db } from "@/server/db";
+import { env } from "@/server/env";
 import { forgiveSignIn, limitSignIn, limitSignUp } from "./auth-limits";
 import { authErrorMessage } from "./auth-errors";
 import { LEGAL_VERSIONS } from "./constants";
@@ -158,16 +159,22 @@ export async function signInWithGoogleAction(formData: FormData): Promise<void> 
     const result = await auth.api.signInSocial({
       body: {
         provider: "google",
-        callbackURL: next,
-        newUserCallbackURL: `/bienvenida?next=${encodeURIComponent(next)}`,
-        errorCallbackURL: "/entrar?error=google",
+        callbackURL: new URL(next, env.APP_URL).href,
+        newUserCallbackURL: new URL(`/bienvenida?next=${encodeURIComponent(next)}`, env.APP_URL)
+          .href,
+        errorCallbackURL: new URL(
+          `/entrar?error=google&next=${encodeURIComponent(next)}`,
+          env.APP_URL,
+        ).href,
         disableRedirect: true,
       },
       headers: withClientIpHeader(requestHeaders),
     });
     url = result?.url ?? undefined;
   } catch (error) {
-    console.error("[identity] no se pudo iniciar el flujo de Google", error);
+    console.error("[identity] no se pudo iniciar el flujo de Google", {
+      code: errorCode(error) ?? "GOOGLE_START_FAILED",
+    });
   }
   redirect((url ?? "/entrar?error=google") as Route);
 }

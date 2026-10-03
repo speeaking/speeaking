@@ -104,6 +104,8 @@ export type FeedItemDTO = {
     reactions: ReactionKind[];
   };
   viewer: {
+    /** El servidor comprobó que quien mira es el autor. Cada acción vuelve a exigir propiedad. */
+    canDelete?: boolean;
     /** La reacción de quien mira; `null` si no ha reaccionado. */
     reaction: ReactionKind | null;
     saved: boolean;

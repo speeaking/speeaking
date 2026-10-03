@@ -30,6 +30,7 @@ export function proxy(request: NextRequest) {
     isDev: process.env.NODE_ENV === "development",
     isHttps: process.env.APP_URL?.startsWith("https://") ?? false,
     storageOrigin: storageOrigin(process.env.STORAGE_DRIVER, process.env.S3_ENDPOINT),
+    googleOAuthEnabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
   });
   const requestHeaders = new Headers(request.headers);
   // `set` pisa lo que mande el cliente: el nonce y la política solo los decide el servidor.
@@ -37,6 +38,10 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("content-security-policy", policy);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("content-security-policy", policy);
+  if (pathname === "/restablecer-contrasena") {
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("Cache-Control", "no-store");
+  }
   return response;
 }
 

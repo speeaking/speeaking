@@ -50,7 +50,13 @@ export function contentSecurityPolicy(
     isDev,
     isHttps,
     storageOrigin = null,
-  }: { isDev: boolean; isHttps: boolean; storageOrigin?: string | null },
+    googleOAuthEnabled = false,
+  }: {
+    isDev: boolean;
+    isHttps: boolean;
+    storageOrigin?: string | null;
+    googleOAuthEnabled?: boolean;
+  },
 ): string {
   const storage = storageOrigin ? ` ${storageOrigin}` : "";
   return [
@@ -63,7 +69,9 @@ export function contentSecurityPolicy(
     `connect-src 'self'${storage}`,
     "object-src 'none'",
     "base-uri 'none'",
-    "form-action 'self'",
+    // Chrome aplica form-action también a la redirección del formulario de OAuth.
+    // Se autoriza únicamente el origen de Google y solo cuando el proveedor está configurado.
+    `form-action 'self'${googleOAuthEnabled ? " https://accounts.google.com" : ""}`,
     "frame-ancestors 'none'",
     // Solo si el sitio se sirve por https: en http (desarrollo, `next start` de las pruebas en CI)
     // subiría las peticiones a https y nada cargaría.

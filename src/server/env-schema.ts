@@ -74,6 +74,9 @@ export const serverEnvSchema = z
      */
     GOOGLE_CLIENT_ID: optional(z.string().min(20, "Debe tener al menos 20 caracteres.")),
     GOOGLE_CLIENT_SECRET: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
+    // Correo transaccional para recuperación de cuenta. Las dos variables o ninguna.
+    RESEND_API_KEY: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
+    EMAIL_FROM: optional(z.email("Escribe el correo de un remitente verificado.")),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
     STORAGE_DRIVER: z
@@ -199,6 +202,13 @@ export const serverEnvSchema = z
         code: "custom",
         path: ["GOOGLE_CLIENT_SECRET"],
         message: "GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET van juntas: pon las dos o ninguna.",
+      });
+    }
+    if (Boolean(env.RESEND_API_KEY) !== Boolean(env.EMAIL_FROM)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["EMAIL_FROM"],
+        message: "RESEND_API_KEY y EMAIL_FROM van juntas: pon las dos o ninguna.",
       });
     }
     if (env.AI_PROVIDER === "openai_compatible") {

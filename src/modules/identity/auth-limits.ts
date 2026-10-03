@@ -28,6 +28,10 @@ export const AUTH_LIMITS = {
   signInEmail: { limit: 5, windowSeconds: 15 * MINUTE },
   signUpIp: { limit: 3, windowSeconds: MINUTE },
   signUpEmail: { limit: 5, windowSeconds: 60 * MINUTE },
+  recoveryIp: { limit: 10, windowSeconds: 15 * MINUTE },
+  recoveryEmail: { limit: 3, windowSeconds: 60 * MINUTE },
+  resetIp: { limit: 10, windowSeconds: 15 * MINUTE },
+  resetToken: { limit: 5, windowSeconds: 15 * MINUTE },
 } as const;
 
 /** Mensaje para la interfaz si se pasó del límite (`null` si no) y las llaves que sumaron. */
@@ -48,6 +52,23 @@ export function limitSignUp(requestHeaders: Headers, email: string) {
   return check([
     { key: rateLimitKey("signup", "ip", ip), ...AUTH_LIMITS.signUpIp },
     { key: rateLimitKey("signup", "email", email), ...AUTH_LIMITS.signUpEmail },
+  ]);
+}
+
+export function limitPasswordRecovery(requestHeaders: Headers, email: string) {
+  return check([
+    {
+      key: rateLimitKey("password-recovery", "ip", clientIp(requestHeaders)),
+      ...AUTH_LIMITS.recoveryIp,
+    },
+    { key: rateLimitKey("password-recovery", "email", email), ...AUTH_LIMITS.recoveryEmail },
+  ]);
+}
+
+export function limitPasswordReset(requestHeaders: Headers, token: string) {
+  return check([
+    { key: rateLimitKey("password-reset", "ip", clientIp(requestHeaders)), ...AUTH_LIMITS.resetIp },
+    { key: rateLimitKey("password-reset", "token", token), ...AUTH_LIMITS.resetToken },
   ]);
 }
 

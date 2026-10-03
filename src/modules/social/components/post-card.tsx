@@ -67,6 +67,7 @@ import { recordShareAction } from "../interaction-actions";
 import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
 import { ContextButton } from "./context-button";
 import { PostVideo } from "./post-video";
+import { PostOwnerMenu } from "./post-owner-menu";
 import { ReactionButton, reactionLabel } from "./reaction-button";
 
 type Post = FeedItemDTO;
@@ -234,7 +235,7 @@ function CommunityChip({ community }: { community: Community }) {
  * y la insignia «Editorial» en su color) y debajo el equipo y la hora. Personas y tiendas: su
  * avatar y nombre, «Tienda» si venden, y la comunidad como chip pequeño.
  */
-function CardHeader({ post }: { post: Post }) {
+function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   const { author, community } = post;
   const profileHref = `/u/${author.username}` as Route;
   // Cada dato lleva su «·» delante: si la línea no cabe (portada angosta), el siguiente baja
@@ -324,6 +325,13 @@ function CardHeader({ post }: { post: Post }) {
             {meta(community !== null)}
           </p>
         </div>
+        {post.viewer.canDelete ? (
+          <PostOwnerMenu
+            postId={post.id}
+            hasProduct={post.product !== null}
+            onDeleted={onDeleted}
+          />
+        ) : null}
       </header>
     );
   }
@@ -364,6 +372,9 @@ function CardHeader({ post }: { post: Post }) {
           {meta()}
         </p>
       </div>
+      {post.viewer.canDelete ? (
+        <PostOwnerMenu postId={post.id} hasProduct={post.product !== null} onDeleted={onDeleted} />
+      ) : null}
     </header>
   );
 }
@@ -867,6 +878,7 @@ export function PostCard({
   /** Cómo se pinta en el feed (ver `pickCardVariant`). Fuera del feed, estándar. */
   variant?: CardVariant;
 }) {
+  const [deleted, setDeleted] = useState(false);
   const community = post.community;
   const product = post.product;
   const isSale = post.type === "PRODUCT" || product !== null;
@@ -921,6 +933,7 @@ export function PostCard({
   // Abierta, la foto nunca es más alta que la ventana: se angosta conservando su proporción.
   const mediaAspect = cover ? frameAspect(cover, isSale ? PRODUCT_FRAME : FEED_FRAME) : 1;
   const theater = layout === "theater" && expanded && (cover !== undefined || Boolean(post.video));
+  if (deleted) return null;
 
   // Portada: foto a la izquierda (300 px, como la maqueta) y titular, texto y conversación a la
   // derecha. Tarjeta blanca: la foto pone el color (`community-soft` es solo para selección). En
@@ -941,7 +954,7 @@ export function PostCard({
           className="aspect-[16/11]! rounded-none md:aspect-auto! md:h-full md:min-h-80"
         />
         <div className="@container flex min-w-0 flex-col gap-3 px-4 py-4 md:px-6 md:py-5">
-          <CardHeader post={post} />
+          <CardHeader post={post} onDeleted={() => setDeleted(true)} />
           {headline ? (
             <h2
               data-size={headlineSize(headline)}
@@ -982,7 +995,7 @@ export function PostCard({
         style={style}
         aria-labelledby={labelledBy}
       >
-        <CardHeader post={post} />
+        <CardHeader post={post} onDeleted={() => setDeleted(true)} />
         <p className="font-heading text-[1.75rem] leading-[1.08] font-extrabold tracking-heading text-balance whitespace-pre-line md:text-[2rem]">
           {post.body}
         </p>
@@ -1010,7 +1023,7 @@ export function PostCard({
     >
       {intent ? <IntentChip intent={intent} /> : null}
       {collaborationStore ? <CollaborationChip store={collaborationStore} /> : null}
-      <CardHeader post={post} />
+      <CardHeader post={post} onDeleted={() => setDeleted(true)} />
       <PostBody text={post.body} expanded={expanded} />
       {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
 

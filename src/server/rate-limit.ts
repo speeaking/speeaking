@@ -40,7 +40,7 @@ import { db } from "./db";
 export type RateLimitRule = { key: string; limit: number; windowSeconds: number };
 export type RateLimitResult = { ok: true } | { ok: false; retryAfterSeconds: number };
 /** Qué identifica la llave: IP (agrupada), id de usuario (UUID) o correo (se guarda como hash). */
-export type RateLimitSubject = "ip" | "user" | "email";
+export type RateLimitSubject = "ip" | "user" | "email" | "token";
 
 // Minúsculas, dígitos y `._:/-`: cabe una IP, un UUID o un hash, pero no un correo en claro.
 const KEY_PATTERN = /^[a-z0-9][a-z0-9._:/-]*$/;
@@ -116,6 +116,8 @@ export function rateLimitKey(
     }
     case "email":
       return `${scope}:email:${sha256(trimmed.toLowerCase())}`;
+    case "token":
+      return `${scope}:token:${sha256(trimmed)}`;
   }
 }
 

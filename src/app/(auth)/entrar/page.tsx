@@ -11,7 +11,7 @@ import { googleSignInEnabled } from "@/modules/identity/social";
 export const metadata: Metadata = { title: "Entrar" };
 
 export default async function SignInPage({ searchParams }: PageProps<"/entrar">) {
-  const { next, error } = await searchParams;
+  const { next, error, password } = await searchParams;
   const safeNext = safeRedirectPath(next, "");
   if (await getSession()) redirect((safeNext || "/") as Route);
   const google = googleSignInEnabled();
@@ -24,9 +24,18 @@ export default async function SignInPage({ searchParams }: PageProps<"/entrar">)
           Entra para seguir descubriendo, comprando y vendiendo.
         </p>
       </div>
-      {error === "google" ? (
+      {password === "actualizada" ? (
+        <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm">
+          Tu contraseña se actualizó. Ya puedes entrar.
+        </p>
+      ) : null}
+      {typeof error === "string" ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          No pudimos entrar con Google. Intenta de nuevo o entra con tu correo.
+          {error === "account_not_linked"
+            ? "Ese correo ya tiene una cuenta con contraseña. Entra con ella o recupérala para verificar tu correo y volver a usar Google."
+            : error === "access_denied"
+              ? "Se canceló el acceso con Google. Puedes intentarlo otra vez."
+              : "No pudimos entrar con Google. Intenta de nuevo o entra con tu correo."}
         </p>
       ) : null}
       {google ? (

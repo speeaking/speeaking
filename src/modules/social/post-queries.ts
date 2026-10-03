@@ -111,6 +111,7 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
   const byId = new Map(
     rows.flatMap((row): [string, FeedItemDTO][] => {
       const item = toFeedItem({ ...row, reactions: reactions.get(row.id) ?? [] }, publicUrl);
+      if (item) item.viewer.canDelete = viewerId !== null && row.author.id === viewerId;
       return item ? [[row.id, item]] : [];
     }),
   );

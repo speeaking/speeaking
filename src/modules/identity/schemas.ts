@@ -65,6 +65,21 @@ export const signInSchema = z.object({
   password: z.string().min(1, "Escribe tu contraseña.").max(MAX_PASSWORD_LENGTH),
 });
 
+export const passwordResetTokenSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{20,256}$/, "El enlace no es válido. Solicita uno nuevo.");
+export const passwordRecoverySchema = z.object({ email });
+export const passwordResetSchema = z
+  .object({
+    token: passwordResetTokenSchema,
+    password: signUpSchema.shape.password,
+    confirmPassword: z.string().max(MAX_PASSWORD_LENGTH),
+  })
+  .refine(({ password, confirmPassword }) => password === confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Las contraseñas no coinciden.",
+  });
+
 /** El correo completo o su parte antes de la @ (si no es muy corta) dentro de la contraseña. */
 function passwordContainsEmail(password: string, email: string) {
   const lower = password.toLowerCase();

@@ -1,3 +1,6 @@
+"use client";
+
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { signInWithGoogleAction } from "../actions";
 
@@ -35,10 +38,7 @@ export function GoogleButton({ next, intent }: { next?: string; intent: "signin"
   return (
     <form action={signInWithGoogleAction} className="flex flex-col gap-2">
       {next ? <input type="hidden" name="next" value={next} /> : null}
-      <Button type="submit" variant="outline" size="lg" className="h-11 text-base font-bold">
-        <GoogleMark />
-        Continuar con Google
-      </Button>
+      <GoogleSubmit />
       {intent === "signup" ? (
         <p className="text-center text-xs text-muted-foreground">
           Google solo nos da tu nombre y tu correo. Tu perfil y lo que aceptas se completan en el
@@ -46,5 +46,21 @@ export function GoogleButton({ next, intent }: { next?: string; intent: "signin"
         </p>
       ) : null}
     </form>
+  );
+}
+
+function GoogleSubmit() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="outline"
+      size="lg"
+      className="h-11 text-base font-bold"
+      disabled={pending}
+    >
+      <GoogleMark />
+      {pending ? "Conectando con Google…" : "Continuar con Google"}
+    </Button>
   );
 }
