@@ -1,4 +1,4 @@
-import { CircleUserRound, Compass } from "lucide-react";
+import { Compass } from "lucide-react";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -8,9 +8,9 @@ import { siteConfig } from "@/config/site";
 import { PeopleSuggestions } from "@/modules/discovery/components/people-suggestions";
 import { Composer } from "@/modules/feed/components/composer";
 import { type FeedSlot, FeedList } from "@/modules/feed/components/feed-list";
+import { ProductReels } from "@/modules/feed/components/product-reels";
 import { VisitorJoinCard } from "@/modules/feed/components/visitor-join-card";
 import { WelcomeCard } from "@/modules/feed/components/welcome-card";
-import { feedDateLabel, localDay } from "@/modules/feed/feed-date";
 import { getHomeFirstPage } from "@/modules/feed/first-page";
 import { firstNameOf, getJoinableCommunities, getWelcomeMoment } from "@/modules/feed/home";
 import { trackImpressions } from "@/modules/feed/impressions";
@@ -21,25 +21,6 @@ import { getViewer } from "@/modules/identity/session";
 const PEOPLE_AFTER = 5;
 /** «Arma tu feed» del visitante, después de la 2.ª publicación (F6). */
 const JOIN_CARD_AFTER = 1;
-
-/** «Para ti» con la fecha pequeña (hora de México). Sin «Tu edición de hoy»: no es un periódico. */
-function FeedHeader({ subtitle }: { subtitle?: string }) {
-  const now = new Date();
-  return (
-    <header className="flex flex-col gap-1.5 px-4 pt-4 pb-3 md:px-0 md:pt-2 md:pb-4">
-      <div className="flex items-end justify-between gap-4">
-        <h1 className="text-4xl leading-none font-extrabold md:text-5xl">Para ti</h1>
-        <time
-          dateTime={localDay(now)}
-          className="shrink-0 pb-1 text-[11px] font-bold tracking-widest text-ink-2 uppercase md:text-xs"
-        >
-          {feedDateLabel(now)}
-        </time>
-      </div>
-      {subtitle ? <p className="text-sm text-ink-2 md:text-[15px]">{subtitle}</p> : null}
-    </header>
-  );
-}
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   const { cuenta } = await searchParams;
@@ -83,42 +64,27 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       ];
 
   return (
-    // Sin fila de burbujas (ADR-050): encabezado, lo que la persona comparte y el feed. Red social
-    // primero (principios 1 y 2): arriba del feed nunca va una invitación a comprar; el estilista vive
-    // en Comprar y en la ficha de las prendas.
+    // Lo que la persona comparte, una vitrina breve de productos y el feed. La vitrina
+    // reutiliza el bloque de productos curado para que no cambie sus reglas de visibilidad.
     <div className="flex flex-col md:gap-4">
-      <FeedHeader subtitle={viewer ? undefined : "Lo más nuevo de las comunidades"} />
+      <h1 className="sr-only">Inicio</h1>
       <>
         {cuenta === "eliminada" && !viewer ? (
           <p role="status" className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border">
             Tu cuenta se eliminó. Gracias por probar {siteConfig.name}; aquí estaremos si vuelves.
           </p>
         ) : null}
-        {viewer ? (
-          <>
-            {moment ? <WelcomeCard moment={moment} /> : null}
-            {onboarded && profile ? (
-              <Composer
-                firstName={firstNameOf(profile.displayName)}
-                displayName={profile.displayName}
-                username={profile.username}
-                avatarUrl={profile.avatarUrl}
-              />
-            ) : (
-              <Link
-                href="/bienvenida"
-                className="flex items-center gap-3 border-b bg-card p-4 md:rounded-3xl md:border"
-              >
-                <CircleUserRound aria-hidden="true" className="size-5 shrink-0 text-primary-text" />
-                <span className="text-sm">
-                  <span className="font-semibold">Termina tu perfil</span> para que tu feed hable de
-                  lo que te gusta.
-                </span>
-              </Link>
-            )}
-          </>
-        ) : null}
+        {moment ? <WelcomeCard moment={moment} /> : null}
+        <Composer
+          firstName={profile ? firstNameOf(profile.displayName) : undefined}
+          displayName={profile?.displayName}
+          username={profile?.username}
+          avatarUrl={profile?.avatarUrl ?? null}
+          isSignedIn={Boolean(viewer)}
+          needsOnboarding={Boolean(viewer) && !onboarded}
+        />
       </>
+      <ProductReels block={page.products} />
       <div>
         <FeedList
           initialPage={page}

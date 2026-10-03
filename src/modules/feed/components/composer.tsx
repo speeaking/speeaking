@@ -1,4 +1,4 @@
-import { CircleHelp, ImagePlus } from "lucide-react";
+import { CircleHelp, ImagePlus, UserRound } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
@@ -6,57 +6,81 @@ import { cn } from "@/lib/utils";
 
 const CREATE_POST = "/crear/publicacion";
 
-/** Acción rápida: 44 × 44 px en móvil (solo ícono) y con texto en escritorio. */
+/** Acciones discretas; el área táctil conserva 44 px aunque el icono sea pequeño. */
 const quickAction =
-  "inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-semibold text-ink-2 transition-colors hover:bg-secondary hover:text-foreground motion-reduce:transition-none md:px-3.5";
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none";
 
 /**
- * Compositor del inicio (F5): «¿Qué quieres compartir, Sofía?» como un campo que abre la página de
- * crear publicación, más «Foto» y «Pregunta» con una pista en la URL (`?tipo=`). Sin el botón lima
- * de Sube y vende: su única entrada en escritorio es la columna izquierda.
+ * Entrada para compartir al inicio: el campo completo y las acciones llevan a crear la publicación.
+ * Sin sesión se pasa por Entrar conservando el destino; con perfil pendiente se abre Bienvenida.
  */
 export function Composer({
   firstName,
   displayName,
   username,
   avatarUrl,
+  isSignedIn = true,
+  needsOnboarding = false,
   className,
 }: {
-  firstName: string;
-  displayName: string;
-  username: string;
+  firstName?: string;
+  displayName?: string;
+  username?: string;
   avatarUrl: string | null;
+  isSignedIn?: boolean;
+  needsOnboarding?: boolean;
   className?: string;
 }) {
+  const destination = (type?: "foto" | "pregunta") => {
+    if (needsOnboarding) return "/bienvenida" as Route;
+    const path = `${CREATE_POST}${type ? `?tipo=${type}` : ""}`;
+    return (isSignedIn ? path : `/entrar?next=${encodeURIComponent(path)}`) as Route;
+  };
+  const prompt = firstName
+    ? `¿Qué quieres compartir, ${firstName}?`
+    : "¿Qué quieres compartir hoy?";
+
   return (
     <section
       aria-label="Crear publicación"
       className={cn(
-        "flex items-center gap-2 border-b bg-card px-4 py-3 md:gap-3 md:rounded-3xl md:border md:px-4",
+        "flex items-center gap-2 border-b bg-card px-3 py-3 md:gap-3 md:rounded-2xl md:border md:px-4",
         className,
       )}
     >
-      <UserAvatar name={displayName} seed={username} src={avatarUrl} className="size-10" />
+      {displayName && username ? (
+        <UserAvatar name={displayName} seed={username} src={avatarUrl} className="size-9" />
+      ) : (
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground">
+          <UserRound aria-hidden="true" className="size-4.5" />
+        </span>
+      )}
       <Link
-        href={CREATE_POST as Route}
-        className="flex h-11 min-w-0 flex-1 items-center rounded-full bg-secondary px-4 text-[15px] text-muted-foreground transition-colors hover:bg-accent motion-reduce:transition-none"
+        href={destination()}
+        aria-label={prompt}
+        className="flex h-11 min-w-0 flex-1 items-center rounded-full bg-secondary/60 px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
       >
-        <span className="truncate">¿Qué quieres compartir, {firstName}?</span>
+        <span className="truncate md:hidden">Comparte algo…</span>
+        <span className="hidden truncate md:inline">{prompt}</span>
       </Link>
-      <Link href={`${CREATE_POST}?tipo=foto` as Route} aria-label="Foto" className={quickAction}>
-        <ImagePlus aria-hidden="true" className="size-5" />
-        <span className="hidden md:inline">Foto</span>
-      </Link>
-      {/* En teléfonos solo «Foto» (como la maqueta de Plaza): con dos íconos el campo se corta
-          antes del nombre («¿Qué quieres compartir, So…»). */}
-      <Link
-        href={`${CREATE_POST}?tipo=pregunta` as Route}
-        aria-label="Pregunta"
-        className={cn(quickAction, "max-sm:hidden")}
-      >
-        <CircleHelp aria-hidden="true" className="size-5" />
-        <span className="hidden md:inline">Pregunta</span>
-      </Link>
+      <div className="flex shrink-0 items-center">
+        <Link
+          href={destination("foto")}
+          aria-label="Foto"
+          title="Añadir una foto"
+          className={quickAction}
+        >
+          <ImagePlus aria-hidden="true" className="size-5" />
+        </Link>
+        <Link
+          href={destination("pregunta")}
+          aria-label="Pregunta"
+          title="Hacer una pregunta"
+          className={quickAction}
+        >
+          <CircleHelp aria-hidden="true" className="size-5" />
+        </Link>
+      </div>
     </section>
   );
 }
