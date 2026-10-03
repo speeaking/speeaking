@@ -29,8 +29,14 @@
 *.p12
 *.pfx
 *.jks
+*.crt
 id_rsa*
 id_ed25519*
+credentials*.json
+service-account*.json
+# respaldos de base de datos
+*.dump
+*.sql.gz
 
 # debug
 npm-debug.log*
@@ -56,6 +62,8 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/playwright/.auth/
+storage-state*.json
 
 # datos locales (clúster de PostgreSQL, archivos subidos)
 /.data/
