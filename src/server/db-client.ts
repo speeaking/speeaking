@@ -9,6 +9,24 @@ import { PrismaClient } from "@/generated/prisma/client";
  * (ADR-028).
  */
 export function createPrismaClient(connectionString: string) {
+  let url: URL;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    // El error nativo de URL incluye la entrada, que aquí contiene la contraseña de la base.
+    throw new Error("La cadena de conexión de PostgreSQL no es válida.");
+  }
+  // pg-connection-string 2.x trata estos modos como verify-full. Hacerlo explícito conserva
+  // la verificación del certificado y elimina la advertencia sobre su futuro cambio de significado.
+  // Una configuración explícita de compatibilidad libpq conserva la política que haya elegido.
+  const tlsMode = url.searchParams.get("sslmode");
+  if (
+    url.searchParams.get("uselibpqcompat") !== "true" &&
+    ["prefer", "require", "verify-ca"].includes(tlsMode ?? "")
+  ) {
+    url.searchParams.set("sslmode", "verify-full");
+    connectionString = url.href;
+  }
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString, options: "-c TimeZone=UTC" }),
     // Margen para transacciones interactivas: con el servidor ocupado (Turbopack compila rutas en

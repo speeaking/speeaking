@@ -162,10 +162,7 @@ export async function signInWithGoogleAction(formData: FormData): Promise<void> 
         callbackURL: new URL(next, env.APP_URL).href,
         newUserCallbackURL: new URL(`/bienvenida?next=${encodeURIComponent(next)}`, env.APP_URL)
           .href,
-        errorCallbackURL: new URL(
-          `/entrar?error=google&next=${encodeURIComponent(next)}`,
-          env.APP_URL,
-        ).href,
+        errorCallbackURL: new URL(`/entrar?next=${encodeURIComponent(next)}`, env.APP_URL).href,
         disableRedirect: true,
       },
       headers: withClientIpHeader(requestHeaders),

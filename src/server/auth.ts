@@ -21,6 +21,8 @@ export const auth = betterAuth({
   appName: siteConfig.name,
   baseURL: env.APP_URL,
   secret: env.BETTER_AUTH_SECRET,
+  // El router de la biblioteca está cerrado: los errores de OAuth se muestran en nuestro login.
+  onAPIError: { errorURL: new URL("/entrar", env.APP_URL).href },
   database: prismaAdapter(db, { provider: "postgresql" }),
   // Entrar con Google (ADR-049): solo con credenciales; el callback lo abre el router HTTP.
   socialProviders:
@@ -29,8 +31,8 @@ export const auth = betterAuth({
           google: {
             clientId: env.GOOGLE_CLIENT_ID,
             clientSecret: env.GOOGLE_CLIENT_SECRET,
-            // Google ya verificó el correo: la cuenta nace verificada. Si el correo ya existe con
-            // contraseña, no se enlaza solo (SEC: evita tomar una cuenta con un correo ajeno).
+            // Google ya verificó el correo: la cuenta nace verificada. Una cuenta existente con
+            // contraseña se enlaza después de verificar su correo local, por ejemplo al recuperarla.
           },
         }
       : {},
