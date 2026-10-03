@@ -19,8 +19,8 @@ function Listener({ className, strokeWidth }: { className?: string; strokeWidth:
 
 /**
  * Isotipo: los dos globos encimados, con un hueco transparente entre ellos para que se vean igual
- * sobre cualquier fondo. Es la misma figura que `public/brand/mark.svg` (fuente de los íconos de la
- * PWA) y `src/app/icon.svg`.
+ * sobre cualquier fondo. Es la misma figura que `public/brand/mark.svg`, usada dentro de la interfaz.
+ * Los iconos instalables y la apertura usan la imagen original `public/brand/launch-source.png`.
  */
 export function BrandMark({ className, title }: { className?: string; title?: string }) {
   // Un id por dibujo: el mismo id repetido en la página haría que todos usaran la primera máscara.

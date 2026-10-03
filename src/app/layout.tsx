@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import { headers } from "next/headers";
+import { AppStartupImages } from "@/components/brand/app-startup-images";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
@@ -42,6 +43,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(display.variable, body.variable)}
       suppressHydrationWarning
     >
+      <head>
+        <AppStartupImages />
+      </head>
       <body>
         <a
           href="#contenido"
