@@ -5,6 +5,9 @@
  */
 export const siteConfig = {
   name: "speeaking",
+  /** Origen canónico del contenido público; independiente del callback de autenticación. */
+  url: "https://www.speeaking.com",
+  googleSiteVerification: "h_Jp67f-8Q5W_AeCqzZzSW4jg7UOomIi6wrZIesfa7c",
   tagline: "Donde las conversaciones cobran vida.",
   sellerFeatureName: "Sube y vende",
   /** Ruta de la función del vendedor (la anterior, `/studio/vende-con-ia`, redirige aquí). */

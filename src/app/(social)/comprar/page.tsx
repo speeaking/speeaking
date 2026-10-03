@@ -1,20 +1,29 @@
-import { Search, ShoppingBag } from "lucide-react";
+import { Search } from "lucide-react";
+import { pageMetadata } from "@/app/seo";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
-import { EmptyState } from "@/components/states/empty-state";
-import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
 import { SponsoredRow } from "@/modules/billing/components/sponsored-products";
 import { ProductCard } from "@/modules/catalog/components/product-card";
+import { ShopEmptyState } from "@/modules/catalog/components/shop-empty-state";
 import { listCategories, listFeaturedProducts, listShopProducts } from "@/modules/catalog/queries";
 import { getViewer } from "@/modules/identity/session";
 import { parseSearchQuery, SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
 import { StylistCard } from "@/modules/stylist/components/stylist-card";
 
-export const metadata: Metadata = { title: "Comprar" };
+export async function generateMetadata({ searchParams }: PageProps<"/comprar">): Promise<Metadata> {
+  const { q, categoria } = await searchParams;
+  return pageMetadata({
+    title: "Compra productos de vendedores en México",
+    description:
+      "Descubre prendas, accesorios y más en speeaking. Revisa precios, prueba prendas compatibles con IA y conversa con la tienda antes de comprar.",
+    path: "/comprar",
+    noIndex: Boolean(q || categoria),
+  });
+}
 
 export default async function ShopPage({ searchParams }: PageProps<"/comprar">) {
   const { q, categoria } = await searchParams;
@@ -90,7 +99,9 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
             <Link
               key={category.id}
               href={
-                `/comprar?categoria=${category.slug}${query ? `&q=${encodeURIComponent(query)}` : ""}` as Route
+                query
+                  ? (`/comprar?categoria=${category.slug}&q=${encodeURIComponent(query)}` as Route)
+                  : (`/comprar/${category.slug}` as Route)
               }
               className={chip(categorySlug === category.slug)}
               aria-current={categorySlug === category.slug ? "page" : undefined}
@@ -101,32 +112,11 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
         </nav>
         {products.length === 0 ? (
           <div className="px-4 md:px-0">
-            <EmptyState
-              icon={ShoppingBag}
-              title={
-                query
-                  ? `Sin resultados para “${query}”${activeCategory ? ` en ${activeCategory.name}` : ""}`
-                  : "Todavía no hay productos"
-              }
-              description={
-                activeCategory
-                  ? "Prueba en todas las categorías o con otra palabra."
-                  : "Prueba con otra palabra o explora las comunidades."
-              }
-              action={
-                activeCategory ? (
-                  <Link
-                    href={allCategoriesHref}
-                    // Sobre el lienzo gris, en blanco: si no, en claro se leía como texto suelto.
-                    className={cn(
-                      buttonVariants({ variant: "outline" }),
-                      "h-11 bg-card px-4 text-[15px] md:h-10",
-                    )}
-                  >
-                    {query ? "Buscar en todas las categorías" : "Ver todas las categorías"}
-                  </Link>
-                ) : undefined
-              }
+            <ShopEmptyState
+              query={query}
+              categorySlug={categorySlug}
+              categoryName={activeCategory?.name}
+              allCategoriesHref={allCategoriesHref}
             />
           </div>
         ) : (

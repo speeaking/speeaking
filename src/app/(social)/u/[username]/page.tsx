@@ -14,15 +14,27 @@ import { hydratePosts } from "@/modules/social/post-queries";
 import { profileCover, profilePhotos, resolveProfileTab } from "@/modules/social/profile-copy";
 import { getPublicProfile } from "@/modules/social/queries";
 import { db } from "@/server/db";
+import { getProfile, getProfileIndexing } from "./profile";
+import { pageMetadata, NO_INDEX } from "@/app/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl } from "@/app/seo";
 
 export async function generateMetadata({ params }: PageProps<"/u/[username]">): Promise<Metadata> {
-  const profile = await getPublicProfile((await params).username, null);
-  return profile
-    ? {
-        title: `${profile.displayName} (@${profile.username})`,
-        description: profile.bio ?? undefined,
-      }
-    : {};
+  const { username } = await params;
+  const [profile, visibility] = await Promise.all([
+    getProfile(username),
+    getProfileIndexing(username),
+  ]);
+  if (!profile) return { robots: NO_INDEX };
+  return pageMetadata({
+    title: `${profile.displayName} (@${profile.username})`,
+    description:
+      profile.bio ||
+      `Conoce las publicaciones${profile.sellerId ? " y productos" : ""} de ${profile.displayName} en speeaking.`,
+    path: `/u/${encodeURIComponent(profile.username)}`,
+    image: profile.avatarUrl ? { url: profile.avatarUrl, alt: profile.displayName } : undefined,
+    noIndex: !visibility?.discoverable || !visibility.onboardedAt,
+  });
 }
 
 /**
@@ -37,7 +49,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
   if (!profile) notFound();
 
   const isOwn = viewer?.userId === profile.userId;
-  const [postIds, products] = await Promise.all([
+  const [postIds, products, visibility] = await Promise.all([
     db.post.findMany({
       where: { authorId: profile.userId, status: "PUBLISHED" },
       orderBy: { publishedAt: "desc" },
@@ -45,6 +57,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
       select: { id: true },
     }),
     profile.sellerId ? listSellerShowcase(profile.sellerId) : Promise.resolve([]),
+    getProfileIndexing(username),
   ]);
   const posts = await hydratePosts(
     postIds.map((post) => post.id),
@@ -102,6 +115,22 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
     <ViewTransition enter="page-ink" default="none">
       {/* `data-page-wide` (ADR-065): en escritorio el perfil ocupa el ancho, sin columnas laterales. */}
       <div data-page-wide="" className="flex flex-col gap-4">
+        {visibility?.discoverable && visibility.onboardedAt ? (
+          <JsonLd
+            data={{
+              "@context": "https://schema.org",
+              "@type": "ProfilePage",
+              url: absoluteUrl(`/u/${encodeURIComponent(profile.username)}`),
+              mainEntity: {
+                "@type": "Person",
+                name: profile.displayName,
+                alternateName: `@${profile.username}`,
+                description: profile.bio ?? undefined,
+                image: profile.avatarUrl ? absoluteUrl(profile.avatarUrl) : undefined,
+              },
+            }}
+          />
+        ) : null}
         <ProfileHeader
           profile={profile}
           inCommon={{

@@ -1,4 +1,5 @@
 import { Users } from "lucide-react";
+import { pageMetadata, NO_INDEX } from "@/app/seo";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -15,31 +16,23 @@ import { getViewer } from "@/modules/identity/session";
 import { JoinButton } from "@/modules/social/components/join-button";
 import { markCommunitySeen } from "@/modules/social/unread";
 import { db } from "@/server/db";
-
-async function loadCommunity(slug: string) {
-  return db.community.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      emoji: true,
-      hue: true,
-      description: true,
-      memberCount: true,
-    },
-  });
-}
+import { getCommunity } from "./community";
 
 export async function generateMetadata({ params }: PageProps<"/c/[slug]">): Promise<Metadata> {
-  const community = await loadCommunity((await params).slug);
-  return community ? { title: community.name, description: community.description } : {};
+  const community = await getCommunity((await params).slug);
+  return community
+    ? pageMetadata({
+        title: `${community.name}: comunidad`,
+        description: community.description,
+        path: `/c/${encodeURIComponent(community.slug)}`,
+      })
+    : { robots: NO_INDEX };
 }
 
 export default async function CommunityPage({ params }: PageProps<"/c/[slug]">) {
   // Lo publicado desde aquí sigue siendo «nuevo» aunque llegue mientras se pinta la página (F7).
   const openedAt = new Date();
-  const community = await loadCommunity((await params).slug);
+  const community = await getCommunity((await params).slug);
   if (!community) notFound();
 
   const viewer = await getViewer();

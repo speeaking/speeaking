@@ -74,6 +74,8 @@ export const serverEnvSchema = z
      */
     GOOGLE_CLIENT_ID: optional(z.string().min(20, "Debe tener al menos 20 caracteres.")),
     GOOGLE_CLIENT_SECRET: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
+    // Indexación pública activada. Local y previews llevan noindex (app/seo.ts).
+    ALLOW_INDEXING: z.stringbool({ error: "Debe ser true o false." }).default(true),
     // Correo transaccional para recuperación de cuenta. Las dos variables o ninguna.
     RESEND_API_KEY: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
     EMAIL_FROM: optional(z.email("Escribe el correo de un remitente verificado.")),

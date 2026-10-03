@@ -15,6 +15,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { UserAvatar } from "@/components/brand/user-avatar";
+import { pageMetadata, NO_INDEX } from "@/app/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { productStructuredData, productBreadcrumbs } from "@/modules/catalog/seo";
 import { MediaCarousel } from "@/components/media/media-carousel";
 import { formatMoney } from "@/lib/format";
 import { frameAspect, PRODUCT_FRAME } from "@/lib/image";
@@ -37,7 +40,6 @@ import {
   nationalShippingLine,
   stockLabel,
 } from "@/modules/catalog/quick-answers";
-import { getAdminViewer } from "@/modules/admin/guard";
 import { BuyBox } from "@/modules/commerce/components/buy-box";
 import { getViewer } from "@/modules/identity/session";
 import { MessageButton } from "@/modules/messages/components/message-button";
@@ -49,24 +51,22 @@ import { AuthenticityNotice } from "@/modules/trust/components/authenticity-noti
 import { ReportButton } from "@/modules/trust/components/report-button";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
+import { getProductForViewer } from "./product";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/producto/[slug]">): Promise<Metadata> {
   const result = await getPublicProduct((await params).slug);
-  if (!result) return {};
+  if (!result) return { robots: NO_INDEX };
   const { product } = result;
   const title = `${product.title} · ${formatMoney(product.priceCents, product.currency)}`;
   const image = product.media[0];
-  return {
+  return pageMetadata({
     title,
-    description: product.description.slice(0, 160),
-    openGraph: {
-      title,
-      description: product.description.slice(0, 160),
-      images: image ? [{ url: image.url, width: image.width, height: image.height }] : undefined,
-    },
-  };
+    description: product.description,
+    path: `/producto/${encodeURIComponent(product.slug)}`,
+    image: image ? { ...image, alt: image.alt ?? product.title } : undefined,
+  });
 }
 
 /** Aviso a quien vende sobre la revisión de autenticidad de su producto (P14). */
@@ -99,18 +99,15 @@ const OWNER_AUTHENTICITY_NOTICES: Partial<
 export default async function ProductPage({ params, searchParams }: PageProps<"/producto/[slug]">) {
   const { slug } = await params;
   const { from, ref, nuevo, probar } = await searchParams;
-  const [viewer, admin] = await Promise.all([getViewer(), getAdminViewer()]);
-  // Un producto oculto por moderación solo existe para su dueño y el equipo (404 para los demás).
-  const result = await getPublicProduct(slug, {
-    viewerUserId: viewer?.userId ?? null,
-    isAdmin: admin !== null,
-  });
+  // Un producto oculto por moderación solo existe para su dueño y el equipo (404 para los demás,
+  // desde el layout; la consulta es la misma).
+  const [viewer, result] = await Promise.all([getViewer(), getProductForViewer(slug)]);
   if (!result) notFound();
   const { product, categoryId, moderation } = result;
 
   const isOwner = viewer?.userId === product.seller.userId;
   const sourcePostId = typeof from === "string" && z.uuid().safeParse(from).success ? from : null;
-  if (!moderation.hidden) {
+  if (!moderation.hidden && !isOwner) {
     track({
       type: "PRODUCT_VIEW",
       userId: viewer?.userId ?? null,
@@ -194,6 +191,21 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
 
   return (
     <div className="flex flex-col gap-6 pb-6">
+      {!moderation.hidden ? (
+        <JsonLd data={[productStructuredData(product), productBreadcrumbs(product)]} />
+      ) : null}
+      <nav
+        aria-label="Ruta del producto"
+        className="flex flex-wrap gap-2 px-4 text-xs text-muted-foreground md:px-0"
+      >
+        <Link href="/comprar" className="hover:underline">
+          Comprar
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/comprar/${product.category.slug}` as Route} className="hover:underline">
+          {product.category.name}
+        </Link>
+      </nav>
       {moderation.hidden ? (
         <p
           role="status"

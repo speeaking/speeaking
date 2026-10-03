@@ -2,27 +2,22 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import { headers } from "next/headers";
 import { AppStartupImages } from "@/components/brand/app-startup-images";
+import { JsonLd } from "@/components/seo/json-ld";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/config/site";
 import { NONCE_HEADER } from "@/lib/csp";
 import { cn } from "@/lib/utils";
 import { env } from "@/server/env";
+import { rootMetadata } from "./seo";
 import "./globals.css";
 
 // Marca (ADR-070): logotipo y titulares en Sora (variable, 100–800); texto en Inter.
 const display = Sora({ subsets: ["latin"], variable: "--font-display" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(env.APP_URL),
-  title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
-  description: siteConfig.description,
-  applicationName: siteConfig.name,
-  appleWebApp: { capable: true, title: siteConfig.name, statusBarStyle: "default" },
-  // Los íconos los anuncia Next desde src/app (favicon.ico, icon.svg, apple-icon.png): declarar
-  // `icons` aquí tapaba el de la pestaña.
-};
+// Título, Open Graph, canonical y `robots` según ALLOW_INDEXING: `seo.ts` (con sus pruebas).
+export const metadata: Metadata = rootMetadata(env);
 
 export const viewport: Viewport = {
   viewportFit: "cover",
@@ -47,6 +42,28 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <AppStartupImages />
       </head>
       <body>
+        <JsonLd
+          data={[
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "@id": `${siteConfig.url}/#organization`,
+              name: siteConfig.name,
+              url: siteConfig.url,
+              logo: `${siteConfig.url}/icons/icon-512.png`,
+              description: siteConfig.description,
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "@id": `${siteConfig.url}/#website`,
+              name: siteConfig.name,
+              url: siteConfig.url,
+              inLanguage: siteConfig.locale,
+              publisher: { "@id": `${siteConfig.url}/#organization` },
+            },
+          ]}
+        />
         <a
           href="#contenido"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-foreground focus:px-3 focus:py-2 focus:text-background"

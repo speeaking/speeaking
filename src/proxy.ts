@@ -37,6 +37,13 @@ export function proxy(request: NextRequest) {
   requestHeaders.set(NONCE_HEADER, nonce);
   requestHeaders.set("content-security-policy", policy);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (
+    isProtected ||
+    ["/avisos", "/saldo", "/probar", "/buscar/foto", "/admin"].some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  )
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
   response.headers.set("content-security-policy", policy);
   if (pathname === "/restablecer-contrasena") {
     response.headers.set("Referrer-Policy", "no-referrer");

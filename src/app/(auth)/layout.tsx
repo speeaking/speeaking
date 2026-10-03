@@ -1,4 +1,7 @@
 import { Logo } from "@/components/brand/logo";
+import { NO_INDEX } from "@/app/seo";
+
+export const metadata = { robots: NO_INDEX };
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (

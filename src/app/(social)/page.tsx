@@ -1,4 +1,5 @@
 import { Compass } from "lucide-react";
+import { pageMetadata } from "@/app/seo";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -21,6 +22,12 @@ import { getViewer } from "@/modules/identity/session";
 const PEOPLE_AFTER = 5;
 /** «Arma tu feed» del visitante, después de la 2.ª publicación (F6). */
 const JOIN_CARD_AFTER = 1;
+
+export const metadata = pageMetadata({
+  title: "Compra, vende y pruébate ropa con IA",
+  description: siteConfig.description,
+  path: "/",
+});
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   const { cuenta } = await searchParams;
@@ -68,7 +75,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     // Lo que la persona comparte, una vitrina breve de productos y el feed. La vitrina
     // usa una selección independiente que también funciona con catálogos pequeños.
     <div className="flex flex-col md:gap-4">
-      <h1 className="sr-only">Inicio</h1>
+      <h1 className="sr-only">
+        speeaking: descubre productos, pruébate prendas con IA y compra a vendedores de México
+      </h1>
       <>
         {cuenta === "eliminada" && !viewer ? (
           <p role="status" className="border-b bg-card px-4 py-3 text-sm md:rounded-3xl md:border">
@@ -107,6 +116,23 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           }
         />
       </div>
+      {!viewer ? (
+        <section className="border-t px-4 py-6 text-sm text-muted-foreground md:rounded-3xl md:border md:bg-card">
+          <h2 className="font-semibold text-foreground">Una comunidad para descubrir y comprar</h2>
+          <p className="mt-2 leading-6">
+            En speeaking puedes descubrir productos de vendedores, compartir lo que te gusta y
+            visualizar prendas compatibles con una foto tuya antes de decidir.
+          </p>
+          <nav
+            aria-label="Conoce speeaking"
+            className="mt-3 flex flex-wrap gap-4 font-semibold text-primary-text"
+          >
+            <Link href="/como-funciona">Cómo funciona</Link>
+            <Link href="/preguntas-frecuentes">Preguntas frecuentes</Link>
+            <Link href="/comprar">Explorar productos</Link>
+          </nav>
+        </section>
+      ) : null}
     </div>
   );
 }

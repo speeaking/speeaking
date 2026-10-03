@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 
 /** Enlaces legales y de confianza, en el orden en que la gente los busca (ADR-053). */
 export const LEGAL_LINKS: readonly { href: Route; label: string }[] = [
+  { href: "/como-funciona" as Route, label: "Cómo funciona" },
+  { href: "/preguntas-frecuentes" as Route, label: "Preguntas frecuentes" },
   { href: "/privacidad", label: "Privacidad" },
   { href: "/terminos", label: "Términos" },
   { href: "/cookies", label: "Cookies" },

@@ -33,7 +33,28 @@ export async function recordEvents(events: TrackedEvent[], context: TrackContext
 export function track(...events: TrackedEvent[]) {
   // Las cabeceras se leen ahora, dentro de la petición: en `after` un Server Component ya no puede.
   const ip = needsClientIp(events) ? currentClientIp() : Promise.resolve(null);
-  after(async () => recordEvents(events, { ip: await ip }));
+  const userAgent = currentUserAgent();
+  after(async () => {
+    // Un rastreo de buscador no representa interés de una persona ni una visita de campaña.
+    if (
+      /bot\b|crawler|spider|slurp|facebookexternalhit|chatgpt-user|googleother/i.test(
+        await userAgent,
+      )
+    )
+      return;
+    await recordEvents(events, { ip: await ip });
+  });
+}
+
+function currentUserAgent(): Promise<string> {
+  try {
+    return headers().then(
+      (value) => value.get("user-agent") ?? "",
+      () => "",
+    );
+  } catch {
+    return Promise.resolve("");
+  }
 }
 
 /** IP del cliente de esta petición (`null` sin proxies de confianza o fuera de una petición). */

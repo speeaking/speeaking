@@ -1,4 +1,8 @@
 import { Logo } from "@/components/brand/logo";
+import { NO_INDEX } from "@/app/seo";
+
+// Los documentos pendientes de revisión siguen accesibles y fuera del índice.
+export const metadata = { robots: NO_INDEX };
 
 export default function LegalLayout({ children }: LayoutProps<"/">) {
   return (
