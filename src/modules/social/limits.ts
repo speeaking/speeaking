@@ -48,6 +48,13 @@ export const SOCIAL_LIMITS = {
     { scope: "follow", subject: "user", limit: 100, windowSeconds: HOUR },
   ],
   join: [{ scope: "join", subject: "user", limit: 30, windowSeconds: HOUR }],
+  createCommunity: [
+    { scope: "community.create", subject: "ip", limit: 20, windowSeconds: DAY },
+    { scope: "community.create", subject: "user", limit: 3, windowSeconds: DAY },
+  ],
+  manageCommunity: [
+    { scope: "community.manage", subject: "user", limit: 100, windowSeconds: HOUR },
+  ],
   // «Contexto» (ADR-060): generar un resumen nuevo (los ya guardados no cuentan).
   context: [
     { scope: "context", subject: "ip", limit: 60, windowSeconds: HOUR },

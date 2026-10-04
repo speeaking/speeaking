@@ -51,7 +51,7 @@ export async function completeOnboarding(
   options: { legalConsent?: boolean } = {},
 ) {
   const communities = await db.community.findMany({
-    where: { slug: { in: input.communities } },
+    where: { slug: { in: input.communities }, removals: { none: { userId } } },
     select: { id: true },
   });
   if (communities.length < MIN_COMMUNITIES) {
@@ -68,6 +68,20 @@ export async function completeOnboarding(
 
   try {
     return await db.$transaction(async (tx) => {
+      // Mismo orden que el borrado de cuenta; une/sale/retira no pueden desajustar el contador.
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
+      const communityIds = communities.map(({ id }) => id);
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM communities
+        WHERE id IN (${Prisma.join(communityIds.map((id) => Prisma.sql`${id}::uuid`))})
+        ORDER BY id FOR UPDATE
+      `;
+      if (
+        locked.length !== communities.length ||
+        (await tx.communityRemoval.count({ where: { userId, communityId: { in: communityIds } } }))
+      ) {
+        throw new OnboardingError("INVALID_COMMUNITIES");
+      }
       const profileData = {
         username: input.username,
         displayName: input.displayName,
@@ -94,6 +108,10 @@ export async function completeOnboarding(
         await tx.community.updateMany({
           where: { id: { in: joined } },
           data: { memberCount: { increment: 1 } },
+        });
+        await tx.communityInvitation.deleteMany({ where: { userId, communityId: { in: joined } } });
+        await tx.notification.deleteMany({
+          where: { recipientId: userId, communityId: { in: joined }, type: "COMMUNITY_INVITE" },
         });
       }
 
@@ -180,10 +198,18 @@ export function countCommunityPosts(communityId: string) {
   });
 }
 
-/** Comunidades oficiales para el onboarding y Descubrir. */
-export function listCommunities() {
+/** Oficiales para bienvenida; también grupos propios al publicar, o todos al descubrir. */
+export function listCommunities(options: { includeGroups?: boolean; userId?: string } = {}) {
   return db.community.findMany({
-    orderBy: { sortOrder: "asc" },
+    where: options.includeGroups
+      ? {}
+      : {
+          OR: [
+            { isOfficial: true },
+            ...(options.userId ? [{ memberships: { some: { userId: options.userId } } }] : []),
+          ],
+        },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }, { id: "asc" }],
     select: {
       id: true,
       slug: true,
@@ -192,6 +218,8 @@ export function listCommunities() {
       hue: true,
       description: true,
       memberCount: true,
+      ownerId: true,
+      isOfficial: true,
     },
   });
 }

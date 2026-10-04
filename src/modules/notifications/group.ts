@@ -6,6 +6,7 @@ import { siteConfig } from "@/config/site";
  */
 
 export type NotificationKind =
+  | "COMMUNITY_INVITE"
   | "MENTION"
   | "REACTION"
   | "COMMENT"
@@ -40,6 +41,8 @@ export type NotificationRow = {
   reaction: string | null;
   orderId: string | null;
   orderTitle: string | null;
+  communityName?: string | null;
+  communitySlug?: string | null;
 };
 
 export type NotificationItem = {
@@ -57,6 +60,7 @@ export type NotificationItem = {
   reactions: string[];
   orderTitle: string | null;
   href: string;
+  communityName?: string | null;
 };
 
 const dayKey = new Intl.DateTimeFormat("en-CA", {
@@ -87,6 +91,8 @@ function hrefFor(
   selfUsername: string,
 ) {
   switch (type) {
+    case "COMMUNITY_INVITE":
+      return first.communitySlug ? `/c/${encodeURIComponent(first.communitySlug)}` : "/descubrir";
     case "MENTION":
       return first.commentExcerpt ? `/p/${first.postId}/comentarios` : `/p/${first.postId}`;
     case "REACTION":
@@ -150,6 +156,7 @@ export function groupNotifications(
       commentExcerpt: group.find((row) => row.commentExcerpt)?.commentExcerpt ?? null,
       reactions,
       orderTitle: first.orderTitle,
+      communityName: first.communityName,
       href: hrefFor(first.type, first, actors, selfUsername),
     };
   });
@@ -169,6 +176,11 @@ export function actorNames(actors: readonly NotificationActor[]): string {
 export function notificationSentence(item: NotificationItem): { who: string | null; what: string } {
   const many = item.actors.length > 1;
   switch (item.type) {
+    case "COMMUNITY_INVITE":
+      return {
+        who: actorNames(item.actors),
+        what: `te invitó a unirte a ${item.communityName ?? "una comunidad"}`,
+      };
     case "MENTION":
       return {
         who: actorNames(item.actors),

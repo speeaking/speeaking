@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Nueva publicación" };
  * abre la misma en una ventana encima, sin salir de donde estabas (ADR-068, `@modal`).
  */
 export default async function NewPostPage({ searchParams }: PageProps<"/crear/publicacion">) {
-  const { producto, tipo } = await searchParams;
+  const { producto, tipo, comunidad } = await searchParams;
   return (
     <>
       <PageHeader title="Nueva publicación" />
@@ -17,6 +17,7 @@ export default async function NewPostPage({ searchParams }: PageProps<"/crear/pu
         <NewPost
           productSlug={productSlugParam(producto)}
           defaultMedia={tipo === "video" ? "video" : "photos"}
+          communitySlug={typeof comunidad === "string" ? comunidad : undefined}
         />
       </div>
     </>

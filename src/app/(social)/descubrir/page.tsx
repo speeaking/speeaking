@@ -1,4 +1,4 @@
-import { Compass, House } from "lucide-react";
+import { Compass, House, Plus, Settings2 } from "lucide-react";
 import type { Metadata, Route } from "next";
 import { pageMetadata } from "@/app/seo";
 import Link from "next/link";
@@ -12,6 +12,8 @@ import { countPostsOfNewCommunities, listCommunities } from "@/modules/identity/
 import { getViewer } from "@/modules/identity/session";
 import { JoinButton } from "@/modules/social/components/join-button";
 import { db } from "@/server/db";
+import { listCommunityInvitations } from "@/modules/communities/queries";
+import { CommunityInvitationCard } from "@/modules/communities/components/invitation-card";
 
 export const metadata: Metadata = pageMetadata({
   title: "Comunidades para descubrir y compartir",
@@ -22,31 +24,57 @@ export const metadata: Metadata = pageMetadata({
 
 export default async function DiscoverPage() {
   const viewer = await getViewer();
-  const [communities, newCommunityPosts, memberships] = await Promise.all([
-    listCommunities(),
+  const [communities, newCommunityPosts, memberships, invitations] = await Promise.all([
+    listCommunities({ includeGroups: true }),
     countPostsOfNewCommunities(),
     viewer
       ? db.communityMembership.findMany({
           where: { userId: viewer.userId },
-          select: { communityId: true },
+          select: { communityId: true, role: true },
         })
       : [],
+    viewer ? listCommunityInvitations(viewer.userId) : [],
   ]);
   const joined = new Set(memberships.map((membership) => membership.communityId));
+  const managed = new Set(
+    memberships
+      .filter((membership) => membership.role === "ADMIN")
+      .map((membership) => membership.communityId),
+  );
 
   return (
     <>
       <PageHeader
         title="Descubrir"
         description="Comunidades para cada gusto. Únete a las que te laten."
+        actions={
+          <Link
+            href={"/crear/comunidad" as Route}
+            className={cn(buttonVariants(), "min-h-11 gap-2 rounded-xl px-3")}
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Crear comunidad</span>
+            <span className="sm:hidden">Crear</span>
+          </Link>
+        }
       />
+      {invitations.length ? (
+        <section aria-label="Invitaciones a comunidades" className="mb-5 space-y-3 px-4 md:px-0">
+          <h2 className="font-bold">Te invitaron a estas comunidades</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {invitations.map(({ community }) => (
+              <CommunityInvitationCard key={community.id} community={community} />
+            ))}
+          </div>
+        </section>
+      ) : null}
       {communities.length === 0 ? (
         // Varias páginas mandan aquí («Explorar comunidades»): sin comunidades, se dice y hay salida.
         <div className="px-4 md:px-0">
           <EmptyState
             icon={Compass}
             title="Todavía no hay comunidades"
-            description="Cuando abramos la primera, aquí podrás unirte. Mientras tanto, mira lo que comparte la gente en el inicio."
+            description="Crea una comunidad con tus intereses y empieza a reunir a otras personas."
             action={
               <Link
                 href="/"
@@ -84,14 +112,26 @@ export default async function DiscoverPage() {
                 </span>
               </Link>
               <p className="line-clamp-2 text-sm text-muted-foreground">{community.description}</p>
-              <JoinButton
-                communityId={community.id}
-                communityName={community.name}
-                communitySlug={community.slug}
-                initialJoined={joined.has(community.id)}
-                isSignedIn={Boolean(viewer)}
-                size="sm"
-              />
+              {community.ownerId && managed.has(community.id) ? (
+                <Link
+                  href={`/c/${community.slug}/miembros` as Route}
+                  className={cn(buttonVariants({ variant: "outline" }), "min-h-11 gap-2")}
+                >
+                  <Settings2 className="size-4" />
+                  {community.ownerId === viewer?.userId
+                    ? "Tu comunidad · Administrar"
+                    : "Administrar"}
+                </Link>
+              ) : (
+                <JoinButton
+                  communityId={community.id}
+                  communityName={community.name}
+                  communitySlug={community.slug}
+                  initialJoined={joined.has(community.id)}
+                  isSignedIn={Boolean(viewer)}
+                  size="sm"
+                />
+              )}
             </li>
           ))}
         </ul>

@@ -14,6 +14,8 @@ export const getCommunity = cache((slug: string) =>
       hue: true,
       description: true,
       memberCount: true,
+      ownerId: true,
+      isOfficial: true,
     },
   }),
 );

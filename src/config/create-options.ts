@@ -1,4 +1,4 @@
-import { Handshake, ImagePlus, type LucideIcon, Package, Sparkles } from "lucide-react";
+import { Handshake, ImagePlus, type LucideIcon, Package, Sparkles, UsersRound } from "lucide-react";
 import type { Route } from "next";
 import { siteConfig } from "./site";
 
@@ -14,6 +14,12 @@ export const CREATE_OPTIONS: readonly CreateOption[] = [
     title: "Publicación",
     description: "Comparte tu día, una foto o un video con tus amigos y comunidades.",
     icon: ImagePlus,
+  },
+  {
+    href: "/crear/comunidad" as Route,
+    title: "Comunidad o grupo",
+    description: "Reúne a personas con tus intereses y administra tu propio grupo.",
+    icon: UsersRound,
   },
   {
     href: "/creadores",

@@ -17,6 +17,7 @@ const filters = [
   { value: "reactions", label: "Reacciones" },
   { value: "tags", label: "Etiquetas" },
   { value: "friends", label: "Amistad" },
+  { value: "communities", label: "Comunidades" },
   { value: "orders", label: "Pedidos" },
 ] as const;
 type Filter = (typeof filters)[number]["value"];
@@ -30,6 +31,7 @@ function matches(item: NotificationItem, filter: Filter) {
   if (filter === "friends")
     return ["FRIEND_REQUEST", "FRIEND_ACCEPTED", "FOLLOW"].includes(item.type);
   if (filter === "orders") return item.type.startsWith("ORDER_");
+  if (filter === "communities") return item.type === "COMMUNITY_INVITE";
   return true;
 }
 

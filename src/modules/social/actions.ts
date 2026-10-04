@@ -2,6 +2,7 @@
 
 import type { Route } from "next";
 import { revalidatePath } from "next/cache";
+import { CommunityError, lockCommunity } from "@/modules/communities/service";
 import { RedirectType, redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
@@ -393,21 +394,41 @@ export async function createPostAction(
 
   let post: { id: string };
   try {
-    post = await db.post.create({
-      data: {
-        authorId: viewer.userId,
-        body,
-        communityId: community?.id ?? null,
-        productId: product?.id ?? null,
-        // Solo tiene sentido declarar un acuerdo sobre el producto de otra tienda.
-        collaboration: thirdParty && parsed.data.collaboration,
-        ...(video
-          ? { type: "VIDEO" as const, media: { create: [{ mediaId: video.id, position: 0 }] } }
-          : { media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) } }),
-      },
-      select: { id: true },
+    post = await db.$transaction(async (tx) => {
+      if (community) {
+        const current = await lockCommunity(tx, community.id);
+        const key = { userId: viewer.userId, communityId: current.id };
+        const removed = await tx.communityRemoval.findUnique({
+          where: { userId_communityId: key },
+          select: { userId: true },
+        });
+        if (removed) throw new CommunityError("Tu acceso a esta comunidad fue retirado.");
+        if (!current.isOfficial) {
+          const member = await tx.communityMembership.findUnique({
+            where: { userId_communityId: key },
+            select: { userId: true },
+          });
+          if (!member)
+            throw new CommunityError("Únete a esta comunidad antes de publicar en ella.");
+        }
+      }
+      return tx.post.create({
+        data: {
+          authorId: viewer.userId,
+          body,
+          communityId: community?.id ?? null,
+          productId: product?.id ?? null,
+          // Solo tiene sentido declarar un acuerdo sobre el producto de otra tienda.
+          collaboration: thirdParty && parsed.data.collaboration,
+          ...(video
+            ? { type: "VIDEO" as const, media: { create: [{ mediaId: video.id, position: 0 }] } }
+            : { media: { create: mediaIds.map((mediaId, position) => ({ mediaId, position })) } }),
+        },
+        select: { id: true },
+      });
     });
   } catch (error) {
+    if (error instanceof CommunityError) return { error: error.message };
     // Se guardó como comprobante mientras tanto: el trigger `reject_proof_media_link` lo rechaza.
     if (isProofMediaLinkError(error)) return { error: INVALID_IMAGE };
     throw error;

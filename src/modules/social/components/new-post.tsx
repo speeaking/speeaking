@@ -21,16 +21,18 @@ export async function NewPost({
   productSlug,
   inLayer = false,
   defaultMedia = "photos",
+  communitySlug,
 }: {
   productSlug: string | null;
   inLayer?: boolean;
   defaultMedia?: "photos" | "video";
+  communitySlug?: string;
 }) {
   const viewer = await requireOnboardedViewer(
     productSlug ? `/crear/publicacion?producto=${productSlug}` : "/crear/publicacion",
   );
   const [communities, memberships, products, taggedProduct] = await Promise.all([
-    listCommunities(),
+    listCommunities({ userId: viewer.userId }),
     db.communityMembership.findMany({
       where: { userId: viewer.userId },
       select: { communityId: true },
@@ -54,7 +56,10 @@ export async function NewPost({
     <CreatePostForm
       communities={sorted}
       products={products}
-      defaultCommunity={sorted.find((community) => mine.has(community.id))?.slug}
+      defaultCommunity={
+        sorted.find((community) => community.slug === communitySlug)?.slug ??
+        sorted.find((community) => mine.has(community.id))?.slug
+      }
       videoEnabled={videoUploadsEnabled()}
       publicAccount={isPlatformAdministrator(viewer.email, viewer.profile.role)}
       taggedProduct={taggedProduct}

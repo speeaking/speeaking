@@ -8,6 +8,7 @@ import {
   Tag,
   Truck,
   UserPlus,
+  UsersRound,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { markNotificationGroupReadAction } from "../actions";
 
 /** Ícono de cada tipo de aviso (las reacciones llevan su emoji). */
 const ICONS: Record<Exclude<NotificationKind, "REACTION">, LucideIcon> = {
+  COMMUNITY_INVITE: UsersRound,
   MENTION: AtSign,
   COMMENT: MessageCircle,
   FOLLOW: UserPlus,

@@ -35,6 +35,38 @@ export async function deleteAccount(
   const keepOrders = asBuyer + asSeller + soldItems > 0;
 
   await client.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
+    // Bloqueo ordenado: no deja grupos huérfanos ni roles pendientes al borrar/anonimizar la cuenta.
+    await tx.$queryRaw`
+      SELECT c.id FROM communities c
+      WHERE c."ownerId" = ${userId}::uuid OR EXISTS (
+        SELECT 1 FROM community_memberships m WHERE m."communityId" = c.id AND m."userId" = ${userId}::uuid
+      ) ORDER BY c.id FOR UPDATE OF c
+    `;
+    const owned = await tx.community.findMany({ where: { ownerId: userId }, select: { id: true } });
+    for (const community of owned) {
+      const successor = await tx.communityMembership.findFirst({
+        where: {
+          communityId: community.id,
+          userId: { not: userId },
+          user: { profile: { onboardedAt: { not: null }, isEditorial: false } },
+        },
+        orderBy: [{ role: "desc" }, { createdAt: "asc" }, { userId: "asc" }],
+        select: { userId: true },
+      });
+      if (successor) {
+        await tx.community.update({
+          where: { id: community.id },
+          data: { ownerId: successor.userId },
+        });
+        await tx.communityMembership.update({
+          where: { userId_communityId: { userId: successor.userId, communityId: community.id } },
+          data: { role: "ADMIN" },
+        });
+      } else {
+        await tx.community.delete({ where: { id: community.id } });
+      }
+    }
     await anonymizeUserActivity(userId, tx);
     // Las comunidades pierden a esta persona: el contador baja antes de que la membresía caiga.
     const memberships = await tx.communityMembership.findMany({
@@ -63,6 +95,13 @@ export async function deleteAccount(
     await tx.friendship.deleteMany({ where: { OR: [{ userAId: userId }, { userBId: userId }] } });
     await tx.savedItem.deleteMany({ where: { userId } });
     await tx.communityMembership.deleteMany({ where: { userId } });
+    await tx.communityInvitation.deleteMany({
+      where: { OR: [{ userId }, { invitedById: userId }] },
+    });
+    await tx.communityRemoval.deleteMany({ where: { userId } });
+    await tx.notification.deleteMany({
+      where: { OR: [{ recipientId: userId }, { actorId: userId }] },
+    });
     await tx.userInterest.deleteMany({ where: { userId } });
     await tx.shoppingIntent.deleteMany({ where: { userId } });
     await tx.tryOnPhoto.deleteMany({ where: { userId } });

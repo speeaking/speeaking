@@ -24,7 +24,8 @@ export function DeleteAccountForm() {
         <span>
           Entiendo que se borra todo y no se puede deshacer: mi perfil, mis publicaciones, mis
           productos, mis fotos, mis mensajes y mi saldo. Si tengo pedidos, se conservan sin mis
-          datos.
+          datos. Si soy propietario de una comunidad, pasa al administrador más antiguo o a un
+          miembro; si no queda nadie elegible, se retira el grupo.
         </span>
       </label>
       {state.error ? (

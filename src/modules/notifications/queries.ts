@@ -31,6 +31,18 @@ const visible = (recipientId: string): Prisma.NotificationWhereInput => ({
       ],
     },
     { OR: [{ commentId: null }, { comment: { status: "PUBLISHED" } }] },
+    {
+      OR: [
+        { type: { not: "COMMUNITY_INVITE" } },
+        {
+          community: { invitations: { some: { userId: recipientId } } },
+          actor: {
+            messageBlocksMade: { none: { blockedId: recipientId } },
+            messageBlocksReceived: { none: { blockerId: recipientId } },
+          },
+        },
+      ],
+    },
   ],
 });
 
@@ -59,6 +71,7 @@ export async function listNotifications(userId: string): Promise<NotificationRow
       },
       post: { select: { id: true, body: true } },
       comment: { select: { body: true } },
+      community: { select: { name: true, slug: true } },
       order: {
         select: {
           id: true,
@@ -85,6 +98,8 @@ export async function listNotifications(userId: string): Promise<NotificationRow
         postExcerpt: excerpt(row.post?.body ?? null),
         commentExcerpt: excerpt(row.comment?.body ?? null),
         reaction: row.reaction,
+        communityName: row.community?.name ?? null,
+        communitySlug: row.community?.slug ?? null,
         orderId: row.order?.id ?? null,
         orderTitle: firstItem
           ? moreItems > 0

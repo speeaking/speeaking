@@ -22,6 +22,7 @@ export function Composer({
   isSignedIn = true,
   needsOnboarding = false,
   className,
+  communitySlug,
 }: {
   firstName?: string;
   displayName?: string;
@@ -30,10 +31,14 @@ export function Composer({
   isSignedIn?: boolean;
   needsOnboarding?: boolean;
   className?: string;
+  communitySlug?: string;
 }) {
   const destination = (type?: "foto" | "video" | "pregunta") => {
     if (needsOnboarding) return "/bienvenida" as Route;
-    const path = `${CREATE_POST}${type ? `?tipo=${type}` : ""}`;
+    const params = new URLSearchParams();
+    if (type) params.set("tipo", type);
+    if (communitySlug) params.set("comunidad", communitySlug);
+    const path = `${CREATE_POST}${params.size ? `?${params}` : ""}`;
     return (isSignedIn ? path : `/entrar?next=${encodeURIComponent(path)}`) as Route;
   };
   const prompt = firstName

@@ -30,6 +30,10 @@ model User {
   interests                 UserInterest[]
   shoppingIntents           ShoppingIntent[]
   memberships               CommunityMembership[]
+  ownedCommunities          Community[]                @relation("communityOwner")
+  communityInvitations      CommunityInvitation[]      @relation("communityInvitee")
+  communityInvitesSent      CommunityInvitation[]      @relation("communityInviter")
+  communityRemovals         CommunityRemoval[]
   posts                     Post[]
   comments                  Comment[]
   likes                     Like[]
@@ -322,6 +326,9 @@ model Community {
   hue         Int      @default(12)
   sortOrder   Int      @default(0)
   isOfficial  Boolean  @default(true)
+  /// El propietario actual; transferir la propiedad también transfiere el control de los roles.
+  ownerId     String?  @db.Uuid
+  owner       User?    @relation("communityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   memberCount Int      @default(0)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
@@ -330,8 +337,17 @@ model Community {
   categories      CommunityCategory[]
   posts           Post[]
   editorialDrafts EditorialDraft[]
+  invitations     CommunityInvitation[]
+  removals        CommunityRemoval[]
+  notifications   Notification[]
 
+  @@index([ownerId])
   @@map("communities")
+}
+
+enum CommunityRole {
+  MEMBER
+  ADMIN
 }
 
 model CommunityMembership {
@@ -340,6 +356,7 @@ model CommunityMembership {
   communityId String    @db.Uuid
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  role        CommunityRole @default(MEMBER)
   /// Última vez que la persona abrió la comunidad («N nuevas», F7). Sin visitas cuenta desde que
   /// se unió (`createdAt`). El índice de posts (communityId, status, publishedAt) sirve al conteo.
   lastSeenAt  DateTime? @db.Timestamptz(3)
@@ -347,6 +364,34 @@ model CommunityMembership {
   @@id([userId, communityId])
   @@index([communityId])
   @@map("community_memberships")
+}
+
+/// Una invitación no agrega a una persona sin su aceptación.
+model CommunityInvitation {
+  communityId String    @db.Uuid
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String    @db.Uuid
+  user        User      @relation("communityInvitee", fields: [userId], references: [id], onDelete: Cascade)
+  invitedById String?   @db.Uuid
+  invitedBy   User?     @relation("communityInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@id([userId, communityId])
+  @@index([communityId, createdAt])
+  @@map("community_invitations")
+}
+
+/// Retirar a un miembro impide que vuelva a unirse hasta que se le permita o acepte una invitación.
+model CommunityRemoval {
+  communityId String    @db.Uuid
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@id([userId, communityId])
+  @@index([communityId, createdAt])
+  @@map("community_removals")
 }
 
 /// Conecta intereses sociales con categorías de producto (Commerce Engine).
@@ -1698,6 +1743,7 @@ model StyleLook {
 // ─────────────────────────────── Avisos (ADR-059) ───────────────────────────────
 
 enum NotificationType {
+  COMMUNITY_INVITE
   /// Alguien mencionó tu @usuario en una publicación o comentario que puedes ver.
   MENTION
   /// Alguien reaccionó a tu publicación (una por persona y publicación: `dedupeKey`).
@@ -1730,6 +1776,8 @@ model Notification {
   actorId     String?          @db.Uuid
   actor       User?            @relation("notificationsCaused", fields: [actorId], references: [id], onDelete: Cascade)
   type        NotificationType
+  communityId String?          @db.Uuid
+  community   Community?       @relation(fields: [communityId], references: [id], onDelete: Cascade)
   postId      String?          @db.Uuid
   post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
   commentId   String?          @db.Uuid
@@ -1748,6 +1796,7 @@ model Notification {
   @@index([postId])
   @@index([commentId])
   @@index([orderId])
+  @@index([communityId])
   @@index([createdAt])
   @@map("notifications")
 }

@@ -1,6 +1,7 @@
-import { Users } from "lucide-react";
+import { Users, Settings2 } from "lucide-react";
 import { pageMetadata, NO_INDEX } from "@/app/seo";
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
@@ -17,6 +18,10 @@ import { JoinButton } from "@/modules/social/components/join-button";
 import { markCommunitySeen } from "@/modules/social/unread";
 import { db } from "@/server/db";
 import { getCommunity } from "./community";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { CommunityInvitationCard } from "@/modules/communities/components/invitation-card";
+import { Composer } from "@/modules/feed/components/composer";
 
 export async function generateMetadata({ params }: PageProps<"/c/[slug]">): Promise<Metadata> {
   const community = await getCommunity((await params).slug);
@@ -36,17 +41,29 @@ export default async function CommunityPage({ params }: PageProps<"/c/[slug]">) 
   if (!community) notFound();
 
   const viewer = await getViewer();
-  const [page, membership, postCount, requestHeaders] = await Promise.all([
+  const [page, membership, postCount, requestHeaders, invitation, removal] = await Promise.all([
     recommendationEngine.getFeed({ viewerId: viewer?.userId ?? null, communityId: community.id }),
     viewer
       ? db.communityMembership.findUnique({
           where: { userId_communityId: { userId: viewer.userId, communityId: community.id } },
-          select: { userId: true },
+          select: { userId: true, role: true },
         })
       : null,
     // Solo hace falta cuando la comunidad todavía no muestra su número de miembros.
     community.memberCount < MIN_VISIBLE_MEMBERS ? countCommunityPosts(community.id) : 0,
     headers(),
+    viewer
+      ? db.communityInvitation.findUnique({
+          where: { userId_communityId: { userId: viewer.userId, communityId: community.id } },
+          select: { userId: true },
+        })
+      : null,
+    viewer
+      ? db.communityRemoval.findUnique({
+          where: { userId_communityId: { userId: viewer.userId, communityId: community.id } },
+          select: { userId: true },
+        })
+      : null,
   ]);
   trackImpressions(page.items, viewer?.userId ?? null, "COMMUNITY");
   // «N nuevas» (F7): quien es miembro ya vio lo que hay. Después de responder, sin bloquear la
@@ -74,7 +91,7 @@ export default async function CommunityPage({ params }: PageProps<"/c/[slug]">) 
           size="lg"
           decorative
         />
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-extrabold">{community.name}</h1>
             <p className="text-sm opacity-80">{community.description}</p>
@@ -82,17 +99,63 @@ export default async function CommunityPage({ params }: PageProps<"/c/[slug]">) 
               {communitySignal({ memberCount: community.memberCount, postCount })}
             </p>
           </div>
-          <JoinButton
-            communityId={community.id}
-            communityName={community.name}
+          {community.ownerId === viewer?.userId ? (
+            <span className="rounded-full border bg-card/60 px-3 py-2 text-sm font-semibold">
+              Tu comunidad
+            </span>
+          ) : removal ? (
+            <span className="text-sm font-semibold">Tu acceso fue retirado</span>
+          ) : (
+            <JoinButton
+              communityId={community.id}
+              communityName={community.name}
+              communitySlug={community.slug}
+              initialJoined={Boolean(membership)}
+              isSignedIn={Boolean(viewer)}
+              className="shrink-0"
+            />
+          )}
+        </div>
+        {membership ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/c/${community.slug}/miembros` as Route}
+              className={cn(buttonVariants({ variant: "outline" }), "min-h-11 gap-2 bg-card/60")}
+            >
+              {community.ownerId &&
+              (community.ownerId === viewer?.userId || membership.role === "ADMIN") ? (
+                <>
+                  <Settings2 className="size-4" />
+                  Administrar grupo
+                </>
+              ) : (
+                <>
+                  <Users className="size-4" />
+                  Ver miembros
+                </>
+              )}
+            </Link>
+          </div>
+        ) : null}
+      </header>
+      {invitation ? (
+        <div className="mb-4 px-4 md:px-0">
+          <CommunityInvitationCard community={community} />
+        </div>
+      ) : null}
+      {viewer && (membership || community.isOfficial) && !removal ? (
+        <div className="mb-4">
+          <Composer
+            displayName={viewer.profile?.displayName ?? viewer.name}
+            username={viewer.profile?.username}
+            avatarUrl={viewer.profile?.avatarUrl ?? null}
             communitySlug={community.slug}
-            initialJoined={Boolean(membership)}
-            isSignedIn={Boolean(viewer)}
-            className="shrink-0"
+            needsOnboarding={!viewer.profile?.onboarded}
           />
         </div>
-      </header>
+      ) : null}
       <FeedList
+        isSignedIn={Boolean(viewer)}
         initialPage={page}
         community={community.slug}
         empty={
