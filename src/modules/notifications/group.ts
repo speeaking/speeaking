@@ -6,6 +6,7 @@ import { siteConfig } from "@/config/site";
  */
 
 export type NotificationKind =
+  | "MENTION"
   | "REACTION"
   | "COMMENT"
   | "FOLLOW"
@@ -18,7 +19,12 @@ export type NotificationKind =
   | "PRODUCT_TAGGED"
   | "PRODUCT_TAG_REMOVED";
 
-export type NotificationActor = { username: string; displayName: string; avatarUrl: string | null };
+export type NotificationActor = {
+  userId?: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
 
 /** Un aviso tal como sale de la base, ya con lo público de quién lo causó y de qué. */
 export type NotificationRow = {
@@ -81,6 +87,8 @@ function hrefFor(
   selfUsername: string,
 ) {
   switch (type) {
+    case "MENTION":
+      return first.commentExcerpt ? `/p/${first.postId}/comentarios` : `/p/${first.postId}`;
     case "REACTION":
       return `/p/${first.postId}`;
     case "COMMENT":
@@ -161,6 +169,13 @@ export function actorNames(actors: readonly NotificationActor[]): string {
 export function notificationSentence(item: NotificationItem): { who: string | null; what: string } {
   const many = item.actors.length > 1;
   switch (item.type) {
+    case "MENTION":
+      return {
+        who: actorNames(item.actors),
+        what: item.commentExcerpt
+          ? "te mencionó en un comentario"
+          : "te mencionó en una publicación",
+      };
     case "REACTION":
       return {
         who: actorNames(item.actors),

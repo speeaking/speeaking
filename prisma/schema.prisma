@@ -1698,6 +1698,8 @@ model StyleLook {
 // ─────────────────────────────── Avisos (ADR-059) ───────────────────────────────
 
 enum NotificationType {
+  /// Alguien mencionó tu @usuario en una publicación o comentario que puedes ver.
+  MENTION
   /// Alguien reaccionó a tu publicación (una por persona y publicación: `dedupeKey`).
   REACTION
   /// Alguien comentó tu publicación (uno por comentario).

@@ -58,7 +58,7 @@ export function NotificationsPanel({
         if (next) void fetchItems();
       }}
       trigger={trigger}
-      title="Avisos"
+      title="Notificaciones"
       actions={
         <Link href="/avisos" className={inboxLinkClass}>
           Ver todos
@@ -66,7 +66,7 @@ export function NotificationsPanel({
       }
     >
       {load.status === "loading" ? (
-        <InboxLoading label="Cargando avisos" />
+        <InboxLoading label="Cargando notificaciones" />
       ) : load.status === "error" ? (
         <InboxNotice
           action={
@@ -79,8 +79,8 @@ export function NotificationsPanel({
         </InboxNotice>
       ) : load.items.length === 0 ? (
         <InboxNotice>
-          Todavía no tienes avisos. Aquí verás quién reacciona, comenta o empieza a seguirte, y cómo
-          van tus pedidos.
+          Aquí verás las respuestas, menciones, solicitudes de amistad, etiquetas de productos y
+          novedades de tus pedidos.
         </InboxNotice>
       ) : (
         <div className="p-1.5">

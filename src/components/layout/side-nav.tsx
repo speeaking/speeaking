@@ -16,7 +16,7 @@ import { JoinButton } from "@/modules/social/components/join-button";
 import { useNav } from "./shell-frame";
 
 /** Sin sesión solo se muestran las secciones públicas (Guardados y Mis pedidos piden cuenta). */
-const PUBLIC_NAV = new Set<string>(["/", "/descubrir", "/comprar"]);
+const PUBLIC_NAV = new Set<string>(["/", "/videos", "/descubrir", "/comprar"]);
 
 /**
  * Sticky bajo la barra superior (64 px), con scroll propio y desvanecido abajo. El `pb-6` deja el

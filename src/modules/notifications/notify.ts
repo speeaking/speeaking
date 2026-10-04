@@ -1,6 +1,9 @@
 import "server-only";
 import type { NotificationType, ReactionKind } from "@/generated/prisma/enums";
 import { db } from "@/server/db";
+import { mentionedUsernames } from "@/modules/social/mentions";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 /**
  * Crear y quitar avisos (ADR-059). Siempre «a lo mejor posible»: si el aviso falla, la acción que lo
@@ -17,6 +20,61 @@ async function safely(label: string, run: () => Promise<unknown>) {
 
 const reactionKey = (actorId: string, postId: string) => `reaction:${actorId}:${postId}`;
 const followKey = (actorId: string, recipientId: string) => `follow:${actorId}:${recipientId}`;
+
+/** Solo avisa a cuentas existentes con acceso al contenido y sin bloqueos entre las personas. */
+export function notifyMentions(input: {
+  actorId: string;
+  postId: string;
+  body: string;
+  commentId?: string;
+  skipRecipientId?: string;
+}) {
+  const usernames = mentionedUsernames(input.body);
+  if (!usernames.length) return Promise.resolve();
+  return safely("avisar de una mención", async () => {
+    const recipients = await db.profile.findMany({
+      where: {
+        username: { in: usernames },
+        userId: {
+          notIn: [input.actorId, ...(input.skipRecipientId ? [input.skipRecipientId] : [])],
+        },
+        onboardedAt: { not: null },
+        isEditorial: false,
+        user: {
+          messageBlocksMade: { none: { blockedId: input.actorId } },
+          messageBlocksReceived: { none: { blockerId: input.actorId } },
+        },
+      },
+      select: { userId: true },
+    });
+    const readable = await Promise.all(
+      recipients.map(async ({ userId }) => {
+        const post = await db.post.findFirst({
+          where: {
+            id: input.postId,
+            status: "PUBLISHED",
+            AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(userId)],
+          },
+          select: { id: true },
+        });
+        return post ? userId : null;
+      }),
+    );
+    const recipientIds = readable.filter((id): id is string => id !== null);
+    if (!recipientIds.length) return;
+    await db.notification.createMany({
+      data: recipientIds.map((recipientId) => ({
+        type: "MENTION" as const,
+        actorId: input.actorId,
+        postId: input.postId,
+        commentId: input.commentId ?? null,
+        recipientId,
+        dedupeKey: `mention:${input.commentId ?? input.postId}:${recipientId}`,
+      })),
+      skipDuplicates: true,
+    });
+  });
+}
 
 /** Alguien reaccionó: un solo aviso por persona y publicación; cambiar de reacción no lo repite. */
 export function notifyReaction(input: {

@@ -249,8 +249,14 @@
     @apply border-border outline-ring;
   }
   html {
+    --shell-toast-top: 124px;
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 7.5rem;
+    @media (width >= 48rem) {
+      --shell-toast-top: 72px;
+      scroll-padding-top: 4.5rem;
+    }
   }
   body {
     /* Lienzo plano: el color lo ponen las fotos y los bloques, no el fondo. */

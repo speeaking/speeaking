@@ -11,6 +11,7 @@ import { TAG_ERRORS, tagDecision } from "@/modules/creators/rules";
 import { getViewer, requireOnboardedViewer } from "@/modules/identity/session";
 import {
   notifyComment,
+  notifyMentions,
   notifyProductTagged,
   notifyReaction,
   removeReactionNotification,
@@ -304,6 +305,13 @@ export async function createCommentAction(
     postId: parsed.data.postId,
     commentId: created.commentId,
   });
+  await notifyMentions({
+    actorId: viewer.userId,
+    postId: parsed.data.postId,
+    commentId: created.commentId,
+    body: parsed.data.body,
+    skipRecipientId: created.authorId,
+  });
   track({
     type: "COMMENT",
     userId: viewer.userId,
@@ -413,7 +421,9 @@ export async function createPostAction(
     });
   }
   // El inicio vuelve a pedirse con la publicación nueva.
+  await notifyMentions({ actorId: viewer.userId, postId: post.id, body });
   revalidatePath("/");
+  revalidatePath("/videos");
   // Desde la ventana encima del feed (ADR-068) la publicación toma su lugar en el historial: al
   // cerrarla se regresa al feed, no al formulario ya enviado.
   redirect(

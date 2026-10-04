@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   MessageCircle,
+  AtSign,
   Package,
   Tag,
   Truck,
@@ -18,9 +19,12 @@ import { cn } from "@/lib/utils";
 import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import { reactionMeta, type ReactionKind } from "@/modules/social/reactions";
 import { type NotificationItem, type NotificationKind, notificationSentence } from "../group";
+import { FriendshipButton } from "@/modules/relationships/components/friendship-button";
+import { markNotificationGroupReadAction } from "../actions";
 
 /** Ícono de cada tipo de aviso (las reacciones llevan su emoji). */
 const ICONS: Record<Exclude<NotificationKind, "REACTION">, LucideIcon> = {
+  MENTION: AtSign,
   COMMENT: MessageCircle,
   FOLLOW: UserPlus,
   FRIEND_REQUEST: UserPlus,
@@ -53,52 +57,70 @@ function Row({ item, allowRemoval }: { item: NotificationItem; allowRemoval: boo
   const [removed, setRemoved] = useState(false);
   const { who, what } = notificationSentence(item);
   const first = item.actors[0];
-  const quote = item.type === "COMMENT" ? item.commentExcerpt : item.postExcerpt;
+  const quote =
+    item.type === "COMMENT" || item.type === "MENTION"
+      ? (item.commentExcerpt ?? item.postExcerpt)
+      : item.postExcerpt;
   if (removed) return null;
   return (
     <li className="flex items-start gap-1">
-      <Link
-        href={item.href as Route}
-        className={cn(
-          "flex min-w-0 flex-1 items-start gap-3 rounded-2xl px-3 py-3 transition-colors hover:bg-secondary",
-          item.unread && "bg-accent/40",
-        )}
-      >
-        <span aria-hidden="true" className="relative shrink-0">
-          {first ? (
-            <UserAvatar
-              name={first.displayName}
-              seed={first.username}
-              src={first.avatarUrl}
-              className="size-12"
-            />
-          ) : (
-            <span className="grid size-12 place-items-center rounded-full bg-secondary">
-              <Package className="size-5 text-muted-foreground" />
-            </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Link
+          href={item.href as Route}
+          onClick={() => {
+            if (item.unread && item.ids?.length)
+              void markNotificationGroupReadAction(item.ids).catch(() => undefined);
+          }}
+          className={cn(
+            "flex min-w-0 flex-1 items-start gap-3 rounded-2xl px-3 py-3 transition-colors hover:bg-secondary",
+            item.unread && "bg-accent/40",
           )}
-          <Badge item={item} />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-[15px] leading-snug">
-            {who ? <strong className="font-semibold">{who}</strong> : null} {what}
-            {item.orderTitle ? (
-              <span className="text-muted-foreground">: {item.orderTitle}</span>
+        >
+          <span aria-hidden="true" className="relative shrink-0">
+            {first ? (
+              <UserAvatar
+                name={first.displayName}
+                seed={first.username}
+                src={first.avatarUrl}
+                className="size-12"
+              />
+            ) : (
+              <span className="grid size-12 place-items-center rounded-full bg-secondary">
+                <Package className="size-5 text-muted-foreground" />
+              </span>
+            )}
+            <Badge item={item} />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[15px] leading-snug">
+              {who ? <strong className="font-semibold">{who}</strong> : null} {what}
+              {item.orderTitle ? (
+                <span className="text-muted-foreground">: {item.orderTitle}</span>
+              ) : null}
+            </span>
+            {quote ? (
+              <span className="line-clamp-1 text-sm text-muted-foreground">«{quote}»</span>
             ) : null}
+            <time dateTime={item.at.toISOString()} className="text-xs text-muted-foreground">
+              {formatRelativeTime(item.at)}
+            </time>
           </span>
-          {quote ? (
-            <span className="line-clamp-1 text-sm text-muted-foreground">«{quote}»</span>
+          {item.unread ? (
+            <span className="mt-2 size-2.5 shrink-0 rounded-full bg-primary">
+              <span className="sr-only">Nuevo</span>
+            </span>
           ) : null}
-          <time dateTime={item.at.toISOString()} className="text-xs text-muted-foreground">
-            {formatRelativeTime(item.at)}
-          </time>
-        </span>
-        {item.unread ? (
-          <span className="mt-2 size-2.5 shrink-0 rounded-full bg-primary">
-            <span className="sr-only">Nuevo</span>
-          </span>
+        </Link>
+        {item.type === "FRIEND_REQUEST" && first?.userId ? (
+          <div className="pb-3 pl-[4.5rem]">
+            <FriendshipButton
+              targetId={first.userId}
+              name={first.displayName}
+              initialState="incoming"
+            />
+          </div>
         ) : null}
-      </Link>
+      </div>
       {allowRemoval && item.ids?.length ? (
         <RemoveContentButton
           kind="notification"

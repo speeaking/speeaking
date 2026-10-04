@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Bell,
   ChartColumn,
   CircleUser,
   Clapperboard,
@@ -10,7 +11,6 @@ import {
   type LucideIcon,
   Megaphone,
   Package,
-  Plus,
   ReceiptText,
   Shirt,
   ShoppingBag,
@@ -33,17 +33,15 @@ export type NavItem = {
 };
 
 /**
- * Barra inferior móvil: máximo 5 pestañas (docs/mvp-0.1.md → Pantallas). Cada pestaña agrupa sus
+ * Secciones principales en móvil: máximo 5 pestañas. Cada pestaña agrupa sus
  * pantallas hijas para que la barra nunca se quede sin pestaña activa en una ruta anidada.
  */
 export const socialNav: readonly NavItem[] = [
   { href: "/", label: "Inicio", icon: House, match: "exact" },
-  { href: "/descubrir", label: "Descubrir", icon: Compass, also: ["/c", "/buscar"] },
-  // La sección de creadores (ADR-063) cuelga de Crear.
-  { href: "/crear", label: "Crear", icon: Plus, also: ["/creadores"] },
+  { href: "/videos" as Route, label: "Reels", icon: Clapperboard },
   {
     href: "/comprar",
-    label: "Comprar",
+    label: "Tienda",
     icon: ShoppingBag,
     // El estilista, Pruébatelo, el saldo y los precios son parte de comprar (ADR-043, ADR-044).
     also: [
@@ -57,11 +55,12 @@ export const socialNav: readonly NavItem[] = [
       "/precios",
     ],
   },
+  { href: "/avisos", label: "Notificaciones", icon: Bell },
   {
     href: "/perfil",
     label: "Perfil",
     icon: CircleUser,
-    also: ["/ajustes", "/guardados", "/mensajes", "/personas"],
+    also: ["/ajustes", "/guardados", "/mensajes", "/personas", "/crear", "/creadores"],
     ownProfile: true,
   },
 ];
@@ -72,16 +71,18 @@ export const socialNav: readonly NavItem[] = [
  */
 export const sideNav: readonly NavItem[] = [
   { href: "/", label: "Inicio", icon: House, match: "exact" },
+  { href: "/videos" as Route, label: "Videos / Reels", icon: Clapperboard },
   { href: "/descubrir", label: "Descubrir", icon: Compass, also: ["/c", "/buscar"] },
   {
     href: "/comprar",
-    label: "Comprar",
+    label: "Tienda",
     icon: ShoppingBag,
     also: ["/producto", "/carrito", "/checkout", "/saldo", "/precios"],
   },
   { href: "/estilista", label: "Estilista", icon: Shirt, also: ["/probar"] },
   { href: "/guardados", label: "Guardados", icon: Bookmark },
   { href: "/personas" as Route, label: "Mis amigos", icon: Users },
+  { href: "/avisos", label: "Notificaciones", icon: Bell },
   { href: "/pedidos", label: "Mis pedidos", icon: ReceiptText },
 ];
 

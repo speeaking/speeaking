@@ -63,7 +63,7 @@ export function CommentForm({
           name="body"
           rows={panel ? 1 : 2}
           maxLength={500}
-          placeholder="Escribe un comentario amable…"
+          placeholder="Escribe un comentario o menciona a @usuario…"
           className={cn(
             "text-base",
             panel && "[field-sizing:content] max-h-32 min-h-11 flex-1 resize-none rounded-3xl",

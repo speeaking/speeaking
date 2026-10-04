@@ -41,12 +41,14 @@ export function PostVideo({
   video,
   label,
   expanded = false,
+  reel = false,
   overlay,
   className,
 }: {
   video: FeedVideoDTO;
   label: string;
   expanded?: boolean;
+  reel?: boolean;
   /** Lo que va encima del video, arriba: el precio y «Ver cómo me veo» del producto (ADR-063). */
   overlay?: ReactNode;
   className?: string;
@@ -55,8 +57,8 @@ export function PostVideo({
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const [unsupported, setUnsupported] = useState(false);
-  const aspect = frameAspect(video, expanded ? OPEN_FRAME : FEED_FRAME);
-  const fit = expanded ? "contain" : fitForFrame(video, aspect);
+  const aspect = frameAspect(video, expanded || reel ? OPEN_FRAME : FEED_FRAME);
+  const fit = expanded || reel ? "contain" : fitForFrame(video, aspect);
   const poster = video.poster ? `${video.poster.url}?w=828` : undefined;
 
   useEffect(() => {

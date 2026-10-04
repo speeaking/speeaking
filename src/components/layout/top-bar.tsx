@@ -4,6 +4,7 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import {
   Bell,
   CircleUser,
+  Compass,
   LogOut,
   type LucideIcon,
   MessageCircle,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Suspense, useCallback, useState, useTransition } from "react";
+import { Suspense, useCallback, useEffect, useState, useTransition } from "react";
 import { Logo } from "@/components/brand/logo";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -35,8 +36,10 @@ import { signOutAction } from "@/modules/identity/actions";
 import type { ViewerSummary } from "@/modules/identity/viewer-summary";
 import { MessagesPanel } from "@/modules/messages/components/messages-panel";
 import { NotificationsPanel } from "@/modules/notifications/components/notifications-panel";
+import { getUnreadNotificationCountAction } from "@/modules/notifications/actions";
 import { CreateMenu } from "./create-menu";
 import { SearchBox } from "./search-box";
+import { MobileNav } from "./mobile-nav";
 
 type Viewer = NonNullable<ViewerSummary>;
 
@@ -94,7 +97,10 @@ function InboxButtons({
   onConversationRead: () => void;
   className?: string;
 }) {
-  const bell = unread.notifications > 0 ? `Avisos (${unread.notifications} sin leer)` : "Avisos";
+  const bell =
+    unread.notifications > 0
+      ? `Notificaciones (${unread.notifications} sin leer)`
+      : "Notificaciones";
   const chat = unread.messages > 0 ? `Mensajes (${unread.messages} sin leer)` : "Mensajes";
   return (
     <>
@@ -159,7 +165,7 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Tu cuenta: ${viewer.displayName}`}
-        className="ml-1 grid size-10 place-items-center rounded-full ring-1 ring-line-strong ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring data-popup-open:ring-2 data-popup-open:ring-ring"
+        className="relative ml-1 grid size-10 place-items-center rounded-full ring-1 ring-line-strong ring-offset-2 ring-offset-card outline-none after:absolute after:-inset-0.5 after:rounded-full focus-visible:ring-2 focus-visible:ring-ring data-popup-open:ring-2 data-popup-open:ring-ring"
       >
         <UserAvatar
           name={viewer.displayName}
@@ -186,6 +192,12 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
         <DropdownMenuSeparator />
         <MenuLink href="/perfil" icon={CircleUser}>
           Perfil
+        </MenuLink>
+        <MenuLink href="/descubrir" icon={Compass}>
+          Explorar comunidades
+        </MenuLink>
+        <MenuLink href="/carrito" icon={ShoppingCart}>
+          {viewer.cartCount ? `Carrito (${viewer.cartCount})` : "Carrito"}
         </MenuLink>
         <MenuLink href={"/personas" as Route} icon={Users}>
           Mis amigos
@@ -223,7 +235,7 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
 }
 
 /**
- * Barra superior. Móvil: logo, lupa (→ /buscar), tema, campana, mensajes y carrito (o «Únete»).
+ * Barra superior. Móvil: logo, búsqueda, tema, crear y mensajes; debajo, las cinco secciones.
  * Escritorio: sobre la misma rejilla que el contenido, logo · búsqueda · «Crear», campana, mensajes,
  * carrito y avatar (o «Entrar» y «Crear cuenta»). La campana de avisos llegó con ADR-059; «Crear»,
  * la campana y los mensajes abren ahí mismo desde ADR-068.
@@ -245,13 +257,33 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
     () => setUnread((current) => ({ ...current, messages: Math.max(0, current.messages - 1) })),
     [],
   );
+  useEffect(() => {
+    if (!viewer?.onboarded) return;
+    let disposed = false;
+    const refresh = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const count = await getUnreadNotificationCountAction();
+        if (!disposed) setUnread((current) => ({ ...current, notifications: count }));
+      } catch {
+        // Un fallo temporal conserva el último conteo conocido.
+      }
+    };
+    const timer = window.setInterval(() => void refresh(), 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [viewer?.username, viewer?.onboarded]);
 
   return (
     // La línea inferior es una sombra, no un borde: así la barra mide 64 px justos y las columnas
     // sticky (top-16) empiezan exactamente debajo, sin un píxel cortado al final.
     <header className="sticky top-0 z-30 bg-glass shadow-[0_1px_0_var(--color-border)] backdrop-blur-xl backdrop-saturate-150">
       <div className="flex h-14 items-center justify-between pr-2 pl-4 md:hidden">
-        <Logo className="py-1.5" />
+        <Logo className="max-w-[110px] shrink py-1.5 min-[400px]:max-w-none [&_svg]:max-w-full" />
         <div className="flex items-center">
           <Link href="/buscar" aria-label="Buscar" className={mobileIcon}>
             <Search className="size-5" />
@@ -262,13 +294,26 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
           </span>
           {viewer ? (
             <>
-              <InboxButtons
-                unread={unread}
-                onNotificationsSeen={onNotificationsSeen}
-                onConversationRead={onConversationRead}
-                className="size-11"
+              <CreateMenu
+                trigger={
+                  <Link href="/crear" aria-label="Crear publicación" className={mobileIcon}>
+                    <Plus className="size-5" />
+                  </Link>
+                }
               />
-              <CartLink count={viewer.cartCount} className="size-11" />
+              <MessagesPanel
+                onRead={onConversationRead}
+                trigger={
+                  <Link
+                    href="/mensajes"
+                    aria-label={`Mensajes (${unread.messages} sin leer)`}
+                    className={cn(mobileIcon, "relative")}
+                  >
+                    <MessageCircle className="size-5" />
+                    <CountBadge count={unread.messages} />
+                  </Link>
+                }
+              />
             </>
           ) : (
             <Link
@@ -342,6 +387,11 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
           </div>
         </div>
       </div>
+      <MobileNav
+        viewer={viewer}
+        notifications={unread.notifications}
+        accountMenu={viewer ? <AccountMenu viewer={viewer} /> : undefined}
+      />
     </header>
   );
 }

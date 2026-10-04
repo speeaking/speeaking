@@ -9,6 +9,7 @@ import { PROFILE_TRANSITION } from "@/lib/page-turn";
 import { cn } from "@/lib/utils";
 import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import type { CommentDTO } from "../comment-queries";
+import { MentionText } from "./mention-text";
 
 /**
  * Comentarios de una publicación, del más antiguo al más nuevo (como una conversación). Lo pintan la
@@ -51,7 +52,9 @@ export function CommentList({
                   {formatRelativeTime(new Date(comment.createdAt))}
                 </span>
               </p>
-              <p className="text-[15px] break-words whitespace-pre-line">{comment.body}</p>
+              <p className="text-[15px] break-words whitespace-pre-line">
+                <MentionText text={comment.body} />
+              </p>
             </div>
             {comment.canDelete ? (
               <RemoveContentButton

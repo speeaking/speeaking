@@ -52,7 +52,10 @@ export async function listNotifications(userId: string): Promise<NotificationRow
       readAt: true,
       reaction: true,
       actor: {
-        select: { profile: { select: { username: true, displayName: true, avatarUrl: true } } },
+        select: {
+          id: true,
+          profile: { select: { username: true, displayName: true, avatarUrl: true } },
+        },
       },
       post: { select: { id: true, body: true } },
       comment: { select: { body: true } },
@@ -77,7 +80,7 @@ export async function listNotifications(userId: string): Promise<NotificationRow
         type: row.type,
         createdAt: row.createdAt,
         readAt: row.readAt,
-        actor,
+        actor: actor && row.actor ? { ...actor, userId: row.actor.id } : null,
         postId: row.post?.id ?? null,
         postExcerpt: excerpt(row.post?.body ?? null),
         commentExcerpt: excerpt(row.comment?.body ?? null),
@@ -94,9 +97,13 @@ export async function listNotifications(userId: string): Promise<NotificationRow
 }
 
 /** Abrir la campana marca todo como leído. Devuelve cuántos cambiaron. */
-export async function markNotificationsRead(userId: string, now = new Date()) {
+export async function markNotificationsRead(
+  userId: string,
+  now = new Date(),
+  ids?: readonly string[],
+) {
   const { count } = await db.notification.updateMany({
-    where: { recipientId: userId, readAt: null },
+    where: { recipientId: userId, readAt: null, ...(ids ? { id: { in: [...ids] } } : {}) },
     data: { readAt: now },
   });
   return count;

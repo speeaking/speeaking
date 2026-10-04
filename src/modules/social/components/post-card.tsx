@@ -69,6 +69,7 @@ import { recordShareAction } from "../interaction-actions";
 import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
 import { ContextButton } from "./context-button";
 import { PostVideo } from "./post-video";
+import { MentionText } from "./mention-text";
 import { PostOwnerMenu } from "./post-owner-menu";
 import { ReactionButton, reactionLabel } from "./reaction-button";
 
@@ -446,7 +447,7 @@ function PostBody({
   return (
     <div className={cn("text-[15px] leading-relaxed", className)}>
       <p className={cn("whitespace-pre-line", !showAll && isLong && "line-clamp-4")}>
-        {source?.body ?? text}
+        <MentionText text={source?.body ?? text} />
       </p>
       {source && (showAll || !isLong) ? (
         <a
@@ -887,6 +888,7 @@ export function PostCard({
   post,
   index = 0,
   expanded = false,
+  reel = false,
   initialMediaIndex = 0,
   isSignedIn = true,
   variant = "standard",
@@ -896,6 +898,8 @@ export function PostCard({
   post: FeedItemDTO;
   index?: number;
   expanded?: boolean;
+  /** En Videos / Reels conserva el encuadre completo del video. */
+  reel?: boolean;
   /**
    * `theater`: visor de la capa en escritorio (ADR-064). Con fotos o video, la imagen queda a la
    * izquierda ajustada a la ventana y todo lo demás (texto, acciones y `children`) a la derecha.
@@ -1033,7 +1037,7 @@ export function PostCard({
       >
         <CardHeader post={post} onDeleted={() => setDeleted(true)} />
         <p className="font-heading text-[1.75rem] leading-[1.08] font-extrabold tracking-heading text-balance whitespace-pre-line md:text-[2rem]">
-          {post.body}
+          <MentionText text={post.body} />
         </p>
         <div className="flex flex-col gap-2">
           <ActionBar
@@ -1069,6 +1073,7 @@ export function PostCard({
           <PostVideo
             video={post.video}
             expanded={expanded}
+            reel={reel}
             overlay={videoTags}
             label={
               product

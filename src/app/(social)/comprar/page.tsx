@@ -1,9 +1,10 @@
-import { Search } from "lucide-react";
+import { ReceiptText, Search, ShoppingCart } from "lucide-react";
 import { pageMetadata } from "@/app/seo";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Input } from "@/components/ui/input";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
 import { SponsoredRow } from "@/modules/billing/components/sponsored-products";
@@ -63,7 +64,30 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
 
   return (
     <>
-      <PageHeader title="Comprar" description="Productos de vendedores de tu comunidad." />
+      <PageHeader
+        title="Tienda"
+        description="Descubre productos de vendedores de tu comunidad."
+        actions={
+          viewer ? (
+            <div className="flex gap-1">
+              <Link
+                href="/pedidos"
+                aria-label="Mis compras"
+                className={buttonVariants({ variant: "ghost", size: "icon-lg" })}
+              >
+                <ReceiptText className="size-5" />
+              </Link>
+              <Link
+                href="/carrito"
+                aria-label="Carrito"
+                className={buttonVariants({ variant: "ghost", size: "icon-lg" })}
+              >
+                <ShoppingCart className="size-5" />
+              </Link>
+            </div>
+          ) : undefined
+        }
+      />
       <div className="flex flex-col gap-4">
         {/* Lo que cambia es cómo se compra: el estilista abre Comprar (no el feed). Con una búsqueda o
             una categoría activa, los resultados van primero. */}

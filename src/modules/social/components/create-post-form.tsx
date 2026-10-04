@@ -56,9 +56,7 @@ export function CreatePostForm({
   const publicPost = publicAccount || publicProduct;
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
-  const [mode, setMode] = useState<"photos" | "video">(
-    videoEnabled ? defaultMedia : "photos",
-  );
+  const [mode, setMode] = useState<"photos" | "video">(videoEnabled ? defaultMedia : "photos");
   const [state, formAction, pending] = useActionState<CreatePostState, FormData>(
     createPostAction,
     {},
@@ -121,9 +119,7 @@ export function CreatePostForm({
         ))}
       </div>
       {!videoEnabled ? (
-        <p className="text-xs text-muted-foreground">
-          La subida de videos aún no está disponible.
-        </p>
+        <p className="text-xs text-muted-foreground">La subida de videos aún no está disponible.</p>
       ) : null}
       <div className="flex flex-col gap-2">
         <label htmlFor="cuerpo" className="text-sm font-medium">
@@ -140,7 +136,8 @@ export function CreatePostForm({
           aria-invalid={state.fieldErrors?.body ? true : undefined}
         />
         <p id="cuerpo-ayuda" className="text-xs text-muted-foreground">
-          Chismes sí; exhibir a alguien, no: sin datos ni fotos de otras personas sin su permiso.
+          Menciona a alguien con @usuario. Recibirá un aviso si puede ver tu publicación. Sin datos
+          ni fotos de otras personas sin su permiso.
         </p>
         {state.fieldErrors?.body ? (
           <p role="alert" className="text-sm text-destructive">

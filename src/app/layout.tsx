@@ -72,12 +72,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <ThemeProvider nonce={nonce}>
           {children}
-          {/* Debajo de la barra superior: 56 px en móvil y 64 px en escritorio, más 8 px de aire
+          {/* Debajo de la barra superior: 116 px en móvil y 64 px en escritorio, más 8 px de aire
               (y la muesca en móvil). Sonner usa `mobileOffset` hasta 600 px de ancho. */}
           <Toaster
             position="top-center"
-            offset={{ top: 72 }}
-            mobileOffset={{ top: "calc(64px + env(safe-area-inset-top, 0px))" }}
+            offset={{ top: "var(--shell-toast-top, 72px)" }}
+            mobileOffset={{ top: "calc(124px + env(safe-area-inset-top, 0px))" }}
             toastOptions={{
               classNames: {
                 // `cn-toast` es la clase que ya pone el Toaster de ui/sonner (se reemplaza todo el

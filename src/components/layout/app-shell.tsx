@@ -7,7 +7,6 @@ import { getPendingLegalDocuments } from "@/modules/identity/consent-refresh";
 import { acceptUpdatedLegalAction } from "@/modules/identity/privacy-actions";
 import { getViewer } from "@/modules/identity/session";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
-import { BottomNav } from "./bottom-nav";
 import { NAV_COOKIE } from "./nav-cookie";
 import { ShellFrame } from "./shell-frame";
 import { SideNav } from "./side-nav";
@@ -15,7 +14,7 @@ import { TopBar } from "./top-bar";
 
 /**
  * Estructura de la red social (docs/design/rediseno-revista.md → F1).
- * - Móvil: barra superior compacta, contenido y barra inferior.
+ * - Móvil: marca, secciones principales en la barra superior y contenido.
  * - Escritorio: barra superior y rejilla 232 / 680 / 320 alineadas. Menos de 1280 px oculta la
  *   columna derecha; menos de 1024 px reduce la izquierda a íconos, y en escritorio la persona la
  *   pliega con el botón de arriba (ADR-046; cookie `speeaking-nav`).
@@ -50,7 +49,7 @@ export async function AppShell({
         <main
           id="contenido"
           className={cn(
-            "min-w-0 pb-24 md:pt-2 md:pb-12",
+            "min-w-0 pb-8 md:pt-2 md:pb-12",
             shellMain,
             "md:has-[[data-page-wide]]:max-w-[62rem] md:has-[[data-page-wide]]:pt-0",
           )}
@@ -69,7 +68,6 @@ export async function AppShell({
           </aside>
         ) : null}
       </div>
-      <BottomNav viewer={viewer} />
     </ShellFrame>
   );
 }
