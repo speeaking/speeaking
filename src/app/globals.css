@@ -149,6 +149,7 @@
 
 /* Claro. Hex aproximado en comentario; contraste medido con src/lib/color.ts. */
 :root {
+  color-scheme: light;
   --radius: 20px;
   /* Marca (ADR-070): los mismos en claro y en oscuro. */
   --brand-violet: oklch(0.575 0.263 294.9); /* #8B3DFF */
@@ -202,6 +203,7 @@
  * para bloques grandes: en oscuro se vuelve un bloque blanco.
  */
 .dark {
+  color-scheme: dark;
   --background: oklch(0 0 0);
   --foreground: oklch(0.97 0.003 285); /* #F5F5F7 */
   --card: oklch(0.175 0.004 285); /* #101012 */
@@ -253,6 +255,16 @@
   body {
     /* Lienzo plano: el color lo ponen las fotos y los bloques, no el fondo. */
     @apply bg-background text-foreground antialiased;
+  }
+  /* La lista nativa se pinta aparte del campo: necesita fondo y tinta del mismo tema. */
+  select option,
+  select optgroup {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
+  select option:disabled,
+  select optgroup:disabled {
+    color: var(--muted-foreground);
   }
   h1 {
     @apply font-heading tracking-display;
