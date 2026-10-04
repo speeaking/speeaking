@@ -1,4 +1,4 @@
-import { ImagePlus, LockKeyhole } from "lucide-react";
+import { Globe, ImagePlus, LockKeyhole } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/states/empty-state";
@@ -171,8 +171,14 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
         {!profile.canViewPersonal && posts.length > 0 ? privateNotice : null}
         {isOwn && !profile.isEditorial ? (
           <p className="mx-4 flex items-center gap-2 text-sm text-muted-foreground md:mx-0">
-            <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
-            Tu contenido personal solo lo ven tus amigos aceptados.
+            {profile.isPlatformAccount ? (
+              <Globe className="size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
+            )}
+            {profile.isPlatformAccount
+              ? "Tus publicaciones como cuenta administradora son públicas para toda la comunidad."
+              : "Tu contenido personal solo lo ven tus amigos aceptados."}
           </p>
         ) : null}
         {/* `key`: «Ver tienda» (`?ver=tienda`) cambia de pestaña aunque la página ya esté abierta. */}

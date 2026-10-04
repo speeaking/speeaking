@@ -13,7 +13,12 @@ import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visi
 import { db } from "@/server/db";
 import { getStorage, getVideoStore } from "@/server/providers/storage";
 import { assertSafeKey, InvalidStorageKeyError } from "@/server/providers/storage/types";
-import { friendsOf, PUBLIC_POST, postVisibleTo } from "@/modules/relationships/privacy";
+import {
+  friendsOf,
+  PUBLIC_POST,
+  PUBLIC_PROFILE,
+  postVisibleTo,
+} from "@/modules/relationships/privacy";
 
 /**
  * Caché de una foto pública: una hora; después, la copia vieja todavía puede salir mientras se
@@ -162,7 +167,7 @@ async function isPubliclyAttached(mediaId: string) {
     }),
     // Foto de perfil o portada de alguien (ADR-058): llaves únicas, una consulta con índice.
     db.profile.findFirst({
-      where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId, isEditorial: true }] },
+      where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId, ...PUBLIC_PROFILE }] },
       select: { userId: true },
     }),
     // Portada de un video adjunto a una publicación PUBLICADA (ADR-062): llave única `posterId`.

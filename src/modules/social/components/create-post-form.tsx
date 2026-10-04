@@ -25,6 +25,7 @@ export function CreatePostForm({
   products,
   defaultCommunity,
   videoEnabled = false,
+  publicAccount = false,
   taggedProduct = null,
   inLayer = false,
   defaultMedia = "photos",
@@ -34,6 +35,8 @@ export function CreatePostForm({
   defaultCommunity?: string;
   /** Se pueden subir videos cortos (ADR-062). */
   videoEnabled?: boolean;
+  /** El servidor identifica a la cuenta administradora que publica avisos públicos. */
+  publicAccount?: boolean;
   /** Producto que se quiere etiquetar (`?producto=`): propio o de una tienda que acepta colaboraciones. */
   taggedProduct?: TaggedProductDTO | null;
   /** En la ventana encima del feed (ADR-068): al publicar, cerrar regresa al feed, no al formulario. */
@@ -50,6 +53,7 @@ export function CreatePostForm({
       : "",
   );
   const publicProduct = tagged || Boolean(ownProduct);
+  const publicPost = publicAccount || publicProduct;
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
   const [mode, setMode] = useState<"photos" | "video">(
@@ -77,14 +81,16 @@ export function CreatePostForm({
         className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground"
         aria-live="polite"
       >
-        {publicProduct ? (
+        {publicPost ? (
           <Globe className="size-4 shrink-0" aria-hidden="true" />
         ) : (
           <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
         )}
-        {publicProduct
-          ? "Público: al etiquetar un producto, cualquier persona puede ver esta publicación y sus fotos o video."
-          : "Solo amigos: tus fotos, videos y esta publicación personal serán visibles únicamente para amigos aceptados."}
+        {publicAccount
+          ? "Público: las publicaciones de la cuenta administradora, incluidas sus fotos o video, son visibles para todos."
+          : publicProduct
+            ? "Público: al etiquetar un producto, cualquier persona puede ver esta publicación y sus fotos o video."
+            : "Solo amigos: tus fotos, videos y esta publicación personal serán visibles únicamente para amigos aceptados."}
       </p>
       <div role="group" aria-label="Añadir a tu publicación" className="flex gap-2">
         {(

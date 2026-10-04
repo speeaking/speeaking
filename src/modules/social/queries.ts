@@ -5,6 +5,7 @@ import { getStorage } from "@/server/providers/storage";
 import { friendshipWith } from "@/modules/relationships/service";
 import { postVisibleTo } from "@/modules/relationships/privacy";
 import type { FriendshipState } from "@/modules/relationships/types";
+import { isPlatformAdministrator } from "@/modules/identity/platform-account";
 
 export type ProfilePersonDTO = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -17,6 +18,7 @@ export type PublicProfile = {
   city: string | null;
   joinedAt: Date;
   isEditorial: boolean;
+  isPlatformAccount: boolean;
   isSeller: boolean;
   /** Id de la tienda, para la pestaña Tienda (ADR-055); `null` si no vende. */
   sellerId: string | null;
@@ -59,11 +61,13 @@ export async function getPublicProfile(
       city: true,
       createdAt: true,
       isEditorial: true,
+      role: true,
       coverMedia: {
         select: { storageKey: true, width: true, height: true, blurDataUrl: true, altText: true },
       },
       user: {
         select: {
+          email: true,
           sellerProfile: { select: { id: true } },
           _count: {
             select: {
@@ -82,11 +86,13 @@ export async function getPublicProfile(
     },
   });
   if (!profile) return null;
-  const friendship = profile.isEditorial
+  const isPlatformAccount = isPlatformAdministrator(profile.user.email, profile.role);
+  const publicAccount = profile.isEditorial || isPlatformAccount;
+  const friendship = publicAccount
     ? "unavailable"
     : await friendshipWith(viewerId, profile.userId);
   const canViewPersonal =
-    viewerId === profile.userId || friendship === "friends" || profile.isEditorial;
+    viewerId === profile.userId || friendship === "friends" || publicAccount;
 
   // Lo «en común» (ADR-055) solo tiene sentido con sesión y en un perfil ajeno: gente que sigues
   // que también sigue este perfil, y comunidades donde están los dos. Datos propios (principio 6).
@@ -133,6 +139,7 @@ export async function getPublicProfile(
     city: canViewPersonal ? profile.city : null,
     joinedAt: profile.createdAt,
     isEditorial: profile.isEditorial,
+    isPlatformAccount,
     isSeller: profile.user.sellerProfile !== null,
     sellerId: profile.user.sellerProfile?.id ?? null,
     cover:

@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MAX_POST_IMAGES } from "./schemas";
 import { postVisibleTo } from "@/modules/relationships/privacy";
+import { isPlatformAdministrator } from "@/modules/identity/platform-account";
 
 /** UUID nulo: permite filtrar "lo del espectador" sin cambiar la forma de la consulta. */
 const NO_VIEWER = "00000000-0000-0000-0000-000000000000";
@@ -67,8 +68,15 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
       author: {
         select: {
           id: true,
+          email: true,
           profile: {
-            select: { username: true, displayName: true, avatarUrl: true, isEditorial: true },
+            select: {
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+              isEditorial: true,
+              role: true,
+            },
           },
           sellerProfile: { select: { status: true } },
         },
@@ -119,7 +127,12 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
       const item = toFeedItem({ ...row, reactions: reactions.get(row.id) ?? [] }, publicUrl);
       if (item) item.viewer.canDelete = viewerId !== null && row.author.id === viewerId;
       if (item)
-        item.audience = row.productId || row.author.profile?.isEditorial ? "public" : "friends";
+        item.audience =
+          row.productId ||
+          row.author.profile?.isEditorial ||
+          isPlatformAdministrator(row.author.email, row.author.profile?.role)
+            ? "public"
+            : "friends";
       return item ? [[row.id, item]] : [];
     }),
   );
