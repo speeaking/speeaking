@@ -89,6 +89,7 @@ export async function deleteAccount(
     });
     await tx.media.deleteMany({ where: { ownerId: userId } });
     await tx.profile.deleteMany({ where: { userId } });
+    await tx.editorialAutomationToken.deleteMany({ where: { userId } });
     await tx.user.update({
       where: { id: userId },
       data: {

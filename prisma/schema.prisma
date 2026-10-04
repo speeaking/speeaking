@@ -22,54 +22,55 @@ model User {
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 
-  sessions              Session[]
-  accounts              Account[]
-  profile               Profile?
-  sellerProfile         SellerProfile?
-  consents              UserConsent[]
-  interests             UserInterest[]
-  shoppingIntents       ShoppingIntent[]
-  memberships           CommunityMembership[]
-  posts                 Post[]
-  comments              Comment[]
-  likes                 Like[]
-  savedItems            SavedItem[]
-  following             Follow[]              @relation("follower")
-  followers             Follow[]              @relation("following")
-  friendshipsAsA        Friendship[]          @relation("friendshipsAsA")
-  friendshipsAsB        Friendship[]          @relation("friendshipsAsB")
-  media                 Media[]
-  aiRequests            AIRequest[]
-  cart                  Cart?
-  addresses             Address[]
-  checkouts             Checkout[]
-  orders                Order[]               @relation("buyerOrders")
+  sessions                  Session[]
+  accounts                  Account[]
+  profile                   Profile?
+  sellerProfile             SellerProfile?
+  consents                  UserConsent[]
+  interests                 UserInterest[]
+  shoppingIntents           ShoppingIntent[]
+  memberships               CommunityMembership[]
+  posts                     Post[]
+  comments                  Comment[]
+  likes                     Like[]
+  savedItems                SavedItem[]
+  following                 Follow[]                   @relation("follower")
+  followers                 Follow[]                   @relation("following")
+  friendshipsAsA            Friendship[]               @relation("friendshipsAsA")
+  friendshipsAsB            Friendship[]               @relation("friendshipsAsB")
+  media                     Media[]
+  aiRequests                AIRequest[]
+  cart                      Cart?
+  addresses                 Address[]
+  checkouts                 Checkout[]
+  orders                    Order[]                    @relation("buyerOrders")
   /// Sugerencias de «Gente de tus comunidades» que la persona quitó, y las veces que otros la quitaron.
-  dismissedSuggestions  SuggestionDismissal[] @relation("dismisser")
-  dismissedBy           SuggestionDismissal[] @relation("dismissedTarget")
+  dismissedSuggestions      SuggestionDismissal[]      @relation("dismisser")
+  dismissedBy               SuggestionDismissal[]      @relation("dismissedTarget")
   // Administración y moderación (architecture.md → Administración y operación). Rol: `Profile.role`.
-  reportsFiled          Report[]              @relation("reportsFiled")
-  reportsResolved       Report[]              @relation("reportsResolved")
-  authenticityReviews   AuthenticityCheck[]   @relation("authenticityReviewer")
-  decisionsApproved     PlatformDecision[]    @relation("decisionApprover")
-  editorialReviews      EditorialDraft[]      @relation("editorialReviewer")
+  reportsFiled              Report[]                   @relation("reportsFiled")
+  reportsResolved           Report[]                   @relation("reportsResolved")
+  authenticityReviews       AuthenticityCheck[]        @relation("authenticityReviewer")
+  decisionsApproved         PlatformDecision[]         @relation("decisionApprover")
+  editorialReviews          EditorialDraft[]           @relation("editorialReviewer")
+  editorialAutomationTokens EditorialAutomationToken[]
   // Saldo, Pruébatelo y looks (ADR-043, ADR-044, ADR-045).
-  wallet                Wallet?
-  tryOnPhotos           TryOnPhoto[]
-  tryOnResults          TryOnResult[]
-  sharedLooks           SharedLook[]          @relation("sharedLookOwner")
-  looksReceived         SharedLook[]          @relation("sharedLookRecipient")
-  looksApproved         SharedLook[]          @relation("sharedLookApprover")
-  styleLooks            StyleLook[]
-  conversationsAsA      Conversation[]        @relation("conversationsAsA")
-  conversationsAsB      Conversation[]        @relation("conversationsAsB")
-  messagesSent          Message[]             @relation("messagesSent")
+  wallet                    Wallet?
+  tryOnPhotos               TryOnPhoto[]
+  tryOnResults              TryOnResult[]
+  sharedLooks               SharedLook[]               @relation("sharedLookOwner")
+  looksReceived             SharedLook[]               @relation("sharedLookRecipient")
+  looksApproved             SharedLook[]               @relation("sharedLookApprover")
+  styleLooks                StyleLook[]
+  conversationsAsA          Conversation[]             @relation("conversationsAsA")
+  conversationsAsB          Conversation[]             @relation("conversationsAsB")
+  messagesSent              Message[]                  @relation("messagesSent")
   // «Bloquear mensajes» (ADR-069): los que hizo y los que recibió.
-  messageBlocksMade     MessageBlock[]        @relation("messageBlocksMade")
-  messageBlocksReceived MessageBlock[]        @relation("messageBlocksReceived")
+  messageBlocksMade         MessageBlock[]             @relation("messageBlocksMade")
+  messageBlocksReceived     MessageBlock[]             @relation("messageBlocksReceived")
   // Avisos (ADR-059): los que recibe y los que causó.
-  notifications         Notification[]        @relation("notificationsReceived")
-  notificationsCaused   Notification[]        @relation("notificationsCaused")
+  notifications             Notification[]             @relation("notificationsReceived")
+  notificationsCaused       Notification[]             @relation("notificationsCaused")
 
   @@map("users")
 }
@@ -1789,6 +1790,21 @@ enum EditorialDraftStatus {
 /// Borrador de la redacción diaria (ADR-066): la IA lo redacta para la cuenta editorial de una
 /// comunidad y solo se publica cuando una persona del equipo lo aprueba. Nunca crea usuarios,
 /// comentarios ni reacciones.
+/// Credencial acotada para la publicación editorial autorizada por ADMIN. Solo se guarda SHA-256;
+/// no sirve para iniciar sesión ni para acceder a datos personales. Revocarla detiene nuevas peticiones.
+model EditorialAutomationToken {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @db.VarChar(64)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("editorial_automation_tokens")
+}
+
 model EditorialDraft {
   id            String               @id @default(uuid(7)) @db.Uuid
   communityId   String               @db.Uuid

@@ -57,3 +57,8 @@ las personas. Usar esos temas para la siguiente colección, alternando las comun
 repetir imágenes o titulares. Las experiencias de usuarios y vendedores deben venir de ellos;
 pedir permiso para destacarlas. La redacción existente en `/admin/redaccion` permite preparar y
 revisar nuevas piezas, sin publicar automáticamente este paquete de nuevo.
+
+El administrador autorizó después dos publicaciones nuevas cada dos horas y mejorar estas
+doce ilustraciones. El proceso, sus límites y la revisión del material están documentados en
+[Publicación editorial cada dos horas](../../../docs/editorial-automation.md). Esta edición
+inicial sigue siendo idempotente y no se vuelve a publicar para actualizar fotografías.
