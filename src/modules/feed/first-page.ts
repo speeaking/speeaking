@@ -4,6 +4,8 @@ import type { FeedPageDTO } from "./dto";
 import { recommendationEngine } from "./engine";
 import { productSlugsIn } from "./dedupe";
 import { pickFeedProducts } from "./product-carousel";
+import { listHomeReelVideos } from "@/modules/social/video-queries";
+import { composeHomeReels } from "./home-reels";
 
 /**
  * Primera página de «Para ti», una sola vez por request. La usan la página de inicio y la columna
@@ -37,4 +39,16 @@ export const getHomeProductReels = cache(async (viewerId: string | null) => {
     console.error("[feed] no se pudo cargar la vitrina de productos", error);
     return null;
   });
+});
+
+/** Productos y videos se consultan por separado: un catálogo vacío no oculta las actualizaciones. */
+export const getHomeReels = cache(async (viewerId: string | null) => {
+  const [products, videos] = await Promise.all([
+    getHomeProductReels(viewerId),
+    listHomeReelVideos(viewerId).catch((error: unknown) => {
+      console.error("[feed] no se pudieron cargar los videos de la vitrina", error);
+      return { items: [], platformUpdateId: null };
+    }),
+  ]);
+  return composeHomeReels(products, videos.items, videos.platformUpdateId);
 });

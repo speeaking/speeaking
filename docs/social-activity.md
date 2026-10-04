@@ -19,5 +19,10 @@
   videos, reacciones ni usuarios de demostración para llenar esta sección.
 - `/comprar` aparece como Tienda y conserva catálogo, categorías y búsqueda, con
   accesos al carrito y las compras de la cuenta.
+- El carrusel superior del inicio alterna videos y productos, incluso con el catálogo
+  vacío. La actualización en video más reciente de la cuenta oficial del administrador
+  abre la fila. Los demás videos van del más reciente al más antiguo y conservan su
+  audiencia; tocar una portada abre la publicación sobre el feed. La fila solo carga
+  portadas, sin descargar todos los clips, y mantiene flechas y deslizamiento horizontal.
 - La migración `20261004160000_person_mentions` agrega `MENTION` al enum de avisos.
   Es aditiva; el despliegue de producción la aplica mediante `prisma migrate deploy`.

@@ -31,11 +31,16 @@ comercial configurable (ADR-008). Registra impresiones con posición, puntuació
 
 **Inicio (F5–F6b, ola C).**
 
-- El inicio pinta el encabezado «Para ti», lo que va antes del feed (compositor, bienvenida) y
-  `FeedList` con la primera página del servidor. La fila de burbujas se retiró (ADR-050): las
+- El inicio pinta el compositor, la bienvenida cuando corresponde, el carrusel «Reels y productos»
+  y `FeedList` con la primera página del servidor. La fila de burbujas se retiró (ADR-050): las
   comunidades se abren desde la columna izquierda, Descubrir y los chips de cada publicación
   (`/c/[slug]`). «Siguiendo» (`/api/feed?following=1`, `FeedRequest.following`) sigue en la API sin
   entrada en la interfaz; sin sesión, o si no sigue a nadie, la página viene vacía (nunca se rellena).
+- Vitrina superior (`getHomeReels`, `HomeReels`): videos listos y visibles del mismo origen que
+  `/videos`, alternados con productos activos con existencias. Abre con el video más reciente del
+  administrador oficial; el resto conserva su orden por fecha. La selección no depende de tener
+  productos ni altera la privacidad de los videos. Solo descarga portadas y abre las publicaciones
+  en capa. Cada fuente puede fallar sin ocultar la otra ni tumbar el feed.
 - Carrusel de productos (ADR-051): cada página del inicio trae `products` (`pickFeedProducts` en
   `product-carousel.ts`: patrocinados → búsqueda declarada o comunidades → más vendidos, populares,
   novedades; `composeFeedProducts` lo arma sin repetir ni lo propio) y `FeedList` lo pinta después de
