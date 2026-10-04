@@ -73,6 +73,10 @@ export const SOCIAL_LIMITS = {
     { scope: "feed", subject: "ip", limit: 300, windowSeconds: MINUTE },
     { scope: "feed", subject: "user", limit: 60, windowSeconds: MINUTE },
   ],
+  search: [
+    { scope: "search", subject: "ip", limit: 120, windowSeconds: MINUTE },
+    { scope: "search", subject: "user", limit: 60, windowSeconds: MINUTE },
+  ],
 } as const satisfies Record<string, readonly Rule[]>;
 
 export type SocialLimitedAction = keyof typeof SOCIAL_LIMITS;

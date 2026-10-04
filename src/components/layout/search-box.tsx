@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
+import { parseSearchScope } from "@/modules/search/scopes";
 
 /** ¿La tecla viene de un lugar donde se escribe? Ahí «/» es texto, no un atajo. */
 function isTypingTarget(target: EventTarget | null) {
@@ -22,6 +23,7 @@ export function SearchBox({ className }: { className?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const current = pathname === "/buscar" ? (searchParams.get("q") ?? "") : "";
+  const scope = pathname === "/buscar" ? parseSearchScope(searchParams.get("tipo")) : "todo";
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function SearchBox({ className }: { className?: string }) {
     >
       <Search className="size-[18px] shrink-0" aria-hidden="true" />
       <label htmlFor="busqueda-global" className="sr-only">
-        Buscar comunidades, temas o productos
+        Buscar personas, comunidades, publicaciones, videos o productos
       </label>
       <input
         // Al cambiar la búsqueda en la URL (atrás/adelante), el campo refleja la nueva.
@@ -62,7 +64,7 @@ export function SearchBox({ className }: { className?: string }) {
         type="search"
         defaultValue={current}
         maxLength={SEARCH_MAX_LENGTH}
-        placeholder="Busca comunidades, temas o productos"
+        placeholder="Busca personas, comunidades o productos"
         autoComplete="off"
         enterKeyHint="search"
         aria-keyshortcuts="/"
@@ -71,6 +73,7 @@ export function SearchBox({ className }: { className?: string }) {
         }}
         className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
       />
+      <input type="hidden" name="tipo" value={scope} />
       <kbd
         aria-hidden="true"
         className="grid h-6 min-w-6 place-items-center rounded-md border border-line-strong px-1.5 font-sans text-xs font-bold text-muted-foreground group-focus-within/search:hidden"

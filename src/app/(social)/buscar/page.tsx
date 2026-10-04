@@ -1,4 +1,12 @@
-import { Camera, Compass, Search, SearchX } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  Search,
+  SearchX,
+} from "lucide-react";
 import type { Metadata, Route } from "next";
 import Form from "next/form";
 import { headers } from "next/headers";
@@ -8,108 +16,210 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
 import { ProductCard } from "@/modules/catalog/components/product-card";
 import { communitySignal } from "@/modules/identity/community-signal";
 import { countPostsOfNewCommunities } from "@/modules/identity/service";
 import { getJoinedCommunityIds, getViewer } from "@/modules/identity/session";
+import { ContactList } from "@/modules/relationships/components/contact-list";
 import { parseSearchQuery, SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
 import { searchEverything } from "@/modules/search/queries";
-import { SEARCH_LIMITS } from "@/modules/search/sql";
+import {
+  parseSearchPage,
+  parseSearchScope,
+  SEARCH_MAX_PAGES,
+  SEARCH_SCOPES,
+  searchHref,
+  type SearchScope,
+} from "@/modules/search/scopes";
 import { JoinButton } from "@/modules/social/components/join-button";
 import { PostCard } from "@/modules/social/components/post-card";
+import { checkSocialLimit } from "@/modules/social/limits";
 
-// Los resultados de búsqueda interna no se indexan: cambian a cada rato y duplican contenido.
-export const metadata: Metadata = { title: "Buscar", robots: { index: false } };
+export const metadata: Metadata = {
+  title: "Buscar personas y contenido",
+  robots: { index: false },
+};
 
-const sectionHeading = "px-4 text-lg font-extrabold md:px-0";
+function SectionHeading({
+  id,
+  title,
+  scope,
+  query,
+  more,
+}: {
+  id: string;
+  title: string;
+  scope: SearchScope;
+  query: string;
+  more: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 md:px-0">
+      <h2 id={id} className="text-lg font-extrabold">
+        {title}
+      </h2>
+      {more ? (
+        <Link
+          href={searchHref(query, scope)}
+          className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-primary-text hover:underline"
+        >
+          Ver más
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
 
 export default async function SearchPage({ searchParams }: PageProps<"/buscar">) {
-  const { q } = await searchParams;
+  const { q, tipo, pagina } = await searchParams;
   const query = parseSearchQuery(q);
+  const scope = parseSearchScope(tipo);
+  const page = scope === "todo" ? 0 : parseSearchPage(pagina);
+  const label = SEARCH_SCOPES.find((item) => item.value === scope)!.label;
   const viewer = await getViewer();
-
-  const [results, joined, newCommunityPosts] = query
-    ? await Promise.all([
-        searchEverything(query, viewer?.userId ?? null),
-        getJoinedCommunityIds(),
-        countPostsOfNewCommunities(),
-      ])
-    : [null, null, null];
-
-  // Una acción en esta página («Unirme», seguir…) vuelve a pintarla en la misma petición POST
-  // (revalidatePath): eso no es una búsqueda nueva y no debe contarse otra vez como intención.
   const isActionRerender = (await headers()).has("next-action");
+  const limited = query
+    ? await checkSocialLimit("search", viewer?.userId ?? null)
+    : { ok: true as const };
+  const results =
+    query && limited.ok
+      ? await searchEverything(query, viewer?.userId ?? null, { scope, page })
+      : null;
+  const [joined, newCommunityPosts] = results?.communities.length
+    ? await Promise.all([getJoinedCommunityIds(), countPostsOfNewCommunities()])
+    : ([new Set<string>(), new Map<string, number>()] as const);
 
   if (query && results && !isActionRerender) {
-    // P5: las búsquedas son señales de intención; los conteos ayudan a detectar búsquedas sin
-    // resultados (contenido que falta).
     track({
       type: "SEARCH",
       userId: viewer?.userId ?? null,
-      query: query.text,
       surface: "DISCOVER",
+      // Solo las búsquedas comerciales aportan texto al historial de intención de compra.
+      query:
+        scope === "productos" || (scope === "todo" && results.products.length > 0)
+          ? query.text
+          : undefined,
       metadata: {
-        scope: "global",
+        scope,
+        people: results.people.length,
         communities: results.communities.length,
         products: results.products.length,
         posts: results.posts.length,
+        videos: results.videos.length,
       },
     });
   }
   const found = results
-    ? results.communities.length + results.products.length + results.posts.length
+    ? results.people.length +
+      results.communities.length +
+      results.products.length +
+      results.posts.length +
+      results.videos.length
     : 0;
+  const more = scope !== "todo" && Boolean(results?.hasMore[scope]) && page < SEARCH_MAX_PAGES - 1;
 
   return (
-    <>
+    <div className="flex flex-col pb-8">
       <PageHeader
         title="Buscar"
         description={
           query
             ? `Resultados para “${query.text}”`
-            : "Encuentra comunidades, publicaciones y productos."
+            : "Personas, comunidades y todo lo que se comparte en speeaking."
         }
         actions={
-          // Búsqueda por foto (ADR-061): la ropa o los objetos de una foto, parecidos en speeaking.
-          <Link href="/buscar/foto" className={buttonVariants({ variant: "outline" })}>
-            <Camera data-icon="inline-start" />
-            Con foto
+          <Link
+            href="/buscar/foto"
+            aria-label="Buscar productos con una foto"
+            className={buttonVariants({
+              variant: "outline",
+              size: "icon-lg",
+              className: "size-11",
+            })}
+          >
+            <Camera />
           </Link>
         }
       />
+      <div className="mb-3 flex items-center gap-2 px-4 md:hidden">
+        <Link
+          href="/"
+          aria-label="Volver al inicio"
+          className={buttonVariants({
+            variant: "ghost",
+            size: "icon-lg",
+            className: "size-11 shrink-0",
+          })}
+        >
+          <ArrowLeft />
+        </Link>
+        <Form
+          action="/buscar"
+          role="search"
+          aria-label="Buscar en speeaking"
+          className="relative flex min-w-0 flex-1 items-center"
+        >
+          <Search
+            className="pointer-events-none absolute left-3 size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <label htmlFor="busqueda" className="sr-only">
+            Buscar personas, comunidades, publicaciones, videos o productos
+          </label>
+          <Input
+            key={`${scope}:${query?.text ?? ""}`}
+            id="busqueda"
+            name="q"
+            type="search"
+            defaultValue={query?.text ?? ""}
+            maxLength={SEARCH_MAX_LENGTH}
+            placeholder="Nombre, @usuario o un tema"
+            autoComplete="off"
+            enterKeyHint="search"
+            autoFocus={!query}
+            className="h-11 rounded-full pl-9 text-base"
+          />
+          <input type="hidden" name="tipo" value={scope} />
+        </Form>
+      </div>
+      <nav
+        aria-label="Buscar en"
+        className="sticky top-[117px] z-20 mb-5 scrollbar-none flex gap-2 overflow-x-auto border-b bg-background/95 px-4 pt-1 pb-3 backdrop-blur-lg md:top-16 md:px-0"
+      >
+        {SEARCH_SCOPES.map((item) => (
+          <Link
+            key={item.value}
+            href={searchHref(query?.text ?? "", item.value)}
+            aria-current={scope === item.value ? "page" : undefined}
+            className={cn(
+              "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring",
+              scope === item.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
 
-      {/* En escritorio la búsqueda vive en la barra superior. */}
-      <Form action="/buscar" role="search" className="relative mb-5 px-4 md:hidden">
-        <Search
-          className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <label htmlFor="busqueda" className="sr-only">
-          Buscar comunidades, temas o productos
-        </label>
-        <Input
-          key={query?.text ?? ""}
-          id="busqueda"
-          name="q"
-          type="search"
-          defaultValue={query?.text ?? ""}
-          maxLength={SEARCH_MAX_LENGTH}
-          placeholder="Busca comunidades, temas o productos"
-          autoComplete="off"
-          enterKeyHint="search"
-          // Se llega aquí con la lupa: el teclado ya abierto ahorra un toque.
-          autoFocus={!query}
-          className="h-11 rounded-full pl-9 text-base"
-        />
-      </Form>
-
-      {!query || !results ? (
+      {!limited.ok ? (
+        <p role="alert" className="mx-4 rounded-2xl border bg-card p-4 text-sm md:mx-0">
+          {limited.error}
+        </p>
+      ) : !query || !results ? (
         <div className="px-4 md:px-0">
           <EmptyState
             icon={Search}
-            title="¿Qué quieres descubrir?"
-            description="Busca por nombre de comunidad, tema o producto. Por ejemplo: recetas, tenis para correr o gaming."
+            title={scope === "todo" ? "¿A quién o qué buscas?" : `Buscar en ${label.toLowerCase()}`}
+            description={
+              scope === "personas"
+                ? "Escribe el nombre o @usuario de la persona que quieres encontrar."
+                : "Escribe un nombre o tema y elige una categoría. También puedes encontrar a alguien por su @usuario."
+            }
             action={
               <Link href="/descubrir" className={buttonVariants({ variant: "soft" })}>
                 <Compass data-icon="inline-start" />
@@ -123,22 +233,53 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
           <EmptyState
             icon={SearchX}
             title={`Sin resultados para “${query.text}”`}
-            description="Revisa cómo está escrito o prueba con otra palabra. También puedes explorar las comunidades."
+            description={
+              scope === "todo"
+                ? "Revisa cómo está escrito o prueba con otra palabra. Para personas, puedes usar su nombre o @usuario."
+                : `No encontramos coincidencias en ${label.toLowerCase()}${page ? " en esta página" : ""}. Prueba otra categoría o cambia la búsqueda.`
+            }
             action={
-              <Link href="/descubrir" className={buttonVariants({ variant: "soft" })}>
-                <Compass data-icon="inline-start" />
-                Explorar comunidades
-              </Link>
+              scope !== "todo" ? (
+                <Link
+                  href={searchHref(query.text, "todo")}
+                  className={buttonVariants({ variant: "soft" })}
+                >
+                  Buscar en todo
+                </Link>
+              ) : (
+                <Link href="/descubrir" className={buttonVariants({ variant: "soft" })}>
+                  <Compass data-icon="inline-start" />
+                  Explorar comunidades
+                </Link>
+              )
             }
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
+          {results.people.length > 0 ? (
+            <section aria-labelledby="resultados-personas" className="flex flex-col gap-3">
+              <SectionHeading
+                id="resultados-personas"
+                title="Personas"
+                scope="personas"
+                query={query.text}
+                more={scope === "todo" && Boolean(results.hasMore.personas)}
+              />
+              <div className="px-4 md:px-0">
+                <ContactList people={results.people} showFollow isSignedIn={Boolean(viewer)} />
+              </div>
+            </section>
+          ) : null}
           {results.communities.length > 0 ? (
             <section aria-labelledby="resultados-comunidades" className="flex flex-col gap-3">
-              <h2 id="resultados-comunidades" className={sectionHeading}>
-                Comunidades
-              </h2>
+              <SectionHeading
+                id="resultados-comunidades"
+                title="Comunidades"
+                scope="comunidades"
+                query={query.text}
+                more={scope === "todo" && Boolean(results.hasMore.comunidades)}
+              />
               <ul className="mx-4 divide-y overflow-hidden rounded-3xl border bg-card md:mx-0">
                 {results.communities.map((community) => (
                   <li key={community.id} className="flex items-center gap-3 p-3 pr-4">
@@ -162,18 +303,17 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
                         <span className="text-xs text-muted-foreground">
                           {communitySignal({
                             memberCount: community.memberCount,
-                            postCount: newCommunityPosts?.get(community.id) ?? 0,
+                            postCount: newCommunityPosts.get(community.id) ?? 0,
                           })}
                         </span>
                       </span>
                     </Link>
-                    {/* El botón se ve compacto (28 px); su ::after estira el área táctil a 44 px. */}
                     <span className="contents [&>*]:relative [&>*]:after:absolute [&>*]:after:-inset-2">
                       <JoinButton
                         communityId={community.id}
                         communityName={community.name}
                         communitySlug={community.slug}
-                        initialJoined={joined?.has(community.id) ?? false}
+                        initialJoined={joined.has(community.id)}
                         isSignedIn={Boolean(viewer)}
                         size="sm"
                       />
@@ -183,22 +323,15 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
               </ul>
             </section>
           ) : null}
-
           {results.products.length > 0 ? (
             <section aria-labelledby="resultados-productos" className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-4 px-4 md:px-0">
-                <h2 id="resultados-productos" className="text-lg font-extrabold">
-                  Productos
-                </h2>
-                {results.products.length === SEARCH_LIMITS.products ? (
-                  <Link
-                    href={`/comprar?q=${encodeURIComponent(query.text)}` as Route}
-                    className="text-sm font-bold text-primary-text underline-offset-4 hover:underline"
-                  >
-                    Ver más en Comprar
-                  </Link>
-                ) : null}
-              </div>
+              <SectionHeading
+                id="resultados-productos"
+                title="Productos"
+                scope="productos"
+                query={query.text}
+                more={scope === "todo" && Boolean(results.hasMore.productos)}
+              />
               <div className="grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 md:px-0">
                 {results.products.map((product) => (
                   <ProductCard key={product.id} product={product} />
@@ -206,12 +339,15 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
               </div>
             </section>
           ) : null}
-
           {results.posts.length > 0 ? (
             <section aria-labelledby="resultados-publicaciones" className="flex flex-col gap-3">
-              <h2 id="resultados-publicaciones" className={sectionHeading}>
-                Publicaciones
-              </h2>
+              <SectionHeading
+                id="resultados-publicaciones"
+                title="Publicaciones"
+                scope="publicaciones"
+                query={query.text}
+                more={scope === "todo" && Boolean(results.hasMore.publicaciones)}
+              />
               <div className="flex flex-col md:gap-4">
                 {results.posts.map((post, index) => (
                   <PostCard key={post.id} post={post} index={index} isSignedIn={Boolean(viewer)} />
@@ -219,8 +355,60 @@ export default async function SearchPage({ searchParams }: PageProps<"/buscar">)
               </div>
             </section>
           ) : null}
+          {results.videos.length > 0 ? (
+            <section aria-labelledby="resultados-videos" className="flex flex-col gap-3">
+              <SectionHeading
+                id="resultados-videos"
+                title="Videos"
+                scope="videos"
+                query={query.text}
+                more={false}
+              />
+              <div className="flex flex-col gap-4">
+                {results.videos.map((post, index) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    index={index}
+                    reel
+                    isSignedIn={Boolean(viewer)}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       )}
-    </>
+      {query && results && scope !== "todo" && (page > 0 || more) ? (
+        <nav
+          aria-label="Páginas de resultados"
+          className="mt-6 flex items-center justify-between gap-3 px-4 md:px-0"
+        >
+          <span>
+            {page > 0 ? (
+              <Link
+                href={searchHref(query.text, scope, page - 1)}
+                className={buttonVariants({ variant: "outline", className: "min-h-11" })}
+              >
+                <ChevronLeft />
+                Anterior
+              </Link>
+            ) : null}
+          </span>
+          <span className="text-sm text-muted-foreground">Página {page + 1}</span>
+          <span>
+            {more ? (
+              <Link
+                href={searchHref(query.text, scope, page + 1)}
+                className={buttonVariants({ variant: "outline", className: "min-h-11" })}
+              >
+                Siguiente
+                <ChevronRight />
+              </Link>
+            ) : null}
+          </span>
+        </nav>
+      ) : null}
+    </div>
   );
 }

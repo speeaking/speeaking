@@ -16,7 +16,8 @@ import { postVisibleToSql } from "@/modules/relationships/privacy";
  */
 
 /** Límites por sección de resultados. */
-export const SEARCH_LIMITS = { communities: 6, products: 6, posts: 10 } as const;
+export const SEARCH_LIMITS = { people: 6, communities: 6, products: 6, posts: 10 } as const;
+export const SEARCH_CATEGORY_PAGE_SIZE = 20;
 
 /** Literal de SQL para una constante de este código (nunca para lo que escribe la persona). */
 function constantLiteral(value: string) {
@@ -67,14 +68,54 @@ function matchesAll(document: Prisma.Sql, terms: string[]) {
 }
 
 /** Comunidades por nombre o descripción; primero las que coinciden en el nombre. */
-export function communitySearchSql(terms: string[], limit: number = SEARCH_LIMITS.communities) {
+export function communitySearchSql(
+  terms: string[],
+  limit: number = SEARCH_LIMITS.communities,
+  offset = 0,
+) {
   const name = folded(Prisma.sql`c."name"`);
   const document = folded(Prisma.sql`c."name" || ' ' || c."description"`);
   return Prisma.sql`
     SELECT c."id" FROM "communities" c
     WHERE ${matchesAll(document, terms)}
-    ORDER BY (${matchesAll(name, terms)}) DESC, c."sortOrder" ASC
-    LIMIT ${limit}`;
+    ORDER BY (${matchesAll(name, terms)}) DESC, c."sortOrder" ASC, c."id" ASC
+    LIMIT ${limit}${offset > 0 ? Prisma.sql` OFFSET ${offset}` : Prisma.empty}`;
+}
+
+/** Nombres y usuarios públicos; incluye la propia cuenta y excluye bloqueos en ambos sentidos. */
+export function personSearchSql(
+  terms: string[],
+  limit: number = SEARCH_LIMITS.people,
+  viewerId: string | null = null,
+  offset = 0,
+) {
+  const document = folded(Prisma.sql`p."displayName" || ' ' || p."username"`);
+  const username = folded(Prisma.sql`p."username"`);
+  const name = folded(Prisma.sql`p."displayName"`);
+  const unblocked = (alias: "p" | "r") =>
+    viewerId
+      ? Prisma.sql`AND NOT EXISTS (
+    SELECT 1 FROM "message_blocks" b
+    WHERE (b."blockerId" = ${viewerId}::uuid AND b."blockedId" = ${Prisma.raw(alias)}."userId")
+      OR (b."blockedId" = ${viewerId}::uuid AND b."blockerId" = ${Prisma.raw(alias)}."userId")
+  )`
+      : Prisma.empty;
+  const people = terms.some(isIndexableTerm)
+    ? Prisma.sql`"profiles" p`
+    : Prisma.sql`(
+    SELECT r."userId", r."username", r."displayName", r."onboardedAt", r."isEditorial"
+    FROM "profiles" r WHERE r."onboardedAt" IS NOT NULL AND r."isEditorial" = false
+      ${unblocked("r")}
+    ORDER BY r."id" DESC LIMIT ${UNINDEXED_SEARCH_WINDOW}
+  ) p`;
+  return Prisma.sql`
+    SELECT p."userId" AS id FROM ${people}
+    WHERE p."onboardedAt" IS NOT NULL AND p."isEditorial" = false
+      ${unblocked("p")} AND ${matchesAll(document, terms)}
+    ORDER BY (${username} = ${terms.join(" ")}) DESC,
+      (${name} = ${terms.join(" ")}) DESC, (${matchesAll(username, terms)}) DESC,
+      ${name} ASC, p."userId" ASC
+    LIMIT ${limit}${offset > 0 ? Prisma.sql` OFFSET ${offset}` : Prisma.empty}`;
 }
 
 /**
@@ -99,7 +140,7 @@ function inCategory(alias: "p" | "r", categorySlug: string) {
 export function productSearchSql(
   terms: string[],
   limit: number = SEARCH_LIMITS.products,
-  { categorySlug }: { categorySlug?: string } = {},
+  { categorySlug, offset = 0 }: { categorySlug?: string; offset?: number } = {},
 ) {
   const title = folded(Prisma.sql`p."title"`);
   // `search_tags_text` = `array_to_string(tags, ' ')` marcada IMMUTABLE (se puede indexar).
@@ -126,7 +167,7 @@ export function productSearchSql(
       AND ${matchesAll(document, terms)}
     ${terms.some(isIndexableTerm) ? category("p") : Prisma.empty}
     ORDER BY (${matchesAll(title, terms)}) DESC, p."publishedAt" DESC NULLS LAST, p."id" DESC
-    LIMIT ${limit}`;
+    LIMIT ${limit}${offset > 0 ? Prisma.sql` OFFSET ${offset}` : Prisma.empty}`;
 }
 
 /**
@@ -149,14 +190,22 @@ export function postSearchSql(
   terms: string[],
   limit: number = SEARCH_LIMITS.posts,
   viewerId: string | null = null,
+  { videosOnly = false, offset = 0 }: { videosOnly?: boolean; offset?: number } = {},
 ) {
   const body = folded(Prisma.sql`p."body"`);
+  const video = (alias: "p" | "r") =>
+    videosOnly
+      ? Prisma.sql`AND EXISTS (
+    SELECT 1 FROM "post_media" link JOIN "media" m ON m."id" = link."mediaId"
+    WHERE link."postId" = ${Prisma.raw(alias)}."id" AND m."kind" = 'VIDEO' AND m."status" = 'READY'
+  )`
+      : Prisma.empty;
   // Sin palabras indexables: solo las publicaciones más recientes (índice por fecha de publicación).
   const posts = terms.some(isIndexableTerm)
     ? Prisma.sql`"posts" p`
     : Prisma.sql`(
         SELECT r."id", r."body", r."status", r."productId", r."publishedAt", r."authorId" FROM "posts" r
-        WHERE r."status" = 'PUBLISHED' AND ${postVisibleToSql(viewerId, "r")}
+        WHERE r."status" = 'PUBLISHED' AND ${postVisibleToSql(viewerId, "r")} ${video("r")}
         ORDER BY r."publishedAt" DESC, r."id" DESC
         LIMIT ${UNINDEXED_SEARCH_WINDOW}
       ) p`;
@@ -164,7 +213,8 @@ export function postSearchSql(
     SELECT p."id" FROM ${posts}
     WHERE p."status" = 'PUBLISHED' AND ${POST_WITH_VISIBLE_PRODUCT_SQL}
       AND ${postVisibleToSql(viewerId)}
+      ${video("p")}
       AND ${matchesAll(body, terms)}
     ORDER BY p."publishedAt" DESC, p."id" DESC
-    LIMIT ${limit}`;
+    LIMIT ${limit}${offset > 0 ? Prisma.sql` OFFSET ${offset}` : Prisma.empty}`;
 }

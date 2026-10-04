@@ -26,3 +26,7 @@
   portadas, sin descargar todos los clips, y mantiene flechas y deslizamiento horizontal.
 - La migración `20261004160000_person_mentions` agrega `MENTION` al enum de avisos.
   Es aditiva; el despliegue de producción la aplica mediante `prisma migrate deploy`.
+- `/buscar` incluye personas por nombre o @usuario y filtros para Todo, Personas, Comunidades,
+  Publicaciones, Videos y Productos. Las categorías conservan la búsqueda y tienen paginación.
+  Las tarjetas de personas incluyen únicamente identidad pública y relaciones propias; no abren
+  contenido personal ni muestran cuentas bloqueadas. Ver `src/modules/search/README.md`.

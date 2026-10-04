@@ -14,9 +14,26 @@ type Person = {
 };
 const myPairs = (userId: string) => ({ OR: [{ userAId: userId }, { userBId: userId }] });
 
-async function contacts(viewerId: string, people: Person[]): Promise<ContactDTO[]> {
+/** Relaciones propias junto a la identidad pública; sin sesión no consulta relaciones privadas. */
+export async function hydrateContacts(
+  viewerId: string | null,
+  people: Person[],
+): Promise<ContactDTO[]> {
   const ids = people.map((person) => person.id);
   if (!ids.length) return [];
+  if (!viewerId)
+    return people.flatMap((person) =>
+      person.profile
+        ? [
+            {
+              userId: person.id,
+              ...person.profile,
+              friendship: "none" as const,
+              viewerFollows: false,
+            },
+          ]
+        : [],
+    );
   const [pairs, follows, blocks] = await Promise.all([
     db.friendship.findMany({
       where: {
@@ -146,7 +163,7 @@ export async function listContacts(
     });
     people = rows.map((row) => (row.userAId === userId ? row.userB : row.userA));
   }
-  const hydrated = await contacts(userId, people.slice(0, PAGE_SIZE));
+  const hydrated = await hydrateContacts(userId, people.slice(0, PAGE_SIZE));
   return {
     people: hydrated.map((person) => ({
       ...person,
@@ -174,5 +191,5 @@ export async function findPeople(userId: string, query: string) {
     orderBy: { id: "desc" },
     select: personSelect,
   });
-  return contacts(userId, rows);
+  return hydrateContacts(userId, rows);
 }

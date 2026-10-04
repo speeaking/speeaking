@@ -9,9 +9,11 @@ import { FriendshipButton } from "./friendship-button";
 export function ContactList({
   people,
   showFollow = false,
+  isSignedIn = true,
 }: {
   people: ContactDTO[];
   showFollow?: boolean;
+  isSignedIn?: boolean;
 }) {
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
@@ -47,17 +49,21 @@ export function ContactList({
               targetId={person.userId}
               name={person.displayName}
               initialState={person.friendship}
+              isSignedIn={isSignedIn}
             />
-            {showFollow && person.friendship !== "self" ? (
+            {showFollow && person.friendship !== "self" && person.friendship !== "unavailable" ? (
               <FollowButton
                 targetUserId={person.userId}
                 targetName={person.displayName}
                 initialFollowing={person.viewerFollows}
-                isSignedIn
+                isSignedIn={isSignedIn}
               />
             ) : null}
             {person.friendship !== "unavailable" && person.friendship !== "self" ? (
-              <MessageButton username={person.username} isSignedIn />
+              <MessageButton username={person.username} isSignedIn={isSignedIn} />
+            ) : null}
+            {person.friendship === "self" ? (
+              <span className="text-xs font-semibold text-primary-text">Tu cuenta</span>
             ) : null}
           </div>
         </li>

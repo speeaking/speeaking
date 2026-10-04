@@ -3,12 +3,23 @@ import type { ProductStatus } from "@/generated/prisma/enums";
 import type { ProductCardDTO } from "@/modules/catalog/queries";
 import type { FeedItemDTO } from "@/modules/feed/dto";
 import { hydratePosts } from "@/modules/social/post-queries";
+import { hydrateContacts } from "@/modules/relationships/queries";
+import type { ContactDTO } from "@/modules/relationships/types";
 import { slotForPublicProduct } from "@/modules/stylist/slots";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import type { SearchQuery } from "./normalize";
-import { communitySearchSql, postSearchSql, productSearchSql } from "./sql";
+import {
+  communitySearchSql,
+  personSearchSql,
+  postSearchSql,
+  productSearchSql,
+  SEARCH_CATEGORY_PAGE_SIZE,
+  SEARCH_LIMITS,
+} from "./sql";
+import type { SearchCategory, SearchScope } from "./scopes";
+import { SEARCH_MAX_PAGES } from "./scopes";
 
 /** Comunidad encontrada (solo datos públicos). */
 export type CommunityResultDTO = {
@@ -22,9 +33,12 @@ export type CommunityResultDTO = {
 };
 
 export type SearchResults = {
+  people: ContactDTO[];
   communities: CommunityResultDTO[];
   products: ProductCardDTO[];
   posts: FeedItemDTO[];
+  videos: FeedItemDTO[];
+  hasMore: Partial<Record<SearchCategory, boolean>>;
 };
 
 /** Reordena filas según una lista de IDs (la consulta de búsqueda ya decidió el orden). */
@@ -114,21 +128,71 @@ export async function productCardsByIds(
 }
 
 /**
- * Búsqueda global: comunidades (nombre y descripción), productos activos (título y etiquetas) y
- * publicaciones visibles (texto), sin acentos ni mayúsculas. Cada sección tiene su límite.
+ * Búsqueda global o por categoría, solo con datos públicos y contenido visible para la sesión.
  */
 export async function searchEverything(
   query: SearchQuery,
   viewerId: string | null,
+  { scope = "todo", page = 0 }: { scope?: SearchScope; page?: number } = {},
 ): Promise<SearchResults> {
-  const [communityRows, productRows, postRows] = await Promise.all([
-    db.$queryRaw<{ id: string }[]>(communitySearchSql(query.terms)),
-    db.$queryRaw<{ id: string }[]>(productSearchSql(query.terms)),
-    db.$queryRaw<{ id: string }[]>(postSearchSql(query.terms, undefined, viewerId)),
+  const all = scope === "todo";
+  const pageIndex = all ? 0 : Math.max(0, Math.min(Math.floor(page), SEARCH_MAX_PAGES - 1));
+  const offset = pageIndex * SEARCH_CATEGORY_PAGE_SIZE;
+  const limits = all
+    ? SEARCH_LIMITS
+    : {
+        people: SEARCH_CATEGORY_PAGE_SIZE,
+        communities: SEARCH_CATEGORY_PAGE_SIZE,
+        products: SEARCH_CATEGORY_PAGE_SIZE,
+        posts: SEARCH_CATEGORY_PAGE_SIZE,
+      };
+  const [personRows, communityRows, productRows, postRows] = await Promise.all([
+    all || scope === "personas"
+      ? db.$queryRaw<{ id: string }[]>(
+          personSearchSql(query.terms, limits.people + 1, viewerId, offset),
+        )
+      : [],
+    all || scope === "comunidades"
+      ? db.$queryRaw<{ id: string }[]>(
+          communitySearchSql(query.terms, limits.communities + 1, offset),
+        )
+      : [],
+    all || scope === "productos"
+      ? db.$queryRaw<{ id: string }[]>(
+          productSearchSql(query.terms, limits.products + 1, { offset }),
+        )
+      : [],
+    all || scope === "publicaciones" || scope === "videos"
+      ? db.$queryRaw<{ id: string }[]>(
+          postSearchSql(query.terms, limits.posts + 1, viewerId, {
+            videosOnly: scope === "videos",
+            offset,
+          }),
+        )
+      : [],
   ]);
-  const communityIds = communityRows.map((row) => row.id);
+  const personIds = personRows.slice(0, limits.people).map((row) => row.id);
+  const communityIds = communityRows.slice(0, limits.communities).map((row) => row.id);
 
-  const [communities, products, posts] = await Promise.all([
+  const [personRecords, communities, products, posts] = await Promise.all([
+    personIds.length
+      ? db.user.findMany({
+          where: {
+            id: { in: personIds },
+            profile: { onboardedAt: { not: null }, isEditorial: false },
+            ...(viewerId
+              ? {
+                  messageBlocksMade: { none: { blockedId: viewerId } },
+                  messageBlocksReceived: { none: { blockerId: viewerId } },
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            profile: { select: { username: true, displayName: true, avatarUrl: true } },
+          },
+        })
+      : [],
     communityIds.length > 0
       ? db.community.findMany({
           where: { id: { in: communityIds } },
@@ -143,12 +207,25 @@ export async function searchEverything(
           },
         })
       : [],
-    productCardsByIds(productRows.map((row) => row.id)),
+    productCardsByIds(productRows.slice(0, limits.products).map((row) => row.id)),
     hydratePosts(
-      postRows.map((row) => row.id),
+      postRows.slice(0, limits.posts).map((row) => row.id),
       viewerId,
     ),
   ]);
 
-  return { communities: inOrder(communityIds, communities), products, posts };
+  return {
+    people: await hydrateContacts(viewerId, inOrder(personIds, personRecords)),
+    communities: inOrder(communityIds, communities),
+    products,
+    posts: scope === "videos" ? [] : posts,
+    videos: scope === "videos" ? posts.filter((post) => Boolean(post.video)) : [],
+    hasMore: {
+      personas: personRows.length > limits.people,
+      comunidades: communityRows.length > limits.communities,
+      productos: productRows.length > limits.products,
+      publicaciones: scope !== "videos" && postRows.length > limits.posts,
+      videos: scope === "videos" && postRows.length > limits.posts,
+    },
+  };
 }
