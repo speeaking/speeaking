@@ -24,13 +24,15 @@ const imageChange = z
     return z.NEVER;
   });
 
+const displayName = z
+  .string()
+  .trim()
+  .min(2, "Escribe tu nombre.")
+  .max(50, { error: "Máximo 50 caracteres.", abort: true });
+
 /** Editar perfil: nombre visible, ciudad, presentación, foto y portada. El usuario no cambia. */
 export const profileEditSchema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .min(2, "Escribe tu nombre.")
-    .max(50, { error: "Máximo 50 caracteres.", abort: true })
+  displayName: displayName
     // Nadie más se llama «Equipo speeaking» o «Soporte» (SEC-18).
     .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE),
   city: z
@@ -49,13 +51,25 @@ export const profileEditSchema = z.object({
 
 export type ProfileEditInput = z.output<typeof profileEditSchema>;
 
-/** Lee el formulario (los campos que falten cuentan como vacíos). */
-export function parseProfileEdit(formData: FormData) {
+/** El servidor puede autorizar conservar un nombre oficial existente; no permite adoptar otro. */
+export function parseProfileEdit(
+  formData: FormData,
+  { preservedPlatformName }: { preservedPlatformName?: string } = {},
+) {
   const field = (name: string) => {
     const value = formData.get(name);
     return typeof value === "string" ? value : "";
   };
-  return profileEditSchema.safeParse({
+  const schema =
+    preservedPlatformName === undefined
+      ? profileEditSchema
+      : profileEditSchema.extend({
+          displayName: displayName.refine(
+            (value) => value === preservedPlatformName || !isPlatformImpersonation(value),
+            RESERVED_NAME_MESSAGE,
+          ),
+        });
+  return schema.safeParse({
     displayName: field("displayName"),
     city: field("city"),
     bio: field("bio"),

@@ -54,7 +54,14 @@ export async function updateProfileAction(
 ): Promise<ProfileEditState> {
   const viewer = await getViewer();
   if (!viewer?.profile?.onboarded) return { error: "Inicia sesión para editar tu perfil." };
-  const parsed = parseProfileEdit(formData);
+  const parsed = parseProfileEdit(formData, {
+    // Solo el administrador principal puede conservar su nombre oficial ya asignado.
+    // La cuenta, el rol y el nombre provienen de la sesión y de la base, nunca del formulario.
+    preservedPlatformName:
+      viewer.profile.role === "ADMIN" && viewer.email === "speeaking@gmail.com"
+        ? viewer.profile.displayName
+        : undefined,
+  });
   if (!parsed.success) {
     const fieldErrors: ProfileEditState["fieldErrors"] = {};
     for (const issue of parsed.error.issues) {
