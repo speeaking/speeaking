@@ -1,10 +1,8 @@
 "use server";
 
-import type { Route } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { safeRedirectPath } from "@/lib/safe-redirect";
 import { track } from "@/modules/analytics/track";
 import { WELCOME_COOKIE, WELCOME_MAX_AGE_SECONDS } from "@/modules/feed/welcome";
 import { onboardingSchema } from "./onboarding-schema";
@@ -65,14 +63,8 @@ export async function completeOnboardingAction(
     })),
   );
 
-  // Quien viene a vender entra directo a "¿Qué quieres vender hoy?" (P6).
-  if (parsed.data.goals.includes("SELL")) {
-    redirect("/studio/sube-y-vende");
-  }
-  // Sin otro destino (o de vuelta al inicio), el inicio abre con el momento «¡Listo, …!». Si llegó
-  // desde un enlace (p. ej. una publicación compartida), regresa a él.
-  const next = safeRedirectPath(formData.get("next"), "");
-  if (next && next !== "/") redirect(next as Route);
+  // Todas las cuentas nuevas empiezan en el feed con el momento «¡Listo, …!».
+  // Los objetivos elegidos personalizan el perfil; vender se inicia desde sus accesos en la app.
   (await cookies()).set(WELCOME_COOKIE, "1", {
     maxAge: WELCOME_MAX_AGE_SECONDS,
     path: "/",
