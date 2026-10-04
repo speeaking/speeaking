@@ -75,7 +75,7 @@ export async function communityMemberPanel(
           {
             ...row.user.profile,
             userId: row.userId,
-            role: "role" in row ? row.role : "MEMBER",
+            role: "role" in row && row.role === "ADMIN" ? "ADMIN" : "MEMBER",
             isOwner: row.userId === community.ownerId,
           },
         ]
