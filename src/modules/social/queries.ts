@@ -2,6 +2,9 @@ import "server-only";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
+import { friendshipWith } from "@/modules/relationships/service";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import type { FriendshipState } from "@/modules/relationships/types";
 
 export type ProfilePersonDTO = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -30,6 +33,8 @@ export type PublicProfile = {
   followingCount: number;
   postCount: number;
   viewerFollows: boolean;
+  friendship: FriendshipState;
+  canViewPersonal: boolean;
   /** Gente que quien mira sigue y que sigue este perfil; vacío sin sesión o en el perfil propio. */
   followedByPeopleYouFollow: { count: number; people: ProfilePersonDTO[] };
   /** Comunidades en común con quien mira (hasta 3); vacío sin sesión o en el propio. */
@@ -64,7 +69,12 @@ export async function getPublicProfile(
             select: {
               followers: true,
               following: true,
-              posts: { where: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } },
+              posts: {
+                where: {
+                  status: "PUBLISHED",
+                  AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
+                },
+              },
             },
           },
         },
@@ -72,6 +82,11 @@ export async function getPublicProfile(
     },
   });
   if (!profile) return null;
+  const friendship = profile.isEditorial
+    ? "unavailable"
+    : await friendshipWith(viewerId, profile.userId);
+  const canViewPersonal =
+    viewerId === profile.userId || friendship === "friends" || profile.isEditorial;
 
   // Lo «en común» (ADR-055) solo tiene sentido con sesión y en un perfil ajeno: gente que sigues
   // que también sigue este perfil, y comunidades donde están los dos. Datos propios (principio 6).
@@ -113,31 +128,36 @@ export async function getPublicProfile(
     userId: profile.userId,
     username: profile.username,
     displayName: profile.displayName,
-    bio: profile.bio,
+    bio: canViewPersonal ? profile.bio : null,
     avatarUrl: profile.avatarUrl,
-    city: profile.city,
+    city: canViewPersonal ? profile.city : null,
     joinedAt: profile.createdAt,
     isEditorial: profile.isEditorial,
     isSeller: profile.user.sellerProfile !== null,
     sellerId: profile.user.sellerProfile?.id ?? null,
-    cover: profile.coverMedia
-      ? {
-          url: getStorage().publicUrl(profile.coverMedia.storageKey),
-          width: profile.coverMedia.width,
-          height: profile.coverMedia.height,
-          blurDataUrl: profile.coverMedia.blurDataUrl,
-          alt: profile.coverMedia.altText,
-          credit: null,
-        }
-      : null,
+    cover:
+      canViewPersonal && profile.coverMedia
+        ? {
+            url: getStorage().publicUrl(profile.coverMedia.storageKey),
+            width: profile.coverMedia.width,
+            height: profile.coverMedia.height,
+            blurDataUrl: profile.coverMedia.blurDataUrl,
+            alt: profile.coverMedia.altText,
+            credit: null,
+          }
+        : null,
     followerCount: profile.user._count.followers,
     followingCount: profile.user._count.following,
     postCount: profile.user._count.posts,
     viewerFollows,
+    friendship,
+    canViewPersonal,
     followedByPeopleYouFollow: {
-      count: peopleCount,
-      people: people.flatMap((row) => (row.follower.profile ? [row.follower.profile] : [])),
+      count: canViewPersonal ? peopleCount : 0,
+      people: canViewPersonal
+        ? people.flatMap((row) => (row.follower.profile ? [row.follower.profile] : []))
+        : [],
     },
-    communitiesInCommon: communities.map((row) => row.community),
+    communitiesInCommon: canViewPersonal ? communities.map((row) => row.community) : [],
   };
 }

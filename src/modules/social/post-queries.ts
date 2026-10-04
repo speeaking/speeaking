@@ -5,6 +5,7 @@ import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MAX_POST_IMAGES } from "./schemas";
+import { postVisibleTo } from "@/modules/relationships/privacy";
 
 /** UUID nulo: permite filtrar "lo del espectador" sin cambiar la forma de la consulta. */
 const NO_VIEWER = "00000000-0000-0000-0000-000000000000";
@@ -47,9 +48,14 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
   const rows = await db.post.findMany({
     // Una publicación de un producto oculto por moderación desaparece con él (feed, perfil,
     // búsqueda, Guardados y su propia página).
-    where: { id: { in: ids }, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] },
+    where: {
+      id: { in: ids },
+      status: "PUBLISHED",
+      AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
+    },
     select: {
       id: true,
+      productId: true,
       type: true,
       body: true,
       publishedAt: true,
@@ -112,6 +118,8 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
     rows.flatMap((row): [string, FeedItemDTO][] => {
       const item = toFeedItem({ ...row, reactions: reactions.get(row.id) ?? [] }, publicUrl);
       if (item) item.viewer.canDelete = viewerId !== null && row.author.id === viewerId;
+      if (item)
+        item.audience = row.productId || row.author.profile?.isEditorial ? "public" : "friends";
       return item ? [[row.id, item]] : [];
     }),
   );

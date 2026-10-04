@@ -2,6 +2,8 @@ import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db";
 import { excerpt, type NotificationRow } from "./group";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 /** Avisos que se muestran (los más recientes); los grupos los vuelven menos. */
 export const NOTIFICATIONS_SHOWN = 80;
@@ -17,7 +19,17 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const visible = (recipientId: string): Prisma.NotificationWhereInput => ({
   recipientId,
   AND: [
-    { OR: [{ postId: null }, { post: { status: "PUBLISHED" } }] },
+    {
+      OR: [
+        { postId: null },
+        {
+          post: {
+            status: "PUBLISHED",
+            AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(recipientId)],
+          },
+        },
+      ],
+    },
     { OR: [{ commentId: null }, { comment: { status: "PUBLISHED" } }] },
   ],
 });

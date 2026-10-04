@@ -5,6 +5,7 @@ import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visi
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MIN_FOLLOW_INTERMEDIARIES } from "./suggestions";
+import { PUBLIC_POST, postVisibleTo } from "@/modules/relationships/privacy";
 
 /**
  * Acceso a datos de la columna «Para ti» y de «Gente de tus comunidades». Todas las consultas están
@@ -36,7 +37,7 @@ export async function countRecentPostsByCommunity(since: Date, until: Date) {
       status: "PUBLISHED",
       communityId: { not: null },
       publishedAt: { gte: since, lte: until },
-      AND: [POST_WITH_VISIBLE_PRODUCT],
+      AND: [POST_WITH_VISIBLE_PRODUCT, PUBLIC_POST],
     },
     _count: { _all: true },
   });
@@ -76,6 +77,7 @@ export function listQuestionCandidates({
     where: {
       status: "PUBLISHED",
       type: "POST",
+      AND: [postVisibleTo(excludeAuthorId)],
       productId: null,
       media: { none: {} },
       body: { contains: "?" },
@@ -284,7 +286,7 @@ export async function listActiveCommunityPeers(viewerId: string, communityIds: s
         authorId: { not: viewerId },
         author: peer,
         // Publicar un producto que el equipo ocultó no cuenta como actividad visible.
-        AND: [POST_WITH_VISIBLE_PRODUCT],
+        AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
       },
       orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
       take: PEER_ACTIVITY_SCAN,

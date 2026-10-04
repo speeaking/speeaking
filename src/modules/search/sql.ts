@@ -1,5 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { FOLD_FROM, FOLD_TO, likePattern } from "./normalize";
+import { postVisibleToSql } from "@/modules/relationships/privacy";
 
 /**
  * Consultas de búsqueda como SQL parametrizado. Lo que escribe la persona SOLO viaja en
@@ -144,20 +145,25 @@ const POST_WITH_VISIBLE_PRODUCT_SQL = Prisma.sql`(
  * Publicaciones visibles por su texto, las más recientes primero: publicadas y sin un producto oculto
  * por moderación (filtrado en el SQL para que no ocupen lugares del `LIMIT`).
  */
-export function postSearchSql(terms: string[], limit: number = SEARCH_LIMITS.posts) {
+export function postSearchSql(
+  terms: string[],
+  limit: number = SEARCH_LIMITS.posts,
+  viewerId: string | null = null,
+) {
   const body = folded(Prisma.sql`p."body"`);
   // Sin palabras indexables: solo las publicaciones más recientes (índice por fecha de publicación).
   const posts = terms.some(isIndexableTerm)
     ? Prisma.sql`"posts" p`
     : Prisma.sql`(
-        SELECT r."id", r."body", r."status", r."productId", r."publishedAt" FROM "posts" r
-        WHERE r."status" = 'PUBLISHED'
+        SELECT r."id", r."body", r."status", r."productId", r."publishedAt", r."authorId" FROM "posts" r
+        WHERE r."status" = 'PUBLISHED' AND ${postVisibleToSql(viewerId, "r")}
         ORDER BY r."publishedAt" DESC, r."id" DESC
         LIMIT ${UNINDEXED_SEARCH_WINDOW}
       ) p`;
   return Prisma.sql`
     SELECT p."id" FROM ${posts}
     WHERE p."status" = 'PUBLISHED' AND ${POST_WITH_VISIBLE_PRODUCT_SQL}
+      AND ${postVisibleToSql(viewerId)}
       AND ${matchesAll(body, terms)}
     ORDER BY p."publishedAt" DESC, p."id" DESC
     LIMIT ${limit}`;

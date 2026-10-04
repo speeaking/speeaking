@@ -8,6 +8,7 @@ import { reserveAiRequest } from "@/modules/ai/reservation";
 import { providerFailure, SERVICE_TIMEOUT_MS, withTimeout } from "@/modules/ai/service";
 import { aiAvailability, simulatedRecord } from "@/modules/ai/tasks/availability";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
+import { postVisibleTo } from "@/modules/relationships/privacy";
 import { db } from "@/server/db";
 import { getAIProvider } from "@/server/providers/ai";
 import { canHaveContext, cleanSummary, contextTask } from "./post-context";
@@ -43,7 +44,11 @@ export async function getPostContext(
   { checkLimit }: { checkLimit: () => Promise<{ ok: true } | { ok: false; error: string }> },
 ): Promise<PostContextResult> {
   const post = await db.post.findFirst({
-    where: { id: postId, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] },
+    where: {
+      id: postId,
+      status: "PUBLISHED",
+      AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
+    },
     select: {
       id: true,
       body: true,

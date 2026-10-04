@@ -52,6 +52,7 @@ export type FeedIntentDTO =
 /** Publicación lista para pintar en el cliente. Solo datos públicos (nunca costos ni correos). */
 export type FeedItemDTO = {
   id: string;
+  audience?: "friends" | "public";
   type: PostType;
   body: string;
   publishedAt: string;

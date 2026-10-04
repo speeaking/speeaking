@@ -5,6 +5,7 @@ import {
   ReceiptText,
   ShoppingBag,
   Store,
+  Users,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -18,6 +19,8 @@ import { MessageButton } from "@/modules/messages/components/message-button";
 import { communitiesInCommonText, joinedText, peopleInCommonText } from "../../profile-copy";
 import { FollowButton } from "../follow-button";
 import { ProfileCover } from "./profile-cover";
+import { FriendshipButton } from "@/modules/relationships/components/friendship-button";
+import type { FriendshipState } from "@/modules/relationships/types";
 
 export type ProfilePerson = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -36,6 +39,7 @@ export type ProfileHeaderProps = {
     followingCount: number;
     postCount: number;
     viewerFollows: boolean;
+    friendship?: FriendshipState;
   };
   /** Lo que quien mira tiene en común con el perfil (vacío sin sesión o en el propio). */
   inCommon: { people: ProfilePerson[]; peopleTotal: number; communities: string[] };
@@ -202,6 +206,13 @@ export function ProfileHeader({
                 Mis compras
               </Link>
               <Link
+                href={"/personas" as Route}
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
+              >
+                <Users data-icon="inline-start" />
+                Mis personas
+              </Link>
+              <Link
                 href="/perfil/editar"
                 className={buttonVariants({ variant: "secondary", size: "lg" })}
               >
@@ -212,6 +223,14 @@ export function ProfileHeader({
             </>
           ) : (
             <>
+              {!profile.isEditorial ? (
+                <FriendshipButton
+                  targetId={profile.userId}
+                  name={profile.displayName}
+                  initialState={profile.friendship ?? "none"}
+                  isSignedIn={isSignedIn}
+                />
+              ) : null}
               <FollowButton
                 targetUserId={profile.userId}
                 targetName={profile.displayName}

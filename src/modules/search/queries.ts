@@ -124,7 +124,7 @@ export async function searchEverything(
   const [communityRows, productRows, postRows] = await Promise.all([
     db.$queryRaw<{ id: string }[]>(communitySearchSql(query.terms)),
     db.$queryRaw<{ id: string }[]>(productSearchSql(query.terms)),
-    db.$queryRaw<{ id: string }[]>(postSearchSql(query.terms)),
+    db.$queryRaw<{ id: string }[]>(postSearchSql(query.terms, undefined, viewerId)),
   ]);
   const communityIds = communityRows.map((row) => row.id);
 

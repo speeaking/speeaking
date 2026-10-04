@@ -1,6 +1,7 @@
 import "server-only";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
+import { postVisibleTo } from "@/modules/relationships/privacy";
 import type { Candidate, IntentQuery, IntentSignal, ViewerContext } from "./ranking";
 import { categoryIntentScores } from "./ranking";
 
@@ -25,6 +26,7 @@ export const EMPTY_CONTEXT: ViewerContext = {
 
 /** Filtros del feed: una comunidad (burbuja o página de la comunidad) o «Siguiendo». */
 export type CandidateFilter = {
+  viewerId?: string | null;
   communityId?: string;
   /** Solo publicaciones de estas personas («Siguiendo»). Una lista vacía no trae nada. */
   authorIds?: readonly string[];
@@ -38,6 +40,7 @@ export async function loadCandidates(
   const rows = await db.post.findMany({
     where: {
       status: "PUBLISHED",
+      AND: [postVisibleTo(filter.viewerId ?? null)],
       publishedAt: { lte: asOf, gte: new Date(asOf.getTime() - CANDIDATE_WINDOW_DAYS * DAY) },
       ...(filter.communityId ? { communityId: filter.communityId } : {}),
       ...(filter.authorIds ? { authorId: { in: [...filter.authorIds] } } : {}),
@@ -219,12 +222,18 @@ export function findOnboardingIntentQuery(userId: string, now: Date) {
  */
 export async function listRecentCommunityPostIds(
   communityId: string,
-  { excludePostId, limit, now }: { excludePostId: string; limit: number; now: Date },
+  {
+    excludePostId,
+    limit,
+    now,
+    viewerId = null,
+  }: { excludePostId: string; limit: number; now: Date; viewerId?: string | null },
 ): Promise<string[]> {
   const rows = await db.post.findMany({
     where: {
       status: "PUBLISHED",
       communityId,
+      AND: [postVisibleTo(viewerId)],
       id: { not: excludePostId },
       publishedAt: { lte: now },
       OR: [

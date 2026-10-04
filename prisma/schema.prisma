@@ -36,6 +36,8 @@ model User {
   savedItems            SavedItem[]
   following             Follow[]              @relation("follower")
   followers             Follow[]              @relation("following")
+  friendshipsAsA        Friendship[]          @relation("friendshipsAsA")
+  friendshipsAsB        Friendship[]          @relation("friendshipsAsB")
   media                 Media[]
   aiRequests            AIRequest[]
   cart                  Cart?
@@ -537,6 +539,28 @@ model Follow {
   @@id([followerId, followingId])
   @@index([followingId])
   @@map("follows")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+/// Un par ordenado de usuarios: enviar otra solicitud nunca acepta la pendiente automáticamente.
+model Friendship {
+  userAId     String           @db.Uuid
+  userA       User             @relation("friendshipsAsA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId     String           @db.Uuid
+  userB       User             @relation("friendshipsAsB", fields: [userBId], references: [id], onDelete: Cascade)
+  requesterId String           @db.Uuid
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  acceptedAt  DateTime?        @db.Timestamptz(3)
+
+  @@id([userAId, userBId])
+  @@index([userAId, status, createdAt(sort: Desc)])
+  @@index([userBId, status, createdAt(sort: Desc)])
+  @@map("friendships")
 }
 
 /// Persona que alguien quitó de «Gente de tus comunidades»: no se le vuelve a sugerir.
@@ -1679,6 +1703,9 @@ enum NotificationType {
   COMMENT
   /// Alguien empezó a seguirte (uno por persona: `dedupeKey`).
   FOLLOW
+  /// Solicitud de amistad y aceptación explícita.
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
   /// A quien vende: un pedido pagado (con cobro real o simulado).
   ORDER_PAID
   /// A quien compra: su pedido salió, se entregó o la tienda lo canceló.

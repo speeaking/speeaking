@@ -23,6 +23,8 @@ import { type NotificationItem, type NotificationKind, notificationSentence } fr
 const ICONS: Record<Exclude<NotificationKind, "REACTION">, LucideIcon> = {
   COMMENT: MessageCircle,
   FOLLOW: UserPlus,
+  FRIEND_REQUEST: UserPlus,
+  FRIEND_ACCEPTED: UserPlus,
   ORDER_PAID: Package,
   ORDER_SHIPPED: Truck,
   ORDER_DELIVERED: Package,

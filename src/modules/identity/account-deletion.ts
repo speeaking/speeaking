@@ -60,6 +60,7 @@ export async function deleteAccount(
     await tx.follow.deleteMany({
       where: { OR: [{ followerId: userId }, { followingId: userId }] },
     });
+    await tx.friendship.deleteMany({ where: { OR: [{ userAId: userId }, { userBId: userId }] } });
     await tx.savedItem.deleteMany({ where: { userId } });
     await tx.communityMembership.deleteMany({ where: { userId } });
     await tx.userInterest.deleteMany({ where: { userId } });

@@ -3,12 +3,12 @@ import { pageMetadata, NO_INDEX } from "@/app/seo";
 import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/states/feed-skeleton";
 import { PostDetail } from "@/modules/social/components/post-detail";
-import { getVisiblePost } from "./post";
+import { getPublicPost } from "./post";
 import { getProfileIndexing } from "../../u/[username]/profile";
 
 export async function generateMetadata({ params }: PageProps<"/p/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const post = await getVisiblePost(id);
+  const post = await getPublicPost(id);
   if (!post) return { robots: NO_INDEX };
   const visibility = await getProfileIndexing(post.author.username);
   const title = `${post.author.displayName}: ${post.body.slice(0, 60) || "Publicación"}`;

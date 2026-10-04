@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { getSharedLook, type SharedLookDTO } from "@/modules/tryon/shared-look";
 import { cleanMessageBody, conversationPair, hasUnread, sideOf } from "./pair";
+import { friendshipPair } from "@/modules/relationships/service";
 
 /**
  * Mensajes privados (ADR-047): una conversación por par de personas, texto plano, solo para las dos.
@@ -279,10 +280,24 @@ async function otherParticipant(viewerId: string, conversationId: string) {
 export async function blockMessages(viewerId: string, conversationId: string): Promise<boolean> {
   const otherUserId = await otherParticipant(viewerId, conversationId);
   if (!otherUserId) return false;
-  await db.messageBlock.upsert({
-    where: { blockerId_blockedId: { blockerId: viewerId, blockedId: otherUserId } },
-    create: { blockerId: viewerId, blockedId: otherUserId },
-    update: {},
+  const pair = friendshipPair(viewerId, otherUserId);
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`friendship:${pair.userAId}:${pair.userBId}`}, 0))`;
+    await tx.messageBlock.upsert({
+      where: { blockerId_blockedId: { blockerId: viewerId, blockedId: otherUserId } },
+      create: { blockerId: viewerId, blockedId: otherUserId },
+      update: {},
+    });
+    await tx.friendship.deleteMany({ where: pair });
+    await tx.notification.deleteMany({
+      where: {
+        type: { in: ["FRIEND_REQUEST", "FRIEND_ACCEPTED"] },
+        OR: [
+          { actorId: viewerId, recipientId: otherUserId },
+          { actorId: otherUserId, recipientId: viewerId },
+        ],
+      },
+    });
   });
   return true;
 }

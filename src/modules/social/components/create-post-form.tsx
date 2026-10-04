@@ -1,6 +1,6 @@
 "use client";
 
-import { Clapperboard, ImagePlus } from "lucide-react";
+import { Clapperboard, ImagePlus, LockKeyhole, Globe } from "lucide-react";
 import Image from "next/image";
 import { type FormEvent, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,12 @@ export function CreatePostForm({
   // El producto de otra tienda (ADR-063) va en su propia tarjeta, con la declaración de acuerdo; se
   // puede quitar antes de publicar.
   const [tagged, setTagged] = useState(taggedProduct !== null && !taggedProduct.own);
+  const [ownProduct, setOwnProduct] = useState(
+    taggedProduct?.own && products.some((product) => product.id === taggedProduct.id)
+      ? taggedProduct.id
+      : "",
+  );
+  const publicProduct = tagged || Boolean(ownProduct);
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
   const [mode, setMode] = useState<"photos" | "video">("photos");
@@ -60,6 +66,19 @@ export function CreatePostForm({
   return (
     <form action={formAction} onSubmit={guardUploads} className="flex flex-col gap-5">
       {inLayer ? <input type="hidden" name="enCapa" value="1" /> : null}
+      <p
+        className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground"
+        aria-live="polite"
+      >
+        {publicProduct ? (
+          <Globe className="size-4 shrink-0" aria-hidden="true" />
+        ) : (
+          <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
+        )}
+        {publicProduct
+          ? "Público: al etiquetar un producto, cualquier persona puede ver esta publicación y sus fotos o video."
+          : "Solo amigos: tus fotos, videos y esta publicación personal serán visibles únicamente para amigos aceptados."}
+      </p>
       <div className="flex flex-col gap-2">
         <label htmlFor="cuerpo" className="text-sm font-medium">
           ¿Qué quieres compartir?
@@ -133,7 +152,7 @@ export function CreatePostForm({
           defaultValue={defaultCommunity ?? ""}
           className={selectClass}
         >
-          <option value="">Sin comunidad (solo en mi perfil y para quien me sigue)</option>
+          <option value="">Sin comunidad</option>
           {communities.map((community) => (
             <option key={community.slug} value={community.slug}>
               {community.emoji} {community.name}
@@ -186,11 +205,8 @@ export function CreatePostForm({
           <select
             id="producto"
             name="productId"
-            defaultValue={
-              taggedProduct?.own && products.some((product) => product.id === taggedProduct.id)
-                ? taggedProduct.id
-                : ""
-            }
+            value={ownProduct}
+            onChange={(event) => setOwnProduct(event.target.value)}
             className={selectClass}
           >
             <option value="">Ninguno</option>

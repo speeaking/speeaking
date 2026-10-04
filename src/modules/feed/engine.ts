@@ -72,10 +72,10 @@ class ExplainableRecommendationEngine implements RecommendationEngine {
     const candidatesPromise = following
       ? contextPromise.then(({ followingIds }) =>
           followingIds.size > 0
-            ? loadCandidates(asOf, { communityId, authorIds: [...followingIds] })
+            ? loadCandidates(asOf, { communityId, authorIds: [...followingIds], viewerId })
             : [],
         )
-      : loadCandidates(asOf, { communityId });
+      : loadCandidates(asOf, { communityId, viewerId });
     // Con experimentos en curso (motor de automejora), quien quedó en el tratamiento ve su variante.
     const [policy, candidates, context] = await Promise.all([
       getFeedPolicy(viewerId),

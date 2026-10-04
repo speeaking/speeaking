@@ -54,6 +54,7 @@ export async function getMoreFromCommunity(
     excludePostId,
     limit: MORE_FROM_COMMUNITY,
     now,
+    viewerId,
   });
   return {
     communityId: community.id,

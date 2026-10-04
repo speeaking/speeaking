@@ -183,6 +183,8 @@ export class LocalVideoStore implements VideoStore {
 export const VIDEO_UPLOAD_URL_SECONDS = 15 * 60;
 /** Vigencia de la URL de lectura. */
 export const VIDEO_DOWNLOAD_URL_SECONDS = 60 * 60;
+/** Contenido personal: firma nueva en cada petición, sin caché y con vigencia corta. */
+export const PRIVATE_VIDEO_DOWNLOAD_URL_SECONDS = 2 * 60;
 /**
  * La firma de lectura se fecha al inicio de su bloque de 10 minutos: dentro del bloque la URL es la
  * misma y el navegador reusa lo que ya descargó; sigue valiendo al menos 50 minutos.
@@ -257,9 +259,11 @@ export class S3VideoStore implements VideoStore {
 
   async deliver(key: string, _request: Request, headers: Record<string, string>) {
     assertSafeKey(key);
-    const signingDate = new Date(
-      Math.floor(this.now().getTime() / SIGNING_BUCKET_MS) * SIGNING_BUCKET_MS,
-    );
+    const privateVideo = headers["Cache-Control"]?.includes("no-store") ?? false;
+    const now = this.now();
+    const signingDate = privateVideo
+      ? now
+      : new Date(Math.floor(now.getTime() / SIGNING_BUCKET_MS) * SIGNING_BUCKET_MS);
     const url = await getSignedUrl(
       this.client,
       new GetObjectCommand({
@@ -267,7 +271,10 @@ export class S3VideoStore implements VideoStore {
         Key: key,
         ResponseContentType: VIDEO_CONTENT_TYPE,
       }),
-      { expiresIn: VIDEO_DOWNLOAD_URL_SECONDS, signingDate },
+      {
+        expiresIn: privateVideo ? PRIVATE_VIDEO_DOWNLOAD_URL_SECONDS : VIDEO_DOWNLOAD_URL_SECONDS,
+        signingDate,
+      },
     );
     return new Response(null, { status: 302, headers: { ...headers, Location: url } });
   }

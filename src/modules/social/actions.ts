@@ -20,6 +20,8 @@ import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
 import { reactionTops } from "./reaction-summary";
 import { createPostSchema } from "./schemas";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 export type ToggleResult =
   { ok: true; active: boolean; count: number } | { ok: false; error: string; needsAuth?: boolean };
@@ -66,6 +68,16 @@ export async function reactAction(
   const next = parsed.data;
   const limited = await checkSocialLimit("like", viewer.userId);
   if (!limited.ok) return { ok: false, error: limited.error };
+  const readablePost = {
+    id: postId,
+    status: "PUBLISHED" as const,
+    AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer.userId)],
+  };
+  const accessible = await db.post.findFirst({
+    where: readablePost,
+    select: { id: true },
+  });
+  if (!accessible) return { ok: false, error: "Esta publicación ya no está disponible." };
 
   const key = { userId: viewer.userId, postId };
   const likeCount = { select: { likeCount: true, authorId: true } } as const;
@@ -82,7 +94,7 @@ export async function reactAction(
       if (previous !== null && (next === null || next === previous)) {
         await tx.like.delete({ where: { userId_postId: key } });
         const post = await tx.post.update({
-          where: { id: postId },
+          where: readablePost,
           data: { likeCount: { decrement: 1 } },
           ...likeCount,
         });
@@ -91,13 +103,13 @@ export async function reactAction(
         active = null;
       } else if (previous !== null && next !== null) {
         await tx.like.update({ where: { userId_postId: key }, data: { kind: next } });
-        const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
+        const post = await tx.post.findUniqueOrThrow({ where: readablePost, ...likeCount });
         count = post.likeCount;
         authorId = post.authorId;
         active = next;
       } else if (next !== null) {
         const post = await tx.post.update({
-          where: { id: postId, status: "PUBLISHED" },
+          where: readablePost,
           data: { likeCount: { increment: 1 } },
           ...likeCount,
         });
@@ -106,7 +118,7 @@ export async function reactAction(
         authorId = post.authorId;
         active = next;
       } else {
-        const post = await tx.post.findUniqueOrThrow({ where: { id: postId }, ...likeCount });
+        const post = await tx.post.findUniqueOrThrow({ where: readablePost, ...likeCount });
         count = post.likeCount;
         authorId = post.authorId;
         active = null;
@@ -187,7 +199,15 @@ export async function toggleSaveAction(
       const count = isPost
         ? (
             await tx.post.update({
-              where: { id: targetId, ...(saving ? { status: "PUBLISHED" as const } : {}) },
+              where: {
+                id: targetId,
+                ...(saving
+                  ? {
+                      status: "PUBLISHED" as const,
+                      AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer.userId)],
+                    }
+                  : {}),
+              },
               data: { saveCount: delta },
               select: { saveCount: true },
             })
@@ -264,7 +284,11 @@ export async function createCommentAction(
         select: { id: true },
       }),
       db.post.update({
-        where: { id: parsed.data.postId, status: "PUBLISHED" },
+        where: {
+          id: parsed.data.postId,
+          status: "PUBLISHED",
+          AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer.userId)],
+        },
         data: { commentCount: { increment: 1 } },
         select: { authorId: true },
       }),

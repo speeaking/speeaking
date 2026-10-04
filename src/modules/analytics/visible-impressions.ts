@@ -1,4 +1,5 @@
 import "server-only";
+import { postVisibleTo } from "@/modules/relationships/privacy";
 import type { Surface } from "@/generated/prisma/enums";
 import { type Day, mexicoDay } from "@/modules/platform/calendar";
 import { getFeedExperimentAssignments } from "@/modules/platform/settings";
@@ -102,7 +103,11 @@ async function record(
   const now = input.now ?? new Date();
   // Publicadas y que no son de quien las ve (las vistas del dueño no cuentan).
   const posts = await db.post.findMany({
-    where: { id: { in: reports.map((report) => report.postId) }, status: "PUBLISHED" },
+    where: {
+      id: { in: reports.map((report) => report.postId) },
+      status: "PUBLISHED",
+      AND: [postVisibleTo(input.viewerId)],
+    },
     select: { id: true, authorId: true },
   });
   const eligible = new Set(

@@ -20,6 +20,7 @@ import {
   Truck,
   Undo2,
   Camera,
+  LockKeyhole,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -250,6 +251,13 @@ function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) 
           {formatRelativeTime(new Date(post.publishedAt))}
         </time>
       </span>
+      {post.audience === "friends" ? (
+        <span className="inline-flex shrink-0 items-center gap-1" title="Solo amigos aceptados">
+          <Dot />
+          <LockKeyhole className="size-3" aria-hidden="true" />
+          <span className="sr-only">Solo amigos</span>
+        </span>
+      ) : null}
       {post.isAiGenerated ? (
         <span className="inline-flex shrink-0 items-center gap-1">
           <Dot />

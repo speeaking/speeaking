@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   Sparkles,
   Wallet,
+  Users,
 } from "lucide-react";
 import type { Route } from "next";
 
@@ -60,7 +61,7 @@ export const socialNav: readonly NavItem[] = [
     href: "/perfil",
     label: "Perfil",
     icon: CircleUser,
-    also: ["/ajustes", "/guardados", "/mensajes"],
+    also: ["/ajustes", "/guardados", "/mensajes", "/personas"],
     ownProfile: true,
   },
 ];
@@ -80,6 +81,7 @@ export const sideNav: readonly NavItem[] = [
   },
   { href: "/estilista", label: "Estilista", icon: Shirt, also: ["/probar"] },
   { href: "/guardados", label: "Guardados", icon: Bookmark },
+  { href: "/personas" as Route, label: "Mis personas", icon: Users },
   { href: "/pedidos", label: "Mis pedidos", icon: ReceiptText },
 ];
 

@@ -13,6 +13,7 @@ import { POST_WITH_VISIBLE_PRODUCT, VISIBLE_PRODUCT } from "@/modules/trust/visi
 import { db } from "@/server/db";
 import { getStorage, getVideoStore } from "@/server/providers/storage";
 import { assertSafeKey, InvalidStorageKeyError } from "@/server/providers/storage/types";
+import { friendsOf, PUBLIC_POST, postVisibleTo } from "@/modules/relationships/privacy";
 
 /**
  * Caché de una foto pública: una hora; después, la copia vieja todavía puede salir mientras se
@@ -59,6 +60,9 @@ const DEGRADED_CACHE = "no-store";
  *
  * Las fotos se piden desde el mismo origen con las cookies de la sesión: su dueño y el equipo ven
  * las fotos privadas en el Studio y en la página del producto oculto.
+ * Las publicaciones personales y portadas de cuentas personales requieren amistad aceptada;
+ * se autorizan en cada petición y se entregan con `private, no-store`. El avatar de identificación,
+ * las publicaciones con productos y el contenido editorial son públicos.
  */
 export async function GET(request: Request, context: RouteContext<"/media/[...key]">) {
   const key = (await context.params).key.join("/");
@@ -143,23 +147,31 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
 async function isPubliclyAttached(mediaId: string) {
   const [post, product, profile, posterOf] = await Promise.all([
     db.postMedia.findFirst({
-      where: { mediaId, post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } },
+      where: {
+        mediaId,
+        post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT, PUBLIC_POST] },
+      },
       select: { mediaId: true },
     }),
     db.productMedia.findFirst({
-      where: { mediaId, product: { ...VISIBLE_PRODUCT, status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } } },
+      where: {
+        mediaId,
+        product: { ...VISIBLE_PRODUCT, status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } },
+      },
       select: { mediaId: true },
     }),
     // Foto de perfil o portada de alguien (ADR-058): llaves únicas, una consulta con índice.
     db.profile.findFirst({
-      where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId }] },
+      where: { OR: [{ avatarMediaId: mediaId }, { coverMediaId: mediaId, isEditorial: true }] },
       select: { userId: true },
     }),
     // Portada de un video adjunto a una publicación PUBLICADA (ADR-062): llave única `posterId`.
     db.media.findFirst({
       where: {
         posterId: mediaId,
-        postLinks: { some: { post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] } } },
+        postLinks: {
+          some: { post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT, PUBLIC_POST] } },
+        },
       },
       select: { id: true },
     }),
@@ -182,8 +194,30 @@ async function canSeePrivate(
   if (viewerId === media.ownerId) return true;
   // Adjunta a algo público pero es comprobante o foto de Pruébatelo: solo su dueño.
   if (publiclyAttached) return false;
+  if (await isProof()) return false;
   // Una foto de Pruébatelo la ve solo su dueña o dueño: ni el equipo (ADR-045).
   if (await isTryOn()) return false;
+  // Amigos aceptados: solo adjuntos de publicaciones visibles y la portada vigente. Nunca
+  // archivos sueltos, borradores, pruebas de autenticidad ni fotos del probador.
+  const visiblePost = {
+    status: "PUBLISHED" as const,
+    AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
+  };
+  const [post, cover, poster] = await Promise.all([
+    db.postMedia.findFirst({
+      where: { mediaId: media.id, post: visiblePost },
+      select: { mediaId: true },
+    }),
+    db.profile.findFirst({
+      where: { coverMediaId: media.id, user: friendsOf(viewerId) },
+      select: { userId: true },
+    }),
+    db.media.findFirst({
+      where: { posterId: media.id, postLinks: { some: { post: visiblePost } } },
+      select: { id: true },
+    }),
+  ]);
+  if (post || cover || poster) return true;
   if ((await findUserRole(viewerId)) !== "ADMIN") return false;
   const hiddenProductLinks = await db.productMedia.count({
     where: { mediaId: media.id, product: { moderationStatus: "HIDDEN" } },

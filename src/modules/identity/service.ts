@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
+import { PUBLIC_POST } from "@/modules/relationships/privacy";
 import { db } from "@/server/db";
 import { MIN_VISIBLE_MEMBERS } from "./community-signal";
 import { LEGAL_VERSIONS } from "./constants";
@@ -165,7 +166,7 @@ export async function countPostsOfNewCommunities() {
     where: {
       status: "PUBLISHED",
       community: { memberCount: { lt: MIN_VISIBLE_MEMBERS } },
-      AND: [POST_WITH_VISIBLE_PRODUCT],
+      AND: [POST_WITH_VISIBLE_PRODUCT, PUBLIC_POST],
     },
     _count: { _all: true },
   });
@@ -175,7 +176,7 @@ export async function countPostsOfNewCommunities() {
 /** Publicaciones visibles de una comunidad (sin las de productos ocultos por el equipo, P14). */
 export function countCommunityPosts(communityId: string) {
   return db.post.count({
-    where: { communityId, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT] },
+    where: { communityId, status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT, PUBLIC_POST] },
   });
 }
 

@@ -1,5 +1,7 @@
 import "server-only";
 import { db } from "@/server/db";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 export type CommentDTO = {
   id: string;
@@ -14,7 +16,11 @@ export async function listComments(
   viewerId: string | null = null,
 ): Promise<CommentDTO[]> {
   const rows = await db.comment.findMany({
-    where: { postId, status: "PUBLISHED" },
+    where: {
+      postId,
+      status: "PUBLISHED",
+      post: { status: "PUBLISHED", AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)] },
+    },
     orderBy: { createdAt: "asc" },
     take: 100,
     select: {

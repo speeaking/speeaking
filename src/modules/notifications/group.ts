@@ -9,6 +9,8 @@ export type NotificationKind =
   | "REACTION"
   | "COMMENT"
   | "FOLLOW"
+  | "FRIEND_REQUEST"
+  | "FRIEND_ACCEPTED"
   | "ORDER_PAID"
   | "ORDER_SHIPPED"
   | "ORDER_DELIVERED"
@@ -85,6 +87,10 @@ function hrefFor(
       return `/p/${first.postId}/comentarios`;
     case "FOLLOW":
       return actors.length === 1 ? `/u/${actors[0]!.username}` : `/u/${selfUsername}/seguidores`;
+    case "FRIEND_REQUEST":
+      return "/personas?ver=solicitudes";
+    case "FRIEND_ACCEPTED":
+      return actors[0] ? `/u/${actors[0].username}` : "/personas";
     case "ORDER_PAID":
       return "/studio/pedidos";
     // La tienda llega a su panel de colaboraciones (ahí puede quitar la etiqueta).
@@ -172,6 +178,10 @@ export function notificationSentence(item: NotificationItem): { who: string | nu
       };
     case "ORDER_PAID":
       return { who: null, what: "Tienes un pedido nuevo: prepara la entrega" };
+    case "FRIEND_REQUEST":
+      return { who: actorNames(item.actors), what: "te envió una solicitud de amistad" };
+    case "FRIEND_ACCEPTED":
+      return { who: actorNames(item.actors), what: "aceptó tu solicitud de amistad" };
     case "ORDER_SHIPPED":
       return { who: null, what: "Tu pedido va en camino" };
     case "ORDER_DELIVERED":

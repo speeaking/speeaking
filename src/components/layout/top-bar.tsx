@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingCart,
+  Users,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -185,6 +186,9 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
         <DropdownMenuSeparator />
         <MenuLink href="/perfil" icon={CircleUser}>
           Perfil
+        </MenuLink>
+        <MenuLink href={"/personas" as Route} icon={Users}>
+          Mis personas
         </MenuLink>
         <MenuLink href="/mensajes" icon={MessageCircle}>
           Mensajes

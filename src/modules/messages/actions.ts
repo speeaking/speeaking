@@ -127,6 +127,7 @@ export async function setMessagesBlockedAction(
     : await unblockMessages(viewer.userId, conversationId);
   if (!done) return { ok: false, error: MESSAGES.FORBIDDEN! };
   revalidatePath(`/mensajes/${conversationId}`);
+  revalidatePath("/(social)", "layout");
   return { ok: true };
 }
 

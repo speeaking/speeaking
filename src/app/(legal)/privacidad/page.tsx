@@ -117,10 +117,13 @@ export default function PrivacyNoticePage() {
 
       <h2>Lo que es público</h2>
       <p>
-        Tu perfil (nombre, nombre de usuario, foto, ciudad si la pones), tus publicaciones,
-        comentarios y productos son públicos: cualquiera puede verlos, también sin cuenta, y los
-        buscadores de internet pueden indexarlos. Tu correo, tu teléfono, tus domicilios, tus
-        búsquedas y tus compras nunca son públicos.
+        Tu nombre, nombre de usuario y foto de perfil permiten identificarte y son públicos. Tu
+        biografía, ciudad, portada y publicaciones personales, incluidas sus fotos, videos y
+        comentarios, solo pueden verlos tú y tus amigos aceptados. Seguirte o comprarte no concede
+        ese acceso. Al quitar una amistad o bloquear sus mensajes se cierra el acceso a tu contenido
+        personal. Las publicaciones con productos y las cuentas editoriales son públicas y los
+        buscadores pueden indexarlas. Tu correo, teléfono, domicilios, búsquedas y compras nunca son
+        públicos; cada tienda solo ve sus propios compradores y pedidos.
       </p>
 
       <h2>Finalidades principales</h2>

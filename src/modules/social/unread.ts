@@ -3,6 +3,7 @@ import { cache } from "react";
 import { CANDIDATE_WINDOW_DAYS } from "@/modules/feed/queries";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db";
+import { postVisibleToSql } from "@/modules/relationships/privacy";
 
 /**
  * «N nuevas» por comunidad (F7): publicaciones que la persona todavía no ha visto en sus
@@ -51,6 +52,7 @@ export function unreadCountsSql(viewerId: string, now: Date) {
         FROM "posts" p
         WHERE p."communityId" = m."communityId"
           AND p."status" = 'PUBLISHED'
+          AND ${postVisibleToSql(viewerId)}
           AND p."publishedAt" > COALESCE(m."lastSeenAt", m."createdAt")
           AND p."publishedAt" >= ${windowStart}::timestamptz
           AND p."publishedAt" <= ${now}::timestamptz

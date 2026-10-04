@@ -1,4 +1,4 @@
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, LockKeyhole } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/states/empty-state";
@@ -18,6 +18,8 @@ import { getProfile, getProfileIndexing } from "./profile";
 import { pageMetadata, NO_INDEX } from "@/app/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { absoluteUrl } from "@/app/seo";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 export async function generateMetadata({ params }: PageProps<"/u/[username]">): Promise<Metadata> {
   const { username } = await params;
@@ -51,7 +53,11 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
   const isOwn = viewer?.userId === profile.userId;
   const [postIds, products, visibility] = await Promise.all([
     db.post.findMany({
-      where: { authorId: profile.userId, status: "PUBLISHED" },
+      where: {
+        authorId: profile.userId,
+        status: "PUBLISHED",
+        AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer?.userId ?? null)],
+      },
       orderBy: { publishedAt: "desc" },
       take: 20,
       select: { id: true },
@@ -64,6 +70,16 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
     viewer?.userId ?? null,
   );
   const photos = profilePhotos(posts);
+  const privateNotice = (
+    <div className="mx-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed px-5 py-8 text-center md:mx-0">
+      <LockKeyhole className="mb-1 size-7 text-muted-foreground" aria-hidden="true" />
+      <h2 className="font-heading text-lg font-bold">Su contenido personal es privado</h2>
+      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+        Envía una solicitud de amistad. Cuando {profile.displayName} la acepte, podrás ver su
+        biografía, fotos, videos y publicaciones personales.
+      </p>
+    </div>
+  );
 
   const tabs: ProfileTabItem[] = [
     {
@@ -73,13 +89,17 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
       content:
         posts.length === 0 ? (
           <div className="px-4 md:px-0">
-            <EmptyState
-              icon={ImagePlus}
-              title="Sin publicaciones todavía"
-              description={
-                isOwn ? "Comparte tu primera publicación con tus comunidades." : "Vuelve pronto."
-              }
-            />
+            {!profile.canViewPersonal ? (
+              privateNotice
+            ) : (
+              <EmptyState
+                icon={ImagePlus}
+                title="Sin publicaciones todavía"
+                description={
+                  isOwn ? "Comparte tu primera publicación con tus comunidades." : "Vuelve pronto."
+                }
+              />
+            )}
           </div>
         ) : (
           // En el perfil ancho de escritorio las publicaciones conservan su ancho de lectura.
@@ -96,8 +116,12 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
     {
       id: "fotos",
       label: "Fotos",
-      count: photos.length,
-      content: <ProfilePhotos photos={photos} name={profile.displayName} />,
+      count: profile.canViewPersonal ? photos.length : undefined,
+      content: profile.canViewPersonal ? (
+        <ProfilePhotos photos={photos} name={profile.displayName} />
+      ) : (
+        privateNotice
+      ),
     },
     ...(products.length > 0
       ? [
@@ -125,7 +149,6 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
                 "@type": "Person",
                 name: profile.displayName,
                 alternateName: `@${profile.username}`,
-                description: profile.bio ?? undefined,
                 image: profile.avatarUrl ? absoluteUrl(profile.avatarUrl) : undefined,
               },
             }}
@@ -145,6 +168,13 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
           isOwn={isOwn}
           isSignedIn={viewer !== null}
         />
+        {!profile.canViewPersonal && posts.length > 0 ? privateNotice : null}
+        {isOwn && !profile.isEditorial ? (
+          <p className="mx-4 flex items-center gap-2 text-sm text-muted-foreground md:mx-0">
+            <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
+            Tu contenido personal solo lo ven tus amigos aceptados.
+          </p>
+        ) : null}
         {/* `key`: «Ver tienda» (`?ver=tienda`) cambia de pestaña aunque la página ya esté abierta. */}
         <ProfileTabs
           key={resolveProfileTab(ver, products.length > 0)}

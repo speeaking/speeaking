@@ -4,6 +4,9 @@ import { z } from "zod";
 import { track } from "@/modules/analytics/track";
 import { getViewer } from "@/modules/identity/session";
 import { checkSocialLimit } from "./limits";
+import { db } from "@/server/db";
+import { postVisibleTo } from "@/modules/relationships/privacy";
+import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 
 const shareSchema = z.object({ postId: z.uuid(), channel: z.enum(["native", "copy"]) });
 
@@ -16,6 +19,17 @@ export async function recordShareAction(postId: string, channel: "native" | "cop
   const parsed = shareSchema.safeParse({ postId, channel });
   if (!parsed.success) return;
   const viewer = await getViewer();
+  if (
+    !(await db.post.findFirst({
+      where: {
+        id: parsed.data.postId,
+        status: "PUBLISHED",
+        AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer?.userId ?? null)],
+      },
+      select: { id: true },
+    }))
+  )
+    return;
   if (!(await checkSocialLimit("share", viewer?.userId ?? null)).ok) return;
   track({
     type: "SHARE",
