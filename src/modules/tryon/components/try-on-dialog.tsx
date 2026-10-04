@@ -26,6 +26,7 @@ import type { ComplementDTO } from "../complements";
 import { TRY_ON_CONSENT_TEXT, TRY_ON_DISCLAIMER, TRY_ON_RETENTION_DAYS } from "../consent";
 import { describeFunding, type FundingStatus } from "../funding";
 import { MAX_TRY_ON_GARMENTS } from "../limits";
+import { ShareLookButton } from "./share-look-button";
 
 export type DialogPhoto = { id: string; url: string };
 export type DialogProduct = { id: string; slug: string; title: string; priceCents: number };
@@ -265,6 +266,7 @@ export function TryOnDialog({
               {/* Una columna, como el pie del carrito (ADR-052): a 360–390 px dos columnas dejan
                   ~140 px por botón y «Comprar todo · $12,345» no cabe. */}
               <div className="flex flex-col gap-2">
+                <ShareLookButton result={result} />
                 <Button
                   size="lg"
                   className="h-12 text-base"

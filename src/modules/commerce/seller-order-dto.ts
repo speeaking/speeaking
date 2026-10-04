@@ -36,7 +36,13 @@ export type SellerOrderRow = {
   shippingAddress: unknown;
   createdAt: Date;
   buyer: { profile: { displayName: string } | null };
-  items: { id: string; titleSnapshot: string; quantity: number }[];
+  items: {
+    id: string;
+    titleSnapshot: string;
+    quantity: number;
+    requestedSize?: string | null;
+    giftRecipientName?: string | null;
+  }[];
   /** Pagos aprobados del checkout. */
   checkout: { payments: { provider: string }[] };
 };
@@ -47,7 +53,13 @@ export type SellerOrderDto = {
   deliveryMethod: DeliveryMethod;
   totalCents: number;
   createdAt: Date;
-  items: { id: string; title: string; quantity: number }[];
+  items: {
+    id: string;
+    title: string;
+    quantity: number;
+    requestedSize?: string | null;
+    giftRecipientName?: string | null;
+  }[];
   /** Pago simulado: no se cobró dinero y no se debe enviar mercancía (SEC-01). */
   simulatedPayment: boolean;
   /** `null` si el pedido ya no está pagado (p. ej. cancelado). */
@@ -76,6 +88,10 @@ export function toSellerOrderDto(row: SellerOrderRow): SellerOrderDto {
       id: item.id,
       title: item.titleSnapshot,
       quantity: item.quantity,
+      ...(item.requestedSize !== undefined ? { requestedSize: item.requestedSize } : {}),
+      ...(item.giftRecipientName !== undefined
+        ? { giftRecipientName: buyerVisible && !simulatedPayment ? item.giftRecipientName : null }
+        : {}),
     })),
     simulatedPayment,
     buyerName: buyerVisible ? (row.buyer.profile?.displayName ?? "Comprador") : null,

@@ -30,6 +30,8 @@ export default async function CheckoutPage() {
       title: line.product.title,
       quantity: line.quantity,
       totalCents: line.product.priceCents * line.quantity,
+      requestedSize: line.requestedSize,
+      giftRecipientName: line.giftRecipientName,
     })),
     subtotalCents: group.lines.reduce(
       (sum, line) => sum + line.product.priceCents * line.quantity,
@@ -58,6 +60,13 @@ export default async function CheckoutPage() {
     },
   });
   const blocked = groups.find((group) => group.methods.length === 0);
+  const giftNames = [
+    ...new Set(lines.flatMap((line) => (line.giftRecipientName ? [line.giftRecipientName] : []))),
+  ];
+  const recipient =
+    giftNames.length === 1 && lines.every((line) => line.giftRecipientName === giftNames[0])
+      ? giftNames[0]
+      : viewer.profile.displayName;
 
   return (
     <>
@@ -81,7 +90,7 @@ export default async function CheckoutPage() {
             groups={groups}
             paymentMethods={paymentMethods}
             cartKey={checkoutCartKey(lines)}
-            defaultRecipient={viewer.profile.displayName}
+            defaultRecipient={recipient}
             addresses={addresses.map((address) => ({
               id: address.id,
               label: `${address.street} ${address.exteriorNumber}, ${address.neighborhood}, ${address.city}`,

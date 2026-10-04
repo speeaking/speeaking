@@ -177,6 +177,8 @@ export async function placeOrder(userId: string, input: PlaceOrderInput) {
           quantity: line.quantity,
           commissionBps: fees.platformFeeBps,
           sourcePostId: line.sourcePostId,
+          requestedSize: line.requestedSize ?? null,
+          giftRecipientName: line.giftRecipientName ?? null,
         };
       });
       const totals = computeOrderTotals({
@@ -330,6 +332,8 @@ export function checkoutCartKey(lines: CartLine[]) {
       quantity: line.quantity,
       unitPriceCents: line.product.priceCents,
       shippingPriceCents: line.product.shippingPriceCents,
+      requestedSize: line.requestedSize,
+      giftRecipientName: line.giftRecipientName,
     })),
   );
 }
@@ -512,7 +516,17 @@ async function releaseCheckout(
     select: {
       buyerId: true,
       orders: {
-        select: { items: { select: { productId: true, quantity: true, sourcePostId: true } } },
+        select: {
+          items: {
+            select: {
+              productId: true,
+              quantity: true,
+              sourcePostId: true,
+              requestedSize: true,
+              giftRecipientName: true,
+            },
+          },
+        },
       },
     },
   });
@@ -532,14 +546,27 @@ async function releaseCheckout(
   });
   const inCart = await tx.cartItem.findMany({
     where: { cartId: cart.id, productId: { in: returned.map((item) => item.productId) } },
-    select: { productId: true, quantity: true },
+    select: { productId: true, quantity: true, requestedSize: true, giftRecipientName: true },
   });
-  for (const item of restoredCartItems(returned, inCart, MAX_QUANTITY_PER_ITEM)) {
+  // Si se agregó otra talla o destinatario mientras se esperaba el pago, conserva esa elección.
+  const compatible = returned.filter((item) => {
+    const existing = inCart.find((line) => line.productId === item.productId);
+    return (
+      !existing ||
+      (existing.requestedSize === item.requestedSize &&
+        existing.giftRecipientName === item.giftRecipientName)
+    );
+  });
+  for (const item of restoredCartItems(compatible, inCart, MAX_QUANTITY_PER_ITEM)) {
     await tx.cartItem.upsert({
       where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
       create: { cartId: cart.id, ...item },
       update: {
         quantity: item.quantity,
+        ...(item.requestedSize !== undefined ? { requestedSize: item.requestedSize } : {}),
+        ...(item.giftRecipientName !== undefined
+          ? { giftRecipientName: item.giftRecipientName }
+          : {}),
         ...(item.sourcePostId ? { sourcePostId: item.sourcePostId } : {}),
       },
     });

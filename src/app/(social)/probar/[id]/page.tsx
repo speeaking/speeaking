@@ -10,6 +10,8 @@ import { requireOnboardedViewer } from "@/modules/identity/session";
 import { TRY_ON_DISCLAIMER } from "@/modules/tryon/consent";
 import { describeFunding } from "@/modules/tryon/funding";
 import { getTryOnResult } from "@/modules/tryon/service";
+import { listMySharedLooks } from "@/modules/tryon/shared-look";
+import { ShareLookButton } from "@/modules/tryon/components/share-look-button";
 
 export const metadata: Metadata = { title: "Tu simulación", robots: { index: false } };
 
@@ -18,6 +20,7 @@ export default async function TryOnResultPage({ params }: PageProps<"/probar/[id
   const { id } = await params;
   const result = await getTryOnResult(viewer.userId, id);
   if (!result) notFound();
+  const shares = await listMySharedLooks(viewer.userId, id);
   const total = result.products.reduce((sum, product) => sum + product.priceCents, 0);
   const again =
     `/probar?${result.products.map((product) => `producto=${product.slug}`).join("&")}` as Route;
@@ -54,8 +57,8 @@ export default async function TryOnResultPage({ params }: PageProps<"/probar/[id
           </div>
           <figcaption className="text-center text-xs text-muted-foreground">
             {TRY_ON_DISCLAIMER} · {describeFunding(result.funding)}
-            {result.chargedCents > 0 ? ` (${formatMoney(result.chargedCents)})` : ""} · Solo tú la
-            ves; se borra el {expires}.
+            {result.chargedCents > 0 ? ` (${formatMoney(result.chargedCents)})` : ""} · Privada
+            hasta que decidas compartirla; se borra el {expires}.
           </figcaption>
         </figure>
 
@@ -96,6 +99,7 @@ export default async function TryOnResultPage({ params }: PageProps<"/probar/[id
         </section>
 
         <div className="flex flex-wrap gap-3">
+          <ShareLookButton result={result} shares={shares} />
           <Link href={again} className={cn(buttonVariants({ variant: "outline" }), "h-10")}>
             Probar otra combinación
           </Link>

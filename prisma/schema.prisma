@@ -55,6 +55,9 @@ model User {
   wallet                Wallet?
   tryOnPhotos           TryOnPhoto[]
   tryOnResults          TryOnResult[]
+  sharedLooks           SharedLook[]          @relation("sharedLookOwner")
+  looksReceived         SharedLook[]          @relation("sharedLookRecipient")
+  looksApproved         SharedLook[]          @relation("sharedLookApprover")
   styleLooks            StyleLook[]
   conversationsAsA      Conversation[]        @relation("conversationsAsA")
   conversationsAsB      Conversation[]        @relation("conversationsAsB")
@@ -1215,15 +1218,17 @@ model Cart {
 }
 
 model CartItem {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  cartId       String   @db.Uuid
-  cart         Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId    String   @db.Uuid
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity     Int
+  id                String   @id @default(uuid(7)) @db.Uuid
+  cartId            String   @db.Uuid
+  cart              Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId         String   @db.Uuid
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity          Int
   /// Publicación que llevó a agregarlo (atribución, P5).
-  sourcePostId String?  @db.Uuid
-  addedAt      DateTime @default(now()) @db.Timestamptz(3)
+  sourcePostId      String?  @db.Uuid
+  requestedSize     String?  @db.VarChar(40)
+  giftRecipientName String?  @db.VarChar(80)
+  addedAt           DateTime @default(now()) @db.Timestamptz(3)
 
   @@unique([cartId, productId])
   @@map("cart_items")
@@ -1330,18 +1335,20 @@ model Order {
 
 /// Precio, costo y comisión se congelan al comprar (P2: el beneficio se calcula con estos datos).
 model OrderItem {
-  id             String  @id @default(uuid(7)) @db.Uuid
-  orderId        String  @db.Uuid
-  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId      String  @db.Uuid
-  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-  titleSnapshot  String
-  unitPriceCents Int
+  id                String  @id @default(uuid(7)) @db.Uuid
+  orderId           String  @db.Uuid
+  order             Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String  @db.Uuid
+  product           Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  titleSnapshot     String
+  unitPriceCents    Int
   /// Privado del vendedor: nunca se muestra a compradores.
-  unitCostCents  Int
-  quantity       Int
-  commissionBps  Int
-  sourcePostId   String? @db.Uuid
+  unitCostCents     Int
+  quantity          Int
+  commissionBps     Int
+  sourcePostId      String? @db.Uuid
+  requestedSize     String? @db.VarChar(40)
+  giftRecipientName String? @db.VarChar(80)
 
   @@index([orderId])
   @@index([productId])
@@ -1451,6 +1458,8 @@ model Message {
   senderId       String       @db.Uuid
   sender         User         @relation("messagesSent", fields: [senderId], references: [id], onDelete: Cascade)
   body           String       @db.VarChar(2000)
+  sharedLookId   String?      @db.Uuid
+  sharedLook     SharedLook?  @relation(fields: [sharedLookId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
 
   @@index([conversationId, createdAt])
@@ -1596,11 +1605,40 @@ model TryOnResult {
   expiresAt       DateTime    @db.Timestamptz(3)
   createdAt       DateTime    @default(now()) @db.Timestamptz(3)
 
+  sharedLooks SharedLook[]
+
   @@index([userId, createdAt(sort: Desc)])
   @@index([expiresAt])
   @@index([sponsorSellerId, createdAt])
   @@index([sellerId, createdAt])
   @@map("try_on_results")
+}
+
+/// Resultado compartido por decisión de su dueño: con una persona del chat o mediante un enlace
+/// secreto. La foto original nunca se comparte; revocar o borrar la simulación retira el acceso.
+model SharedLook {
+  id           String      @id @default(uuid(7)) @db.Uuid
+  ownerId      String      @db.Uuid
+  owner        User        @relation("sharedLookOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  resultId     String      @db.Uuid
+  result       TryOnResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  recipientId  String?     @db.Uuid
+  recipient    User?       @relation("sharedLookRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  tokenHash    String?     @unique @db.VarChar(64)
+  message      String      @db.VarChar(240)
+  sizes        Json        @default("{}")
+  expiresAt    DateTime    @db.Timestamptz(3)
+  revokedAt    DateTime?   @db.Timestamptz(3)
+  approvedAt   DateTime?   @db.Timestamptz(3)
+  approvedById String?     @db.Uuid
+  approvedBy   User?       @relation("sharedLookApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+
+  messages Message[]
+
+  @@index([ownerId, resultId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("shared_looks")
 }
 
 // ─────────────────────────── Estilista (ADR-043) ───────────────────────────

@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/server/db";
 import type { Prisma } from "@/generated/prisma/client";
+import { getSharedLook, type SharedLookDTO } from "@/modules/tryon/shared-look";
 import { cleanMessageBody, conversationPair, hasUnread, sideOf } from "./pair";
 
 /**
@@ -33,7 +34,13 @@ export type ConversationSummaryDTO = {
   unread: boolean;
 };
 
-export type MessageDTO = { id: string; body: string; mine: boolean; at: string };
+export type MessageDTO = {
+  id: string;
+  body: string;
+  mine: boolean;
+  at: string;
+  look?: SharedLookDTO | null;
+};
 
 /**
  * Bloqueo de mensajes entre las dos (ADR-069): `byMe`, lo bloqueó quien ve (puede quitarlo);
@@ -225,7 +232,7 @@ export async function getThread(
       where: { conversationId: row.id, ...(clearedAt ? { createdAt: { gt: clearedAt } } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
-      select: { id: true, body: true, senderId: true, createdAt: true },
+      select: { id: true, body: true, senderId: true, createdAt: true, sharedLookId: true },
     }),
     db.conversation.update({
       where: { id: row.id },
@@ -233,6 +240,14 @@ export async function getThread(
       select: { id: true },
     }),
   ]);
+  const sharedIds = [
+    ...new Set(messages.flatMap((message) => (message.sharedLookId ? [message.sharedLookId] : []))),
+  ];
+  const looks = new Map(
+    await Promise.all(
+      sharedIds.map(async (id) => [id, await getSharedLook(id, viewerId)] as const),
+    ),
+  );
   return {
     id: row.id,
     other: toPerson(side.otherUserId === row.userAId ? row.userA : row.userB),
@@ -241,6 +256,7 @@ export async function getThread(
       body: message.body,
       mine: message.senderId === viewerId,
       at: message.createdAt.toISOString(),
+      ...(message.sharedLookId ? { look: looks.get(message.sharedLookId) ?? null } : {}),
     })),
     blocked,
   };
@@ -280,7 +296,12 @@ export async function unblockMessages(viewerId: string, conversationId: string):
 }
 
 /** Envía un mensaje en una conversación propia; el texto limpio, nunca vacío. */
-export async function sendMessage(viewerId: string, conversationId: string, rawBody: string) {
+export async function sendMessage(
+  viewerId: string,
+  conversationId: string,
+  rawBody: string,
+  sharedLookId?: string,
+) {
   const body = cleanMessageBody(rawBody);
   if (!body) throw new MessageError("EMPTY");
   const conversation = await db.conversation.findFirst({
@@ -291,11 +312,30 @@ export async function sendMessage(viewerId: string, conversationId: string, rawB
   const otherUserId =
     conversation.userAId === viewerId ? conversation.userBId : conversation.userAId;
   if (await blockBetween(viewerId, otherUserId)) throw new MessageError("BLOCKED");
+  if (sharedLookId) {
+    const look = await db.sharedLook.findFirst({
+      where: {
+        id: sharedLookId,
+        ownerId: viewerId,
+        recipientId: otherUserId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+    if (!look) throw new MessageError("FORBIDDEN");
+  }
   const now = new Date();
   const side = sideOf({ ...conversation, aReadAt: null, bReadAt: null }, viewerId);
   const [message] = await db.$transaction([
     db.message.create({
-      data: { conversationId, senderId: viewerId, body, createdAt: now },
+      data: {
+        conversationId,
+        senderId: viewerId,
+        body,
+        createdAt: now,
+        ...(sharedLookId ? { sharedLookId } : {}),
+      },
       select: { id: true },
     }),
     db.conversation.update({

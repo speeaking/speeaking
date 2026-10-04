@@ -25,6 +25,7 @@ export const CRAWL_DISALLOW = [
   "/avisos",
   "/saldo",
   "/probar",
+  "/look/",
   "/buscar/foto",
 ] as const;
 

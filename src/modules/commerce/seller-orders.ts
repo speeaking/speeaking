@@ -25,7 +25,15 @@ export async function listSellerOrders(sellerId: string) {
       shippingAddress: true,
       createdAt: true,
       buyer: { select: { profile: { select: { displayName: true } } } },
-      items: { select: { id: true, titleSnapshot: true, quantity: true } },
+      items: {
+        select: {
+          id: true,
+          titleSnapshot: true,
+          quantity: true,
+          requestedSize: true,
+          giftRecipientName: true,
+        },
+      },
       checkout: {
         select: { payments: { where: { status: "APPROVED" }, select: { provider: true } } },
       },

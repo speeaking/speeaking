@@ -49,7 +49,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/pedidos/[i
           seller: { select: { displayName: true } },
           // Solo datos del comprador: el costo del vendedor no se consulta.
           items: {
-            select: { id: true, titleSnapshot: true, quantity: true, unitPriceCents: true },
+            select: {
+              id: true,
+              titleSnapshot: true,
+              quantity: true,
+              unitPriceCents: true,
+              requestedSize: true,
+              giftRecipientName: true,
+            },
           },
         },
       },
@@ -121,6 +128,16 @@ export default async function OrderDetailPage({ params }: PageProps<"/pedidos/[i
               <li key={item.id} className="flex justify-between gap-3">
                 <span>
                   {item.quantity} × {item.titleSnapshot}
+                  {item.requestedSize ? (
+                    <span className="block text-xs text-muted-foreground">
+                      Talla solicitada: {item.requestedSize}
+                    </span>
+                  ) : null}
+                  {item.giftRecipientName ? (
+                    <span className="block text-xs text-primary-text">
+                      Regalo para {item.giftRecipientName}
+                    </span>
+                  ) : null}
                 </span>
                 <span>{formatMoney(item.unitPriceCents * item.quantity)}</span>
               </li>

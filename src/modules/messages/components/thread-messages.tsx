@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import type { Route } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { RemoveContentButton } from "@/modules/identity/components/remove-content-button";
 import type { MessageDTO } from "../service";
@@ -38,6 +42,42 @@ export function ThreadMessages({
             key={message.id}
             className={cn("flex max-w-[85%] flex-col", message.mine ? "self-end" : "self-start")}
           >
+            {message.look ? (
+              <Link
+                href={`/look/${message.look.id}` as Route}
+                className="mb-1 overflow-hidden rounded-2xl border bg-card text-card-foreground"
+              >
+                <Image
+                  src={message.look.image.url}
+                  width={message.look.image.width}
+                  height={message.look.image.height}
+                  unoptimized
+                  alt="Look compartido"
+                  className="max-h-72 w-full bg-muted object-contain"
+                />
+                <div className="flex flex-col gap-1.5 p-3 text-sm">
+                  <span className="font-semibold">
+                    {message.look.mine
+                      ? "Tu look compartido"
+                      : `El look de ${message.look.owner.name}`}
+                  </span>
+                  {message.look.products.map((product) => (
+                    <span key={product.id} className="text-xs text-muted-foreground">
+                      {product.title}
+                      {product.size ? ` · talla ${product.size}` : ""} ·{" "}
+                      {formatMoney(product.priceCents, product.currency)}
+                    </span>
+                  ))}
+                  <span className="font-semibold text-primary-text">
+                    Ver look y {message.mine ? "comprar" : "regalar 🎁"}
+                  </span>
+                </div>
+              </Link>
+            ) : message.look === null ? (
+              <p className="mb-1 rounded-2xl border bg-muted px-3 py-2 text-xs text-muted-foreground">
+                Este look ya no está disponible.
+              </p>
+            ) : null}
             <p
               className={cn(
                 "rounded-2xl px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap",

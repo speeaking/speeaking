@@ -55,6 +55,16 @@ export default async function StudioOrdersPage() {
                   {order.items.map((item) => (
                     <li key={item.id}>
                       {item.quantity} × {item.title}
+                      {item.requestedSize ? (
+                        <span className="block text-xs text-muted-foreground">
+                          Talla solicitada: {item.requestedSize}
+                        </span>
+                      ) : null}
+                      {item.giftRecipientName ? (
+                        <span className="block text-xs text-muted-foreground">
+                          Regalo para {item.giftRecipientName}
+                        </span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

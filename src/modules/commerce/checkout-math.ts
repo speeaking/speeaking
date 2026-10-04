@@ -65,18 +65,26 @@ export function cartFingerprint(
     quantity: number;
     unitPriceCents: number;
     shippingPriceCents: number | null;
+    requestedSize?: string | null;
+    giftRecipientName?: string | null;
   }[],
 ): string {
   return lines
     .map(
       (line) =>
-        `${line.productId}:${line.quantity}:${line.unitPriceCents}:${line.shippingPriceCents ?? "-"}`,
+        `${line.productId}:${line.quantity}:${line.unitPriceCents}:${line.shippingPriceCents ?? "-"}${line.requestedSize || line.giftRecipientName ? `:${JSON.stringify([line.requestedSize ?? null, line.giftRecipientName ?? null])}` : ""}`,
     )
     .sort()
     .join(",");
 }
 
-type ReturnedItem = { productId: string; quantity: number; sourcePostId: string | null };
+type ReturnedItem = {
+  productId: string;
+  quantity: number;
+  sourcePostId: string | null;
+  requestedSize?: string | null;
+  giftRecipientName?: string | null;
+};
 
 /**
  * Piezas de un pedido cancelado que regresan al carrito: se suman a las que ya estén ahí, con el
@@ -96,6 +104,10 @@ export function restoredCartItems(
       productId: item.productId,
       quantity: Math.min(base + item.quantity, maxPerItem),
       sourcePostId: item.sourcePostId ?? previous?.sourcePostId ?? null,
+      ...(item.requestedSize !== undefined ? { requestedSize: item.requestedSize } : {}),
+      ...(item.giftRecipientName !== undefined
+        ? { giftRecipientName: item.giftRecipientName }
+        : {}),
     });
   }
   return [...merged.values()];

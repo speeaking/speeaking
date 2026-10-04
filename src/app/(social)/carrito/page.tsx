@@ -117,6 +117,16 @@ export default async function CartPage() {
                       >
                         {line.product.title}
                       </Link>
+                      {line.requestedSize ? (
+                        <span className="text-xs text-muted-foreground">
+                          Talla solicitada: {line.requestedSize}
+                        </span>
+                      ) : null}
+                      {line.giftRecipientName ? (
+                        <span className="text-xs text-primary-text">
+                          Regalo para {line.giftRecipientName}
+                        </span>
+                      ) : null}
                       <span className="font-heading font-bold">
                         {formatMoney(line.product.priceCents * line.quantity)}
                       </span>

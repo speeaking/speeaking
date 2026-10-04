@@ -13,7 +13,14 @@ import { DELIVERY_LABELS } from "../labels";
 export type CheckoutGroup = {
   sellerId: string;
   sellerName: string;
-  lines: { productId: string; title: string; quantity: number; totalCents: number }[];
+  lines: {
+    productId: string;
+    title: string;
+    quantity: number;
+    totalCents: number;
+    requestedSize?: string | null;
+    giftRecipientName?: string | null;
+  }[];
   subtotalCents: number;
   methods: DeliveryMethod[];
   nationalShippingCents: number;
@@ -60,8 +67,11 @@ export function CheckoutForm({
   // `defaultChecked`, que refleja lo que la persona eligió (no a la primera opción).
   const [delivery, setDelivery] = useState<Record<string, DeliveryMethod>>({});
   const deliveryFor = (group: CheckoutGroup) => delivery[group.sellerId] ?? group.methods[0];
+  const gifts = groups.flatMap((group) => group.lines).filter((line) => line.giftRecipientName);
   const [addressChoice, setAddressChoice] = useState(
-    addresses.find((address) => address.isDefault)?.id ?? addresses[0]?.id ?? "nueva",
+    gifts.length
+      ? "nueva"
+      : (addresses.find((address) => address.isDefault)?.id ?? addresses[0]?.id ?? "nueva"),
   );
   const errors = state.fieldErrors ?? {};
   const values = state.values ?? {};
@@ -78,6 +88,12 @@ export function CheckoutForm({
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="cartKey" value={cartKey} />
+      {gifts.length ? (
+        <p className="rounded-2xl bg-secondary p-3 text-sm">
+          Hay un regalo en tu carrito. Confirma con esa persona la talla y la dirección de entrega;
+          también puedes recibirlo tú y entregárselo.
+        </p>
+      ) : null}
       {groups.map((group) => (
         <fieldset
           key={group.sellerId}
@@ -88,8 +104,20 @@ export function CheckoutForm({
           <ul className="flex flex-col gap-1 text-sm">
             {group.lines.map((line) => (
               <li key={line.productId} className="flex justify-between gap-3">
-                <span className="line-clamp-1">
-                  {line.quantity} × {line.title}
+                <span>
+                  <span className="line-clamp-1">
+                    {line.quantity} × {line.title}
+                  </span>
+                  {line.requestedSize ? (
+                    <span className="block text-xs text-muted-foreground">
+                      Talla solicitada: {line.requestedSize}
+                    </span>
+                  ) : null}
+                  {line.giftRecipientName ? (
+                    <span className="block text-xs text-primary-text">
+                      Regalo para {line.giftRecipientName}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="shrink-0 font-medium">{formatMoney(line.totalCents)}</span>
               </li>

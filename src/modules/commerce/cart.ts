@@ -91,6 +91,8 @@ export type CartLine = {
   itemId: string;
   quantity: number;
   sourcePostId: string | null;
+  requestedSize?: string | null;
+  giftRecipientName?: string | null;
   product: {
     id: string;
     slug: string;
@@ -176,6 +178,8 @@ async function readCartLines(
       id: true,
       quantity: true,
       sourcePostId: true,
+      requestedSize: true,
+      giftRecipientName: true,
       product: {
         select: {
           id: true,
@@ -210,6 +214,8 @@ async function readCartLines(
       itemId: item.id,
       quantity: item.quantity,
       sourcePostId: item.sourcePostId,
+      requestedSize: item.requestedSize,
+      giftRecipientName: item.giftRecipientName,
       product: {
         id: product.id,
         slug: product.slug,

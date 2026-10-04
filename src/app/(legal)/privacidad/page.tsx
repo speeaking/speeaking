@@ -314,10 +314,19 @@ export default function PrivacyNoticePage() {
       <p>
         Para simular cómo podría verse una prenda en ti, subes una foto tuya (debe ser tuya y ser
         mayor de edad) y aceptas expresamente su uso. La usamos solo para generar esas simulaciones.
-        La foto y cada simulación son privadas: solo tú las ves, ni el equipo ni los vendedores
-        tienen acceso, no se publican ni se comparten y no se pueden adjuntar a publicaciones ni
-        productos. Se borran solas a los 30 días y puedes borrarlas antes desde Ajustes («Mis fotos
-        de prueba»); al borrar la foto se borran sus simulaciones.
+        La foto y cada simulación son privadas por defecto: solo tú las ves, ni el equipo ni los
+        vendedores tienen acceso. No se pueden adjuntar a publicaciones ni productos. Se borran
+        solas a los 30 días y puedes borrarlas antes desde Ajustes («Mis fotos de prueba»); al
+        borrar la foto se borran sus simulaciones.
+      </p>
+      <p>
+        Si eliges «Compartir mi look» y aceptas compartir, damos acceso solo a la simulación
+        elegida: a la persona que selecciones en el chat, o a quien reciba el enlace secreto si
+        decides usar WhatsApp. Tu foto original y tus otras pruebas siguen privadas. El acceso vence
+        en un máximo de siete días y puedes desactivarlo antes; borrar la foto también retira sus
+        resultados compartidos. Esto no borra copias que alguien ya haya guardado. La tarjeta
+        incluye tu nombre, tu mensaje y las prendas con sus tallas solicitadas y precios, pero
+        ningún domicilio guardado.
       </p>
       <p>
         Para generar la imagen enviamos al proveedor de inteligencia artificial tu foto, las fotos
