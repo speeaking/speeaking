@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { PasswordRecoveryForm } from "@/modules/identity/components/password-recovery-form";
+import { NONCE_HEADER } from "@/lib/csp";
+import { turnstileSiteKey } from "@/modules/identity/turnstile";
 
 export const metadata: Metadata = {
   title: "Recuperar contraseña",
   robots: { index: false, follow: false },
 };
 
-export default function PasswordRecoveryPage() {
+export default async function PasswordRecoveryPage() {
+  const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
   return (
     <div className="flex flex-col gap-6">
       <Link
@@ -24,7 +28,7 @@ export default function PasswordRecoveryPage() {
           Te enviaremos un enlace para elegir una nueva y volver a tu cuenta.
         </p>
       </div>
-      <PasswordRecoveryForm />
+      <PasswordRecoveryForm turnstileSiteKey={turnstileSiteKey()} nonce={nonce} />
     </div>
   );
 }

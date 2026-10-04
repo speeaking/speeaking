@@ -1,13 +1,16 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CommunityAvatar } from "@/components/brand/community-avatar";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { NONCE_HEADER } from "@/lib/csp";
 import { GoogleButton } from "@/modules/identity/components/google-button";
 import { SignUpForm } from "@/modules/identity/components/sign-up-form";
 import { googleSignInEnabled } from "@/modules/identity/social";
 import { listCommunities } from "@/modules/identity/service";
 import { getSession } from "@/modules/identity/session";
+import { turnstileSiteKey } from "@/modules/identity/turnstile";
 import { onboardingPath, parseJoinSlugs } from "../unirse";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
@@ -16,6 +19,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/registro"
   const { next, unirse } = await searchParams;
   const safeNext = safeRedirectPath(next, "");
   if (await getSession()) redirect((safeNext || "/") as Route);
+  const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
 
   // `?unirse=gaming`: solo comunidades que existen, en el orden en que llegaron.
   const requested = parseJoinSlugs(unirse);
@@ -68,7 +72,11 @@ export default async function SignUpPage({ searchParams }: PageProps<"/registro"
           <p className="text-center text-xs text-muted-foreground">o con tu correo</p>
         </>
       ) : null}
-      <SignUpForm next={formNext || undefined} />
+      <SignUpForm
+        next={formNext || undefined}
+        turnstileSiteKey={turnstileSiteKey()}
+        nonce={nonce}
+      />
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
         <Link

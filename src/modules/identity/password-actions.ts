@@ -10,6 +10,7 @@ import { env } from "@/server/env";
 import { passwordRecoveryEnabled } from "@/server/providers/email";
 import { limitPasswordRecovery, limitPasswordReset } from "./auth-limits";
 import { passwordRecoverySchema, passwordResetSchema } from "./schemas";
+import { verifyTurnstile } from "./turnstile";
 
 export type PasswordFormState = {
   error?: string;
@@ -33,6 +34,8 @@ export async function requestPasswordResetAction(
   const requestHeaders = await headers();
   const limit = await limitPasswordRecovery(requestHeaders, parsed.data.email);
   if (limit.error) return { error: limit.error, email };
+  const verificationError = await verifyTurnstile(formData, requestHeaders, "password-recovery");
+  if (verificationError) return { error: verificationError, email };
   try {
     await auth.api.requestPasswordReset({
       body: {

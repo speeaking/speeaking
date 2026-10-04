@@ -5,6 +5,10 @@ Fases: 1.3 (auth) y 1.4 (perfiles). Ver docs/architecture.md → Estructura.
 
 ## Seguridad (auditoría 2026-09-26)
 
+- Turnstile en registro y solicitud de recuperación (`turnstile.ts`, `docs/turnstile.md`): widget
+  explícito con renovación tras cada respuesta y Siteverify en la Server Action. Requiere las dos
+  claves reales en producción, valida hostname y acción, y bloquea el envío si falla la verificación.
+
 - Registro, inicio y cierre de sesión van SOLO por Server Actions (`actions.ts`) que llaman
   `auth.api.*`. El router HTTP `/api/auth/*` responde 404 a todo (SEC-09).
 - Límite de intentos antes de Better Auth (`auth-limits.ts`, SEC-02): inicio de sesión 10 fallidos por

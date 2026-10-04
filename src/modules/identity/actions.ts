@@ -18,6 +18,7 @@ import { LEGAL_VERSIONS } from "./constants";
 import { signInSchema, signUpSchema } from "./schemas";
 import { requireViewer } from "./session";
 import { googleSignInEnabled } from "./social";
+import { verifyTurnstile } from "./turnstile";
 
 export type AuthFormState = {
   error?: string;
@@ -65,6 +66,8 @@ export async function signUpAction(
   const requestHeaders = await headers();
   const limit = await limitSignUp(requestHeaders, parsed.data.email);
   if (limit.error) return { error: limit.error, values };
+  const verificationError = await verifyTurnstile(formData, requestHeaders, "signup");
+  if (verificationError) return { error: verificationError, values };
 
   let userId: string;
   try {

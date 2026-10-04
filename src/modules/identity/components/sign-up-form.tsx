@@ -1,15 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { PasswordField } from "@/components/forms/password-field";
 import { TextField } from "@/components/forms/text-field";
 import { Button } from "@/components/ui/button";
 import { signUpAction, type AuthFormState } from "../actions";
 import { MIN_PASSWORD_LENGTH } from "../schemas";
+import { TurnstileField } from "./turnstile-field";
 
-export function SignUpForm({ next }: { next?: string }) {
-  const [state, formAction, pending] = useActionState<AuthFormState, FormData>(signUpAction, {});
+export function SignUpForm({
+  next,
+  turnstileSiteKey,
+  nonce,
+}: {
+  next?: string;
+  turnstileSiteKey?: string;
+  nonce?: string;
+}) {
+  const [verified, setVerified] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
+    async (previous, data) => {
+      const result = await signUpAction(previous, data);
+      // Cada respuesta vuelve a emitir un token: el anterior puede haberse consumido en Siteverify.
+      setVerified(false);
+      setAttempt((value) => value + 1);
+      return result;
+    },
+    {},
+  );
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
@@ -85,13 +105,28 @@ export function SignUpForm({ next }: { next?: string }) {
         ) : null}
       </div>
 
+      {turnstileSiteKey ? (
+        <TurnstileField
+          key={attempt}
+          siteKey={turnstileSiteKey}
+          nonce={nonce}
+          action="signup"
+          onVerifiedChange={setVerified}
+        />
+      ) : null}
+
       {state.error ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
         </p>
       ) : null}
 
-      <Button type="submit" size="lg" className="h-11 text-base" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="h-11 text-base"
+        disabled={pending || Boolean(turnstileSiteKey && !verified)}
+      >
         {pending ? "Creando tu cuenta…" : "Crear cuenta"}
       </Button>
     </form>

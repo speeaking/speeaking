@@ -31,6 +31,7 @@ export function proxy(request: NextRequest) {
     isHttps: process.env.APP_URL?.startsWith("https://") ?? false,
     storageOrigin: storageOrigin(process.env.STORAGE_DRIVER, process.env.S3_ENDPOINT),
     googleOAuthEnabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    turnstileEnabled: Boolean(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY),
   });
   const requestHeaders = new Headers(request.headers);
   // `set` pisa lo que mande el cliente: el nonce y la política solo los decide el servidor.

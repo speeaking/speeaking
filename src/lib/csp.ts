@@ -43,6 +43,8 @@ export function createNonce(): string {
  * - Videos (ADR-062): con el bucket, el navegador sube el archivo directo a él (`connect-src`) y lo
  *   reproduce desde una URL firmada a la que `/media` redirige (`media-src`). Solo ese origen;
  *   `blob:` es la vista previa local del video elegido.
+ * - Turnstile: solo `challenges.cloudflare.com`, con el nonce existente para sus scripts y permiso
+ *   de iframe/conexión cuando ambas claves están configuradas. No cambia `frame-ancestors`.
  */
 export function contentSecurityPolicy(
   nonce: string,
@@ -51,22 +53,27 @@ export function contentSecurityPolicy(
     isHttps,
     storageOrigin = null,
     googleOAuthEnabled = false,
+    turnstileEnabled = false,
   }: {
     isDev: boolean;
     isHttps: boolean;
     storageOrigin?: string | null;
     googleOAuthEnabled?: boolean;
+    turnstileEnabled?: boolean;
   },
 ): string {
   const storage = storageOrigin ? ` ${storageOrigin}` : "";
+  const turnstile = turnstileEnabled ? " https://challenges.cloudflare.com" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${turnstile}${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     `media-src 'self' blob:${storage}`,
     "font-src 'self'",
-    `connect-src 'self'${storage}`,
+    `connect-src 'self'${storage}${turnstile}`,
+    // Debe estar en el documento inicial también al llegar al formulario por navegación de Next.
+    ...(turnstileEnabled ? [`frame-src 'self'${turnstile}`] : []),
     "object-src 'none'",
     "base-uri 'none'",
     // Chrome aplica form-action también a la redirección del formulario de OAuth.

@@ -1,14 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { TextField } from "@/components/forms/text-field";
 import { Button } from "@/components/ui/button";
 import { requestPasswordResetAction, type PasswordFormState } from "../password-actions";
+import { TurnstileField } from "./turnstile-field";
 
-export function PasswordRecoveryForm() {
+export function PasswordRecoveryForm({
+  turnstileSiteKey,
+  nonce,
+}: {
+  turnstileSiteKey?: string;
+  nonce?: string;
+}) {
+  const [verified, setVerified] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [state, action, pending] = useActionState<PasswordFormState, FormData>(
-    requestPasswordResetAction,
+    async (previous, data) => {
+      const result = await requestPasswordResetAction(previous, data);
+      setVerified(false);
+      setAttempt((value) => value + 1);
+      return result;
+    },
     {},
   );
   if (state.sent)
@@ -41,12 +55,26 @@ export function PasswordRecoveryForm() {
         required
         errors={state.fieldErrors?.email}
       />
+      {turnstileSiteKey ? (
+        <TurnstileField
+          key={attempt}
+          siteKey={turnstileSiteKey}
+          nonce={nonce}
+          action="password-recovery"
+          onVerifiedChange={setVerified}
+        />
+      ) : null}
       {state.error ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" size="lg" className="h-11" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="h-11"
+        disabled={pending || Boolean(turnstileSiteKey && !verified)}
+      >
         {pending ? "Solicitando enlace…" : "Enviar enlace de recuperación"}
       </Button>
     </form>

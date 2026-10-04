@@ -79,6 +79,14 @@ export const serverEnvSchema = z
     // Correo transaccional para recuperación de cuenta. Las dos variables o ninguna.
     RESEND_API_KEY: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
     EMAIL_FROM: optional(z.email("Escribe el correo de un remitente verificado.")),
+    // Turnstile protege registro y solicitud de recuperación. Las dos claves o ninguna.
+    // Solo SITE_KEY se entrega a los formularios; SECRET_KEY permanece en el servidor.
+    TURNSTILE_SITE_KEY: optional(
+      z.string().regex(/^[A-Za-z0-9_-]{20,100}$/, "Clave de Turnstile inválida."),
+    ),
+    TURNSTILE_SECRET_KEY: optional(
+      z.string().regex(/^[A-Za-z0-9_-]{20,100}$/, "Clave de Turnstile inválida."),
+    ),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
     STORAGE_DRIVER: z
@@ -212,6 +220,25 @@ export const serverEnvSchema = z
         path: ["EMAIL_FROM"],
         message: "RESEND_API_KEY y EMAIL_FROM van juntas: pon las dos o ninguna.",
       });
+    }
+    if (Boolean(env.TURNSTILE_SITE_KEY) !== Boolean(env.TURNSTILE_SECRET_KEY)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["TURNSTILE_SECRET_KEY"],
+        message: "TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY van juntas: pon las dos o ninguna.",
+      });
+    }
+    // Las claves de prueba de Cloudflare no protegen contra bots; nunca se aceptan en producción.
+    if (env.NODE_ENV === "production") {
+      for (const name of ["TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"] as const) {
+        if (/^[123]x0{10,}/.test(env[name] ?? "")) {
+          ctx.addIssue({
+            code: "custom",
+            path: [name],
+            message: "Usa una clave real de Turnstile en producción.",
+          });
+        }
+      }
     }
     if (env.AI_PROVIDER === "openai_compatible") {
       for (const name of ["AI_BASE_URL", "AI_API_KEY", "AI_DEFAULT_MODEL"] as const) {
