@@ -10,7 +10,7 @@ import type { PeopleTab } from "@/modules/relationships/types";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Mis personas",
+  title: "Mis amigos",
   description: "Tus amigos, solicitudes y contactos en speeaking.",
   path: "/personas",
   noIndex: true,
@@ -71,7 +71,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/personas"
         <span className="flex items-center gap-2 text-sm font-semibold text-primary-text">
           <Users className="size-4" aria-hidden="true" /> Tu círculo
         </span>
-        <h1 className="font-heading text-3xl font-extrabold tracking-heading">Mis personas</h1>
+        <h1 className="font-heading text-3xl font-extrabold tracking-heading">Mis amigos</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Amigos, seguidores y las personas que conectan contigo.
         </p>

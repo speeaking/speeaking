@@ -188,7 +188,7 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
           Perfil
         </MenuLink>
         <MenuLink href={"/personas" as Route} icon={Users}>
-          Mis personas
+          Mis amigos
         </MenuLink>
         <MenuLink href="/mensajes" icon={MessageCircle}>
           Mensajes

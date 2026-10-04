@@ -81,7 +81,7 @@ export const sideNav: readonly NavItem[] = [
   },
   { href: "/estilista", label: "Estilista", icon: Shirt, also: ["/probar"] },
   { href: "/guardados", label: "Guardados", icon: Bookmark },
-  { href: "/personas" as Route, label: "Mis personas", icon: Users },
+  { href: "/personas" as Route, label: "Mis amigos", icon: Users },
   { href: "/pedidos", label: "Mis pedidos", icon: ReceiptText },
 ];
 

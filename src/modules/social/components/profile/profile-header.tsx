@@ -210,7 +210,7 @@ export function ProfileHeader({
                 className={buttonVariants({ variant: "secondary", size: "lg" })}
               >
                 <Users data-icon="inline-start" />
-                Mis personas
+                Mis amigos
               </Link>
               <Link
                 href="/perfil/editar"
