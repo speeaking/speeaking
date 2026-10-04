@@ -39,7 +39,7 @@ export function CreateMenu({
           <MenuPrimitive.LinkItem
             key={href}
             closeOnClick
-            render={<Link href={href} />}
+            render={<Link href={href} scroll={href === "/crear/publicacion" ? false : undefined} />}
             className="flex items-center gap-3 rounded-xl px-2.5 py-2 outline-none select-none focus:bg-accent data-highlighted:bg-accent"
           >
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-ink-2">

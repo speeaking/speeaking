@@ -9,12 +9,15 @@ export const metadata: Metadata = { title: "Nueva publicación" };
  * abre la misma en una ventana encima, sin salir de donde estabas (ADR-068, `@modal`).
  */
 export default async function NewPostPage({ searchParams }: PageProps<"/crear/publicacion">) {
-  const { producto } = await searchParams;
+  const { producto, tipo } = await searchParams;
   return (
     <>
       <PageHeader title="Nueva publicación" />
       <div className="px-4 md:px-0">
-        <NewPost productSlug={productSlugParam(producto)} />
+        <NewPost
+          productSlug={productSlugParam(producto)}
+          defaultMedia={tipo === "video" ? "video" : "photos"}
+        />
       </div>
     </>
   );

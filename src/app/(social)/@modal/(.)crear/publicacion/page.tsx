@@ -11,11 +11,15 @@ export default async function NewPostModalPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { producto } = await searchParams;
+  const { producto, tipo } = await searchParams;
   return (
-    <RouteModal label="Crear publicación" match="/crear/publicacion" showTitle>
+    <RouteModal label="Crear publicación" match="/crear/publicacion" showTitle presentation="composer">
       <div className="px-4 sm:px-6">
-        <NewPost productSlug={productSlugParam(producto)} inLayer />
+        <NewPost
+          productSlug={productSlugParam(producto)}
+          defaultMedia={tipo === "video" ? "video" : "photos"}
+          inLayer
+        />
       </div>
     </RouteModal>
   );

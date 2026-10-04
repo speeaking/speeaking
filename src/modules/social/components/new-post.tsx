@@ -19,9 +19,11 @@ export function productSlugParam(value: string | string[] | undefined): string |
 export async function NewPost({
   productSlug,
   inLayer = false,
+  defaultMedia = "photos",
 }: {
   productSlug: string | null;
   inLayer?: boolean;
+  defaultMedia?: "photos" | "video";
 }) {
   const viewer = await requireOnboardedViewer(
     productSlug ? `/crear/publicacion?producto=${productSlug}` : "/crear/publicacion",
@@ -55,6 +57,7 @@ export async function NewPost({
       videoEnabled={videoUploadsEnabled()}
       taggedProduct={taggedProduct}
       inLayer={inLayer}
+      defaultMedia={defaultMedia}
     />
   );
 }

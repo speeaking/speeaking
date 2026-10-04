@@ -12,7 +12,7 @@ export const CREATE_OPTIONS: readonly CreateOption[] = [
   {
     href: "/crear/publicacion",
     title: "Publicación",
-    description: "Tu día, una experiencia, una noticia o una foto para tus comunidades.",
+    description: "Comparte tu día, una foto o un video con tus amigos y comunidades.",
     icon: ImagePlus,
   },
   {

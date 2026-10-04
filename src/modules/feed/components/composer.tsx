@@ -1,4 +1,4 @@
-import { CircleHelp, ImagePlus, UserRound } from "lucide-react";
+import { CircleHelp, Clapperboard, ImagePlus, UserRound } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { UserAvatar } from "@/components/brand/user-avatar";
@@ -31,7 +31,7 @@ export function Composer({
   needsOnboarding?: boolean;
   className?: string;
 }) {
-  const destination = (type?: "foto" | "pregunta") => {
+  const destination = (type?: "foto" | "video" | "pregunta") => {
     if (needsOnboarding) return "/bienvenida" as Route;
     const path = `${CREATE_POST}${type ? `?tipo=${type}` : ""}`;
     return (isSignedIn ? path : `/entrar?next=${encodeURIComponent(path)}`) as Route;
@@ -57,6 +57,7 @@ export function Composer({
       )}
       <Link
         href={destination()}
+        scroll={false}
         aria-label={prompt}
         className="flex h-11 min-w-0 flex-1 items-center rounded-full bg-secondary/60 px-4 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
       >
@@ -66,6 +67,7 @@ export function Composer({
       <div className="flex shrink-0 items-center">
         <Link
           href={destination("foto")}
+          scroll={false}
           aria-label="Foto"
           title="Añadir una foto"
           className={quickAction}
@@ -73,7 +75,17 @@ export function Composer({
           <ImagePlus aria-hidden="true" className="size-5" />
         </Link>
         <Link
+          href={destination("video")}
+          scroll={false}
+          aria-label="Video"
+          title="Añadir un video"
+          className={quickAction}
+        >
+          <Clapperboard aria-hidden="true" className="size-5" />
+        </Link>
+        <Link
           href={destination("pregunta")}
+          scroll={false}
           aria-label="Pregunta"
           title="Hacer una pregunta"
           className={quickAction}
