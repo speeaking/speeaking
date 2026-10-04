@@ -21,6 +21,7 @@ import {
   Undo2,
   Camera,
   LockKeyhole,
+  ExternalLink,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -428,9 +429,36 @@ function PostBody({
   const [showAll, setShowAll] = useState(expanded);
   if (!text) return null;
   const isLong = text.length > LONG_BODY;
+  // Las publicaciones editoriales pueden citar una fuente al final. El texto sigue almacenado
+  // completo para búsquedas y metadatos; aquí se presenta la liga con un nombre legible.
+  const citation = /\n\nFuente: ([^\n]+?) — (https:\/\/[^\s]+)$/.exec(text);
+  let source: { title: string; url: string; body: string } | null = null;
+  if (citation) {
+    try {
+      const url = new URL(citation[2]!);
+      if (url.protocol === "https:" && !url.username && !url.password) {
+        source = { title: citation[1]!, url: url.href, body: text.slice(0, citation.index) };
+      }
+    } catch {
+      /* Una cita mal formada se muestra como texto sin crear un enlace. */
+    }
+  }
   return (
     <div className={cn("text-[15px] leading-relaxed", className)}>
-      <p className={cn("whitespace-pre-line", !showAll && isLong && "line-clamp-4")}>{text}</p>
+      <p className={cn("whitespace-pre-line", !showAll && isLong && "line-clamp-4")}>
+        {source?.body ?? text}
+      </p>
+      {source && (showAll || !isLong) ? (
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer nofollow ugc"
+          className="mt-3 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
+        >
+          <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+          Fuente: {source.title}
+        </a>
+      ) : null}
       {isLong && !showAll ? (
         <button
           type="button"

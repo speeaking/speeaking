@@ -1,4 +1,5 @@
 import type { ServerEnv } from "@/server/env-schema";
+import { EditorialStorageProvider } from "./editorial-storage";
 import { LocalStorageProvider } from "./local-storage";
 import { type S3StorageConfig, S3StorageProvider } from "./s3-storage";
 import type { StorageProvider } from "./types";
@@ -23,9 +24,9 @@ export type StorageEnv = Pick<
 export function createStorage(env: StorageEnv): StorageProvider {
   switch (env.STORAGE_DRIVER) {
     case "local":
-      return new LocalStorageProvider(env.STORAGE_LOCAL_ROOT);
+      return new EditorialStorageProvider(new LocalStorageProvider(env.STORAGE_LOCAL_ROOT));
     case "s3":
-      return new S3StorageProvider(s3StorageConfig(env));
+      return new EditorialStorageProvider(new S3StorageProvider(s3StorageConfig(env)));
   }
 }
 

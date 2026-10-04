@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // La barra inferior móvil ocupa ambas esquinas; los errores de compilación se siguen mostrando.
   devIndicators: false,
+  // Assets editoriales privados del servidor; `/media` comprueba que sigan publicados.
+  outputFileTracingIncludes: {
+    "/media/*": ["./content/editorial/launch-20261003/images/*.webp"],
+  },
   images: {
     // Las fotos subidas NO pasan por el optimizador de Next (`/_next/image`): guardaba copias propias
     // y las seguía sirviendo después de ocultar o borrar la foto. `next/image` las pide a nuestra
