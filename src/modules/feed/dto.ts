@@ -55,6 +55,8 @@ export type FeedItemDTO = {
   audience?: "friends" | "public";
   type: PostType;
   body: string;
+  /** true si body es una vista previa; el texto completo se carga con autorización al expandir. */
+  bodyTruncated?: boolean;
   publishedAt: string;
   isAiGenerated: boolean;
   author: {

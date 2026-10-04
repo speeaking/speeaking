@@ -1,24 +1,18 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { recordedCost } from "@/modules/ai/cost";
 import { AIError } from "@/modules/ai/errors";
 import { isFeatureOn } from "@/modules/ai/features-store";
 import { redactPersonalData } from "@/modules/ai/personal-data";
-import { reserveAiRequest } from "@/modules/ai/reservation";
-import { providerFailure, SERVICE_TIMEOUT_MS, withTimeout } from "@/modules/ai/service";
 import { aiAvailability, simulatedRecord } from "@/modules/ai/tasks/availability";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { postVisibleTo } from "@/modules/relationships/privacy";
 import { db } from "@/server/db";
 import { getAIProvider } from "@/server/providers/ai";
-import { canHaveContext, cleanSummary, contextTask } from "./post-context";
+import { generateFullContext } from "./context-generation";
+import { canHaveContext, contextTask } from "./post-context";
 
-/**
- * Tope diario del gasto en «Contexto», sumando a todas las personas (ADR-060). Con el modelo de
- * texto de hoy un resumen cuesta ≈ US$0.00015: el tope alcanza para miles al día y, si se acaba,
- * el botón dice «inténtalo más tarde» en lugar de gastar de más.
- */
-export const CONTEXT_DAILY_CAP_USD = 0.5;
+/** Incluye todas las partes y la síntesis final, sin modificar el presupuesto de la función. */
+export { CONTEXT_DAILY_CAP_USD } from "./context-generation";
 
 export type PostContextResult =
   | { ok: true; summary: string; simulated: boolean; cached: boolean }
@@ -75,35 +69,31 @@ export async function getPostContext(
   const limited = await checkLimit();
   if (!limited.ok) return { ok: false, reason: "limited", message: limited.error };
 
-  const input = { text: redactPersonalData(post.body) };
   let provider;
-  let requestId: string;
   try {
     provider = await getAIProvider("post_context");
-    // Es de la publicación, no de quien la abre: sin cuota personal, dentro del presupuesto y del
-    // tope diario de la función. Se guarda solo el id (el texto ya está en la publicación).
-    ({ requestId } = await reserveAiRequest({
-      userId: null,
-      feature: "POST_CONTEXT",
-      provider: {
-        id: provider.id,
-        model: provider.model,
-        promptVersion: contextTask.promptVersion,
-      },
-      input: { postId: post.id },
-      featureDailyCapMicros: Math.round(CONTEXT_DAILY_CAP_USD * 1_000_000),
-    }));
   } catch (error) {
     if (error instanceof AIError) return { ok: false, reason: "unavailable" };
     throw error;
   }
 
-  const started = Date.now();
   try {
-    const result = await withTimeout(provider.generate(contextTask, input), SERVICE_TIMEOUT_MS);
-    const summary = cleanSummary(result.output.summary);
-    if (!summary) throw new Error("[contexto] el resumen quedó vacío al limpiarlo");
-    const cost = recordedCost(provider.model, result.usage);
+    const { summary, requestId } = await generateFullContext(
+      provider,
+      post.id,
+      redactPersonalData(post.body),
+    );
+    // Una lectura larga puede coincidir con una eliminación o un cambio de privacidad.
+    const stillVisible = await db.post.findFirst({
+      where: {
+        id: post.id,
+        body: post.body,
+        status: "PUBLISHED",
+        AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewerId)],
+      },
+      select: { id: true },
+    });
+    if (!stillVisible) return { ok: false, reason: "not_found" };
     const saved = {
       summary,
       bodyHash: hash,
@@ -112,39 +102,17 @@ export async function getPostContext(
       promptVersion: contextTask.promptVersion,
       requestId,
     };
-    await db.$transaction([
-      db.aIResponse.create({
-        data: {
-          requestId,
-          output: { summary },
-          inputTokens: result.usage.inputTokens,
-          outputTokens: result.usage.outputTokens,
-          costMicrosUsd: cost.micros,
-        },
-      }),
-      db.aIRequest.update({
-        where: { id: requestId },
-        data: { status: "SUCCEEDED", latencyMs: Date.now() - started },
-      }),
-      db.postContext.upsert({
-        where: { postId: post.id },
-        create: { postId: post.id, ...saved },
-        update: { ...saved, createdAt: new Date() },
-      }),
-    ]);
+    // Las respuestas de todos los pasos ya están contabilizadas por generateFullContext.
+    await db.postContext.upsert({
+      where: { postId: post.id },
+      create: { postId: post.id, ...saved },
+      update: { ...saved, createdAt: new Date() },
+    });
     return { ok: true, summary, simulated: simulatedRecord(provider.id), cached: false };
   } catch (error) {
-    await db.aIRequest
-      .update({
-        where: { id: requestId },
-        data: {
-          status: "FAILED",
-          errorCode: providerFailure(error),
-          latencyMs: Date.now() - started,
-        },
-      })
-      .catch(() => undefined);
-    console.error("[contexto] no se pudo generar", error);
-    return { ok: false, reason: "failed" };
+    console.error("[contexto] no se pudo generar el contexto completo", {
+      code: error instanceof AIError ? error.code : "GENERATION_FAILED",
+    });
+    return { ok: false, reason: error instanceof AIError ? "unavailable" : "failed" };
   }
 }

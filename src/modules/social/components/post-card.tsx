@@ -66,6 +66,8 @@ import type {
 import { type ReactResult, reactAction, type ToggleResult, toggleSaveAction } from "../actions";
 import { canHaveContext } from "../context-rules";
 import { recordShareAction } from "../interaction-actions";
+import { getPostTextAction } from "../post-text-actions";
+import { postTextPreview } from "../post-text";
 import { applyReaction, type ReactionKind, type ReactionState } from "../reactions";
 import { ContextButton } from "./context-button";
 import { PostVideo } from "./post-video";
@@ -422,23 +424,38 @@ function PostBody({
   text,
   expanded,
   className,
+  postId,
+  bodyTruncated = false,
+  omitHeadline = false,
 }: {
   text: string;
   expanded: boolean;
   className?: string;
+  postId: string;
+  bodyTruncated?: boolean;
+  omitHeadline?: boolean;
 }) {
   const [showAll, setShowAll] = useState(expanded);
+  const [loadedBody, setLoadedBody] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   if (!text) return null;
-  const isLong = text.length > LONG_BODY;
+  const completeText =
+    loadedBody === null ? text : omitHeadline ? extractHeadline(loadedBody).rest : loadedBody;
+  const isLong = bodyTruncated || completeText.length > LONG_BODY;
   // Las publicaciones editoriales pueden citar una fuente al final. El texto sigue almacenado
   // completo para búsquedas y metadatos; aquí se presenta la liga con un nombre legible.
-  const citation = /\n\nFuente: ([^\n]+?) — (https:\/\/[^\s]+)$/.exec(text);
+  const citation = /\n\nFuente: ([^\n]+?) — (https:\/\/[^\s]+)$/.exec(completeText);
   let source: { title: string; url: string; body: string } | null = null;
   if (citation) {
     try {
       const url = new URL(citation[2]!);
       if (url.protocol === "https:" && !url.username && !url.password) {
-        source = { title: citation[1]!, url: url.href, body: text.slice(0, citation.index) };
+        source = {
+          title: citation[1]!,
+          url: url.href,
+          body: completeText.slice(0, citation.index),
+        };
       }
     } catch {
       /* Una cita mal formada se muestra como texto sin crear un enlace. */
@@ -446,8 +463,12 @@ function PostBody({
   }
   return (
     <div className={cn("text-[15px] leading-relaxed", className)}>
-      <p className={cn("whitespace-pre-line", !showAll && isLong && "line-clamp-4")}>
-        <MentionText text={source?.body ?? text} />
+      <p className={cn("break-words whitespace-pre-line", !showAll && isLong && "line-clamp-4")}>
+        <MentionText
+          text={
+            showAll ? (source?.body ?? completeText) : postTextPreview(source?.body ?? completeText)
+          }
+        />
       </p>
       {source && (showAll || !isLong) ? (
         <a
@@ -460,14 +481,44 @@ function PostBody({
           Fuente: {source.title}
         </a>
       ) : null}
-      {isLong && !showAll ? (
+      {error ? (
+        <p role="alert" className="mt-1 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+      {isLong && !expanded ? (
         <button
           type="button"
           // El área táctil crece con `after` (44 px de alto) sin mover el texto.
           className="relative mt-1 text-sm font-semibold text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-3 hover:text-foreground"
-          onClick={() => setShowAll(true)}
+          disabled={pending}
+          aria-expanded={showAll}
+          onClick={() => {
+            if (showAll) {
+              setShowAll(false);
+              return;
+            }
+            if (!bodyTruncated || loadedBody !== null) {
+              setShowAll(true);
+              return;
+            }
+            setError(null);
+            startTransition(async () => {
+              try {
+                const result = await getPostTextAction(postId);
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setLoadedBody(result.body);
+                setShowAll(true);
+              } catch {
+                setError("No pudimos cargar el texto. Intenta otra vez.");
+              }
+            });
+          }}
         >
-          Ver más
+          {pending ? "Cargando texto…" : showAll ? "Ver menos" : "Ver más"}
         </button>
       ) : null}
     </div>
@@ -1006,7 +1057,14 @@ export function PostCard({
               {headline}
             </h2>
           ) : null}
-          <PostBody text={rest} expanded={expanded} className="text-ink-2" />
+          <PostBody
+            text={rest}
+            expanded={expanded}
+            className="text-ink-2"
+            postId={post.id}
+            bodyTruncated={post.bodyTruncated}
+            omitHeadline
+          />
           {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
           <PhotoCredit media={post.media} />
           <div className="mt-auto flex flex-col gap-2">
@@ -1064,7 +1122,12 @@ export function PostCard({
       {intent ? <IntentChip intent={intent} /> : null}
       {collaborationStore ? <CollaborationChip store={collaborationStore} /> : null}
       <CardHeader post={post} onDeleted={() => setDeleted(true)} />
-      <PostBody text={post.body} expanded={expanded} />
+      <PostBody
+        text={post.body}
+        expanded={expanded}
+        postId={post.id}
+        bodyTruncated={post.bodyTruncated}
+      />
       {canHaveContext(post.body) ? <ContextButton postId={post.id} /> : null}
 
       {/* Video corto (ADR-062): empieza solo y sin sonido al verse en el feed; abierto, con controles. */}

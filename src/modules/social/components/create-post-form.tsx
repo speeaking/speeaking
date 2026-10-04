@@ -57,6 +57,10 @@ export function CreatePostForm({
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
   const [mode, setMode] = useState<"photos" | "video">(videoEnabled ? defaultMedia : "photos");
+  // Controlado: React no borra un texto largo si la acción devuelve un error.
+  const [body, setBody] = useState("");
+  const bodyLength = body.trim().length;
+  const bodyTooLong = bodyLength > MAX_POST_LENGTH;
   const [state, formAction, pending] = useActionState<CreatePostState, FormData>(
     createPostAction,
     {},
@@ -69,7 +73,7 @@ export function CreatePostForm({
       event.currentTarget.querySelector("fieldset:not(:disabled) [data-uploading]"),
     );
     setUploading(stillUploading);
-    if (stillUploading) event.preventDefault();
+    if (stillUploading || bodyTooLong) event.preventDefault();
   };
 
   return (
@@ -129,19 +133,27 @@ export function CreatePostForm({
           id="cuerpo"
           name="body"
           rows={3}
-          maxLength={MAX_POST_LENGTH}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
           placeholder="Tu día, una experiencia, una noticia, un chisme…"
-          className="text-base"
+          className="max-h-72 min-h-28 overflow-y-auto text-base"
           aria-describedby="cuerpo-ayuda"
-          aria-invalid={state.fieldErrors?.body ? true : undefined}
+          aria-invalid={bodyTooLong || state.fieldErrors?.body ? true : undefined}
         />
         <p id="cuerpo-ayuda" className="text-xs text-muted-foreground">
           Menciona a alguien con @usuario. Recibirá un aviso si puede ver tu publicación. Sin datos
           ni fotos de otras personas sin su permiso.
         </p>
-        {state.fieldErrors?.body ? (
+        {bodyLength >= MAX_POST_LENGTH * 0.9 ? (
+          <p className={cn("text-xs", bodyTooLong ? "text-destructive" : "text-muted-foreground")}>
+            {bodyLength.toLocaleString("es-MX")} / 60,000 caracteres
+          </p>
+        ) : null}
+        {bodyTooLong || state.fieldErrors?.body ? (
           <p role="alert" className="text-sm text-destructive">
-            {state.fieldErrors.body[0]}
+            {bodyTooLong
+              ? "Tu publicación puede tener hasta 60,000 caracteres. El texto que pegaste sigue aquí para que puedas ajustarlo."
+              : state.fieldErrors?.body?.[0]}
           </p>
         ) : null}
       </div>
@@ -247,7 +259,12 @@ export function CreatePostForm({
             : undefined
         }
       >
-        <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={pending}>
+        <Button
+          type="submit"
+          size="lg"
+          className="h-11 w-full text-base"
+          disabled={pending || bodyTooLong}
+        >
           {pending ? "Publicando…" : "Publicar"}
         </Button>
       </div>

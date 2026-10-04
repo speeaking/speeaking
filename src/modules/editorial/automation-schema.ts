@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { MAX_POST_LENGTH } from "@/modules/social/schemas";
 
 export const EDITORIAL_INTERVAL_MS = 2 * 60 * 60 * 1000;
 export const EDITORIAL_POSTS_PER_INTERVAL = 2;
+/** La automatización conserva sus textos breves, independientemente del editor de usuarios. */
+export const EDITORIAL_AUTOMATION_MAX_CHARS = 2000;
 export const EDITORIAL_TOKEN_PREFIX = "speeaking_editorial_";
 
 const imageFields = {
@@ -12,7 +13,7 @@ const imageFields = {
 const newPost = z
   .object({
     communitySlug: z.string().regex(/^[a-z][a-z0-9-]{1,48}$/),
-    body: z.string().trim().min(80).max(MAX_POST_LENGTH),
+    body: z.string().trim().min(80).max(EDITORIAL_AUTOMATION_MAX_CHARS),
     ...imageFields,
   })
   .strict();

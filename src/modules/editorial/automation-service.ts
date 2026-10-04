@@ -3,13 +3,13 @@ import { createHash } from "node:crypto";
 import { assertAdmin } from "@/modules/admin/service";
 import { policyViolation } from "@/modules/ai/content-policy";
 import { processImage } from "@/modules/media/image-processing";
-import { MAX_POST_LENGTH } from "@/modules/social/schemas";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { ensureEditorialAccount } from "./account";
 import {
   editorialSlot,
   EDITORIAL_POSTS_PER_INTERVAL,
+  EDITORIAL_AUTOMATION_MAX_CHARS,
   type EditorialSubmission,
   scheduledEditorialKey,
 } from "./automation-schema";
@@ -110,7 +110,8 @@ function labeledBody(input: string) {
     sourceIndex < 0
       ? `${input}\n\n${note}`
       : `${input.slice(0, sourceIndex)}\n\n${note}${input.slice(sourceIndex)}`;
-  if (body.length > MAX_POST_LENGTH) throw new EditorialSubmissionError("TEXT_TOO_LONG", 400);
+  if (body.length > EDITORIAL_AUTOMATION_MAX_CHARS)
+    throw new EditorialSubmissionError("TEXT_TOO_LONG", 400);
   return body;
 }
 

@@ -19,7 +19,7 @@ import { ReportButton } from "@/modules/trust/components/report-button";
 /** La publicación con su autor y su comunidad, o `null` si el id no es válido o no existe. */
 export async function loadPost(id: string, viewerId: string | null) {
   if (!z.uuid().safeParse(id).success) return null;
-  const [post] = await hydratePosts([id], viewerId);
+  const [post] = await hydratePosts([id], viewerId, { fullBody: true });
   return post ?? null;
 }
 

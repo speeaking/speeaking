@@ -29,7 +29,7 @@ export function ContextButton({ postId }: { postId: string }) {
       return;
     }
     setOpen(true);
-    if (result?.ok) return;
+    if (result?.ok || pending) return;
     startTransition(async () => {
       try {
         setResult(await getPostContextAction(postId));
@@ -63,7 +63,10 @@ export function ContextButton({ postId }: { postId: string }) {
           className="flex flex-col gap-1.5 rounded-2xl border bg-background p-3.5 motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in motion-safe:slide-in-from-top-1"
         >
           {pending || !result ? (
-            <div className="flex flex-col gap-2" aria-label="Leyendo la publicación…">
+            <div className="flex flex-col gap-2" aria-label="Leyendo la publicación completa…">
+              <p className="text-xs text-muted-foreground">
+                Preparando el contexto del texto completo…
+              </p>
               <span className="h-3.5 w-11/12 animate-pulse rounded bg-muted" />
               <span className="h-3.5 w-4/5 animate-pulse rounded bg-muted" />
               <span className="h-3.5 w-2/3 animate-pulse rounded bg-muted" />

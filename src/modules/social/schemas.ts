@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 export const MAX_POST_IMAGES = 10;
-export const MAX_POST_LENGTH = 2000;
+/** Publicaciones largas; el texto completo se conserva, independientemente del contexto de IA. */
+export const MAX_POST_LENGTH = 60_000;
 
 export const createPostSchema = z
   .object({
-    body: z.string().trim().max(MAX_POST_LENGTH, `Máximo ${MAX_POST_LENGTH} caracteres.`),
+    body: z
+      .string()
+      .trim()
+      .max(MAX_POST_LENGTH, "Tu publicación puede tener hasta 60,000 caracteres."),
     communitySlug: z
       .string()
       .regex(/^[a-z0-9-]+$/)

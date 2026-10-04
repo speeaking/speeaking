@@ -5,6 +5,7 @@ import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { MAX_POST_IMAGES } from "./schemas";
+import { POST_PREVIEW_LENGTH, postTextPreview } from "./post-text";
 import { postVisibleTo } from "@/modules/relationships/privacy";
 import { isPlatformAdministrator } from "@/modules/identity/platform-account";
 
@@ -43,7 +44,11 @@ const mediaLinks = {
  * Solo selecciona campos públicos del producto: el costo nunca se consulta aquí, y `toFeedItem`
  * arma el DTO campo por campo.
  */
-export async function hydratePosts(ids: string[], viewerId: string | null): Promise<FeedItemDTO[]> {
+export async function hydratePosts(
+  ids: string[],
+  viewerId: string | null,
+  { fullBody = false }: { fullBody?: boolean } = {},
+): Promise<FeedItemDTO[]> {
   if (ids.length === 0) return [];
   const viewer = viewerId ?? NO_VIEWER;
   const rows = await db.post.findMany({
@@ -125,6 +130,10 @@ export async function hydratePosts(ids: string[], viewerId: string | null): Prom
   const byId = new Map(
     rows.flatMap((row): [string, FeedItemDTO][] => {
       const item = toFeedItem({ ...row, reactions: reactions.get(row.id) ?? [] }, publicUrl);
+      if (item && !fullBody && item.body.length > POST_PREVIEW_LENGTH) {
+        item.body = postTextPreview(item.body);
+        item.bodyTruncated = true;
+      }
       if (item) item.viewer.canDelete = viewerId !== null && row.author.id === viewerId;
       if (item)
         item.audience =

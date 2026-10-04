@@ -80,6 +80,10 @@ export const SOCIAL_LIMITS = {
     { scope: "feed", subject: "ip", limit: 300, windowSeconds: MINUTE },
     { scope: "feed", subject: "user", limit: 60, windowSeconds: MINUTE },
   ],
+  postText: [
+    { scope: "post.text", subject: "ip", limit: 300, windowSeconds: MINUTE },
+    { scope: "post.text", subject: "user", limit: 60, windowSeconds: MINUTE },
+  ],
   search: [
     { scope: "search", subject: "ip", limit: 120, windowSeconds: MINUTE },
     { scope: "search", subject: "user", limit: 60, windowSeconds: MINUTE },

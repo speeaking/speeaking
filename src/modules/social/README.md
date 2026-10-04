@@ -24,6 +24,10 @@ ajenos. Abrir un perfil «pasa la página»: enlaces con `transitionTypes` de `l
 simulador y limpieza), `post-context-service.ts` (guardado por publicación con su sha256; generar pide
 sesión, límite `context` y tope diario) y `components/context-button.tsx`.
 
+**Publicaciones largas.** Hasta 60,000 caracteres, borrador conservado al fallar y vistas previas de
+800 caracteres con lectura autorizada al expandir (`post-text-actions.ts`). Contexto lee todas las
+partes y combina sus resúmenes; cada llamada reserva su presupuesto. Ver `docs/long-posts.md`.
+
 **Portada propia y seguidores (ADR-058).** `getPublicProfile` trae la portada (`Profile.coverMedia`);
 `follow-lists.ts` (`listFollowPeople`, de 30 en 30 con cursor) alimenta `/u/[usuario]/seguidores` y
 `/siguiendo` (`components/profile/follow-list.tsx`). Editar perfil vive en `identity`.
