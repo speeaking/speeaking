@@ -58,6 +58,8 @@ model User {
   decisionsApproved         PlatformDecision[]         @relation("decisionApprover")
   editorialReviews          EditorialDraft[]           @relation("editorialReviewer")
   editorialAutomationTokens EditorialAutomationToken[]
+  accountRestriction        AccountRestriction?        @relation("restrictedAccount")
+  accountRestrictionsMade   AccountRestriction[]       @relation("accountRestrictionActor")
   // Saldo, Pruébatelo y looks (ADR-043, ADR-044, ADR-045).
   wallet                    Wallet?
   tryOnPhotos               TryOnPhoto[]
@@ -92,6 +94,21 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
+}
+
+/// Bloqueo de acceso decidido por el equipo. Separado de User para que Better Auth no lo escriba.
+/// Una fila bloquea correo, Google y sesiones existentes; quitarla permite volver a iniciar sesión.
+model AccountRestriction {
+  userId      String   @id @db.Uuid
+  user        User     @relation("restrictedAccount", fields: [userId], references: [id], onDelete: Cascade)
+  reason      String   @db.VarChar(500)
+  blockedById String?  @db.Uuid
+  blockedBy   User?    @relation("accountRestrictionActor", fields: [blockedById], references: [id], onDelete: SetNull)
+  blockedAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([blockedById])
+  @@index([blockedAt])
+  @@map("account_restrictions")
 }
 
 model Account {

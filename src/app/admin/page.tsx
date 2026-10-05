@@ -10,6 +10,8 @@ import { type AdminOverview, getAdminOverview } from "@/modules/admin/service";
 
 /** Qué cuenta cada sección en el resumen (solo números calculados por código). */
 const SECTION_SUMMARY: Record<string, (overview: AdminOverview) => string> = {
+  "/admin/usuarios": (o) =>
+    formatCount(o.registeredUsers, "cuenta registrada", "cuentas registradas"),
   "/admin/decisiones": (o) =>
     formatCount(o.proposedDecisions, "propuesta por revisar", "propuestas por revisar"),
   "/admin/experimentos": (o) =>

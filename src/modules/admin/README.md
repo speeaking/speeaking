@@ -16,6 +16,9 @@ construye cada módulo (`ceo`, `trust`, `ai`); aquí vive lo común.
   `--allow-production` y exige que la cuenta haya terminado la bienvenida.
 - `nav.ts`, `components/`: navegación y estructura del área (solo se pintan dentro de
   `requireAdmin`).
+- `user-service.ts`, `user-queries.ts`, `user-actions.ts`: directorio y administración de cuentas en
+  `/admin/usuarios` (búsqueda, bloqueo de acceso, desbloqueo, eliminación y bitácora). Reglas y
+  alcance en `docs/admin-users.md`; las cuentas ADMIN y la cuenta del operador están protegidas.
 
 ```
 pnpm exec tsx scripts/make-admin.ts <correo>            # dar ADMIN

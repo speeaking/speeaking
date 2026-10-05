@@ -4,6 +4,7 @@ const SIGN_UP_FAILED =
   "No pudimos crear la cuenta con ese correo. Si ya tienes cuenta, inicia sesión.";
 
 const MESSAGES: Record<string, string> = {
+  ACCOUNT_BLOCKED: "Esta cuenta está bloqueada. Contacta con el equipo de speeaking.",
   INVALID_EMAIL_OR_PASSWORD: "Correo o contraseña incorrectos.",
   INVALID_PASSWORD: "Correo o contraseña incorrectos.",
   USER_ALREADY_EXISTS: SIGN_UP_FAILED,
@@ -46,6 +47,8 @@ export function googleAuthError(value: string | string[] | undefined) {
       "Tu cuenta se creó con correo y contraseña. Para conectar Google, verifica tu correo mediante «Recuperar mi cuenta» y después vuelve a entrar con Google.";
   } else if (code === "access_denied") {
     message = "Se canceló el acceso con Google. Puedes intentarlo otra vez.";
+  } else if (code === "ACCOUNT_BLOCKED" || code === "account_blocked") {
+    message = MESSAGES.ACCOUNT_BLOCKED!;
   } else if (GOOGLE_SESSION_ERRORS.has(code)) {
     message = "Este intento de acceso caducó. Pulsa «Continuar con Google» para iniciar uno nuevo.";
   }

@@ -23,6 +23,7 @@ export async function assertAdmin(actorUserId: string): Promise<void> {
 
 /** Resumen de /admin: cuántos pendientes hay en cada cola. Solo conteos calculados por código. */
 export type AdminOverview = {
+  registeredUsers: number;
   openReports: number;
   proofsToReview: number;
   proposedDecisions: number;

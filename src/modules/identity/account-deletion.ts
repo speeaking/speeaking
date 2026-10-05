@@ -1,5 +1,6 @@
 import { anonymizeUserActivity } from "@/modules/analytics/privacy";
 import { deleteStoredMedia } from "@/modules/media/variant-keys";
+import type { Prisma } from "@/generated/prisma/client";
 import type { Database } from "@/server/db-client";
 import type { StorageProvider } from "@/server/providers/storage/types";
 
@@ -9,7 +10,7 @@ import type { StorageProvider } from "@/server/providers/storage/types";
  * - **Sin pedidos:** se borra la fila de la persona y todo cae en cascada (perfil, publicaciones,
  *   productos, fotos, mensajes, saldo, sesiones). Los archivos se borran después, uno a uno.
  * - **Con pedidos** (como quien compra o como tienda): los pedidos son registros de una operación y
- *   se conservan sin datos personales. Se borra todo lo demás y la cuenta queda anonimizada: correo
+ *   se conservan con los datos necesarios para atender la operación. La cuenta queda anonimizada: correo
  *   y nombre sustituidos, sin perfil (el usuario se libera), sin credenciales ni sesiones, tienda
  *   suspendida y productos archivados.
  *
@@ -22,20 +23,24 @@ export async function deleteAccount(
   client: Database,
   storage: Pick<StorageProvider, "delete">,
   userId: string,
+  beforeDelete?: (tx: Prisma.TransactionClient) => Promise<void>,
 ): Promise<DeletionOutcome> {
-  const media = await client.media.findMany({
-    where: { ownerId: userId },
-    select: { storageKey: true },
-  });
-  const [asBuyer, asSeller, soldItems] = await Promise.all([
-    client.order.count({ where: { buyerId: userId } }),
-    client.order.count({ where: { seller: { userId } } }),
-    client.orderItem.count({ where: { product: { seller: { userId } } } }),
-  ]);
-  const keepOrders = asBuyer + asSeller + soldItems > 0;
+  let media: { storageKey: string }[] = [];
+  let keepOrders = false;
 
   await client.$transaction(async (tx) => {
+    // La eliminación administrativa valida permisos y registra la acción en esta misma transacción.
+    // El borrado propio no pasa este callback. Si falla, no se elimina ni se registra nada.
+    await beforeDelete?.(tx);
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
+    const [ownedMedia, asBuyer, asSeller, soldItems] = await Promise.all([
+      tx.media.findMany({ where: { ownerId: userId }, select: { storageKey: true } }),
+      tx.order.count({ where: { buyerId: userId } }),
+      tx.order.count({ where: { seller: { userId } } }),
+      tx.orderItem.count({ where: { product: { seller: { userId } } } }),
+    ]);
+    media = ownedMedia;
+    keepOrders = asBuyer + asSeller + soldItems > 0;
     // Bloqueo ordenado: no deja grupos huérfanos ni roles pendientes al borrar/anonimizar la cuenta.
     await tx.$queryRaw`
       SELECT c.id FROM communities c
@@ -104,6 +109,14 @@ export async function deleteAccount(
     });
     await tx.userInterest.deleteMany({ where: { userId } });
     await tx.shoppingIntent.deleteMany({ where: { userId } });
+    await tx.address.deleteMany({ where: { userId } });
+    await tx.styleLook.deleteMany({ where: { userId } });
+    await tx.suggestionDismissal.deleteMany({
+      where: { OR: [{ userId }, { targetUserId: userId }] },
+    });
+    await tx.messageBlock.deleteMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+    });
     await tx.tryOnPhoto.deleteMany({ where: { userId } });
     await tx.conversation.deleteMany({ where: { OR: [{ userAId: userId }, { userBId: userId }] } });
     await tx.cart.deleteMany({ where: { userId } });
@@ -129,6 +142,7 @@ export async function deleteAccount(
     await tx.media.deleteMany({ where: { ownerId: userId } });
     await tx.profile.deleteMany({ where: { userId } });
     await tx.editorialAutomationToken.deleteMany({ where: { userId } });
+    await tx.accountRestriction.deleteMany({ where: { userId } });
     await tx.user.update({
       where: { id: userId },
       data: {

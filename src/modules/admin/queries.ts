@@ -6,7 +6,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Rol de equipo guardado en el perfil; `null` si la cuenta no tiene perfil. */
 export async function findUserRole(userId: string): Promise<UserRole | null> {
-  const profile = await db.profile.findUnique({ where: { userId }, select: { role: true } });
+  const profile = await db.profile.findFirst({
+    where: { userId, user: { accountRestriction: { is: null } } },
+    select: { role: true },
+  });
   return profile?.role ?? null;
 }
 
@@ -20,6 +23,7 @@ export async function countAdminQueues(now: Date = new Date()) {
     failedJobs,
     evalRuns,
     editorialDrafts,
+    registeredUsers,
   ] = await Promise.all([
     db.report.count({ where: { status: "OPEN" } }),
     db.authenticityCheck.count({ where: { status: "PROOF_SUBMITTED" } }),
@@ -30,6 +34,7 @@ export async function countAdminQueues(now: Date = new Date()) {
     }),
     db.aIEvalRun.count(),
     db.editorialDraft.count({ where: { status: "PENDING" } }),
+    db.user.count(),
   ]);
   return {
     openReports,
@@ -39,5 +44,6 @@ export async function countAdminQueues(now: Date = new Date()) {
     failedJobsLast24h: failedJobs,
     evalRuns,
     editorialDrafts,
+    registeredUsers,
   };
 }

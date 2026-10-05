@@ -22,6 +22,16 @@ export const MAX_SESSION_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 export const getSession = cache(async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
+  // Se lee de la base en cada petición, incluso si Better Auth entrega una sesión cacheada.
+  // También invalida una sesión creada en carrera con el bloqueo del administrador.
+  const blocked = await db.accountRestriction.findUnique({
+    where: { userId: session.user.id },
+    select: { userId: true },
+  });
+  if (blocked) {
+    await db.session.deleteMany({ where: { userId: session.user.id } });
+    return null;
+  }
   if (Date.now() - new Date(session.session.createdAt).getTime() < MAX_SESSION_AGE_MS) {
     return session;
   }

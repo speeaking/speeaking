@@ -5,6 +5,7 @@ import {
   Scale,
   ShieldAlert,
   Sparkles,
+  UsersRound,
 } from "lucide-react";
 import type { Route } from "next";
 import type { NavItem } from "@/config/navigation";
@@ -18,6 +19,7 @@ const adminRoute = (path: string) => path as Route;
 /** Navegación del área de administración (solo se pinta para ADMIN, dentro de `requireAdmin`). */
 export const adminNav: readonly NavItem[] = [
   { href: adminRoute("/admin"), label: "Resumen", icon: LayoutDashboard, match: "exact" },
+  { href: adminRoute("/admin/usuarios"), label: "Usuarios", icon: UsersRound },
   { href: adminRoute("/admin/decisiones"), label: "Decisiones", icon: Scale },
   { href: adminRoute("/admin/experimentos"), label: "Experimentos", icon: FlaskConical },
   { href: adminRoute("/admin/moderacion"), label: "Moderación", icon: ShieldAlert },

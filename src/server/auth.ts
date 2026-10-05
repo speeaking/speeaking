@@ -2,6 +2,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { APIError } from "better-auth/api";
 import { after } from "next/server";
 import { siteConfig } from "@/config/site";
 import { AUTH_COOKIE_PREFIX } from "@/modules/identity/constants";
@@ -77,6 +78,22 @@ export const auth = betterAuth({
     updateAge: DAY,
   },
   databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const blocked = await db.accountRestriction.findUnique({
+            where: { userId: session.userId },
+            select: { userId: true },
+          });
+          if (blocked) {
+            throw APIError.from("FORBIDDEN", {
+              code: "ACCOUNT_BLOCKED",
+              message: "Esta cuenta está bloqueada. Contacta con el equipo de speeaking.",
+            });
+          }
+        },
+      },
+    },
     user: {
       // Nombre validado e `image` vacía en cualquier camino (SEC-09, ver `user-write.ts`).
       create: { before: async (user) => ({ data: sanitizeUserWrite(user) }) },
