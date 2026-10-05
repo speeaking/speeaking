@@ -20,7 +20,6 @@ import {
   Truck,
   Undo2,
   Camera,
-  LockKeyhole,
   ExternalLink,
 } from "lucide-react";
 import type { Route } from "next";
@@ -73,6 +72,8 @@ import { ContextButton } from "./context-button";
 import { PostVideo } from "./post-video";
 import { MentionText } from "./mention-text";
 import { PostOwnerMenu } from "./post-owner-menu";
+import { AudienceIcon } from "./post-audience-picker";
+import { AUDIENCE_OPTIONS, audienceFromDTO, type PostAudienceDTO } from "../audience";
 import { ReactionButton, reactionLabel } from "./reaction-button";
 
 type Post = FeedItemDTO;
@@ -242,6 +243,9 @@ function CommunityChip({ community }: { community: Community }) {
  */
 function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
   const { author, community } = post;
+  const [audienceOverride, setAudienceOverride] = useState<PostAudienceDTO | null>(null);
+  const audience = audienceOverride ?? post.audience ?? "friends";
+  const audienceValue = audienceFromDTO(audience);
   const profileHref = `/u/${author.username}` as Route;
   // Cada dato lleva su «·» delante: si la línea no cabe (portada angosta), el siguiente baja
   // completo en lugar de recortar el nombre.
@@ -255,13 +259,14 @@ function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) 
           {formatRelativeTime(new Date(post.publishedAt))}
         </time>
       </span>
-      {post.audience === "friends" ? (
-        <span className="inline-flex shrink-0 items-center gap-1" title="Solo amigos aceptados">
-          <Dot />
-          <LockKeyhole className="size-3" aria-hidden="true" />
-          <span className="sr-only">Solo amigos</span>
-        </span>
-      ) : null}
+      <span
+        className="inline-flex shrink-0 items-center gap-1"
+        title={AUDIENCE_OPTIONS[audienceValue].description}
+      >
+        <Dot />
+        <AudienceIcon value={audienceValue} className="size-3" />
+        <span>{AUDIENCE_OPTIONS[audienceValue].label}</span>
+      </span>
       {post.isAiGenerated ? (
         <span className="inline-flex shrink-0 items-center gap-1">
           <Dot />
@@ -341,6 +346,8 @@ function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) 
           <PostOwnerMenu
             postId={post.id}
             hasProduct={post.product !== null}
+            audience={audience}
+            onAudienceChanged={setAudienceOverride}
             onDeleted={onDeleted}
           />
         ) : null}
@@ -385,7 +392,13 @@ function CardHeader({ post, onDeleted }: { post: Post; onDeleted: () => void }) 
         </p>
       </div>
       {post.viewer.canDelete ? (
-        <PostOwnerMenu postId={post.id} hasProduct={post.product !== null} onDeleted={onDeleted} />
+        <PostOwnerMenu
+          postId={post.id}
+          hasProduct={post.product !== null}
+          audience={audience}
+          onAudienceChanged={setAudienceOverride}
+          onDeleted={onDeleted}
+        />
       ) : null}
     </header>
   );

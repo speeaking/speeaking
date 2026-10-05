@@ -118,12 +118,16 @@ export default function PrivacyNoticePage() {
       <h2>Lo que es público</h2>
       <p>
         Tu nombre, nombre de usuario y foto de perfil permiten identificarte y son públicos. Tu
-        biografía, ciudad, portada y publicaciones personales, incluidas sus fotos, videos y
-        comentarios, solo pueden verlos tú y tus amigos aceptados. Seguirte o comprarte no concede
-        ese acceso. Al quitar una amistad o bloquear sus mensajes se cierra el acceso a tu contenido
-        personal. Las publicaciones con productos y las cuentas editoriales son públicas y los
-        buscadores pueden indexarlas. Tu correo, teléfono, domicilios, búsquedas y compras nunca son
-        públicos; cada tienda solo ve sus propios compradores y pedidos.
+        biografía, ciudad y portada solo pueden verlas tú y tus amigos aceptados. En cada
+        publicación eliges Público, Amigos o Solo yo; esa elección también controla sus fotos,
+        videos y comentarios. Las publicaciones nuevas son públicas por defecto, pero puedes elegir
+        otra audiencia antes de publicar o cambiarla después. Las publicaciones antiguas conservan
+        su audiencia hasta que su autor la cambie. Seguirte o comprarte no da acceso a publicaciones
+        para amigos. Quitar una amistad o bloquear sus mensajes cierra ese acceso. Los buscadores
+        pueden indexar publicaciones públicas. Un producto publicado en la tienda sigue siendo
+        público aunque una publicación que lo etiquete tenga otra audiencia. Tu correo, teléfono,
+        domicilios, búsquedas y compras nunca son públicos; cada tienda solo ve sus compradores y
+        pedidos.
       </p>
 
       <h2>Finalidades principales</h2>

@@ -25,35 +25,30 @@ export const PUBLIC_PROFILE: Prisma.ProfileWhereInput = {
   ],
 };
 
-/** Productos, contenido editorial y avisos del administrador oficial son públicos. */
-export const PUBLIC_POST: Prisma.PostWhereInput = {
-  OR: [{ productId: { not: null } }, { author: { profile: PUBLIC_PROFILE } }],
-};
+/** La audiencia de la publicación se aplica también a productos, editorial y administradores. */
+export const PUBLIC_POST: Prisma.PostWhereInput = { audience: "PUBLIC" };
 
 export function postVisibleTo(viewerId: string | null): Prisma.PostWhereInput {
   return viewerId
-    ? { OR: [PUBLIC_POST, { authorId: viewerId }, { author: friendsOf(viewerId) }] }
+    ? {
+        OR: [
+          PUBLIC_POST,
+          { authorId: viewerId },
+          { audience: "FRIENDS", author: friendsOf(viewerId) },
+        ],
+      }
     : PUBLIC_POST;
 }
 
-/** Versión parametrizada para las búsquedas y los contadores que usan SQL. Alias fijos del código. */
+/** SQL parametrizado con la misma audiencia que Prisma. Los alias son constantes del código. */
 export function postVisibleToSql(viewerId: string | null, alias: "p" | "r" = "p") {
   const author = Prisma.raw(`${alias}."authorId"`);
-  const publicPost = Prisma.sql`(
-    ${Prisma.raw(`${alias}."productId"`)} IS NOT NULL
-    OR EXISTS (SELECT 1 FROM "profiles" privacy_profile
-      WHERE privacy_profile."userId" = ${author} AND (
-        privacy_profile."isEditorial" = true
-        OR (privacy_profile."role" = 'ADMIN' AND EXISTS (
-          SELECT 1 FROM "users" privacy_user
-          WHERE privacy_user."id" = ${author}
-            AND lower(privacy_user."email") = ${PLATFORM_ADMIN_EMAIL}
-        ))
-      ))
-  )`;
+  const audience = Prisma.raw(`${alias}."audience"`);
+  const publicPost = Prisma.sql`(${audience} = 'PUBLIC')`;
   if (!viewerId) return publicPost;
   return Prisma.sql`(${publicPost} OR ${author} = ${viewerId}::uuid OR (
-    EXISTS (SELECT 1 FROM "friendships" friendship
+    ${audience} = 'FRIENDS'
+    AND EXISTS (SELECT 1 FROM "friendships" friendship
       WHERE friendship."status" = 'ACCEPTED' AND (
         (friendship."userAId" = ${author} AND friendship."userBId" = ${viewerId}::uuid)
         OR (friendship."userBId" = ${author} AND friendship."userAId" = ${viewerId}::uuid)

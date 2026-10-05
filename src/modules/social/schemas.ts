@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { POST_AUDIENCES } from "./audience";
 
 export const MAX_POST_IMAGES = 10;
 /** Publicaciones largas; el texto completo se conserva, independientemente del contexto de IA. */
@@ -10,6 +11,7 @@ export const createPostSchema = z
       .string()
       .trim()
       .max(MAX_POST_LENGTH, "Tu publicación puede tener hasta 60,000 caracteres."),
+    audience: z.enum(POST_AUDIENCES).default("FRIENDS"),
     communitySlug: z
       .string()
       .regex(/^[a-z0-9-]+$/)

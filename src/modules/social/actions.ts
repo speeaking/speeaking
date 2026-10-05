@@ -339,6 +339,7 @@ export async function createPostAction(
   const parsed = createPostSchema.safeParse({
     body: formData.get("body"),
     communitySlug: formData.get("communitySlug") || undefined,
+    audience: formData.get("audience") || undefined,
     mediaIds: formData.getAll("mediaIds"),
     videoId: formData.get("videoId") || undefined,
     productId: formData.get("productId") || undefined,
@@ -347,7 +348,7 @@ export async function createPostAction(
   if (!parsed.success) {
     return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
-  const { body, communitySlug, mediaIds, videoId, productId } = parsed.data;
+  const { body, audience, communitySlug, mediaIds, videoId, productId } = parsed.data;
   const limited = await checkSocialLimit("post", viewer.userId);
   if (!limited.ok) return { error: limited.error };
 
@@ -416,6 +417,7 @@ export async function createPostAction(
         data: {
           authorId: viewer.userId,
           body,
+          audience,
           communityId: community?.id ?? null,
           productId: product?.id ?? null,
           // Solo tiene sentido declarar un acuerdo sobre el producto de otra tienda.

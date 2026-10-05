@@ -1,7 +1,6 @@
 import { findTaggableProduct } from "@/modules/creators/service";
 import { listCommunities } from "@/modules/identity/service";
 import { requireOnboardedViewer } from "@/modules/identity/session";
-import { isPlatformAdministrator } from "@/modules/identity/platform-account";
 import { videoUploadsEnabled } from "@/modules/media/video-upload";
 import { VISIBLE_PRODUCT } from "@/modules/trust/visibility";
 import { db } from "@/server/db";
@@ -61,7 +60,6 @@ export async function NewPost({
         sorted.find((community) => mine.has(community.id))?.slug
       }
       videoEnabled={videoUploadsEnabled()}
-      publicAccount={isPlatformAdministrator(viewer.email, viewer.profile.role)}
       taggedProduct={taggedProduct}
       inLayer={inLayer}
       defaultMedia={defaultMedia}

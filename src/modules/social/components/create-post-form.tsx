@@ -1,6 +1,6 @@
 "use client";
 
-import { Clapperboard, ImagePlus, LockKeyhole, Globe } from "lucide-react";
+import { Clapperboard, ImagePlus } from "lucide-react";
 import Image from "next/image";
 import { type FormEvent, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { ImageUploader } from "@/modules/media/components/image-uploader";
 import { VideoPicker } from "@/modules/media/components/video-picker";
 import { type CreatePostState, createPostAction } from "../actions";
 import { MAX_POST_IMAGES, MAX_POST_LENGTH } from "../schemas";
+import { AUDIENCE_OPTIONS, DEFAULT_POST_AUDIENCE, type PostAudienceValue } from "../audience";
+import { PostAudiencePicker } from "./post-audience-picker";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring";
@@ -25,7 +27,6 @@ export function CreatePostForm({
   products,
   defaultCommunity,
   videoEnabled = false,
-  publicAccount = false,
   taggedProduct = null,
   inLayer = false,
   defaultMedia = "photos",
@@ -35,8 +36,6 @@ export function CreatePostForm({
   defaultCommunity?: string;
   /** Se pueden subir videos cortos (ADR-062). */
   videoEnabled?: boolean;
-  /** El servidor identifica a la cuenta administradora que publica avisos públicos. */
-  publicAccount?: boolean;
   /** Producto que se quiere etiquetar (`?producto=`): propio o de una tienda que acepta colaboraciones. */
   taggedProduct?: TaggedProductDTO | null;
   /** En la ventana encima del feed (ADR-068): al publicar, cerrar regresa al feed, no al formulario. */
@@ -53,7 +52,7 @@ export function CreatePostForm({
       : "",
   );
   const publicProduct = tagged || Boolean(ownProduct);
-  const publicPost = publicAccount || publicProduct;
+  const [audience, setAudience] = useState<PostAudienceValue>(DEFAULT_POST_AUDIENCE);
   // Fotos o un video, no los dos. Lo de la otra pestaña no se pierde al cambiar: queda en un
   // `fieldset` desactivado (sus campos no se envían) y vuelve al regresar.
   const [mode, setMode] = useState<"photos" | "video">(videoEnabled ? defaultMedia : "photos");
@@ -79,20 +78,16 @@ export function CreatePostForm({
   return (
     <form action={formAction} onSubmit={guardUploads} className="flex flex-col gap-4">
       {inLayer ? <input type="hidden" name="enCapa" value="1" /> : null}
-      <p
-        className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground"
-        aria-live="polite"
-      >
-        {publicPost ? (
-          <Globe className="size-4 shrink-0" aria-hidden="true" />
-        ) : (
-          <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
-        )}
-        {publicAccount
-          ? "Público: las publicaciones de la cuenta administradora, incluidas sus fotos o video, son visibles para todos."
-          : publicProduct
-            ? "Público: al etiquetar un producto, cualquier persona puede ver esta publicación y sus fotos o video."
-            : "Solo amigos: tus fotos, videos y esta publicación personal serán visibles únicamente para amigos aceptados."}
+      <input type="hidden" name="audience" value={audience} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-medium">Quién puede verlo</span>
+        <PostAudiencePicker value={audience} onChange={setAudience} disabled={pending} />
+      </div>
+      <p className="text-xs leading-relaxed text-muted-foreground" aria-live="polite">
+        {AUDIENCE_OPTIONS[audience].description}
+        {publicProduct && audience !== "PUBLIC"
+          ? " El producto seguirá disponible en la tienda; esta publicación tendrá la audiencia elegida."
+          : ""}
       </p>
       <div role="group" aria-label="Añadir a tu publicación" className="flex gap-2">
         {(

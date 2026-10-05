@@ -77,10 +77,10 @@ function VideoReel({ item }: { item: HomeVideoReelDTO }) {
           {item.caption || `Video de ${author.displayName}`}
         </span>
         <span className="truncate text-[11px] font-medium text-white/85">{author.displayName}</span>
-        {item.audience === "friends" ? (
+        {item.audience !== "public" ? (
           <span className="flex items-center gap-1 text-[10px] text-white/85">
             <LockKeyhole aria-hidden="true" className="size-2.5" />
-            Amigos
+            {item.audience === "only_me" ? "Solo yo" : "Amigos"}
           </span>
         ) : null}
       </span>

@@ -7,7 +7,7 @@ import { getStorage } from "@/server/providers/storage";
 import { MAX_POST_IMAGES } from "./schemas";
 import { POST_PREVIEW_LENGTH, postTextPreview } from "./post-text";
 import { postVisibleTo } from "@/modules/relationships/privacy";
-import { isPlatformAdministrator } from "@/modules/identity/platform-account";
+import { audienceToDTO } from "./audience";
 
 /** UUID nulo: permite filtrar "lo del espectador" sin cambiar la forma de la consulta. */
 const NO_VIEWER = "00000000-0000-0000-0000-000000000000";
@@ -62,6 +62,7 @@ export async function hydratePosts(
     select: {
       id: true,
       productId: true,
+      audience: true,
       type: true,
       body: true,
       publishedAt: true,
@@ -135,13 +136,7 @@ export async function hydratePosts(
         item.bodyTruncated = true;
       }
       if (item) item.viewer.canDelete = viewerId !== null && row.author.id === viewerId;
-      if (item)
-        item.audience =
-          row.productId ||
-          row.author.profile?.isEditorial ||
-          isPlatformAdministrator(row.author.email, row.author.profile?.role)
-            ? "public"
-            : "friends";
+      if (item) item.audience = audienceToDTO(row.audience);
       return item ? [[row.id, item]] : [];
     }),
   );

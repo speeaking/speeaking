@@ -368,15 +368,15 @@ enum CommunityRole {
 }
 
 model CommunityMembership {
-  userId      String    @db.Uuid
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  communityId String    @db.Uuid
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  userId      String        @db.Uuid
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  communityId String        @db.Uuid
+  community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
   role        CommunityRole @default(MEMBER)
   /// Última vez que la persona abrió la comunidad («N nuevas», F7). Sin visitas cuenta desde que
   /// se unió (`createdAt`). El índice de posts (communityId, status, publishedAt) sirve al conteo.
-  lastSeenAt  DateTime? @db.Timestamptz(3)
+  lastSeenAt  DateTime?     @db.Timestamptz(3)
 
   @@id([userId, communityId])
   @@index([communityId])
@@ -494,29 +494,37 @@ enum PostStatus {
   REMOVED
 }
 
+/// Audiencia elegida por el autor, independiente de la biografía y de los productos etiquetados.
+enum PostAudience {
+  PUBLIC
+  FRIENDS
+  ONLY_ME
+}
+
 model Post {
-  id            String     @id @default(uuid(7)) @db.Uuid
-  authorId      String     @db.Uuid
-  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  communityId   String?    @db.Uuid
-  community     Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
-  type          PostType   @default(POST)
+  id            String       @id @default(uuid(7)) @db.Uuid
+  authorId      String       @db.Uuid
+  author        User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  communityId   String?      @db.Uuid
+  community     Community?   @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  type          PostType     @default(POST)
   body          String
-  productId     String?    @db.Uuid
-  product       Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
-  status        PostStatus @default(PUBLISHED)
+  productId     String?      @db.Uuid
+  product       Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  status        PostStatus   @default(PUBLISHED)
+  audience      PostAudience @default(PUBLIC)
   /// Contenido generado o asistido por IA: se etiqueta en la interfaz (ADR-018).
-  isAiGenerated Boolean    @default(false)
+  isAiGenerated Boolean      @default(false)
   /// Colaboración (ADR-063): quien publica declaró un acuerdo con la tienda del producto etiquetado
   /// (pago, producto o comisión), o la tienda lo marcó. Se muestra «Colaboración»: la publicidad
   /// debe identificarse (LFPC art. 32).
-  collaboration Boolean    @default(false)
-  likeCount     Int        @default(0)
-  commentCount  Int        @default(0)
-  saveCount     Int        @default(0)
-  publishedAt   DateTime   @default(now()) @db.Timestamptz(3)
-  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+  collaboration Boolean      @default(false)
+  likeCount     Int          @default(0)
+  commentCount  Int          @default(0)
+  saveCount     Int          @default(0)
+  publishedAt   DateTime     @default(now()) @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
 
   media          PostMedia[]
   likes          Like[]
@@ -527,6 +535,7 @@ model Post {
   editorialDraft EditorialDraft?
 
   @@index([status, publishedAt(sort: Desc), id])
+  @@index([audience, status, publishedAt(sort: Desc)])
   @@index([communityId, status, publishedAt(sort: Desc)])
   @@index([authorId, publishedAt(sort: Desc)])
   @@index([productId])

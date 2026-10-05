@@ -204,7 +204,7 @@ export function postSearchSql(
   const posts = terms.some(isIndexableTerm)
     ? Prisma.sql`"posts" p`
     : Prisma.sql`(
-        SELECT r."id", r."body", r."status", r."productId", r."publishedAt", r."authorId" FROM "posts" r
+        SELECT r."id", r."body", r."status", r."productId", r."publishedAt", r."authorId", r."audience" FROM "posts" r
         WHERE r."status" = 'PUBLISHED' AND ${postVisibleToSql(viewerId, "r")} ${video("r")}
         ORDER BY r."publishedAt" DESC, r."id" DESC
         LIMIT ${UNINDEXED_SEARCH_WINDOW}

@@ -6,7 +6,7 @@ export type HomeVideoReelDTO = {
   postId: string;
   caption: string;
   author: FeedItemDTO["author"];
-  audience: "friends" | "public";
+  audience: NonNullable<FeedItemDTO["audience"]>;
   video: FeedVideoDTO;
   platformUpdate: boolean;
 };

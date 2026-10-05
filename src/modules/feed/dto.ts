@@ -11,6 +11,7 @@ import type {
 import type { ProductFacts } from "@/modules/catalog/quick-answers";
 import { slotForPublicProduct } from "@/modules/stylist/slots";
 import type { RankReason } from "./ranking";
+import type { PostAudienceDTO } from "@/modules/social/audience";
 import type { FeedProductsDTO } from "./product-carousel-compose";
 
 /** Foto lista para pintar, con el crédito de su autor si es de stock con licencia libre. */
@@ -52,7 +53,7 @@ export type FeedIntentDTO =
 /** Publicación lista para pintar en el cliente. Solo datos públicos (nunca costos ni correos). */
 export type FeedItemDTO = {
   id: string;
-  audience?: "friends" | "public";
+  audience?: PostAudienceDTO;
   type: PostType;
   body: string;
   /** true si body es una vista previa; el texto completo se carga con autorización al expandir. */

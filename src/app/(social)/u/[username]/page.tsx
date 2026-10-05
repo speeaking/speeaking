@@ -73,10 +73,11 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
   const privateNotice = (
     <div className="mx-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed px-5 py-8 text-center md:mx-0">
       <LockKeyhole className="mb-1 size-7 text-muted-foreground" aria-hidden="true" />
-      <h2 className="font-heading text-lg font-bold">Su contenido personal es privado</h2>
+      <h2 className="font-heading text-lg font-bold">Su biografía es privada</h2>
       <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
         Envía una solicitud de amistad. Cuando {profile.displayName} la acepte, podrás ver su
-        biografía, fotos, videos y publicaciones personales.
+        biografía y las publicaciones que comparta con amigos. Las publicaciones públicas se
+        muestran aquí.
       </p>
     </div>
   );
@@ -116,12 +117,13 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
     {
       id: "fotos",
       label: "Fotos",
-      count: profile.canViewPersonal ? photos.length : undefined,
-      content: profile.canViewPersonal ? (
-        <ProfilePhotos photos={photos} name={profile.displayName} />
-      ) : (
-        privateNotice
-      ),
+      count: photos.length,
+      content:
+        photos.length > 0 || profile.canViewPersonal ? (
+          <ProfilePhotos photos={photos} name={profile.displayName} />
+        ) : (
+          privateNotice
+        ),
     },
     ...(products.length > 0
       ? [
@@ -177,8 +179,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps<"/
               <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
             )}
             {profile.isPlatformAccount
-              ? "Tus publicaciones como cuenta administradora son públicas para toda la comunidad."
-              : "Tu contenido personal solo lo ven tus amigos aceptados."}
+              ? "Tus publicaciones nuevas son públicas por defecto. Puedes cambiar la audiencia de cada una."
+              : "Tu biografía es privada para amigos. En cada publicación eliges Público, Amigos o Solo yo."}
           </p>
         ) : null}
         {/* `key`: «Ver tienda» (`?ver=tienda`) cambia de pestaña aunque la página ya esté abierta. */}

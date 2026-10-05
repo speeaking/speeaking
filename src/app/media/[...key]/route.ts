@@ -21,13 +21,13 @@ import {
 } from "@/modules/relationships/privacy";
 
 /**
- * Caché de una foto pública: una hora; después, la copia vieja todavía puede salir mientras se
- * revalida en segundo plano (un navegador, una vez; una CDN, según cómo trate el 404: ADR-039,
- * «Ventana de retiro»). Nunca `immutable`: la clave no cambia de contenido, pero la foto sí puede
+ * Caché de una foto de producto o avatar público: cinco minutos. Las fotos de publicaciones
+ * con audiencia editable no se guardan en navegador ni CDN; cada solicitud vuelve a autorizar.
+ * Nunca `immutable` ni `stale-while-revalidate`: la foto sí puede
  * dejar de servirse (producto oculto, publicación retirada, cuenta borrada) y ese retiro tiene que
  * llegar a navegadores y CDN (SEC-14). La revalidación recibe 404 sin caché.
  */
-const PUBLIC_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
+const PUBLIC_CACHE = "public, max-age=300, must-revalidate";
 const PRIVATE_CACHE = "private, no-store";
 /**
  * Video público (ADR-062): la redirección a su URL firmada (o el archivo, en disco) se guarda 10
@@ -65,9 +65,9 @@ const DEGRADED_CACHE = "no-store";
  *
  * Las fotos se piden desde el mismo origen con las cookies de la sesión: su dueño y el equipo ven
  * las fotos privadas en el Studio y en la página del producto oculto.
- * Las publicaciones personales y portadas de cuentas personales requieren amistad aceptada;
+ * Cada publicación aplica su audiencia Público, Amigos o Solo yo; la portada personal requiere amistad;
  * se autorizan en cada petición y se entregan con `private, no-store`. El avatar de identificación,
- * las publicaciones con productos y el contenido editorial son públicos.
+ * un producto de la tienda sigue siendo público aunque una publicación tenga otra audiencia.
  */
 export async function GET(request: Request, context: RouteContext<"/media/[...key]">) {
   const key = (await context.params).key.join("/");
@@ -89,7 +89,8 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
   });
   if (!media || media.status !== "READY") return notFound();
 
-  const publiclyAttached = await isPubliclyAttached(media.id);
+  const attachment = await isPubliclyAttached(media.id);
+  const publiclyAttached = attachment.publiclyAttached;
   // Un comprobante (vigente o anterior) y una foto de Pruébatelo (ADR-045) nunca son públicos. Solo
   // se consulta cuando cambia la respuesta (lo que no está adjunto a nada visible ya es privado).
   // Consultas con índice (GIN y `mediaId`).
@@ -105,7 +106,7 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
   // el bucket, redirección a una URL firmada de lectura; en disco, por rangos (Safari los exige).
   if (media.kind === "VIDEO") {
     return getVideoStore().deliver(key, request, {
-      "Cache-Control": isPublic ? PUBLIC_VIDEO_CACHE : PRIVATE_CACHE,
+      "Cache-Control": isPublic && !attachment.postAttached ? PUBLIC_VIDEO_CACHE : PRIVATE_CACHE,
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'; sandbox",
     });
@@ -127,7 +128,12 @@ export async function GET(request: Request, context: RouteContext<"/media/[...ke
   const headers = {
     // Lo privado (sin adjuntar, de un producto oculto, un comprobante) nunca va a una caché
     // compartida ni se queda en el navegador: `private, no-store`.
-    "Cache-Control": !isPublic ? PRIVATE_CACHE : file.cacheable ? PUBLIC_CACHE : DEGRADED_CACHE,
+    "Cache-Control":
+      !isPublic || attachment.postAttached
+        ? PRIVATE_CACHE
+        : file.cacheable
+          ? PUBLIC_CACHE
+          : DEGRADED_CACHE,
     ETag: etag,
     // Aunque alguien lograra subir otro tipo de archivo, el navegador no ejecutaría nada.
     "X-Content-Type-Options": "nosniff",
@@ -181,7 +187,11 @@ async function isPubliclyAttached(mediaId: string) {
       select: { id: true },
     }),
   ]);
-  return post !== null || product !== null || profile !== null || posterOf !== null;
+  return {
+    publiclyAttached: post !== null || product !== null || profile !== null || posterOf !== null,
+    // Una audiencia editable se comprueba sin reutilizar respuestas de navegador o CDN.
+    postAttached: post !== null || posterOf !== null,
+  };
 }
 
 /**

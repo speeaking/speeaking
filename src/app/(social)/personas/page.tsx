@@ -79,8 +79,8 @@ export default async function PeoplePage({ searchParams }: PageProps<"/personas"
       <div className="flex items-start gap-3 rounded-2xl bg-secondary p-4 text-sm">
         <LockKeyhole className="mt-0.5 size-5 shrink-0 text-primary-text" aria-hidden="true" />
         <p>
-          Tu biografía, portada, fotos, videos y publicaciones personales son{" "}
-          <strong>solo para amigos aceptados</strong>. Tus publicaciones con productos son públicas.
+          Tu biografía y portada son <strong>solo para amigos aceptados</strong>. En cada
+          publicación eliges quién la ve: Público, Amigos o Solo yo, incluidas sus fotos y videos.
         </p>
       </div>
       <form action="/personas" className="flex gap-2" role="search" aria-label="Buscar personas">
