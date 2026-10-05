@@ -19,6 +19,8 @@ export const AI_TASKS = [
   "image_search",
   /** Redacción diaria: borrador de una publicación editorial que el equipo aprueba (ADR-066). */
   "editorial_draft",
+  /** Spyke: interpretar la orden de voz; no puede enviar ni modificar contenido. */
+  "voice_command",
 ] as const;
 export type AITaskId = (typeof AI_TASKS)[number];
 

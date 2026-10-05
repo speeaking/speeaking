@@ -827,6 +827,8 @@ enum AIFeature {
   IMAGE_SEARCH
   /// Redacción diaria: borradores para las cuentas editoriales; los publica el equipo (ADR-066).
   EDITORIAL_DRAFT
+  /// Spyke: interpreta órdenes de voz; el envío siempre lo confirma la persona.
+  VOICE_COMMAND
 }
 
 /// Quién financia una solicitud de IA (ADR-044). Solo PLATFORM y SYSTEM consumen el presupuesto

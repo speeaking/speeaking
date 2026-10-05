@@ -295,6 +295,24 @@ export default function PrivacyNoticePage() {
         texto de la publicación cambia, se hace otro.
       </p>
 
+      <h2 id="spyke">Spyke: lectura y órdenes de voz</h2>
+      <p>
+        Spyke usa el micrófono solo cuando lo activas y das permiso al navegador, con la app
+        abierta. Al cerrar su ventana o salir de la app se detienen el micrófono y la lectura.
+        speeaking no guarda grabaciones. El reconocimiento y la voz de lectura los proporciona tu
+        navegador: según el navegador y la voz elegida, puede enviar audio o texto a sus propios
+        proveedores. La disponibilidad depende de tu dispositivo y de tu conexión.
+      </p>
+      <p>
+        Para interpretar una orden que no sea un control básico, enviamos su texto al proveedor de
+        IA descrito arriba, quitando correos, teléfonos, ligas y cuentas. No enviamos la publicación
+        ni tu lista de amigos. El registro de IA guarda el tipo de acción y su costo, sin el
+        dictado, destinatario ni mensaje privado. Antes de compartir eliges un amigo aceptado y
+        confirmas el destinatario y el mensaje. Solo se envía el enlace de la publicación y tu
+        mensaje corto: compartir no cambia su audiencia y ambas personas deben tener acceso. El
+        mensaje se conserva en la conversación con las reglas de mensajes privados.
+      </p>
+
       <h2 id="colaboraciones">Colaboraciones con tiendas</h2>
       <p>
         Si etiquetas en tu publicación un producto de otra tienda (solo se puede si esa tienda

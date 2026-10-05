@@ -24,6 +24,7 @@ export const AI_TASK_INFO: Record<AITaskId, { label: string; feature: AIFeature 
   post_context: { label: "Contexto de publicaciones largas", feature: "POST_CONTEXT" },
   image_search: { label: "Búsqueda por foto (ve imágenes)", feature: "IMAGE_SEARCH" },
   editorial_draft: { label: "Redacción diaria (borradores)", feature: "EDITORIAL_DRAFT" },
+  voice_command: { label: "Spyke (órdenes de voz)", feature: "VOICE_COMMAND" },
 };
 
 /**

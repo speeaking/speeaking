@@ -11,7 +11,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
   },
   // Otra pestaña abierta con `window.open` no conserva referencia a la nuestra (ni al revés), y
   // otros sitios no pueden incrustar nuestras respuestas (fotos, JSON) como recurso.

@@ -75,6 +75,7 @@ import { PostOwnerMenu } from "./post-owner-menu";
 import { AudienceIcon } from "./post-audience-picker";
 import { AUDIENCE_OPTIONS, audienceFromDTO, type PostAudienceDTO } from "../audience";
 import { ReactionButton, reactionLabel } from "./reaction-button";
+import { PostVoiceAssistant } from "@/modules/voice/components/post-voice-assistant";
 
 type Post = FeedItemDTO;
 type Product = NonNullable<Post["product"]>;
@@ -912,6 +913,13 @@ function ActionBar({
         <Share2 aria-hidden="true" className="size-5" />
         <span className={secondaryLabel}>Compartir</span>
       </button>
+      <PostVoiceAssistant
+        postId={post.id}
+        authorName={post.author.displayName}
+        isSignedIn={isSignedIn}
+        className={control}
+        labelClassName={secondaryLabel}
+      />
     </footer>
   );
 }
