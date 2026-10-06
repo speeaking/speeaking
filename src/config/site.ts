@@ -15,6 +15,14 @@ export const siteConfig = {
   description:
     "Descubre contenido y productos de gente real, pruébatelos con una foto y compra a quien te inspira.",
   country: "MX",
+  /** Nombre del país para quien lee (datos estructurados: «sirve a todo México»). */
+  countryName: "México",
+  /**
+   * Perfiles oficiales de la marca (Instagram, TikTok, Facebook…), en URL completa. Ligan la marca
+   * con sus redes para buscadores y asistentes (`sameAs`). Solo los que ya existen: vacío, no se
+   * publica nada.
+   */
+  socialProfiles: [] as readonly string[],
   locale: "es-MX",
   currency: "MXN",
   timeZone: "America/Mexico_City",

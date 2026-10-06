@@ -101,6 +101,41 @@ export function pageMetadata({
   };
 }
 
+type SiteIdentity = Pick<
+  typeof siteConfig,
+  "name" | "url" | "description" | "locale" | "country" | "countryName" | "socialProfiles"
+>;
+
+/**
+ * La organización y el sitio (JSON-LD de todas las páginas): quién es speeaking, que sirve a todo
+ * México y, cuando existan, sus perfiles oficiales para que buscadores y asistentes no confundan la
+ * marca con «speaking».
+ */
+export function siteStructuredData(site: SiteIdentity = siteConfig) {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": `${site.url}/#organization`,
+      name: site.name,
+      url: site.url,
+      logo: `${site.url}/icons/icon-512.png`,
+      description: site.description,
+      areaServed: { "@type": "Country", name: site.countryName, identifier: site.country },
+      ...(site.socialProfiles.length > 0 ? { sameAs: [...site.socialProfiles] } : {}),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": `${site.url}/#website`,
+      name: site.name,
+      url: site.url,
+      inLanguage: site.locale,
+      publisher: { "@id": `${site.url}/#organization` },
+    },
+  ];
+}
+
 export function rootMetadata(env: IndexingEnv): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),

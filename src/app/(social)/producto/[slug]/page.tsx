@@ -17,7 +17,12 @@ import { z } from "zod";
 import { UserAvatar } from "@/components/brand/user-avatar";
 import { pageMetadata, NO_INDEX } from "@/app/seo";
 import { JsonLd } from "@/components/seo/json-ld";
-import { productStructuredData, productBreadcrumbs } from "@/modules/catalog/seo";
+import {
+  productBreadcrumbs,
+  productSeoDescription,
+  productSeoTitle,
+  productStructuredData,
+} from "@/modules/catalog/seo";
 import { MediaCarousel } from "@/components/media/media-carousel";
 import { formatMoney } from "@/lib/format";
 import { frameAspect, PRODUCT_FRAME } from "@/lib/image";
@@ -59,11 +64,10 @@ export async function generateMetadata({
   const result = await getPublicProduct((await params).slug);
   if (!result) return { robots: NO_INDEX };
   const { product } = result;
-  const title = `${product.title} · ${formatMoney(product.priceCents, product.currency)}`;
   const image = product.media[0];
   return pageMetadata({
-    title,
-    description: product.description,
+    title: productSeoTitle(product),
+    description: productSeoDescription(product),
     path: `/producto/${encodeURIComponent(product.slug)}`,
     image: image ? { ...image, alt: image.alt ?? product.title } : undefined,
   });

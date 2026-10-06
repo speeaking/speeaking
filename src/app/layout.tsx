@@ -9,7 +9,7 @@ import { siteConfig } from "@/config/site";
 import { NONCE_HEADER } from "@/lib/csp";
 import { cn } from "@/lib/utils";
 import { env } from "@/server/env";
-import { rootMetadata } from "./seo";
+import { rootMetadata, siteStructuredData } from "./seo";
 import "./globals.css";
 
 // Marca (ADR-070): logotipo y titulares en Sora (variable, 100–800); texto en Inter.
@@ -42,28 +42,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <AppStartupImages />
       </head>
       <body>
-        <JsonLd
-          data={[
-            {
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "@id": `${siteConfig.url}/#organization`,
-              name: siteConfig.name,
-              url: siteConfig.url,
-              logo: `${siteConfig.url}/icons/icon-512.png`,
-              description: siteConfig.description,
-            },
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "@id": `${siteConfig.url}/#website`,
-              name: siteConfig.name,
-              url: siteConfig.url,
-              inLanguage: siteConfig.locale,
-              publisher: { "@id": `${siteConfig.url}/#organization` },
-            },
-          ]}
-        />
+        <JsonLd data={siteStructuredData()} />
         <a
           href="#contenido"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-foreground focus:px-3 focus:py-2 focus:text-background"
