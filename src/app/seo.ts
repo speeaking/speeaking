@@ -53,6 +53,19 @@ export function snippet(text: string, limit = 160): string {
 
 export const NO_INDEX: Metadata["robots"] = { index: false, follow: true };
 
+/**
+ * Título y descripción de una comunidad para buscadores: que es de México (las búsquedas «… en
+ * México») y qué hay en ella, después de la frase corta que la describe.
+ */
+export function communitySeo({ name, description }: { name: string; description: string }) {
+  const intro = description.trim();
+  const rest = `Publicaciones, preguntas y productos de la comunidad ${name} en ${siteConfig.name}, la red social de ${siteConfig.countryName}.`;
+  return {
+    title: `${name}: comunidad en ${siteConfig.countryName}`,
+    description: intro ? `${intro} ${rest}` : rest,
+  };
+}
+
 /** Canonical sin parámetros y objetos completos: Next reemplaza openGraph, no lo mezcla. */
 export function pageMetadata({
   title,

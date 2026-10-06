@@ -13,6 +13,7 @@ import { scheduleAuthenticityAiSignal } from "@/modules/trust/background";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { evaluateProductAuthenticity } from "@/modules/trust/service";
 import { db } from "@/server/db";
+import { scheduleIndexNow } from "@/server/seo/schedule-indexnow";
 import { parseProductForm, productEditMetaSchema, productSlug } from "./schemas";
 import { ProductEditError, setProductStatus, updateProduct } from "./service";
 import type { ToggleTarget } from "./status";
@@ -159,6 +160,8 @@ export async function createProductAction(
     });
   }
 
+  // Que los buscadores lean la ficha nueva pronto (IndexNow; solo en producción).
+  scheduleIndexNow([`/producto/${slug}`]);
   redirect(`/producto/${slug}?nuevo=1` as Route);
 }
 
@@ -221,6 +224,7 @@ export async function updateProductAction(
   scheduleAuthenticityAiSignal(productId);
   revalidatePath("/studio/productos");
   revalidatePath(`/producto/${slug}`);
+  scheduleIndexNow([`/producto/${slug}`]);
   redirect("/studio/productos?guardado=1" as Route);
 }
 
@@ -242,6 +246,7 @@ export async function toggleProductStatusAction(
     const result = await setProductStatus(viewer.userId, parsed.data.productId, parsed.data.target);
     revalidatePath("/studio/productos");
     revalidatePath(`/producto/${result.slug}`);
+    scheduleIndexNow([`/producto/${result.slug}`]);
     return { ok: true, status: result.status };
   } catch (error) {
     if (error instanceof ProductEditError) return { ok: false, error: EDIT_MESSAGES[error.code] };

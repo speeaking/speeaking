@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { siteConfig } from "@/config/site";
-import { siteStructuredData } from "./seo";
+import { communitySeo, siteStructuredData } from "./seo";
 
 describe("siteStructuredData (la organización y el sitio, para buscadores y asistentes)", () => {
   it("la organización sirve a todo México y el sitio está en español de México", () => {
@@ -35,5 +35,21 @@ describe("siteStructuredData (la organización y el sitio, para buscadores y asi
     ).toMatchObject({
       sameAs: ["https://www.instagram.com/speeaking", "https://www.tiktok.com/@speeaking"],
     });
+  });
+});
+
+describe("communitySeo (título y descripción de una comunidad para buscadores)", () => {
+  it("dice que es una comunidad en México y completa la frase corta de la comunidad", () => {
+    expect(communitySeo({ name: "Hogar", description: "Deco, plantas, orden y cocina." })).toEqual({
+      title: "Hogar: comunidad en México",
+      description:
+        "Deco, plantas, orden y cocina. Publicaciones, preguntas y productos de la comunidad Hogar en speeaking, la red social de México.",
+    });
+  });
+
+  it("sin descripción, no deja un punto suelto", () => {
+    expect(communitySeo({ name: "Gaming", description: "  " }).description).toBe(
+      "Publicaciones, preguntas y productos de la comunidad Gaming en speeaking, la red social de México.",
+    );
   });
 });

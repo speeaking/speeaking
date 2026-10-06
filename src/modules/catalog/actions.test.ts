@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createProductAction, updateProductAction } from "./actions";
+import { createProductAction, toggleProductStatusAction, updateProductAction } from "./actions";
 
 // La acción solo traduce: quién edita sale de la sesión (nunca del formulario) y los errores del
 // servicio se vuelven mensajes. Las reglas de propiedad e inventario se prueban en service.test.
@@ -51,6 +51,9 @@ vi.mock("@/server/db", () => ({ db }));
 // Revisión de autenticidad (P14): la lógica vive en src/modules/trust; aquí, que se llame.
 vi.mock("@/modules/trust/service", () => trust);
 vi.mock("@/modules/trust/background", () => background);
+// IndexNow (SEO): después de responder se avisa que la ficha cambió; aquí, que se programe.
+const { indexNow } = vi.hoisted(() => ({ indexNow: { scheduleIndexNow: vi.fn() } }));
+vi.mock("@/server/seo/schedule-indexnow", () => indexNow);
 
 const SELLER = "0199a000-0000-7000-8000-00000000000a";
 const OTHER = "0199a000-0000-7000-8000-00000000000f";
@@ -117,6 +120,10 @@ describe("createProductAction", () => {
     ).rejects.toThrow(/^redirect:\/producto\/airpods-pro-replica-aaa-[a-z0-9]+\?nuevo=1$/);
     expect(trust.evaluateProductAuthenticity).toHaveBeenCalledWith(created);
     expect(background.scheduleAuthenticityAiSignal).toHaveBeenCalledWith(created);
+    // Los buscadores se enteran de la ficha nueva (IndexNow).
+    expect(indexNow.scheduleIndexNow).toHaveBeenCalledWith([
+      expect.stringMatching(/^\/producto\/airpods-pro-replica-aaa-[a-z0-9]+$/),
+    ]);
     // Primero se guarda el producto, después se revisa.
     expect(db.$transaction.mock.invocationCallOrder[0]!).toBeLessThan(
       trust.evaluateProductAuthenticity.mock.invocationCallOrder[0]!,
@@ -138,6 +145,7 @@ describe("updateProductAction", () => {
       { stockShown: 5 },
     );
     expect(revalidatePath).toHaveBeenCalledWith("/producto/airpods-pro-2-abc123");
+    expect(indexNow.scheduleIndexNow).toHaveBeenCalledWith(["/producto/airpods-pro-2-abc123"]);
     // La señal opcional de IA se pide después de responder (apagada por omisión).
     expect(background.scheduleAuthenticityAiSignal).toHaveBeenCalledWith(PRODUCT);
   });
@@ -168,5 +176,18 @@ describe("updateProductAction", () => {
     const next = await updateProductAction(state, editForm({ stockShown: "1", title: "" }));
     expect(next.fieldErrors?.title).toBeDefined();
     expect(next.stockShown).toBe("1");
+  });
+});
+
+describe("toggleProductStatusAction", () => {
+  it("al pausar o reactivar, los buscadores se enteran (IndexNow)", async () => {
+    session.requireOnboardedViewer.mockResolvedValue({ userId: SELLER, sellerProfileId: "s-1" });
+    service.setProductStatus.mockResolvedValue({ slug: "airpods-pro-2-abc123", status: "PAUSED" });
+
+    await expect(toggleProductStatusAction(PRODUCT, "PAUSED")).resolves.toEqual({
+      ok: true,
+      status: "PAUSED",
+    });
+    expect(indexNow.scheduleIndexNow).toHaveBeenCalledWith(["/producto/airpods-pro-2-abc123"]);
   });
 });

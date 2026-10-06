@@ -23,6 +23,11 @@ export const siteConfig = {
    * publica nada.
    */
   socialProfiles: [] as readonly string[],
+  /**
+   * Llave de IndexNow (avisar a Bing y otros buscadores cuando cambia un producto). Es pública por
+   * diseño: se sirve en `/indexnow.txt` para comprobar que el aviso viene de este sitio.
+   */
+  indexNowKey: "98f5bf3673a4cb86f52883c12242589a",
   locale: "es-MX",
   currency: "MXN",
   timeZone: "America/Mexico_City",

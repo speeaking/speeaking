@@ -80,6 +80,24 @@ export async function sitemapRows(kind: SitemapKind, page: number) {
   }
 }
 
+/** Lo que lista `llms.txt`: categorías con productos públicos y comunidades (las primeras 100). */
+export async function llmsData() {
+  const [categories, communities] = await Promise.all([
+    db.category.findMany({
+      where: publicCategories,
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+      take: 100,
+    }),
+    db.community.findMany({
+      select: { slug: true, name: true, description: true },
+      orderBy: { name: "asc" },
+      take: 100,
+    }),
+  ]);
+  return { categories, communities };
+}
+
 export function escapeXml(text: string) {
   return text.replace(
     /[<>&"']/g,

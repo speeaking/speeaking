@@ -1,5 +1,5 @@
 import { Users, Settings2 } from "lucide-react";
-import { pageMetadata, NO_INDEX } from "@/app/seo";
+import { communitySeo, pageMetadata, NO_INDEX } from "@/app/seo";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -27,8 +27,7 @@ export async function generateMetadata({ params }: PageProps<"/c/[slug]">): Prom
   const community = await getCommunity((await params).slug);
   return community
     ? pageMetadata({
-        title: `${community.name}: comunidad`,
-        description: community.description,
+        ...communitySeo(community),
         path: `/c/${encodeURIComponent(community.slug)}`,
       })
     : { robots: NO_INDEX };
