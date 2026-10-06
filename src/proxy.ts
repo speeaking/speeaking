@@ -2,6 +2,7 @@ import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 import { contentSecurityPolicy, createNonce, NONCE_HEADER, storageOrigin } from "@/lib/csp";
 import { AUTH_COOKIE_PREFIX, PROTECTED_PREFIXES } from "@/modules/identity/constants";
+import { tiktokPixelId } from "@/modules/marketing/ad-pixel";
 
 /**
  * Dos trabajos antes de renderizar:
@@ -32,6 +33,11 @@ export function proxy(request: NextRequest) {
     storageOrigin: storageOrigin(process.env.STORAGE_DRIVER, process.env.S3_ENDPOINT),
     googleOAuthEnabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     turnstileEnabled: Boolean(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY),
+    tiktokPixelEnabled:
+      tiktokPixelId({
+        TIKTOK_PIXEL_ID: process.env.TIKTOK_PIXEL_ID,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+      }) !== null,
   });
   const requestHeaders = new Headers(request.headers);
   // `set` pisa lo que mande el cliente: el nonce y la política solo los decide el servidor.

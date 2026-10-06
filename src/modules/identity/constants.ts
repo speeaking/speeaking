@@ -26,7 +26,8 @@ export const LEGAL_VERSIONS = {
   // 2026-09-30: saldo solo de tiendas y registro agregado de la demanda de simulaciones (ADR-046).
   // 2026-10-01: «Contexto» (ADR-060), buscar con una foto (ADR-061), videos sin ubicación (ADR-062)
   // y colaboraciones con tiendas (ADR-063).
-  privacyNotice: "2026-10-01",
+  // 2026-10-06: medición de anuncios con el pixel de TikTok, solo con permiso (ADR-072).
+  privacyNotice: "2026-10-06",
   personalization: "2026-09-24",
   // Texto del ajuste «Aparecer en sugerencias». 2026-09-26: con quienes se siguen mutuamente, a quién
   // sigues cuenta como señal sin decir quién (ADR-030, SEC-17; SEC-34 pedía subirla).

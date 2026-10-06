@@ -2,6 +2,8 @@ import type { Metadata, Route } from "next";
 import { redirect } from "next/navigation";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { OnboardingForm } from "@/modules/identity/components/onboarding-form";
+import { RegistrationEvent } from "@/modules/marketing/components/registration-event";
+import { configuredTikTokPixel } from "@/modules/marketing/server";
 import {
   hasLegalConsents,
   listCommunities,
@@ -42,12 +44,16 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/bienv
   const preselected = join.filter((slug) => known.has(slug));
 
   return (
-    <OnboardingForm
-      communities={communities}
-      suggestedUsername={suggestedUsername}
-      defaultName={viewer.profile?.displayName ?? viewer.name}
-      preselected={preselected}
-      needsLegalConsent={!legalAccepted}
-    />
+    <>
+      {/* Aquí solo llega quien aún no termina la bienvenida: una cuenta recién creada (ADR-072). */}
+      {configuredTikTokPixel() ? <RegistrationEvent /> : null}
+      <OnboardingForm
+        communities={communities}
+        suggestedUsername={suggestedUsername}
+        defaultName={viewer.profile?.displayName ?? viewer.name}
+        preselected={preselected}
+        needsLegalConsent={!legalAccepted}
+      />
+    </>
   );
 }

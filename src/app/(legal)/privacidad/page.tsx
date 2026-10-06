@@ -13,6 +13,10 @@ export const metadata: Metadata = { title: "Aviso de privacidad" };
 // sube LEGAL_VERSIONS.privacyNotice.
 const AI_PROCESSOR = "[Proveedor de IA: nombre y país — pendiente]";
 
+// PENDIENTE (revisión legal): la empresa de TikTok con la que está la cuenta de anunciante y su país,
+// según el contrato que se aceptó al crear el pixel (ADR-072). No se inventa.
+const ADS_RECIPIENT = "[Empresa de TikTok de la cuenta de anunciante y país — pendiente]";
+
 // PENDIENTE (revisión legal, antes del lanzamiento): plazos máximos de conservación que el código aún
 // no aplica. Hoy esos registros no se borran solos: no se publica un plazo que no se cumple.
 const ACTIVITY_RETENTION =
@@ -40,6 +44,14 @@ export default function PrivacyNoticePage() {
           Qué cambió en esta versión
         </h2>
         <ul className="mt-2 flex flex-col gap-1">
+          <li>
+            La medición de nuestros anuncios en TikTok, solo si la permites y nunca en lo privado
+            (ver{" "}
+            <a className={SECTION_LINK} href="#medicion-de-anuncios">
+              «Medición de anuncios»
+            </a>
+            ).
+          </li>
           <li>
             Qué enviamos al buscar con una foto y que la foto no se guarda (ver{" "}
             <a className={SECTION_LINK} href="#buscar-con-una-foto">
@@ -110,9 +122,9 @@ export default function PrivacyNoticePage() {
         </li>
       </ul>
       <p>
-        No obtenemos datos de otras redes sociales ni de terceros para perfilarte. No usamos cookies
-        de publicidad ni de rastreo: solo la cookie de sesión y las necesarias para que la
-        plataforma funcione.
+        No obtenemos datos de otras redes sociales ni de terceros para perfilarte. Usamos la cookie
+        de sesión y las necesarias para que la plataforma funcione; la única de publicidad es la del
+        pixel de TikTok, y solo si la permites (ver «Medición de anuncios»).
       </p>
 
       <h2>Lo que es público</h2>
@@ -154,6 +166,10 @@ export default function PrivacyNoticePage() {
         <li>
           Medir y mejorar la plataforma con métricas agregadas (por ejemplo, cuántas veces se vio de
           verdad cada publicación y si un cambio al feed ayuda o estorba).
+        </li>
+        <li>
+          Medir si nuestros anuncios en TikTok traen personas a {siteConfig.name}, solo si lo
+          aceptas (ver «Medición de anuncios»).
         </li>
       </ul>
       <p>
@@ -418,6 +434,29 @@ export default function PrivacyNoticePage() {
         revisión de autenticidad se le muestra a quien vende.
       </p>
 
+      <h2 id="medicion-de-anuncios">Medición de anuncios</h2>
+      <p>
+        Anunciamos {siteConfig.name} en TikTok. Si lo permites en el aviso que aparece en las
+        páginas públicas (o en la página de{" "}
+        <a className={SECTION_LINK} href="/cookies#anuncios">
+          Cookies
+        </a>
+        ), cargamos el pixel de TikTok en la portada sin sesión, Comprar, los productos, las páginas
+        informativas, el registro y la bienvenida: nunca en tus mensajes, pedidos, perfiles ni en tu
+        feed. Sin tu permiso no se carga.
+      </p>
+      <p>
+        TikTok recibe qué página pública visitas, si terminaste de crear tu cuenta y datos técnicos
+        de tu navegador (dirección IP, tipo de navegador e identificadores guardados en cookies),
+        para saber si uno de nuestros anuncios trajo a alguien. No le mandamos tu nombre, correo ni
+        teléfono. TikTok trata esos datos bajo sus propias condiciones para anunciantes y su aviso
+        de privacidad, y puede hacerlo fuera de México.
+      </p>
+      <p>
+        Puedes cambiar tu decisión cuando quieras en Cookies: al no permitirlo dejamos de cargar el
+        pixel y borramos sus cookies de tu navegador. Lo que TikTok ya recibió lo resguarda TikTok.
+      </p>
+
       <h2>Cuánto tiempo guardamos tus datos</h2>
       <ul>
         <li>Tu cuenta, perfil y contenido: mientras tengas la cuenta.</li>
@@ -499,6 +538,10 @@ export default function PrivacyNoticePage() {
           publicaciones largas que alguien resume (ver «Contexto»).
         </li>
       </ul>
+      <p>
+        Transferencia, solo si la permites: a TikTok (<PendingData>{ADS_RECIPIENT}</PendingData>),
+        lo descrito en «Medición de anuncios», para medir nuestros anuncios.
+      </p>
       <p>
         Si alguno de estos proveedores procesa datos fuera de México, lo indicaremos aquí con su
         nombre y país. No vendemos tus datos.

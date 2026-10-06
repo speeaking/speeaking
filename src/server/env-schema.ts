@@ -74,6 +74,11 @@ export const serverEnvSchema = z
      */
     GOOGLE_CLIENT_ID: optional(z.string().min(20, "Debe tener al menos 20 caracteres.")),
     GOOGLE_CLIENT_SECRET: optional(z.string().min(16, "Debe tener al menos 16 caracteres.")),
+    /**
+     * Pixel de TikTok para medir la campaña (ADR-072): solo con permiso de quien visita y solo en
+     * páginas públicas, el registro y la bienvenida. Sin él no se carga nada ni se pregunta.
+     */
+    TIKTOK_PIXEL_ID: optional(z.string().regex(/^[A-Z0-9]{10,40}$/, "ID de pixel inválido.")),
     // Indexación pública activada. Local y previews llevan noindex (app/seo.ts).
     ALLOW_INDEXING: z.stringbool({ error: "Debe ser true o false." }).default(true),
     // Correo transaccional para recuperación de cuenta. Las dos variables o ninguna.

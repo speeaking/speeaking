@@ -865,8 +865,11 @@ o morales, te avisaremos de inmediato [1, art. 19], por correo y dentro de speea
 
 ### 13. Cookies y almacenamiento en tu navegador
 
-speeaking **no usa cookies de publicidad ni de rastreo**, ni píxeles, ni herramientas de analítica o
-publicidad de otras empresas. Las fuentes tipográficas se sirven desde nuestro propio sitio.
+speeaking no usa cookies de publicidad ni de rastreo **salvo el pixel de TikTok, y solo si lo
+permites** (ver «Medición de anuncios», ADR-072): se carga únicamente después de «Aceptar», en las
+páginas públicas, el registro y la bienvenida, nunca en tus mensajes, pedidos, perfiles ni en tu
+feed. No usamos otras herramientas de analítica o publicidad de otras empresas. Las fuentes
+tipográficas se sirven desde nuestro propio sitio.
 
 Esto es todo lo que guardamos en tu navegador:
 
@@ -1117,7 +1120,7 @@ Todos están fuera de México (§8.1).
 | Cookie `speeaking_bienvenida` de 10 min                                                        | `src/modules/feed/welcome.ts`, `src/modules/identity/onboarding-actions.ts`                                                    |
 | Tema en `localStorage` (next-themes)                                                           | `src/components/theme/theme-provider.tsx`                                                                                      |
 | «Ocultar» en `sessionStorage`                                                                  | `identity/components/consent-banner.tsx` (`dismissKey`), `discovery/components/people-suggestions-view.tsx` (`CLOSED_KEY`)     |
-| Sin terceros en el navegador; fuentes propias                                                  | `src/lib/csp.ts` (`connect-src 'self'`, `font-src 'self'`), `package.json`                                                     |
+| Sin terceros en el navegador salvo TikTok con permiso; fuentes propias                         | `src/lib/csp.ts` (TikTok solo con `TIKTOK_PIXEL_ID`), `src/modules/marketing/*` (ADR-072), `package.json`                      |
 | Registro sin casilla de 18 años; casilla de términos sin marcar                                | `identity/components/sign-up-form.tsx`                                                                                         |
 | Personalización **marcada** por omisión                                                        | `identity/components/onboarding-form.tsx` (`defaultChecked`); `prisma/schema.prisma` (`personalizationEnabled @default(true)`) |
 | Antes de terminar el registro, la actividad es anónima                                         | `analytics/personalization.ts` (`isPersonalizationEnabled`)                                                                    |

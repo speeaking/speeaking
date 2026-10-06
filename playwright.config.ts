@@ -49,6 +49,8 @@ export default defineConfig({
       AI_VISION_MODEL: "",
       GOOGLE_CLIENT_ID: "",
       GOOGLE_CLIENT_SECRET: "",
+      // Sin pixel de TikTok (ADR-072): la suite nunca manda eventos reales a la campaña.
+      TIKTOK_PIXEL_ID: "",
     },
   },
 });

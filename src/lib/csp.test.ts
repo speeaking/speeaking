@@ -78,6 +78,30 @@ describe("contentSecurityPolicy (SEC-06)", () => {
     );
   });
 
+  it("pixel de TikTok (ADR-072): solo su origen, y solo con el pixel configurado", () => {
+    const tiktok = "https://analytics.tiktok.com";
+    const withPixel = directives(
+      contentSecurityPolicy("abc", { isDev: false, isHttps: true, tiktokPixelEnabled: true }),
+    );
+
+    // Su script lo inserta el nuestro (strict-dynamic); el origen queda de respaldo sin CSP 3.
+    expect(withPixel.get("script-src")).toEqual([
+      "'self'",
+      "'nonce-abc'",
+      "'strict-dynamic'",
+      tiktok,
+    ]);
+    expect(withPixel.get("connect-src")).toEqual(["'self'", tiktok]);
+    expect(withPixel.get("img-src")).toEqual(["'self'", "data:", "blob:", tiktok]);
+    // Nada más se abre: ni marcos ni formularios.
+    expect(withPixel.has("frame-src")).toBe(false);
+    expect(withPixel.get("form-action")).toEqual(["'self'"]);
+    // Sin pixel, la política no cambia.
+    for (const name of ["script-src", "connect-src", "img-src"]) {
+      expect(production.get(name)).not.toContain(tiktok);
+    }
+  });
+
   it("sin https no sube las peticiones (rompería `next start` en http://localhost)", () => {
     const http = directives(contentSecurityPolicy("abc", { isDev: false, isHttps: false }));
 

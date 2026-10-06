@@ -272,6 +272,7 @@ eso incluye `APP_URL` (si falta valdría localhost) y `TRUSTED_PROXY_HOPS` (si f
 | `SUPPORT_URL`                  | Liga https de apoyo (Mercado Pago, PayPal.me, Ko-fi), ADR-048      | No      | No (sin ella, `/apoya` explica los costos sin botón)           |
 | `GOOGLE_CLIENT_ID`             | Paso 6 bis                                                         | No      | No (las dos o ninguna)                                         |
 | `GOOGLE_CLIENT_SECRET`         | Paso 6 bis                                                         | Sí      | No (las dos o ninguna)                                         |
+| `TIKTOK_PIXEL_ID`              | El ID del pixel de TikTok (ADR-072), solo en **Production**        | No      | No (sin él no hay pixel ni aviso)                              |
 
 No pongas `NODE_ENV` (Vercel ya usa `production`), ni `STORAGE_LOCAL_ROOT`, ni `ALLOW_LOCAL_STORAGE`:
 en Vercel el disco es efímero y la app rechaza guardar fotos en él aunque la bandera diga `true`.

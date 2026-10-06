@@ -19,6 +19,7 @@ describe("Aviso de privacidad", () => {
       ["«Contexto»", "contexto"],
       ["«Colaboraciones con tiendas»", "colaboraciones"],
       ["«Videos»", "videos"],
+      ["«Medición de anuncios»", "medicion-de-anuncios"],
     ] as const) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", `#${id}`);
       expect(document.getElementById(id)).toHaveRole("heading");
@@ -116,19 +117,58 @@ describe("Términos y condiciones", () => {
 });
 
 describe("Cookies", () => {
-  it("lista cada cookie real con su duración, dice que no hay de terceros y enlaza al aviso", () => {
+  it("lista cada cookie real con su duración y enlaza al aviso", () => {
     render(<CookiesPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Cookies" })).toBeInTheDocument();
     expect(document.body).toHaveTextContent(`actualizado el ${COOKIES_NOTICE_UPDATED}`);
-    for (const name of ["speeaking… (sesión)", "speeaking-nav", "speeaking_bienvenida"]) {
+    for (const name of [
+      "speeaking… (sesión)",
+      "speeaking-nav",
+      "speeaking_bienvenida",
+      "speeaking_anuncios",
+      "_ttp, ttcsid… (TikTok)",
+    ]) {
       expect(screen.getByRole("cell", { name })).toBeInTheDocument();
     }
-    expect(document.body).toHaveTextContent("No hay cookies de terceros, ni de publicidad");
-    expect(document.body).toHaveTextContent("no te pedimos «aceptar cookies» al entrar");
-    expect(screen.getAllByRole("link", { name: "aviso de privacidad" })[0]).toHaveAttribute(
-      "href",
+    expect(
+      screen
+        .getAllByRole("link", { name: "aviso de privacidad" })
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/privacidad#medicion-de-anuncios",
       "/privacidad#publicaciones-en-pantalla",
+      "/privacidad",
+    ]);
+  });
+
+  it("dice la verdad sobre el pixel de TikTok (ADR-072): solo si aceptas y solo en lo público", () => {
+    render(<CookiesPage />);
+
+    expect(document.getElementById("anuncios")).toHaveRole("heading");
+    const page = document.body;
+    expect(page).toHaveTextContent("Solo se carga si aceptas");
+    expect(page).toHaveTextContent("nunca en tus mensajes, pedidos, perfiles ni en tu feed");
+    // Ya no promete lo que dejó de ser cierto.
+    expect(page).not.toHaveTextContent("No hay cookies de terceros, ni de publicidad");
+    expect(page).not.toHaveTextContent("no hay nada opcional que aceptar");
+    // Desde aquí se cambia la decisión.
+    expect(
+      screen.getByRole("group", { name: "Tu decisión sobre la medición de anuncios" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("Aviso de privacidad: medición de anuncios (ADR-072)", () => {
+  it("nombra a TikTok, qué recibe, que es opcional y que no vale para lo privado", () => {
+    render(<PrivacyNoticePage />);
+
+    const page = document.body;
+    expect(page).not.toHaveTextContent("No usamos cookies de publicidad ni de rastreo: solo");
+    expect(page).toHaveTextContent(
+      "Medir si nuestros anuncios en TikTok traen personas a speeaking, solo si lo aceptas",
     );
+    expect(page).toHaveTextContent("nunca en tus mensajes, pedidos, perfiles ni en tu feed");
+    expect(page).toHaveTextContent("TikTok recibe");
   });
 });

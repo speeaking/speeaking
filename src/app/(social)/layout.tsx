@@ -1,6 +1,8 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { SocialAside } from "@/components/layout/social-aside";
 import { getNavCommunities, getViewerSummary } from "@/modules/identity/session";
+import { AdPixel } from "@/modules/marketing/components/ad-pixel";
+import { configuredTikTokPixel } from "@/modules/marketing/server";
 
 /** `modal`: slot paralelo (@modal) para abrir publicaciones en capa sobre el feed (ADR-052). */
 export default async function SocialLayout({ children, modal }: LayoutProps<"/">) {
@@ -9,6 +11,7 @@ export default async function SocialLayout({ children, modal }: LayoutProps<"/">
     <AppShell viewer={viewer} communities={communities} aside={<SocialAside viewer={viewer} />}>
       {children}
       {modal}
+      <AdPixel pixelId={configuredTikTokPixel()} signedIn={viewer !== null} />
     </AppShell>
   );
 }

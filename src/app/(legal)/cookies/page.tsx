@@ -4,13 +4,15 @@ import { NAV_COOKIE } from "@/components/layout/nav-cookie";
 import { siteConfig } from "@/config/site";
 import { WELCOME_COOKIE } from "@/modules/feed/welcome";
 import { AUTH_COOKIE_PREFIX } from "@/modules/identity/constants";
+import { AD_CONSENT_COOKIE } from "@/modules/marketing/ad-pixel";
+import { AdConsentControl } from "@/modules/marketing/components/ad-consent-control";
 
 export const metadata: Metadata = { title: "Cookies" };
 
 // BORRADOR: requiere revisión legal antes del lanzamiento público. Es el inventario REAL del código
 // (docs/legal/00-marco-legal-2026.md §2.6): si se agrega una cookie, un almacenamiento o un proveedor
 // externo, se actualiza aquí antes de publicarlo.
-export const COOKIES_NOTICE_UPDATED = "2026-10-01";
+export const COOKIES_NOTICE_UPDATED = "2026-10-06";
 
 const COOKIES = [
   {
@@ -31,6 +33,19 @@ const COOKIES = [
     duration: "10 minutos.",
     kind: "Preferencia",
   },
+  {
+    name: AD_CONSENT_COOKIE,
+    purpose: "Recordar si permitiste o no la medición de anuncios.",
+    duration: "1 año.",
+    kind: "Preferencia",
+  },
+  {
+    name: "_ttp, ttcsid… (TikTok)",
+    purpose:
+      "Las pone el pixel de TikTok para saber si llegaste desde uno de nuestros anuncios. Solo si lo permites.",
+    duration: "Las fija TikTok (la de _ttp, hasta 13 meses).",
+    kind: "Medición de anuncios (opcional)",
+  },
 ] as const;
 
 const SECTION_LINK = "font-semibold text-primary-text underline underline-offset-4";
@@ -44,54 +59,80 @@ export default function CookiesPage() {
       <h1 className="text-3xl font-extrabold">Cookies</h1>
       <p>
         Una cookie es un dato pequeño que el navegador guarda para que un sitio te reconozca entre
-        una página y otra. {siteConfig.name} usa solo las suyas, para que la plataforma funcione y
-        recuerde tus preferencias. Aquí están todas, con nombre y duración.
+        una página y otra. {siteConfig.name} usa las suyas para que la plataforma funcione y
+        recuerde tus preferencias, y las del pixel de TikTok solo si lo permites. Aquí están todas,
+        con nombre y duración.
       </p>
 
       <h2 id="cuales">Cuáles usamos</h2>
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="text-left">
-            <th scope="col" className="border-b py-2 pr-3 font-semibold">
-              Cookie
-            </th>
-            <th scope="col" className="border-b py-2 pr-3 font-semibold">
-              Para qué
-            </th>
-            <th scope="col" className="border-b py-2 pr-3 font-semibold">
-              Dura
-            </th>
-            <th scope="col" className="border-b py-2 font-semibold">
-              Tipo
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {COOKIES.map((cookie) => (
-            <tr key={cookie.name} className="align-top">
-              <td className="border-b py-2 pr-3 font-mono text-xs">{cookie.name}</td>
-              <td className="border-b py-2 pr-3">{cookie.purpose}</td>
-              <td className="border-b py-2 pr-3">{cookie.duration}</td>
-              <td className="border-b py-2">{cookie.kind}</td>
+      {/* En el celular la tabla se desliza sola: la página no se sale de la pantalla. */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[30rem] border-collapse text-sm">
+          <thead>
+            <tr className="text-left">
+              <th scope="col" className="border-b py-2 pr-3 font-semibold">
+                Cookie
+              </th>
+              <th scope="col" className="border-b py-2 pr-3 font-semibold">
+                Para qué
+              </th>
+              <th scope="col" className="border-b py-2 pr-3 font-semibold">
+                Dura
+              </th>
+              <th scope="col" className="border-b py-2 font-semibold">
+                Tipo
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {COOKIES.map((cookie) => (
+              <tr key={cookie.name} className="align-top">
+                <td className="border-b py-2 pr-3 font-mono text-xs">{cookie.name}</td>
+                <td className="border-b py-2 pr-3">{cookie.purpose}</td>
+                <td className="border-b py-2 pr-3">{cookie.duration}</td>
+                <td className="border-b py-2">{cookie.kind}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="anuncios">Medición de anuncios (TikTok)</h2>
+      <p>
+        Anunciamos {siteConfig.name} en TikTok. Para saber si un anuncio trajo a alguien usamos el
+        pixel de TikTok. Solo se carga si aceptas, y solo en las páginas públicas (la portada sin
+        sesión, Comprar, los productos y las páginas informativas), el registro y la bienvenida:
+        nunca en tus mensajes, pedidos, perfiles ni en tu feed.
+      </p>
+      <p>
+        Si lo permites, TikTok recibe qué página pública visitas y, cuando terminas de crear tu
+        cuenta, que te registraste, junto con datos técnicos de tu navegador (dirección IP, tipo de
+        navegador y sus cookies). No le mandamos tu nombre, correo ni teléfono. Más detalle en el{" "}
+        <Link href="/privacidad#medicion-de-anuncios" className={SECTION_LINK}>
+          aviso de privacidad
+        </Link>
+        .
+      </p>
+      <AdConsentControl />
+      <p>
+        Si eliges «No permitir», dejamos de cargar el pixel y borramos sus cookies de este
+        navegador.
+      </p>
 
       <h2 id="que-no">Lo que no hacemos</h2>
       <ul>
-        <li>No hay cookies de terceros, ni de publicidad, ni píxeles de seguimiento.</li>
         <li>
-          No te seguimos en otros sitios ni compramos datos de nadie. Lo único que medimos ocurre
-          dentro de {siteConfig.name}: qué publicaciones ves en pantalla, como explica el{" "}
+          No te seguimos en otros sitios ni compramos datos de nadie. Fuera del pixel de TikTok
+          (solo si lo permites), lo que medimos ocurre dentro de {siteConfig.name}: qué
+          publicaciones ves en pantalla, como explica el{" "}
           <Link href="/privacidad#publicaciones-en-pantalla" className={SECTION_LINK}>
             aviso de privacidad
           </Link>
           .
         </li>
         <li>
-          Por eso no te pedimos «aceptar cookies» al entrar: no hay nada opcional que aceptar. Si
-          algún día agregamos una herramienta externa que las use, te lo pediremos antes.
+          No cargamos nada opcional sin preguntarte antes. Si agregamos otra herramienta externa que
+          use cookies, también te lo pediremos antes.
         </li>
       </ul>
 

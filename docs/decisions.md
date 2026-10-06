@@ -2173,3 +2173,47 @@ fallaban a veces con toda la suite corriendo:
   un solo checkout y una sola reserva de stock. También la nube gris de
   Cloudflare, un solo origen, Google en el aviso de privacidad antes de activarlo, costos de imágenes y
   videos, y verificaciones nuevas.
+
+## ADR-072 · Pixel de TikTok para medir la campaña: solo con permiso y nunca en lo privado
+
+**Contexto.** El fundador prepara una campaña en TikTok con destino `/registro`. TikTok no deja usar
+el pixel (ID `DB2LL7RC77UA626EHMOG`, solo de navegador, sin «Automatic Advanced Matching») hasta
+que reciba eventos desde speeaking.com. La guía que acompañaba los archivos lo cargaba en todas las
+páginas sin preguntar, pero el aviso de privacidad y `/cookies` prometían «sin cookies de
+publicidad ni píxeles de seguimiento». Instalarlo así volvía falsas esas promesas (LFPDPPP,
+Profeco) y, en una red social, mandaba a TikTok qué ve cada persona: mensajes, pedidos, perfiles.
+
+**Decisión.** El fundador eligió la opción recomendada:
+
+- **Solo con permiso.** Un aviso pequeño, sin bloquear la pantalla, con «Aceptar / No, gracias»
+  y «Más información». Sin decidir o con «no», no se carga nada. La decisión vive en una cookie
+  propia (`speeaking_anuncios`, 1 año) y se cambia en `/cookies`; al decir «no» se borran las
+  cookies de TikTok de ese navegador. Se usa el modo de consentimiento de TikTok
+  (`holdConsent` / `grantConsent` / `revokeConsent`).
+- **Solo en lo público.** Portada sin sesión, Comprar, productos, páginas informativas,
+  `/registro` y `/bienvenida` (`pixelAllowedOn`). Con sesión, únicamente la bienvenida.
+- **Registro completo:** `CompleteRegistration` en `/bienvenida`, que solo ve quien aún no termina
+  la bienvenida (una cuenta recién creada), una vez por navegador.
+- **Guardián de navegación** (`navigation-guard.ts`). La prueba en un Chrome real mostró que el
+  script de TikTok detecta solo los cambios de URL de la app y mandaba `Pageview` de `/c/hogar` y
+  del feed con sesión antes de que nuestro código le retirara el permiso. Con el pixel cargado,
+  cualquier navegación hacia una página no permitida (clic en un enlace, `pushState` de una
+  redirección, atrás/adelante) se vuelve una carga completa: el documento con TikTok se descarta y
+  la página privada abre en uno nuevo. El guardián queda siempre por fuera de `pushState`, aunque
+  TikTok lo envuelva después. Verificado de nuevo en Chrome: 0 eventos de páginas privadas.
+- **Sin ID no hay nada.** `TIKTOK_PIXEL_ID` (opcional, solo Production; nunca en vistas previas de
+  Vercel). Desarrollo y E2E corren sin pixel. El cargador es el código base de TikTok escrito en
+  TypeScript, sin script en línea: lo autoriza `strict-dynamic`. La CSP suma
+  `https://analytics.tiktok.com` (script de respaldo, `connect-src`, `img-src`) solo con el ID; es
+  el único dominio al que el pixel se conectó en la prueba.
+- **Textos.** Aviso de privacidad `2026-10-06`: finalidad secundaria, sección «Medición de
+  anuncios» y transferencia a TikTok. La empresa de TikTok y su país van marcados como pendientes
+  para el abogado. `/cookies` con el inventario real y el control.
+
+**Consecuencias.** `src/modules/marketing/` (reglas puras, cargador, guardián y componentes);
+`src/lib/csp.ts`; layouts social y de registro; `/bienvenida`. Quien tiene sesión ve el aviso de
+documentos actualizados (nueva versión del aviso de privacidad). Con permiso, ir de una página
+pública a una privada recarga la página, y nunca al revés. Pendiente del fundador: poner
+`TIKTOK_PIXEL_ID` en Vercel Production y desplegar. En TikTok Events Manager, dejar apagado
+«Automatic Advanced Matching»; los eventos automáticos de interacción solo pueden ocurrir en las
+páginas permitidas.

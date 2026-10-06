@@ -275,8 +275,15 @@ Inventario real (sección 1) y lo que conviene decir:
 | «Ocultar» del aviso y de sugerencias (`sessionStorage`) | Almacenamiento de la pestaña | Preferencia                                | Se borra al cerrar la pestaña.                                                                                           |
 | Registro de impresiones visibles (JS propio → servidor) | Recolección automática       | No (medición)                              | Ya descrito en «Publicaciones que ves en pantalla». Se limita con la personalización. Lineamiento Trigésimo Primero [4]. |
 
-No hay cookies de terceros, píxeles ni SDK de publicidad. **Mantenerlo así**: agregar Sentry, una
-analítica externa o un proveedor de pagos es un encargado nuevo, cambia el aviso y cambia la CSP.
+**Excepción (2026-10-06, ADR-072): pixel de TikTok para medir la campaña.** Solo con
+consentimiento previo (aviso «Aceptar / No, gracias»; sin decidir no se carga nada), solo en
+páginas públicas, el registro y la bienvenida (nunca mensajes, pedidos, perfiles ni el feed con
+sesión) y sin «Automatic Advanced Matching». Cookies: la propia `speeaking_anuncios` (la decisión,
+1 año) y las de TikTok (`_ttp`, `ttcsid…`). Es una **transferencia** a TikTok, que trata los datos
+como responsable bajo sus términos para anunciantes: va en el aviso, «Medición de anuncios» y
+«Encargados y transferencias». La empresa de TikTok y su país quedan **[VERIFICAR CON ABOGADO]**.
+Fuera de eso no hay cookies de terceros ni SDK de publicidad: agregar Sentry, otra analítica externa
+o un proveedor de pagos es un encargado nuevo, cambia el aviso y cambia la CSP.
 
 ### 2.7 Encargados, remisiones y transferencias (incluidas las internacionales)
 
