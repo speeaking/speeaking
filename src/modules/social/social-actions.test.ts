@@ -403,6 +403,23 @@ describe("reactAction (ADR-054)", () => {
     expect(notify.notifyReaction).not.toHaveBeenCalled();
   });
 
+  it("sin acceso, quitar la propia reacción funciona pero no dice el total ni el resumen", async () => {
+    // ADR-054: la reacción es de quien la puso. Sin acceso (p. ej. tras dejar de ser amigos) se
+    // puede quitar, pero la respuesta no revela nada de la publicación: `count: -1` hace que la
+    // interfaz conserve lo que ya tenía.
+    db.post.findFirst.mockResolvedValueOnce(null);
+    db.tx.like.findUnique.mockResolvedValue({ kind: "LIKE" });
+    db.tx.post.update.mockResolvedValue({ likeCount: 3, authorId: OTHER });
+
+    await expect(reactAction(TARGET, null)).resolves.toEqual({
+      ok: true,
+      kind: null,
+      count: -1,
+      top: [],
+    });
+    expect(db.tx.like.delete).toHaveBeenCalledWith({ where });
+  });
+
   it("cambiar de reacción actualiza el tipo sin mover el contador y lo dice en el evento", async () => {
     db.tx.like.findUnique.mockResolvedValue({ kind: "LIKE" });
     db.tx.post.findUniqueOrThrow.mockResolvedValue({ likeCount: 5 });
@@ -572,6 +589,9 @@ describe("límites de frecuencia (SEC-15)", () => {
     await recordShareAction(TARGET, "copy");
 
     expect(checkSocialLimit).toHaveBeenCalledWith("share", null);
+    // SEC-15: el límite va antes de cualquier consulta; si no, sin cuenta se podían pedir lecturas
+    // a la base sin tope con publicaciones que no existen o no se ven.
+    expect(db.post.findFirst).not.toHaveBeenCalled();
     expect(track).not.toHaveBeenCalled();
   });
 
@@ -596,6 +616,7 @@ describe("límites de frecuencia (SEC-15)", () => {
 
 describe("argumentos que llegan del cliente (SEC-38)", () => {
   it("una superficie desconocida se registra como FEED en lugar de romper el evento", async () => {
+    db.post.findFirst.mockResolvedValueOnce({ id: TARGET });
     db.tx.like.findUnique.mockResolvedValue(null);
     db.tx.post.update.mockResolvedValue({ likeCount: 1 });
 

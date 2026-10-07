@@ -55,7 +55,8 @@ const reactionSchema = z.enum(ReactionKind).nullable();
 /**
  * Reaccionar a una publicación (ADR-054): una reacción por persona. Repetir la misma la quita (y
  * `null` también); otra distinta la cambia sin mover el total. El contador y el resumen se calculan
- * en la misma transacción. Quitar funciona aunque la publicación ya no esté visible.
+ * en la misma transacción. Reaccionar o cambiar exige poder verla (audiencia y moderación); quitar
+ * la propia funciona aunque ya no esté visible, y entonces no devuelve su total ni su resumen.
  */
 export async function reactAction(
   postId: string,
@@ -70,13 +71,13 @@ export async function reactAction(
   const next = parsed.data;
   const limited = await checkSocialLimit("like", viewer.userId);
   if (!limited.ok) return { ok: false, error: limited.error };
-  // Reaccionar, cambiar o leer el contador exige poder ver la publicación (su audiencia); si no,
-  // la consulta lanza P2025 y la transacción se deshace. Quitar la propia reacción, no.
   const readablePost = {
     id: postId,
     status: "PUBLISHED" as const,
     AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer.userId)],
   };
+  const accessible =
+    (await db.post.findFirst({ where: readablePost, select: { id: true } })) !== null;
 
   const key = { userId: viewer.userId, postId };
   const likeCount = { select: { likeCount: true, authorId: true } } as const;
@@ -87,10 +88,13 @@ export async function reactAction(
         select: { kind: true },
       });
       const previous = existing?.kind ?? null;
+      const removing = previous !== null && (next === null || next === previous);
+      // Sin acceso solo se puede quitar la reacción propia (la persona decide sobre lo suyo).
+      if (!accessible && !removing) return null;
       let count: number;
       let active: ReactionKind | null;
       let authorId: string;
-      if (previous !== null && (next === null || next === previous)) {
+      if (removing) {
         await tx.like.delete({ where: { userId_postId: key } });
         const post = await tx.post.update({
           where: { id: postId },
@@ -122,9 +126,12 @@ export async function reactAction(
         authorId = post.authorId;
         active = null;
       }
+      // Sin acceso no se dice nada de la publicación: `-1` hace que la interfaz conserve lo suyo.
+      if (!accessible) return { previous, kind: active, count: -1, top: [], authorId };
       const top = (await reactionTops(tx, [postId])).get(postId) ?? [];
       return { previous, kind: active, count, top, authorId };
     });
+    if (!result) return { ok: false, error: "Esta publicación ya no está disponible." };
     if (result.kind !== result.previous) {
       const reaction = result.kind ?? result.previous;
       track({
