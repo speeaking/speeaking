@@ -45,6 +45,14 @@ export default function PrivacyNoticePage() {
         </h2>
         <ul className="mt-2 flex flex-col gap-1">
           <li>
+            Si eliges «Continuar con Google», qué nos envía Google LLC (Estados Unidos) y para qué
+            lo usamos (ver{" "}
+            <a className={SECTION_LINK} href="#entrar-con-google">
+              «Entrar con Google»
+            </a>
+            ).
+          </li>
+          <li>
             La medición de nuestros anuncios en TikTok, solo si la permites y nunca en lo privado
             (ver{" "}
             <a className={SECTION_LINK} href="#medicion-de-anuncios">
@@ -92,6 +100,10 @@ export default function PrivacyNoticePage() {
       <h2>Datos que tratamos</h2>
       <ul>
         <li>Identificación y contacto: nombre, correo, nombre de usuario y foto de perfil.</li>
+        <li>
+          Si entras con Google: tu nombre, tu correo, la liga a tu foto de perfil de Google y un
+          identificador de tu cuenta de Google (ver «Entrar con Google»).
+        </li>
         <li>
           Datos técnicos de tu conexión: dirección IP y tipo de navegador o dispositivo de cada
           sesión, para mantenerla abierta, mostrarte tus sesiones y proteger tu cuenta. La IP
@@ -178,6 +190,24 @@ export default function PrivacyNoticePage() {
         también hacia atrás, tu actividad deja de estar ligada a tu cuenta y solo se cuenta de forma
         anónima y agregada (sin tus búsquedas, sin datos que te identifiquen y con la hora
         redondeada). En Ajustes también puedes ver y borrar tu historial de búsqueda.
+      </p>
+
+      {/* ADR-049 y docs/deploy.md 6 bis.0. Alcances por omisión de Better Auth (openid, email,
+          profile); `sanitizeUserWrite` deja `image` vacía. */}
+      <h2 id="entrar-con-google">Entrar con Google</h2>
+      <p>
+        Si eliges «Continuar con Google» para crear tu cuenta o entrar, Google LLC, en Estados
+        Unidos, confirma que eres tú y nos envía tu nombre, tu correo (que Google ya verificó), la
+        liga a tu foto de perfil de Google y un identificador de tu cuenta de Google. Solo pedimos
+        esos datos básicos (los permisos «openid», «email» y «profile»): nunca vemos tu contraseña
+        de Google, tus contactos, tus correos ni tus archivos.
+      </p>
+      <p>
+        Los usamos solo para crear tu cuenta y dejarte entrar. Guardamos tu nombre, tu correo, el
+        identificador y los datos de acceso que Google entrega al entrar, para reconocerte la
+        próxima vez; no usamos la foto de Google como tu foto de perfil. Google sabe que usaste tu
+        cuenta para entrar a {siteConfig.name}; lo que Google hace con sus propios datos se rige por
+        su aviso de privacidad. Si prefieres no usar Google, crea tu cuenta con correo y contraseña.
       </p>
 
       <h2 id="publicaciones-en-pantalla">Publicaciones que ves en pantalla</h2>
@@ -460,6 +490,10 @@ export default function PrivacyNoticePage() {
       <h2>Cuánto tiempo guardamos tus datos</h2>
       <ul>
         <li>Tu cuenta, perfil y contenido: mientras tengas la cuenta.</li>
+        <li>
+          Si entras con Google, el identificador y los datos de acceso de Google: mientras tengas la
+          cuenta.
+        </li>
         <li>Tus sesiones: hasta que cierres sesión o venzan (30 días sin uso).</li>
         <li>
           Los registros de intentos por IP: se borran al terminar su ventana (de minutos a unos
@@ -527,6 +561,11 @@ export default function PrivacyNoticePage() {
         <li>
           Correo: cuando te enviemos correos (por ejemplo, para verificar tu cuenta), el proveedor
           de envío recibirá tu correo y el mensaje.
+        </li>
+        <li>
+          Inicio de sesión con Google (solo si eliges «Continuar con Google»): Google LLC, en
+          Estados Unidos. Confirma que eres tú y nos envía tu nombre, tu correo y tu foto de perfil,
+          solo para autenticar tu cuenta (ver «Entrar con Google»).
         </li>
         <li>
           Inteligencia artificial: un proveedor externo de modelos de lenguaje por API, pagado por

@@ -74,10 +74,15 @@ export default function SecurityPage() {
 
         <section className="flex flex-col gap-2 rounded-3xl border bg-card p-5">
           <h2 className="font-heading text-lg font-bold">Quién responde</h2>
+          {/* Solo lo publicado: el aviso aún dice que el responsable y el medio para ejercer los
+              derechos «se completarán antes del lanzamiento». Al llenarlos, esto dice dónde están. */}
           <p className="text-sm text-ink-2">
-            Una persona, no un buzón automático. El aviso de privacidad dice quién es la persona
-            responsable de tus datos y cómo ejercer tus derechos de acceso, rectificación,
-            cancelación y oposición; los términos, las reglas de la comunidad.
+            Una persona, no un buzón automático. El aviso de privacidad explica qué datos tratamos,
+            para qué y tus derechos de acceso, rectificación, cancelación y oposición. El nombre de
+            la persona responsable de tus datos, su domicilio y el medio para ejercer esos derechos
+            todavía no están publicados: se agregarán al aviso antes del lanzamiento. Mientras
+            tanto, desde Ajustes puedes borrar tu historial de búsqueda, tus fotos de prueba o tu
+            cuenta completa. Los términos tienen las reglas de la comunidad.
           </p>
           <p className="flex flex-wrap gap-3 text-sm font-semibold text-primary-text">
             <Link href={"/privacidad" as Route} className="underline-offset-2 hover:underline">

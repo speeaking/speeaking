@@ -15,6 +15,7 @@ describe("Aviso de privacidad", () => {
       screen.getByText(`Borrador para revisión legal · versión ${LEGAL_VERSIONS.privacyNotice}`),
     ).toBeInTheDocument();
     for (const [name, id] of [
+      ["«Entrar con Google»", "entrar-con-google"],
       ["«Buscar con una foto»", "buscar-con-una-foto"],
       ["«Contexto»", "contexto"],
       ["«Colaboraciones con tiendas»", "colaboraciones"],
@@ -24,6 +25,24 @@ describe("Aviso de privacidad", () => {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", `#${id}`);
       expect(document.getElementById(id)).toHaveRole("heading");
     }
+  });
+
+  it("nombra a Google LLC (EE. UU.) en «Entrar con Google» y solo lo que pide la app", () => {
+    render(<PrivacyNoticePage />);
+
+    const page = document.body;
+    // docs/deploy.md 6 bis.0: el aviso nombra a Google mientras el botón exista. Better Auth pide
+    // solo `openid`, `email` y `profile` (server/auth.ts no agrega alcances).
+    expect(page).toHaveTextContent(
+      "Si eliges «Continuar con Google» para crear tu cuenta o entrar, Google LLC, en Estados Unidos,",
+    );
+    expect(page).toHaveTextContent("«openid», «email» y «profile»");
+    // `sanitizeUserWrite` deja `image` vacía: la liga a la foto llega, pero no es tu foto de perfil.
+    expect(page).toHaveTextContent("no usamos la foto de Google como tu foto de perfil");
+    // También en la lista de encargados, con su país.
+    expect(page).toHaveTextContent(
+      "Inicio de sesión con Google (solo si eliges «Continuar con Google»): Google LLC, en Estados Unidos.",
+    );
   });
 
   it("promete solo lo que hacen la búsqueda por foto, los videos y las colaboraciones", () => {
@@ -80,6 +99,23 @@ describe("Términos y condiciones", () => {
     expect(screen.getByRole("heading", { name: "Qué cambió en esta versión" })).toBeInTheDocument();
     expect(screen.getByText(/nunca decide sola\. Si declaraste/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Cambios" })).toBeInTheDocument();
+  });
+
+  it("«Pruébatelo» lo paga la tienda o la plataforma, nunca quien compra (ADR-046)", () => {
+    render(<TermsPage />);
+
+    const page = document.body;
+    // Mismo orden que `tryon/funding.ts`: saldo de la tienda con tope del día → cortesía → nada.
+    expect(page).toHaveTextContent("Quien compra nunca paga por «Pruébatelo»");
+    expect(page).toHaveTextContent(
+      "Cada simulación la paga la tienda que vende el producto principal, desde su saldo,",
+    );
+    expect(page).toHaveTextContent("con las pruebas de cortesía que le da a cada tienda");
+    expect(page).toHaveTextContent("la simulación no se genera");
+    expect(page).toHaveTextContent("Solo las tiendas tienen saldo");
+    // El modelo anterior (ADR-044) ya no existe: ni simulaciones gratis al mes ni saldo personal.
+    expect(page).not.toHaveTextContent("Tienes un número de simulaciones gratis al mes");
+    expect(page).not.toHaveTextContent("las demás se pagan con saldo");
   });
 
   it("explica las colaboraciones y las cuentas editoriales como funcionan", () => {

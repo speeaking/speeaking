@@ -180,17 +180,21 @@ export default function TermsPage() {
         eres mayor de edad y aceptas el uso descrito en el aviso de privacidad. No subas fotos de
         otras personas.
       </p>
+      {/* Quién paga (ADR-046): el orden de `tryon/funding.ts`. */}
       <p>
-        Tienes un número de simulaciones gratis al mes; las demás se pagan con saldo al precio
-        vigente publicado en la página de precios, que puede bajar conforme crece el uso de la
-        plataforma y nunca baja de nuestro costo. El saldo se recarga en los montos publicados, no
-        es dinero, no genera intereses, no se transfiere entre cuentas ni se retira en efectivo, y
-        sirve solo para usos dentro de la plataforma. Puedes pedir la devolución del saldo no usado
-        dentro de los 5 días hábiles siguientes a una recarga. Si una simulación falla, no se cobra
-        (o se devuelve el cargo). Los vendedores pueden patrocinar simulaciones sobre sus productos
-        con un tope diario que ellos fijan; el cargo sale de su saldo por cada simulación generada.
-        Durante la etapa de prueba no se cobra nada: las recargas se habilitan cuando haya un medio
-        de pago real.
+        Quien compra nunca paga por «Pruébatelo» (el botón «Ver cómo me veo» de las prendas). Cada
+        simulación la paga la tienda que vende el producto principal, desde su saldo, si activó «Ver
+        cómo me veo» y no ha llegado al tope diario que ella misma fija; si no, la paga{" "}
+        {siteConfig.name} con las pruebas de cortesía que le da a cada tienda, mientras le queden.
+        Si no hay ninguna de las dos, la simulación no se genera: solo registramos que alguien quiso
+        probarse el producto, y la tienda ve cuántas veces pasó, nunca quién. Solo las tiendas
+        tienen saldo, al precio vigente publicado en la página de precios, que puede bajar conforme
+        crece el uso de la plataforma y nunca baja de nuestro costo. El saldo se recarga en los
+        montos publicados, no es dinero, no genera intereses, no se transfiere entre cuentas ni se
+        retira en efectivo, y sirve solo para usos dentro de la plataforma. La tienda puede pedir la
+        devolución del saldo no usado dentro de los 5 días hábiles siguientes a una recarga. Si una
+        simulación falla, no se cobra (o se devuelve el cargo). Durante la etapa de prueba no se
+        cobra nada: las recargas se habilitan cuando haya un medio de pago real.
       </p>
 
       <h2>Pagos</h2>

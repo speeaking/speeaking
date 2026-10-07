@@ -16,7 +16,9 @@ export const LEGAL_VERSIONS = {
   // ayuda de IA y aprobados por el equipo (ADR-066). El mismo día, antes del lanzamiento y sin
   // personas reales que la hubieran aceptado: las recargas se habilitan con un medio de pago real
   // (ADR-071).
-  terms: "2026-10-01",
+  // 2026-10-07: la página por fin dice lo que anotó la versión 2026-09-30 (su texto no había
+  // cambiado): «Pruébatelo» lo paga la tienda o la plataforma, nunca quien compra (ADR-046).
+  terms: "2026-10-07",
   // 2026-09-26: proveedor externo de IA como encargado (nombre y país pendientes antes de activarlo),
   // kit de anuncios, eventos anónimos y reglas de «Gente de tus comunidades» (ADR-030, ADR-038).
   // 2026-09-27: publicaciones que ves en pantalla (ADR-037), señal opcional de IA de autenticidad,
@@ -27,7 +29,9 @@ export const LEGAL_VERSIONS = {
   // 2026-10-01: «Contexto» (ADR-060), buscar con una foto (ADR-061), videos sin ubicación (ADR-062)
   // y colaboraciones con tiendas (ADR-063).
   // 2026-10-06: medición de anuncios con el pixel de TikTok, solo con permiso (ADR-072).
-  privacyNotice: "2026-10-06",
+  // 2026-10-07: «Entrar con Google» con Google LLC (EE. UU.) como encargado; el botón ya estaba
+  // activo en producción sin nombrarlo (ADR-049, docs/deploy.md 6 bis.0).
+  privacyNotice: "2026-10-07",
   personalization: "2026-09-24",
   // Texto del ajuste «Aparecer en sugerencias». 2026-09-26: con quienes se siguen mutuamente, a quién
   // sigues cuenta como señal sin decir quién (ADR-030, SEC-17; SEC-34 pedía subirla).
