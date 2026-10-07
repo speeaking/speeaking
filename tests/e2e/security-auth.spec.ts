@@ -105,7 +105,7 @@ test.describe("redirección después de entrar (SEC-04)", () => {
     }
   });
 
-  test("la cadena /bienvenida → /entrar termina dentro del sitio", async ({ page }) => {
+  test("la cadena /bienvenida → /entrar termina dentro del sitio", async ({ page, baseURL }) => {
     const user = fixUser();
     await register(page, user);
     await completeOnboarding(page, user);
@@ -124,7 +124,7 @@ test.describe("redirección después de entrar (SEC-04)", () => {
     await submitSignIn(page, user.email, user.password);
 
     await expect(page).toHaveURL("/");
-    expect(new URL(page.url()).host).toBe("localhost:3000");
+    expect(new URL(page.url()).host).toBe(new URL(baseURL!).host);
   });
 });
 
@@ -146,11 +146,13 @@ test.describe("API HTTP de Better Auth cerrada (SEC-09)", () => {
   test("no se puede crear una cuenta sin aceptar términos ni escribir el perfil por la API", async ({
     page,
     request,
+    baseURL,
   }) => {
     const user = fixUser();
+    const origin = new URL(baseURL!).origin;
     const signUp = await request.post("/api/auth/sign-up/email", {
       data: { name: "a".repeat(5000), email: user.email, password: user.password },
-      headers: { origin: "http://localhost:3000" },
+      headers: { origin },
     });
     expect(signUp.status()).toBe(404);
 
@@ -158,10 +160,7 @@ test.describe("API HTTP de Better Auth cerrada (SEC-09)", () => {
       ["/api/auth/sign-in/email", { email: user.email, password: user.password }],
       ["/api/auth/update-user", { name: "a".repeat(5000), image: "javascript:alert(1)" }],
     ] as const) {
-      const response = await request.post(path, {
-        data,
-        headers: { origin: "http://localhost:3000" },
-      });
+      const response = await request.post(path, { data, headers: { origin } });
       expect(response.status(), path).toBe(404);
     }
     expect((await request.get("/api/auth/get-session")).status()).toBe(404);

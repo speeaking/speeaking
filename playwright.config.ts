@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3000;
+// E2E_PORT deja correr la suite en otro puerto cuando el 3000 está ocupado (otra corrida, `next dev`).
+// La app sigue al puerto: APP_URL y PORT van al servidor (Better Auth compara el Origin con APP_URL).
+const PORT = Number(process.env.E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
 
 /**
@@ -43,6 +45,8 @@ export default defineConfig({
     // Y la IA de texto simulada: determinista, sin costo y sin depender del saldo ni de la velocidad
     // de un proveedor externo (con el saldo agotado, «Sube y vende» fallaba en la suite).
     env: {
+      PORT: String(PORT),
+      APP_URL: baseURL,
       AI_PROVIDER: "mock",
       ALLOW_SIMULATED_AI: "true",
       AI_IMAGE_MODEL: "",
