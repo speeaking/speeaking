@@ -16,14 +16,19 @@ export class OnboardingError extends Error {
 }
 
 /**
- * ¿La cuenta ya aceptó términos y aviso de privacidad? Una cuenta creada con Google (ADR-049) no
- * pasó por el registro: la bienvenida le pide la casilla y lo registra al terminar.
+ * ¿La cuenta ya hizo lo que pide el registro: aceptar términos y aviso de privacidad y declarar 18
+ * años o más (ADR-076)? Una cuenta creada con Google (ADR-049) no pasó por el registro: la
+ * bienvenida le pide las casillas y lo registra al terminar. También a quien se registró con correo
+ * antes de que existiera la casilla de edad y aún no termina la bienvenida.
  */
 export async function hasLegalConsents(userId: string): Promise<boolean> {
-  const count = await db.userConsent.count({
-    where: { userId, type: { in: ["TERMS", "PRIVACY_NOTICE"] }, granted: true },
+  const rows = await db.userConsent.findMany({
+    where: { userId, type: { in: ["TERMS", "PRIVACY_NOTICE", "AGE_18"] }, granted: true },
+    distinct: ["type"],
+    select: { type: true },
   });
-  return count > 0;
+  const types = new Set(rows.map((row) => row.type));
+  return (types.has("TERMS") || types.has("PRIVACY_NOTICE")) && types.has("AGE_18");
 }
 
 /** Sugiere un nombre de usuario libre a partir del nombre (agrega números si está ocupado). */
@@ -149,7 +154,8 @@ export async function completeOnboarding(
         },
       });
       if (options.legalConsent) {
-        // Cuenta creada con Google (ADR-049): aceptó términos y aviso aquí, con la casilla.
+        // Cuenta creada con Google (ADR-049): aceptó términos y aviso y declaró 18 años o más aquí,
+        // con las casillas (la edad, con la versión de los términos que la piden, como al registrarse).
         await tx.userConsent.createMany({
           data: [
             { userId, type: "TERMS", version: LEGAL_VERSIONS.terms, granted: true },
@@ -159,6 +165,7 @@ export async function completeOnboarding(
               version: LEGAL_VERSIONS.privacyNotice,
               granted: true,
             },
+            { userId, type: "AGE_18", version: LEGAL_VERSIONS.terms, granted: true },
           ],
         });
       }

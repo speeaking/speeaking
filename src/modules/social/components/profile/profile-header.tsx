@@ -21,6 +21,7 @@ import { FollowButton } from "../follow-button";
 import { ProfileCover } from "./profile-cover";
 import { FriendshipButton } from "@/modules/relationships/components/friendship-button";
 import type { FriendshipState } from "@/modules/relationships/types";
+import { ReportButton } from "@/modules/trust/components/report-button";
 
 export type ProfilePerson = { username: string; displayName: string; avatarUrl: string | null };
 
@@ -262,6 +263,18 @@ export function ProfileHeader({
                 label="Compartir perfil"
                 size="icon"
               />
+              {/* Reportar una cuenta (suplantación, cuenta de un menor de edad…, ADR-076). Las
+                  editoriales son del equipo. */}
+              {!profile.isEditorial ? (
+                <ReportButton
+                  targetType="USER"
+                  targetId={profile.userId}
+                  isSignedIn={isSignedIn}
+                  returnTo={path}
+                  label="Reportar perfil"
+                  compact
+                />
+              ) : null}
             </>
           )}
         </div>

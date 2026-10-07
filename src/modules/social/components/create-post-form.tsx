@@ -2,6 +2,7 @@
 
 import { Clapperboard, ImagePlus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { type FormEvent, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -244,6 +245,18 @@ export function CreatePostForm({
       {uploading || state.error ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {uploading ? "Espera a que termine de subir lo que agregaste." : state.error}
+          {/* Bloqueo por las reglas (ADR-076): la lista completa está en los Términos. */}
+          {!uploading && state.helpLink ? (
+            <>
+              {" "}
+              <Link
+                href={state.helpLink.href}
+                className="font-semibold underline underline-offset-2"
+              >
+                {state.helpLink.label}
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
 
@@ -262,6 +275,13 @@ export function CreatePostForm({
         >
           {pending ? "Publicando…" : "Publicar"}
         </Button>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Al publicar confirmas que tienes derecho a compartirlo y que quienes aparecen están de
+          acuerdo.{" "}
+          <Link href="/terminos#reglas" target="_blank" className="underline underline-offset-2">
+            Reglas de la comunidad
+          </Link>
+        </p>
       </div>
     </form>
   );

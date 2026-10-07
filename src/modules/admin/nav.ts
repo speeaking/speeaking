@@ -1,4 +1,5 @@
 import {
+  Copyright,
   FlaskConical,
   LayoutDashboard,
   Newspaper,
@@ -23,6 +24,8 @@ export const adminNav: readonly NavItem[] = [
   { href: adminRoute("/admin/decisiones"), label: "Decisiones", icon: Scale },
   { href: adminRoute("/admin/experimentos"), label: "Experimentos", icon: FlaskConical },
   { href: adminRoute("/admin/moderacion"), label: "Moderación", icon: ShieldAlert },
+  // Aviso y retirada de la LFDA (ADR-076): aparte de los reportes de la comunidad.
+  { href: adminRoute("/admin/avisos"), label: "Avisos de derechos", icon: Copyright },
   { href: adminRoute("/admin/redaccion"), label: "Redacción", icon: Newspaper },
   { href: adminRoute("/admin/ia"), label: "IA", icon: Sparkles },
 ];

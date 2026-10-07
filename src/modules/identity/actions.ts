@@ -86,11 +86,13 @@ export async function signUpAction(
     return apiErrorState(error, values);
   }
 
-  // Consentimiento versionado: términos y aviso de privacidad aceptados al registrarse.
+  // Consentimiento versionado: términos y aviso de privacidad aceptados al registrarse, y la
+  // declaración de mayoría de edad con la versión de los términos que la piden (ADR-076).
   await db.userConsent.createMany({
     data: [
       { userId, type: "TERMS", version: LEGAL_VERSIONS.terms, granted: true },
       { userId, type: "PRIVACY_NOTICE", version: LEGAL_VERSIONS.privacyNotice, granted: true },
+      { userId, type: "AGE_18", version: LEGAL_VERSIONS.terms, granted: true },
     ],
   });
   track({ type: "SIGN_UP", userId, surface: "ONBOARDING" });

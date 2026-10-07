@@ -20,6 +20,7 @@ import { brandById } from "./brands";
 import {
   ADMIN_AUTHENTICITY_LABELS,
   ADMIN_NOT_DECLARED_LABEL,
+  isUrgentReportReason,
   REPORT_REASON_LABELS,
   RISK_LABELS,
 } from "./labels";
@@ -334,12 +335,16 @@ export type QueueTarget =
       hidden: boolean;
     }
   | { kind: "POST"; excerpt: string; href: string; author: string | null; hidden: boolean }
-  | { kind: "USER"; displayName: string; username: string; href: string; hidden: false };
+  | { kind: "USER"; displayName: string; username: string; href: string; hidden: false }
+  /** `href` es la publicación donde está el comentario. */
+  | { kind: "COMMENT"; excerpt: string; href: string; author: string | null; hidden: boolean };
 
 export type QueueReportGroup = {
   targetType: ReportableTarget;
   targetId: string;
   target: QueueTarget | null;
+  /** Algún reporte es de contenido íntimo sin consentimiento o de riesgo para menores (ADR-076). */
+  urgent: boolean;
   reasons: { reason: ReportReason; label: string; count: number }[];
   reports: {
     id: string;
@@ -379,6 +384,7 @@ export type ModerationQueue = {
   hidden: {
     products: { id: string; title: string; href: string; sellerName: string; at: Date | null }[];
     posts: { id: string; excerpt: string; href: string; author: string | null; at: Date }[];
+    comments: { id: string; excerpt: string; href: string; author: string | null; at: Date }[];
   };
 };
 
@@ -398,36 +404,34 @@ export async function getModerationQueue(
   now: Date = new Date(),
 ): Promise<ModerationQueue> {
   await assertAdmin(actorUserId);
-  const [openReports, checkRows, [hiddenProducts, hiddenPosts]] = await Promise.all([
+  const [openReports, checkRows, hidden] = await Promise.all([
     q.listOpenReports(),
     q.listReviewChecks(),
     q.listHiddenContent(),
   ]);
+  const [hiddenProducts, hiddenPosts, hiddenComments] = hidden;
 
-  // Reportes agrupados por objetivo, lo más antiguo primero (24 h hábiles de respuesta).
+  // Reportes agrupados por objetivo. Primero los urgentes (contenido íntimo sin consentimiento o
+  // riesgo para menores, ADR-076); dentro de cada grupo, lo más antiguo primero (24 h hábiles de
+  // respuesta).
   const groups = new Map<string, QueueReportGroup>();
   for (const report of openReports) {
     const key = `${report.targetType}:${report.targetId}`;
     let group = groups.get(key);
     if (!group) {
-      // Los comentarios aún no se reportan desde la interfaz.
-      if (
-        report.targetType !== "POST" &&
-        report.targetType !== "PRODUCT" &&
-        report.targetType !== "USER"
-      ) {
-        continue;
-      }
       group = {
         targetType: report.targetType,
         targetId: report.targetId,
         target: null,
+        urgent: false,
         reasons: [],
         reports: [],
         oldestAt: report.createdAt,
       };
       groups.set(key, group);
     }
+    if (isUrgentReportReason(report.reason)) group.urgent = true;
+    if (report.createdAt < group.oldestAt) group.oldestAt = report.createdAt;
     group.reports.push({
       id: report.id,
       reasonLabel: REPORT_REASON_LABELS[report.reason],
@@ -445,18 +449,33 @@ export async function getModerationQueue(
       });
   }
   const reportGroups = [...groups.values()];
-  const productIds = reportGroups.filter((g) => g.targetType === "PRODUCT").map((g) => g.targetId);
-  const postIds = reportGroups.filter((g) => g.targetType === "POST").map((g) => g.targetId);
-  const userIds = reportGroups.filter((g) => g.targetType === "USER").map((g) => g.targetId);
-  const [products, posts, profiles] = await Promise.all([
-    q.findProductsForQueue(productIds),
-    q.findPostsForQueue(postIds),
-    q.findProfilesForQueue(userIds),
+  const idsOf = (type: ReportableTarget) =>
+    reportGroups.filter((g) => g.targetType === type).map((g) => g.targetId);
+  const [products, posts, profiles, comments] = await Promise.all([
+    q.findProductsForQueue(idsOf("PRODUCT")),
+    q.findPostsForQueue(idsOf("POST")),
+    q.findProfilesForQueue(idsOf("USER")),
+    q.findCommentsForQueue(idsOf("COMMENT")),
   ]);
   const productById = new Map(products.map((product) => [product.id, product]));
   const postById = new Map(posts.map((post) => [post.id, post]));
   const profileByUserId = new Map(profiles.map((profile) => [profile.userId, profile]));
+  const commentById = new Map(comments.map((comment) => [comment.id, comment]));
   for (const group of reportGroups) {
+    group.reports.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    if (group.targetType === "COMMENT") {
+      const comment = commentById.get(group.targetId);
+      group.target = comment
+        ? {
+            kind: "COMMENT",
+            excerpt: excerpt(comment.body),
+            href: `/p/${comment.postId}`,
+            author: comment.author.profile?.username ?? null,
+            hidden: comment.status !== "PUBLISHED",
+          }
+        : null;
+      continue;
+    }
     if (group.targetType === "USER") {
       const profile = profileByUserId.get(group.targetId);
       group.target = profile
@@ -557,7 +576,9 @@ export async function getModerationQueue(
     );
 
   return {
-    reports: reportGroups.sort((a, b) => a.oldestAt.getTime() - b.oldestAt.getTime()),
+    reports: reportGroups.sort((a, b) =>
+      a.urgent === b.urgent ? a.oldestAt.getTime() - b.oldestAt.getTime() : a.urgent ? -1 : 1,
+    ),
     checks,
     hidden: {
       products: hiddenProducts.map((product) => ({
@@ -573,6 +594,13 @@ export async function getModerationQueue(
         href: `/p/${post.id}`,
         author: post.author.profile?.username ?? null,
         at: post.updatedAt,
+      })),
+      comments: hiddenComments.map((comment) => ({
+        id: comment.id,
+        excerpt: excerpt(comment.body),
+        href: `/p/${comment.postId}`,
+        author: comment.author.profile?.username ?? null,
+        at: comment.updatedAt,
       })),
     },
   };
@@ -729,6 +757,45 @@ export async function applyModerationAction(
         if (action.action === "dismiss") await evaluateProductAuthenticity(action.targetId, now);
         return { paths: [`/producto/${slug}`, "/studio/productos", ...PUBLIC_LISTS] };
       }
+      if (action.targetType === "COMMENT") {
+        // Oculto, deja de verse en la publicación, en las notificaciones y en el contador; su autor
+        // lo sigue viendo en «Mi contenido». No se refiere a un producto: no reevalúa nada.
+        const postId = await q.inTransaction(async (tx) => {
+          const state = await q.findCommentState(tx, action.targetId);
+          if (!state) throw new TrustError("NOT_FOUND");
+          let changed = 0;
+          if (action.action === "dismiss") {
+            changed = (await q.resolveOpenReports(tx, target, "DISMISSED", actorUserId, now)).count;
+          } else {
+            const hide = action.action === "hide";
+            changed = (await q.setCommentModeration(tx, action.targetId, hide)).count;
+            if (hide) await q.resolveOpenReports(tx, target, "ACTIONED", actorUserId, now);
+          }
+          if (changed === 0) throw new TrustError("NOT_ALLOWED");
+          await q.logModeration(tx, {
+            kind: `moderation.${action.action}_comment`,
+            title: `${ACTION_TITLES[action.action]}: comentario ${action.targetId.slice(0, 8)}`,
+            riskLevel: action.action === "dismiss" ? "LOW" : "MEDIUM",
+            actorUserId,
+            previousValue: { ...target, postId: state.postId, status: state.status },
+            newValue: {
+              ...target,
+              postId: state.postId,
+              status:
+                action.action === "dismiss"
+                  ? state.status
+                  : action.action === "hide"
+                    ? "HIDDEN"
+                    : "PUBLISHED",
+              reports: action.action === "dismiss" ? "DISMISSED" : undefined,
+            },
+            reason,
+            now,
+          });
+          return state.postId;
+        });
+        return { paths: [`/p/${postId}`] };
+      }
 
       const productId = await q.inTransaction(async (tx) => {
         const state = await q.findPostState(tx, action.targetId);
@@ -769,6 +836,87 @@ export async function applyModerationAction(
       return { paths: [`/p/${action.targetId}`, ...PUBLIC_LISTS] };
     }
   }
+}
+
+// ─────────────────────── Avisos de derechos (ADR-076) ───────────────────────
+
+export type RightsModerationInput = {
+  targetType: "POST" | "PRODUCT";
+  targetId: string;
+  hide: boolean;
+  noticeId: string;
+  /** «DA-000123», para el título de la bitácora. */
+  caseLabel: string;
+  note: string | null;
+};
+
+/**
+ * Oculta o restaura una publicación o un producto por un aviso de derechos (módulo `rights`). Mismo
+ * camino que «Ocultar» y «Restaurar» de la cola: mismas escrituras, mismo candado por producto,
+ * reportes abiertos atendidos al ocultar y una entrada en la bitácora
+ * (`moderation.rights_<hide|restore>_<post|product>`, con el aviso en `newValue.noticeId`). Dos
+ * diferencias: lo que ya estaba así no es error (otro aviso o un reporte pudo ocultarlo antes;
+ * `changed: false`, sin entrada) y lo que ya no existe tampoco (el caso sigue su curso).
+ * `applyModerationAction` no cambia.
+ */
+export async function moderateForRightsNotice(
+  actorUserId: string,
+  input: RightsModerationInput,
+  now: Date = new Date(),
+): Promise<{ changed: boolean; paths: string[] }> {
+  await assertAdmin(actorUserId);
+  const target = { targetType: input.targetType, targetId: input.targetId };
+  const verb = input.hide ? "hide" : "restore";
+  const title = `${input.hide ? "Retirado" : "Restaurado"} por el aviso ${input.caseLabel}`;
+
+  if (input.targetType === "PRODUCT") {
+    const slug = await q.withProductTrustLock(input.targetId, async (tx) => {
+      const state = await q.findProductState(tx, input.targetId);
+      if (!state) return null;
+      const status = input.hide ? "HIDDEN" : "VISIBLE";
+      if ((await q.setProductModeration(tx, input.targetId, status, now)).count === 0) return null;
+      if (input.hide) await q.resolveOpenReports(tx, target, "ACTIONED", actorUserId, now);
+      await q.logModeration(tx, {
+        kind: `moderation.rights_${verb}_product`,
+        title: `${title}: ${state.title}`,
+        riskLevel: "MEDIUM",
+        actorUserId,
+        previousValue: { ...target, moderationStatus: state.moderationStatus },
+        newValue: { ...target, moderationStatus: status, noticeId: input.noticeId },
+        reason: input.note,
+        now,
+      });
+      return state.slug;
+    });
+    return slug
+      ? { changed: true, paths: [`/producto/${slug}`, "/studio/productos", ...PUBLIC_LISTS] }
+      : { changed: false, paths: [] };
+  }
+
+  const changed = await q.inTransaction(async (tx) => {
+    const state = await q.findPostState(tx, input.targetId);
+    if (!state) return false;
+    if ((await q.setPostModeration(tx, input.targetId, input.hide)).count === 0) return false;
+    if (input.hide) await q.resolveOpenReports(tx, target, "ACTIONED", actorUserId, now);
+    await q.logModeration(tx, {
+      kind: `moderation.rights_${verb}_post`,
+      title: `${title}: publicación ${input.targetId.slice(0, 8)}`,
+      riskLevel: "MEDIUM",
+      actorUserId,
+      previousValue: { ...target, status: state.status },
+      newValue: {
+        ...target,
+        status: input.hide ? "HIDDEN" : "PUBLISHED",
+        noticeId: input.noticeId,
+      },
+      reason: input.note,
+      now,
+    });
+    return true;
+  });
+  return changed
+    ? { changed, paths: [`/p/${input.targetId}`, ...PUBLIC_LISTS] }
+    : { changed, paths: [] };
 }
 
 /** Archivo de una foto de comprobante, solo para ADMIN. `null` si no es una prueba o no existe. */

@@ -55,6 +55,8 @@ function submitUnchanged(defaults: ReturnType<typeof editFormDefaults>) {
   for (const [key, value] of Object.entries(fields)) {
     if (typeof value === "string") data.append(key, value);
   }
+  // La casilla de derechos nunca viene marcada: se confirma en cada edición.
+  data.append("rightsAttestation", "on");
   if (defaults.pickupAvailable) data.append("pickupAvailable", "on");
   if (defaults.nationalShippingAvailable) data.append("nationalShippingAvailable", "on");
   for (const item of defaults.initialMedia ?? []) data.append("mediaIds", item.id);
@@ -97,7 +99,7 @@ describe("editFormDefaults", () => {
     });
   });
 
-  it("sin envío nacional ni días de garantía no inventa datos al guardar", () => {
+  it("sin envío nacional no inventa datos al guardar", () => {
     const defaults = editFormDefaults(
       {
         ...row,
@@ -105,13 +107,11 @@ describe("editFormDefaults", () => {
         shippingPriceCents: null,
         deliveryMinDays: null,
         deliveryMaxDays: null,
-        warrantyType: "MANUFACTURER",
-        warrantyDays: null,
         cost: null,
       },
       media,
     );
-    expect(defaults).toMatchObject({ shippingPrice: "", warrantyDays: "", cost: "0" });
+    expect(defaults).toMatchObject({ shippingPrice: "", cost: "0" });
 
     const result = submitUnchanged(defaults);
     expect(result.success).toBe(true);
@@ -121,7 +121,19 @@ describe("editFormDefaults", () => {
       shippingPriceCents: null,
       deliveryMinDays: null,
       deliveryMaxDays: null,
-      warrantyDays: null,
     });
+  });
+
+  it("una garantía del fabricante guardada sin días no inventa días: al guardar se piden (ADR-076)", () => {
+    const defaults = editFormDefaults(
+      { ...row, warrantyType: "MANUFACTURER", warrantyDays: null },
+      media,
+    );
+    expect(defaults).toMatchObject({ warrantyType: "MANUFACTURER", warrantyDays: "" });
+
+    const result = submitUnchanged(defaults);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((issue) => issue.path)).toEqual([["warrantyDays"]]);
   });
 });

@@ -1,10 +1,11 @@
-import { Bot, EyeOff, Flag, ImageOff, ShieldQuestion } from "lucide-react";
+import { Bot, EyeOff, Flag, ImageOff, ShieldAlert, ShieldQuestion } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { formatCount, formatRelativeTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { getAdminViewer, requireAdmin } from "@/modules/admin/guard";
 import { ModerationActionForm } from "@/modules/trust/components/moderation-action";
 import {
@@ -62,7 +63,9 @@ export default async function ModerationPage() {
   const admin = await requireAdmin();
   const now = new Date();
   const queue = await getModerationQueue(admin.userId, now);
-  const hiddenCount = queue.hidden.products.length + queue.hidden.posts.length;
+  const hiddenCount =
+    queue.hidden.products.length + queue.hidden.posts.length + queue.hidden.comments.length;
+  const urgentCount = queue.reports.filter((group) => group.urgent).length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -92,7 +95,7 @@ export default async function ModerationPage() {
 
       <Section
         title="Reportes abiertos"
-        description={`${formatCount(queue.reports.length, "publicación reportada", "publicaciones reportadas")}. Quien reporta es anónimo para el vendedor.`}
+        description={`${formatCount(queue.reports.length, "publicación reportada", "publicaciones reportadas")}${urgentCount > 0 ? `; ${formatCount(urgentCount, "urgente va", "urgentes van")} primero` : ""}. Quien reporta es anónimo para el vendedor.`}
         icon={Flag}
       >
         {queue.reports.length === 0 ? (
@@ -149,6 +152,26 @@ export default async function ModerationPage() {
                   action="restore"
                   fields={{ targetType: "POST", targetId: post.id }}
                   label="Restaurar publicación"
+                  note={{ label: "Motivo (interno, opcional)" }}
+                />
+              </li>
+            ))}
+            {queue.hidden.comments.map((comment) => (
+              <li key={comment.id} className={cardClass}>
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-sm">{comment.excerpt}</p>
+                  <span className="text-sm text-muted-foreground">
+                    <Link href={comment.href as Route} className="underline">
+                      Comentario
+                    </Link>
+                    {comment.author ? ` de @${comment.author}` : ""} · oculto{" "}
+                    {formatRelativeTime(comment.at, now)}
+                  </span>
+                </div>
+                <ModerationActionForm
+                  action="restore"
+                  fields={{ targetType: "COMMENT", targetId: comment.id }}
+                  label="Restaurar comentario"
                   note={{ label: "Motivo (interno, opcional)" }}
                 />
               </li>
@@ -299,16 +322,29 @@ function CheckCard({ check, now }: { check: QueueCheck; now: Date }) {
   );
 }
 
+const REPORT_NOUNS: Record<QueueReportGroup["targetType"], string> = {
+  PRODUCT: "producto",
+  USER: "cuenta",
+  POST: "publicación",
+  COMMENT: "comentario",
+};
+
+/** Lo que el equipo puede ocultar desde un reporte (una cuenta solo se descarta, ADR-047). */
+const HIDE_LABELS: Partial<Record<QueueReportGroup["targetType"], string>> = {
+  PRODUCT: "Ocultar producto",
+  POST: "Ocultar publicación",
+  COMMENT: "Ocultar comentario",
+};
+
 function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
   const { target } = group;
-  const noun =
-    group.targetType === "PRODUCT"
-      ? "producto"
-      : group.targetType === "USER"
-        ? "cuenta"
-        : "publicación";
+  const noun = REPORT_NOUNS[group.targetType];
+  const hideLabel = HIDE_LABELS[group.targetType];
   return (
-    <article className={cardClass} aria-label={`Reportes de ${noun}`}>
+    <article
+      className={cn(cardClass, group.urgent && "border-destructive/50")}
+      aria-label={`${group.urgent ? "Urgente: reportes" : "Reportes"} de ${noun}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           {target ? (
@@ -318,14 +354,16 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
                   ? target.title
                   : target.kind === "USER"
                     ? target.displayName
-                    : target.excerpt || "Publicación"}
+                    : target.excerpt || (target.kind === "COMMENT" ? "Comentario" : "Publicación")}
               </Link>
               <span className="text-sm text-muted-foreground">
                 {target.kind === "PRODUCT"
                   ? `Producto · ${target.price} · ${target.sellerName}`
                   : target.kind === "USER"
                     ? `Cuenta · @${target.username} · reportada desde mensajes o su perfil`
-                    : `Publicación${target.author ? ` de @${target.author}` : ""}`}
+                    : target.kind === "COMMENT"
+                      ? `Comentario${target.author ? ` de @${target.author}` : ""} · el enlace abre su publicación`
+                      : `Publicación${target.author ? ` de @${target.author}` : ""}`}
               </span>
             </>
           ) : (
@@ -333,6 +371,12 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
           )}
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {group.urgent ? (
+            <Badge variant="destructive">
+              <ShieldAlert data-icon="inline-start" aria-hidden />
+              Urgente
+            </Badge>
+          ) : null}
           {group.reasons.map((reason) => (
             <Badge key={reason.reason} variant="secondary">
               {reason.label} · {reason.count}
@@ -341,6 +385,13 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
           {target?.hidden ? <Badge variant="outline">Oculto</Badge> : null}
         </div>
       </div>
+      {group.urgent ? (
+        <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Atiéndelo antes que lo demás. Mira solo lo necesario para decidir y no descargues ni
+          compartas el contenido. Si es íntimo sin consentimiento o pone en riesgo a un menor,
+          ocúltalo.
+        </p>
+      ) : null}
 
       <ul className="flex flex-col gap-2 text-sm">
         {group.reports.map((report) => (
@@ -359,14 +410,26 @@ function ReportCard({ group, now }: { group: QueueReportGroup; now: Date }) {
       </ul>
 
       <div className="grid gap-4 border-t pt-3 md:grid-cols-2">
-        {target && !target.hidden && group.targetType !== "USER" ? (
+        {target && !target.hidden && hideLabel ? (
           <ModerationActionForm
             action="hide"
             fields={{ targetType: group.targetType, targetId: group.targetId }}
-            label={group.targetType === "PRODUCT" ? "Ocultar producto" : "Ocultar publicación"}
+            label={hideLabel}
             variant="destructive"
             note={{ label: "Motivo (interno, opcional)" }}
           />
+        ) : null}
+        {target?.kind === "USER" ? (
+          // Una cuenta (p. ej., la de un menor de edad) se bloquea en Usuarios, con su motivo.
+          <p className="text-sm text-muted-foreground">
+            Aquí solo se descartan sus reportes.{" "}
+            <Link
+              href={`/admin/usuarios?q=${encodeURIComponent(target.username)}` as Route}
+              className="font-medium text-foreground underline"
+            >
+              Bloquearla en Usuarios
+            </Link>
+          </p>
         ) : null}
         <ModerationActionForm
           action="dismiss"

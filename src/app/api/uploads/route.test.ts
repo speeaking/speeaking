@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,7 @@ const rateLimitMany = vi.fn();
 const mediaCreate = vi.fn();
 const mediaUpdate = vi.fn();
 const mediaDelete = vi.fn();
+const blockedFindUnique = vi.fn();
 const put = vi.fn();
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
@@ -19,7 +21,10 @@ vi.mock("@/server/rate-limit", () => ({
   limitOrError: () => "Demasiados intentos. Intenta de nuevo en 5 minutos.",
 }));
 vi.mock("@/server/db", () => ({
-  db: { media: { create: mediaCreate, update: mediaUpdate, delete: mediaDelete } },
+  db: {
+    media: { create: mediaCreate, update: mediaUpdate, delete: mediaDelete },
+    blockedMediaHash: { findUnique: blockedFindUnique },
+  },
 }));
 vi.mock("@/server/providers/storage", () => ({
   getStorage: () => ({ put, publicUrl: (key: string) => `/media/${key}` }),
@@ -111,8 +116,11 @@ beforeEach(() => {
   mediaCreate.mockResolvedValue({ id: "m1", width: 8, height: 6 });
   mediaUpdate.mockResolvedValue({});
   mediaDelete.mockResolvedValue({});
+  blockedFindUnique.mockResolvedValue(null);
   put.mockResolvedValue(undefined);
 });
+
+const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
 describe("POST /api/uploads", () => {
   it("sin sesión 401 y sin perfil terminado 403, sin contar ni leer nada", async () => {
@@ -139,6 +147,55 @@ describe("POST /api/uploads", () => {
     expect(put).toHaveBeenCalledOnce();
     expect(mediaUpdate).toHaveBeenCalledWith({ where: { id: "m1" }, data: { status: "READY" } });
     expect(mediaCreate.mock.invocationCallOrder[0]).toBeLessThan(put.mock.invocationCallOrder[0]!);
+  });
+
+  it("guarda la huella SHA-256 del archivo tal como llegó, no de la foto re-codificada (ADR-076)", async () => {
+    const png = await tinyPng();
+
+    expect((await POST(await uploadRequest(png))).status).toBe(201);
+
+    expect(blockedFindUnique).toHaveBeenCalledWith({
+      where: { sha256: sha256(png) },
+      select: { sha256: true },
+    });
+    expect(mediaCreate.mock.calls[0]![0].data.sha256).toBe(sha256(png));
+    expect(sha256(put.mock.calls[0]![1])).not.toBe(sha256(png));
+  });
+
+  it("lo retirado no se vuelve a subir desde ninguna cuenta: 422, sin fila ni archivo, y queda en el log sin datos de la persona", async () => {
+    const png = await tinyPng();
+    blockedFindUnique.mockResolvedValueOnce({ sha256: sha256(png) });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const response = await POST(await uploadRequest(png));
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      error:
+        "No puedes subir este archivo: se retiró de speeaking por un aviso de derechos o por nuestras reglas.",
+    });
+    expect(mediaCreate).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledOnce();
+    const logged = String(warn.mock.calls[0]![0]);
+    expect(logged).toContain(sha256(png));
+    expect(logged).not.toContain(USER);
+    expect(logged).not.toContain("203.0.113.7");
+    warn.mockRestore();
+  });
+
+  it("un archivo bloqueado ni se decodifica: se revisa su huella antes de procesarlo", async () => {
+    const flood = pixelFloodPng();
+    blockedFindUnique.mockResolvedValueOnce({ sha256: sha256(flood) });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const response = await POST(await uploadRequest(flood));
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      error: expect.stringContaining("se retiró de speeaking"),
+    });
+    warn.mockRestore();
   });
 
   it("si el archivo no se guarda, borra la fila (no queda media sin archivo)", async () => {

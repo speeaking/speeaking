@@ -14,6 +14,7 @@ const validSignUp = {
   email: "Ana@Example.com ",
   password: "una-clave-segura",
   acceptTerms: "on",
+  confirmAge: "on",
 };
 
 describe("signUpSchema", () => {
@@ -28,6 +29,20 @@ describe("signUpSchema", () => {
     const { acceptTerms: _omit, ...withoutTerms } = validSignUp;
 
     expect(signUpSchema.safeParse(withoutTerms).success).toBe(false);
+  });
+
+  it("exige declarar que tiene 18 años o más (ADR-076)", () => {
+    const { confirmAge: _omit, ...withoutAge } = validSignUp;
+
+    const result = signUpSchema.safeParse(withoutAge);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]).toMatchObject({
+        path: ["confirmAge"],
+        message: "Para crear una cuenta necesitas tener 18 años o más.",
+      });
+    }
+    expect(signUpSchema.parse(validSignUp).confirmAge).toBe(true);
   });
 
   it("exige contraseñas de al menos 10 caracteres", () => {

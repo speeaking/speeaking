@@ -37,10 +37,14 @@ const { q, admin, runner, storage } = vi.hoisted(() => {
       findMediaByIds: vi.fn(),
       findProductsForQueue: vi.fn(),
       findPostsForQueue: vi.fn(),
+      findProfilesForQueue: vi.fn(),
+      findCommentsForQueue: vi.fn(),
       findProofMedia: vi.fn(),
       resolveOpenReports: vi.fn(),
       setProductModeration: vi.fn(),
       setPostModeration: vi.fn(),
+      setCommentModeration: vi.fn(),
+      findCommentState: vi.fn(),
       findCheckForReview: vi.fn(),
       markCheckReviewed: vi.fn(),
       forceGeneric: vi.fn(),
@@ -666,5 +670,168 @@ describe("equipo: autorización y bitácora", () => {
     await expect(getProofFileForAdmin(ADMIN, MEDIA)).resolves.toMatchObject({
       contentType: "image/webp",
     });
+  });
+});
+
+describe("cola: urgentes primero y comentarios", () => {
+  const POST = "0199a000-0000-7000-8000-0000000000f1";
+  const COMMENT = "0199a000-0000-7000-8000-0000000000f2";
+  const OLD = new Date(NOW.getTime() - 3 * 86_400_000);
+  const RECENT = new Date(NOW.getTime() - 3_600_000);
+
+  function report(overrides: Record<string, unknown>) {
+    return {
+      id: `r-${String(overrides.targetId)}-${String(overrides.reason)}`,
+      details: null,
+      createdAt: OLD,
+      reporter: { profile: { username: "alguien" } },
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    q.listReviewChecks.mockResolvedValue([]);
+    q.listHiddenContent.mockResolvedValue([[], [], []]);
+    q.findMediaByIds.mockResolvedValue([]);
+    q.findProductsForQueue.mockResolvedValue([]);
+    q.findProfilesForQueue.mockResolvedValue([]);
+    q.findPostsForQueue.mockResolvedValue([
+      { id: POST, body: "Mi outfit de hoy", status: "PUBLISHED", author: { profile: null } },
+    ]);
+    q.findCommentsForQueue.mockResolvedValue([
+      {
+        id: COMMENT,
+        body: "Un comentario reportado",
+        status: "PUBLISHED",
+        postId: POST,
+        author: { profile: { username: "beto" } },
+      },
+    ]);
+  });
+
+  it("lo íntimo sin consentimiento o que pone en riesgo a un menor va primero y marcado", async () => {
+    q.listOpenReports.mockResolvedValue([
+      report({ targetType: "POST", targetId: POST, reason: "SPAM", createdAt: OLD }),
+      report({
+        targetType: "COMMENT",
+        targetId: COMMENT,
+        reason: "CHILD_SAFETY",
+        createdAt: RECENT,
+      }),
+    ]);
+
+    const queue = await getModerationQueue(ADMIN, NOW);
+
+    expect(queue.reports.map((group) => [group.targetType, group.urgent])).toEqual([
+      ["COMMENT", true],
+      ["POST", false],
+    ]);
+    expect(queue.reports[0]?.target).toEqual({
+      kind: "COMMENT",
+      excerpt: "Un comentario reportado",
+      href: `/p/${POST}`,
+      author: "beto",
+      hidden: false,
+    });
+  });
+
+  it("entre los urgentes (y entre los demás) sigue primero lo más antiguo", async () => {
+    q.listOpenReports.mockResolvedValue([
+      report({ targetType: "POST", targetId: POST, reason: "INTIMATE_WITHOUT_CONSENT" }),
+      report({
+        targetType: "COMMENT",
+        targetId: COMMENT,
+        reason: "CHILD_SAFETY",
+        createdAt: RECENT,
+      }),
+    ]);
+
+    const queue = await getModerationQueue(ADMIN, NOW);
+
+    expect(queue.reports.map((group) => group.targetType)).toEqual(["POST", "COMMENT"]);
+    expect(queue.reports.every((group) => group.urgent)).toBe(true);
+  });
+
+  it("ocultar un comentario: estado, reportes atendidos y bitácora; restaurar lo regresa", async () => {
+    q.findCommentState.mockResolvedValue({ id: COMMENT, status: "PUBLISHED", postId: POST });
+    q.setCommentModeration.mockResolvedValue({ count: 1 });
+    q.resolveOpenReports.mockResolvedValue({ count: 1 });
+
+    const hidden = await applyModerationAction(
+      ADMIN,
+      { action: "hide", targetType: "COMMENT", targetId: COMMENT, note: "Acoso" },
+      NOW,
+    );
+    expect(q.setCommentModeration).toHaveBeenCalledWith(q.tx, COMMENT, true);
+    expect(q.resolveOpenReports).toHaveBeenCalledWith(
+      q.tx,
+      { targetType: "COMMENT", targetId: COMMENT },
+      "ACTIONED",
+      ADMIN,
+      NOW,
+    );
+    expect(q.logModeration).toHaveBeenCalledWith(
+      q.tx,
+      expect.objectContaining({
+        kind: "moderation.hide_comment",
+        actorUserId: ADMIN,
+        reason: "Acoso",
+        previousValue: expect.objectContaining({ status: "PUBLISHED" }),
+        newValue: expect.objectContaining({ status: "HIDDEN" }),
+      }),
+    );
+    expect(hidden.paths).toContain(`/p/${POST}`);
+    expect(q.setPostModeration).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    q.findCommentState.mockResolvedValue({ id: COMMENT, status: "HIDDEN", postId: POST });
+    q.setCommentModeration.mockResolvedValue({ count: 1 });
+    await applyModerationAction(
+      ADMIN,
+      { action: "restore", targetType: "COMMENT", targetId: COMMENT, note: undefined },
+      NOW,
+    );
+    expect(q.setCommentModeration).toHaveBeenCalledWith(q.tx, COMMENT, false);
+    expect(q.resolveOpenReports).not.toHaveBeenCalled();
+    expect(q.logModeration).toHaveBeenCalledWith(
+      q.tx,
+      expect.objectContaining({ kind: "moderation.restore_comment" }),
+    );
+  });
+
+  it("descartar los reportes de un comentario no lo toca", async () => {
+    q.findCommentState.mockResolvedValue({ id: COMMENT, status: "PUBLISHED", postId: POST });
+    q.resolveOpenReports.mockResolvedValue({ count: 2 });
+
+    await applyModerationAction(
+      ADMIN,
+      { action: "dismiss", targetType: "COMMENT", targetId: COMMENT, note: undefined },
+      NOW,
+    );
+    expect(q.resolveOpenReports).toHaveBeenCalledWith(
+      q.tx,
+      { targetType: "COMMENT", targetId: COMMENT },
+      "DISMISSED",
+      ADMIN,
+      NOW,
+    );
+    expect(q.setCommentModeration).not.toHaveBeenCalled();
+    expect(q.logModeration).toHaveBeenCalledWith(
+      q.tx,
+      expect.objectContaining({ kind: "moderation.dismiss_comment" }),
+    );
+  });
+
+  it("un comentario que ya no existe no deja bitácora", async () => {
+    q.findCommentState.mockResolvedValue(null);
+    await expect(
+      applyModerationAction(ADMIN, {
+        action: "hide",
+        targetType: "COMMENT",
+        targetId: COMMENT,
+        note: undefined,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(q.logModeration).not.toHaveBeenCalled();
   });
 });

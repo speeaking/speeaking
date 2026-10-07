@@ -3,6 +3,16 @@
 Productos, categorías, costo privado (`ProductCost`, nunca enviado al navegador) y datos verificables de
 entrega, garantía, devoluciones y autenticidad (P4, ADR-007). Fase: 1.6.
 
+## Garantía y derechos sobre lo publicado (ADR-076)
+
+- Garantía (`productFormSchema`): «Sin garantía» (por omisión) o un número entero de días de 90 o
+  más (LFPC arts. 77 y 78; `MIN_WARRANTY_DAYS`), también la del fabricante: una garantía anunciada
+  dice cuánto dura. Solo se valida lo que se guarda: un producto anterior con menos días (o sin
+  días) se sigue mostrando igual y, al editarlo, el formulario pide corregirlo.
+- Cada alta y edición exige la casilla sin marcar «Las fotos, videos y textos son míos o tengo
+  permiso para usarlos (y de las personas que aparecen)» (`rightsAttestation`). Hoy no se guarda:
+  no hay columna para la fecha de la declaración.
+
 ## Límites (SEC-15)
 
 `limits.ts` (`checkCatalogLimit`): crear productos 30/h y 150/día por cuenta (60/h por IP); cada

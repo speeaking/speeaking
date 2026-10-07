@@ -40,6 +40,14 @@ const checkbox = z
   .optional()
   .transform((value) => value === "on");
 
+/** Una garantía ofrecida dura al menos 90 días desde la entrega (LFPC art. 77). */
+export const MIN_WARRANTY_DAYS = 90;
+export const MAX_WARRANTY_DAYS = 3650;
+export const WARRANTY_MIN_MESSAGE = `La garantía debe ser de al menos ${MIN_WARRANTY_DAYS} días (Ley Federal de Protección al Consumidor). Si no das garantía, elige «Sin garantía».`;
+
+export const RIGHTS_ATTESTATION_MESSAGE =
+  "Confirma que las fotos, videos y textos son tuyos o que tienes permiso para usarlos.";
+
 export const productFormSchema = z
   .object({
     title: z.string().trim().min(3, "Escribe un nombre de al menos 3 letras.").max(120),
@@ -76,6 +84,9 @@ export const productFormSchema = z
       .regex(/^[a-z0-9-]*$/)
       .optional(),
     postBody: z.string().trim().max(2000).optional(),
+    // Casilla sin marcar en cada alta y edición: lo publicado es de quien vende o tiene permiso,
+    // también de las personas que aparecen (LFDA art. 27; derecho a la propia imagen).
+    rightsAttestation: z.literal("on", { error: RIGHTS_ATTESTATION_MESSAGE }),
   })
   .transform((data, context) => {
     // Envío nacional: costo (0 = gratis) y tiempos obligatorios.
@@ -107,22 +118,31 @@ export const productFormSchema = z
         });
       }
     }
-    // Garantía: con días si la da el vendedor.
+    // Garantía (LFPC arts. 77 y 78): «Sin garantía» o un número entero de días, de 90 o más, también
+    // la del fabricante (una garantía anunciada dice cuánto dura). Solo se valida lo que se guarda:
+    // un producto guardado antes con menos días (o sin días) se sigue mostrando igual y, al
+    // editarlo, pide corregirlo.
     let warrantyDays: number | null = null;
-    if (data.warrantyType !== "NONE" && data.warrantyDays) {
-      warrantyDays = Number(data.warrantyDays);
-      if (!Number.isInteger(warrantyDays) || warrantyDays < 1 || warrantyDays > 3650) {
+    const warrantyText = data.warrantyDays?.trim() ?? "";
+    if (data.warrantyType !== "NONE" && warrantyText) {
+      warrantyDays = Number(warrantyText);
+      if (!Number.isInteger(warrantyDays) || warrantyDays > MAX_WARRANTY_DAYS) {
         context.addIssue({
           code: "custom",
           path: ["warrantyDays"],
-          message: "Días de garantía inválidos.",
+          message: `Escribe los días de garantía como un número entero, de ${MIN_WARRANTY_DAYS} a ${MAX_WARRANTY_DAYS.toLocaleString("es-MX")}.`,
         });
+      } else if (warrantyDays < MIN_WARRANTY_DAYS) {
+        context.addIssue({ code: "custom", path: ["warrantyDays"], message: WARRANTY_MIN_MESSAGE });
       }
-    } else if (data.warrantyType === "SELLER") {
+    } else if (data.warrantyType !== "NONE") {
       context.addIssue({
         code: "custom",
         path: ["warrantyDays"],
-        message: "Indica cuántos días de garantía das.",
+        message:
+          data.warrantyType === "SELLER"
+            ? `Indica cuántos días de garantía das (mínimo ${MIN_WARRANTY_DAYS}).`
+            : `Indica cuántos días de garantía da el fabricante (mínimo ${MIN_WARRANTY_DAYS}).`,
       });
     }
     return {

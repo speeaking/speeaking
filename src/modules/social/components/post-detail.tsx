@@ -93,7 +93,9 @@ export async function PostDetail({
           viewer={viewer ? { onboarded: Boolean(viewer.profile?.onboarded) } : null}
           anchorId="comentar"
         />
-        {comments.length > 0 ? <CommentList comments={comments} /> : null}
+        {comments.length > 0 ? (
+          <CommentList comments={comments} isSignedIn={viewer !== null} />
+        ) : null}
       </section>
     </>
   );

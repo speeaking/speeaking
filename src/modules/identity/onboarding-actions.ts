@@ -8,6 +8,7 @@ import { safeRedirectPath } from "@/lib/safe-redirect";
 import { track } from "@/modules/analytics/track";
 import { WELCOME_COOKIE, WELCOME_MAX_AGE_SECONDS } from "@/modules/feed/welcome";
 import { onboardingSchema } from "./onboarding-schema";
+import { ADULT_REQUIRED_MESSAGE, adultDeclaration } from "./schemas";
 import { completeOnboarding, hasLegalConsents, OnboardingError } from "./service";
 import { requireViewer } from "./session";
 
@@ -29,15 +30,20 @@ export async function completeOnboardingAction(
     };
   }
 
-  // Con Google no hubo casilla en el registro (ADR-049): la bienvenida la exige.
+  // Con Google no hubo casillas en el registro (ADR-049): la bienvenida exige aceptar términos y
+  // aviso y declarar 18 años o más (ADR-076).
   const legalConsent = !(await hasLegalConsents(viewer.userId));
-  if (legalConsent && formData.get("acceptLegal") !== "on") {
-    return {
-      error: "Revisa los datos marcados.",
-      fieldErrors: {
-        acceptLegal: ["Acepta los términos y el aviso de privacidad para continuar."],
-      },
-    };
+  if (legalConsent) {
+    const fieldErrors: Partial<Record<string, string[]>> = {};
+    if (formData.get("acceptLegal") !== "on") {
+      fieldErrors.acceptLegal = ["Acepta los términos y el aviso de privacidad para continuar."];
+    }
+    if (!adultDeclaration.safeParse(formData.get("confirmAge")).success) {
+      fieldErrors.confirmAge = [ADULT_REQUIRED_MESSAGE];
+    }
+    if (Object.keys(fieldErrors).length > 0) {
+      return { error: "Revisa los datos marcados.", fieldErrors };
+    }
   }
 
   let joinedCommunityIds: string[];

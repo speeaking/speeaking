@@ -22,7 +22,7 @@ import { BRAND_SUGGESTIONS, GOAL_OPTIONS, MIN_COMMUNITIES } from "../onboarding-
 type Community = { slug: string; name: string; emoji: string; hue: number; description: string };
 
 const STEP_TITLES = ["Cuéntanos de ti", "Elige tus comunidades", "Para conocerte mejor"] as const;
-const STEP_ONE_FIELDS = ["username", "displayName", "goals", "acceptLegal"];
+const STEP_ONE_FIELDS = ["username", "displayName", "goals", "acceptLegal", "confirmAge"];
 
 // El paso se refleja en la URL (?paso=2) para que el botón Atrás del navegador (o de Android)
 // regrese un paso en lugar de salir del cuestionario. Next integra window.history con su router,
@@ -61,7 +61,10 @@ export function OnboardingForm({
   defaultName: string;
   /** Adónde regresa al terminar (ya validado en el servidor): la publicación o comunidad de origen. */
   next?: string;
-  /** La cuenta llegó por Google y aún no acepta términos ni aviso (ADR-049): casilla obligatoria. */
+  /**
+   * La cuenta llegó por Google y aún no acepta términos ni aviso ni declara 18 años o más (ADR-049,
+   * ADR-076): casillas obligatorias, sin marcar.
+   */
   needsLegalConsent?: boolean;
   /**
    * Comunidades que eligió antes de tener cuenta (`?unirse=`, ya validadas en el servidor): llegan
@@ -267,6 +270,23 @@ export function OnboardingForm({
             {state.fieldErrors.acceptLegal[0]}
           </p>
         ) : null}
+        {needsLegalConsent ? (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="confirmAge"
+              required
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+              aria-invalid={state.fieldErrors?.confirmAge ? true : undefined}
+            />
+            <span>Tengo 18 años o más</span>
+          </label>
+        ) : null}
+        {state.fieldErrors?.confirmAge ? (
+          <p role="alert" className="text-sm text-destructive">
+            {state.fieldErrors.confirmAge[0]}
+          </p>
+        ) : null}
         <Button type="button" size="lg" className="h-11 text-base" onClick={() => goToStep(1)}>
           Siguiente
         </Button>
@@ -396,11 +416,11 @@ export function OnboardingForm({
           </div>
         </div>
 
+        {/* Finalidad secundaria: la casilla nunca viene marcada (LFPDPPP; Lineamientos Décimo). */}
         <label className="flex items-start gap-3 rounded-3xl border bg-card p-4 text-sm leading-snug">
           <input
             type="checkbox"
             name="personalization"
-            defaultChecked
             className="mt-0.5 size-4 shrink-0 accent-primary"
           />
           <span>

@@ -98,3 +98,36 @@ Subida, validación por firma de bytes y re-codificación de imágenes (sin EXIF
   firmada de lectura (bucket) o rangos (disco). La portada (`media.posterId`) es una foto que el
   navegador toma del video; es pública solo mientras su video lo es, y el recolector la borra en la
   tanda siguiente a su video.
+
+**Lo retirado no vuelve (ADR-076, 2026-10-07).**
+
+- Cada subida guarda `media.sha256`: la huella del archivo tal como llegó, antes de re-codificarlo
+  (`rights/stay-down.ts`). Al retirar algo por un aviso de derechos, por contenido íntimo sin
+  consentimiento, de menores o por moderación, `blockMediaHashes` pasa sus huellas a
+  `blocked_media_hashes` y ese mismo archivo ya no se sube desde ninguna cuenta: la medida razonable
+  contra la nueva subida de la LFDA (art. 114 Octies fr. II a), párrafo segundo) y, con lo íntimo o
+  de menores, no repetir el daño. La portada de un video no se bloquea sola (la genera el navegador;
+  bloquearla solo le quitaría la portada a otro video con el mismo cuadro).
+- Una fila por huella, con un solo motivo: CHILD_SAFETY > INTIMATE_WITHOUT_CONSENT > MODERATION >
+  RIGHTS_NOTICE. Un motivo de más peso reemplaza al anterior y suelta la huella de su aviso, así que
+  quitar las huellas de un aviso al restaurarlo (`noticeId`) nunca desbloquea lo retirado por nuestras
+  reglas. Dos avisos sobre el mismo archivo comparten la fila del primero.
+- Fotos (`/api/uploads`, también perfil, portada, comprobantes y Pruébatelo): la huella se calcula
+  con WebCrypto (fuera del hilo principal) y se revisa después de leer el formulario y ANTES de
+  decodificar; un archivo bloqueado responde 422 con el motivo general y no crea fila.
+- Videos: el servidor ve el archivo completo por primera vez en `finishVideoUpload` (sube directo al
+  bucket). Ahí, después de las revisiones baratas (estructura y metadatos), lee el archivo por tramos
+  de 8 MB y calcula la huella; si está bloqueado, lo borra como cualquier video inválido. Sin
+  transcodificar, la huella es la del archivo que se entrega.
+- Cada intento queda en el log (`[stay-down] subida rechazada (foto|video): <huella>`) sin la cuenta
+  ni la IP; con la huella, el equipo encuentra el motivo y el aviso en `blocked_media_hashes`.
+- Límites: coincidencia EXACTA. Una foto se re-codifica, así que quien descarga la copia servida
+  (WebP, o una variante de `/media?w=`) y la vuelve a subir no coincide, ni una foto que el navegador
+  redujo (más de 3 MB) de otra forma. La huella perceptual con revisión humana queda pendiente. Lo
+  subido antes de ADR-076 no tiene huella y no se puede bloquear así.
+- **Pendiente (video):** la URL firmada de subida vale 15 minutos y el bucket acepta otro `PUT` del
+  mismo tamaño y tipo después de la revisión: quien la conserve puede cambiar el archivo ya revisado
+  (y saltarse la huella, los metadatos y la estructura). Arreglo propuesto: firmar
+  `x-amz-checksum-sha256` (la huella que manda el navegador; el bucket rechaza otros bytes) o
+  `If-None-Match: *` (no sobrescribir), con el CORS del bucket actualizado, o copiar el objeto a una
+  clave nueva al revisarlo.

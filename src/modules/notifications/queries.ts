@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { excerpt, type NotificationRow } from "./group";
 import { postVisibleTo } from "@/modules/relationships/privacy";
 import { POST_WITH_VISIBLE_PRODUCT } from "@/modules/trust/visibility";
+import { parseRightsNotificationKey } from "@/modules/rights/notification-key";
 
 /** Avisos que se muestran (los más recientes); los grupos los vuelven menos. */
 export const NOTIFICATIONS_SHOWN = 80;
@@ -63,6 +64,7 @@ export async function listNotifications(userId: string): Promise<NotificationRow
       createdAt: true,
       readAt: true,
       reaction: true,
+      dedupeKey: true,
       actor: {
         select: {
           id: true,
@@ -86,6 +88,11 @@ export async function listNotifications(userId: string): Promise<NotificationRow
     // Quien lo causó ya no tiene perfil: el aviso ya no dice nada.
     if (row.actor && !actor) return [];
     const firstItem = row.order?.items[0]?.titleSnapshot ?? null;
+    // Retiro o restauración por un aviso de derechos: el caso viaja en la llave (ADR-076).
+    const rights =
+      row.type === "CONTENT_REMOVED" || row.type === "CONTENT_RESTORED"
+        ? parseRightsNotificationKey(row.dedupeKey)
+        : null;
     const moreItems = (row.order?._count.items ?? 0) - 1;
     return [
       {
@@ -100,6 +107,14 @@ export async function listNotifications(userId: string): Promise<NotificationRow
         reaction: row.reaction,
         communityName: row.community?.name ?? null,
         communitySlug: row.community?.slug ?? null,
+        rightsCase: rights
+          ? {
+              caseNumber: rights.caseNumber,
+              subject: rights.subject,
+              kind: rights.kind,
+              event: rights.event,
+            }
+          : null,
         orderId: row.order?.id ?? null,
         orderTitle: firstItem
           ? moreItems > 0

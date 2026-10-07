@@ -17,6 +17,11 @@ import {
   notifyReaction,
   removeReactionNotification,
 } from "@/modules/notifications/notify";
+import {
+  blockedByPolicy,
+  type PolicyHelpLink,
+  prohibitedInPost,
+} from "@/modules/trust/content-policy";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { db } from "@/server/db";
 import { checkSocialLimit } from "./limits";
@@ -331,7 +336,12 @@ export async function createCommentAction(
   return { ok: true };
 }
 
-export type CreatePostState = { error?: string; fieldErrors?: Partial<Record<string, string[]>> };
+export type CreatePostState = {
+  error?: string;
+  fieldErrors?: Partial<Record<string, string[]>>;
+  /** Liga que explica el error (lo que no se puede publicar, en los Términos). */
+  helpLink?: PolicyHelpLink;
+};
 
 const INVALID_IMAGE = "Alguna imagen no es válida.";
 
@@ -355,6 +365,10 @@ export async function createPostAction(
   const { body, audience, communitySlug, mediaIds, videoId, productId } = parsed.data;
   const limited = await checkSocialLimit("post", viewer.userId);
   if (!limited.ok) return { error: limited.error };
+  // Ofertas prohibidas (venta de facturas, IPTV, servicios sexuales…) y, si el texto ofrece algo o
+  // etiqueta un producto, artículos prohibidos. Un aviso para corregir, nunca una sanción.
+  const prohibited = prohibitedInPost(body, { offer: productId !== undefined });
+  if (prohibited) return blockedByPolicy("post.create", prohibited);
 
   // Autorización: solo imágenes propias; productos propios o de una tienda que aceptó
   // colaboraciones (ADR-063, `creators/rules.ts`).

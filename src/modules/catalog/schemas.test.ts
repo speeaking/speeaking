@@ -26,6 +26,7 @@ function form(overrides: Record<string, string | string[]> = {}) {
     returnWindowDays: "7",
     authenticity: "DECLARED_ORIGINAL",
     mediaIds: [uuid],
+    rightsAttestation: "on",
     ...overrides,
   };
   const data = new FormData();
@@ -94,6 +95,56 @@ describe("parseProductForm", () => {
   it("la garantía del vendedor requiere días", () => {
     expect(parseProductForm(form({ warrantyDays: "" })).success).toBe(false);
     expect(parseProductForm(form({ warrantyType: "NONE", warrantyDays: "" })).success).toBe(true);
+  });
+
+  it("una garantía es de al menos 90 días en número entero (LFPC art. 77)", () => {
+    const issue = (overrides: Record<string, string>) => {
+      const result = parseProductForm(form(overrides));
+      return result.success ? null : result.error.issues[0];
+    };
+    expect(issue({ warrantyDays: "30" })).toMatchObject({
+      path: ["warrantyDays"],
+      message:
+        "La garantía debe ser de al menos 90 días (Ley Federal de Protección al Consumidor). Si no das garantía, elige «Sin garantía».",
+    });
+    expect(issue({ warrantyDays: "89" })?.path).toEqual(["warrantyDays"]);
+    expect(issue({ warrantyDays: "120.5" })?.path).toEqual(["warrantyDays"]);
+    expect(issue({ warrantyDays: "3651" })?.path).toEqual(["warrantyDays"]);
+    expect(issue({ warrantyDays: "90" })).toBeNull();
+    expect(issue({ warrantyDays: "365" })).toBeNull();
+    // La del fabricante también: una garantía anunciada dice cuánto dura (LFPC arts. 77 y 78).
+    expect(issue({ warrantyType: "MANUFACTURER", warrantyDays: "" })).toMatchObject({
+      path: ["warrantyDays"],
+      message: "Indica cuántos días de garantía da el fabricante (mínimo 90).",
+    });
+    expect(issue({ warrantyType: "MANUFACTURER", warrantyDays: "30" })?.path).toEqual([
+      "warrantyDays",
+    ]);
+    expect(issue({ warrantyType: "MANUFACTURER", warrantyDays: "365" })).toBeNull();
+  });
+
+  it("«Sin garantía» ignora los días que quedaron escritos", () => {
+    const result = parseProductForm(form({ warrantyType: "NONE", warrantyDays: "30" }));
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.warrantyDays).toBeNull();
+  });
+
+  it("exige confirmar que las fotos, videos y textos son propios o con permiso", () => {
+    const data = form();
+    data.delete("rightsAttestation");
+    const result = parseProductForm(data);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["rightsAttestation"],
+          message:
+            "Confirma que las fotos, videos y textos son tuyos o que tienes permiso para usarlos.",
+        }),
+      );
+    }
   });
 });
 

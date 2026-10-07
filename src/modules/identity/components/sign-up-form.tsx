@@ -105,6 +105,25 @@ export function SignUpForm({
         ) : null}
       </div>
 
+      {/* Solo personas adultas (ADR-076): casilla sin marcar; se guarda con la fecha y la versión. */}
+      <div className="flex flex-col gap-1">
+        <label className="flex items-start gap-3 text-sm leading-snug">
+          <input
+            type="checkbox"
+            name="confirmAge"
+            required
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+            aria-invalid={state.fieldErrors?.confirmAge ? true : undefined}
+          />
+          <span>Tengo 18 años o más</span>
+        </label>
+        {state.fieldErrors?.confirmAge ? (
+          <p role="alert" className="text-sm text-destructive">
+            {state.fieldErrors.confirmAge[0]}
+          </p>
+        ) : null}
+      </div>
+
       {turnstileSiteKey ? (
         <TurnstileField
           key={attempt}

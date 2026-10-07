@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { ReportReason } from "@/generated/prisma/enums";
 
-/** Lo que se puede reportar desde la interfaz (el modelo también admite personas y comentarios). */
-export const REPORTABLE_TARGETS = ["PRODUCT", "POST", "USER"] as const;
+/** Lo que se puede reportar desde la interfaz: todo lo que admite el modelo. */
+export const REPORTABLE_TARGETS = ["PRODUCT", "POST", "USER", "COMMENT"] as const;
 export type ReportableTarget = (typeof REPORTABLE_TARGETS)[number];
 
 export const REPORT_DETAILS_MAX = 1000;
@@ -16,12 +16,22 @@ const optionalText = (max: number, message: string) =>
     .optional()
     .transform((value) => (value ? value : undefined));
 
-export const reportInputSchema = z.object({
-  targetType: z.enum(REPORTABLE_TARGETS),
-  targetId: z.uuid(),
-  reason: z.enum(ReportReason, { error: "Elige un motivo." }),
-  details: optionalText(REPORT_DETAILS_MAX, `Máximo ${REPORT_DETAILS_MAX} caracteres.`),
-});
+/**
+ * Un reporte de la comunidad (anónimo para quien publicó). Un aviso de derechos de autor o de marca
+ * no es un motivo: es el aviso formal de /derechos-de-autor, que no es anónimo.
+ */
+export const reportInputSchema = z
+  .object({
+    targetType: z.enum(REPORTABLE_TARGETS),
+    targetId: z.uuid(),
+    reason: z.enum(ReportReason, { error: "Elige un motivo." }),
+    details: optionalText(REPORT_DETAILS_MAX, `Máximo ${REPORT_DETAILS_MAX} caracteres.`),
+  })
+  // La cuenta de un menor se reporta como cuenta: el equipo actúa sobre ella, no sobre un contenido.
+  .refine(({ targetType, reason }) => reason !== "MINOR_ACCOUNT" || targetType === "USER", {
+    path: ["reason"],
+    message: "Ese motivo solo aplica al reportar una cuenta.",
+  });
 export type ReportInput = z.infer<typeof reportInputSchema>;
 
 /** Fotos de comprobante por producto (ticket, factura, empaque, número de serie). */

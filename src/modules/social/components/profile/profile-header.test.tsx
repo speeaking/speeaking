@@ -7,6 +7,7 @@ import { ProfileHeader, type ProfileHeaderProps } from "./profile-header";
 vi.mock("@/modules/identity/actions", () => ({ signOutAction: vi.fn() }));
 vi.mock("../../follow-actions", () => ({ toggleFollowAction: vi.fn() }));
 vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
+vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn(async () => ({})) }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   usePathname: () => "/u/ana",
@@ -184,5 +185,32 @@ describe("ProfileHeader", () => {
       "href",
       expect.stringContaining("/registro"),
     );
+  });
+});
+
+describe("ProfileHeader: reportar la cuenta (ADR-076)", () => {
+  it("en un perfil ajeno se puede reportar; en el propio y en las cuentas editoriales, no", () => {
+    const { unmount } = render(
+      <ProfileHeader profile={base} inCommon={nobody} cover={null} isOwn={false} isSignedIn />,
+    );
+    expect(screen.getByRole("button", { name: "Reportar perfil" })).toBeInTheDocument();
+    unmount();
+
+    const own = render(
+      <ProfileHeader profile={base} inCommon={nobody} cover={null} isOwn isSignedIn />,
+    );
+    expect(screen.queryByRole("button", { name: "Reportar perfil" })).toBeNull();
+    own.unmount();
+
+    render(
+      <ProfileHeader
+        profile={{ ...base, isEditorial: true }}
+        inCommon={nobody}
+        cover={null}
+        isOwn={false}
+        isSignedIn
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Reportar perfil" })).toBeNull();
   });
 });

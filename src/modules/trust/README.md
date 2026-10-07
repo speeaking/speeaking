@@ -37,6 +37,17 @@ actualizada en su lugar).
 - `service.ts`: `refreshAuthenticityCheck` (alta y edición del catálogo, reportes, cambio a
   genérico; serializado por producto), reportes, comprobante del vendedor y acciones del equipo
   (`assertAdmin` + bitácora en `PlatformDecision` con `kind` `moderation.*` / `authenticity.*`).
+- Reportes (ADR-076): productos, publicaciones, comentarios (cada uno con su «Reportar», salvo los
+  propios) y cuentas (desde mensajes). «Cuenta de un menor de edad» solo para una cuenta (también
+  en `reportInputSchema`). «Contenido íntimo sin consentimiento» y «Pone en riesgo a un menor» son
+  urgentes (`URGENT_REPORT_REASONS`): el diálogo recuerda el 911 y la cola los pone primero con la
+  marca «Urgente» (`listOpenReports` los lee aparte para que el límite no los deje fuera).
+  «Infringe mis derechos de autor o mi marca» no crea un reporte: explica que el aviso formal no es
+  anónimo y lleva a `/derechos-de-autor?url=…#aviso` (un comentario va sin `url`: la de su
+  publicación apuntaría el aviso a quien la publicó). El equipo oculta, restaura o descarta un
+  comentario igual que una publicación (`setCommentModeration` ajusta `commentCount`). Una cuenta
+  reportada (p. ej., la de un menor) solo se descarta en la cola: su tarjeta lleva a Usuarios
+  (`/admin/usuarios?q=`) para bloquearla.
 - `visibility.ts`: filtros `VISIBLE_PRODUCT` y `POST_WITH_VISIBLE_PRODUCT` para toda consulta
   pública (en SQL: `p."moderationStatus" = 'VISIBLE'`). Los usan el feed, Comprar, similares,
   perfiles, tarjetas, búsqueda (`search/sql.ts`), «Lo que buscas» y la actividad de comunidades

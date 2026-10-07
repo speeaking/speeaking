@@ -14,6 +14,12 @@ import {
 } from "@/modules/media/image-processing";
 import { parseContentLength, readBodyWithLimit } from "@/modules/media/limited-body";
 import { getViewer } from "@/modules/identity/session";
+import {
+  BLOCKED_UPLOAD_MESSAGE,
+  isBlockedHash,
+  logBlockedUpload,
+  sha256Hex,
+} from "@/modules/rights/stay-down";
 import { clientIp } from "@/server/client-ip";
 import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
@@ -98,7 +104,8 @@ function newStorageKey(now = new Date()) {
 }
 
 /**
- * Sube una imagen: valida su contenido real, elimina metadatos (GPS) y la guarda. La imagen queda
+ * Sube una imagen: rechaza un archivo que se retiró antes (ADR-076), valida su contenido real,
+ * elimina metadatos (GPS) y la guarda con la huella del archivo original. La imagen queda
  * privada (solo su dueño la ve) hasta que se adjunta a una publicación o producto; si no se adjunta
  * en 24 h, `scripts/cleanup-orphan-media.ts` la borra (SEC-14).
  */
@@ -180,9 +187,18 @@ async function receiveAndStore(request: Request, contentType: string, ownerId: s
   }
   if (!(file instanceof File)) return json({ error: "No recibimos ninguna imagen." }, 400);
 
+  const original = Buffer.from(await file.arrayBuffer());
+  // Lo retirado no vuelve (ADR-076): la huella es del archivo tal como llegó (la salida re-codificada
+  // cambia) y se revisa antes de decodificar, desde cualquier cuenta.
+  const sha256 = await sha256Hex(original);
+  if (await isBlockedHash(db, sha256)) {
+    logBlockedUpload("image", sha256);
+    return json({ error: BLOCKED_UPLOAD_MESSAGE }, 422);
+  }
+
   let image;
   try {
-    image = await processImage(Buffer.from(await file.arrayBuffer()));
+    image = await processImage(original);
   } catch (error) {
     if (error instanceof ImageValidationError) return json({ error: MESSAGES[error.code] }, 422);
     throw error;
@@ -200,6 +216,7 @@ async function receiveAndStore(request: Request, contentType: string, ownerId: s
       height: image.height,
       sizeBytes: image.sizeBytes,
       blurDataUrl: image.blurDataUrl,
+      sha256,
       status: "PROCESSING",
     },
     select: { id: true, width: true, height: true },

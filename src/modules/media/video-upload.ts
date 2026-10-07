@@ -1,6 +1,13 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
+import {
+  BLOCKED_UPLOAD_MESSAGE,
+  IncompleteFileError,
+  isBlockedHash,
+  logBlockedUpload,
+  sha256HexOfRanges,
+} from "@/modules/rights/stay-down";
 import { clientIp } from "@/server/client-ip";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
@@ -22,8 +29,9 @@ import {
  *    dónde subir el archivo (URL firmada del bucket o, en desarrollo, la ruta local).
  * 2. `finishVideoUpload`: con el archivo ya guardado, lee su estructura por rangos
  *    (`video-container.ts`), revisa que ya no traiga la ubicación ni los datos del teléfono (el
- *    navegador los quita antes de subirlo, `video-metadata.ts`) y lo deja READY con su duración y
- *    medidas, o lo borra con el motivo.
+ *    navegador los quita antes de subirlo, `video-metadata.ts`), calcula su huella SHA-256 leyendo el
+ *    archivo por tramos y rechaza uno que se retiró antes (ADR-076); lo deja READY con su duración,
+ *    medidas y huella, o lo borra con el motivo.
  * Hasta adjuntarse a una publicación, el video es privado y el recolector lo borra a las 24 h, como
  * las fotos (SEC-14).
  */
@@ -191,6 +199,7 @@ export async function finishVideoUpload(
   }
 
   let facts;
+  let sha256;
   try {
     const read = store.reader(media.storageKey);
     facts = await inspectVideo(read, size, {
@@ -199,9 +208,21 @@ export async function finishVideoUpload(
     });
     // Ni la ubicación ni la marca o el modelo del teléfono llegan a un video público.
     await assertNoMetadata(read, size);
+    // Lo retirado no vuelve (ADR-076). Es el primer momento en que el servidor ve el archivo
+    // completo (sube directo al bucket); va al final porque lee todo (hasta 50 MB, por tramos). Sin
+    // transcodificar, es lo mismo que se entrega: también coincide quien vuelve a subir una copia.
+    sha256 = await sha256HexOfRanges(read, size);
   } catch (error) {
     if (error instanceof VideoValidationError) return fail(VIDEO_MESSAGES[error.code]);
+    // Se acortó después de medirlo (otro PUT encima): no se publica algo que no se revisó entero.
+    if (error instanceof IncompleteFileError) {
+      return fail("El video no llegó completo. Intenta de nuevo.");
+    }
     throw error;
+  }
+  if (await isBlockedHash(db, sha256)) {
+    logBlockedUpload("video", sha256);
+    return fail(BLOCKED_UPLOAD_MESSAGE);
   }
   await db.media.update({
     where: { id: media.id },
@@ -211,6 +232,7 @@ export async function finishVideoUpload(
       height: facts.height,
       durationMs: facts.durationMs,
       videoCodec: facts.videoCodec,
+      sha256,
     },
   });
   // DTO explícito: solo lo que la vista previa necesita.

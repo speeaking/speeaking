@@ -46,7 +46,7 @@ export default async function CommentsLayerPage({ params }: { params: Promise<{ 
       }
     >
       {comments.length > 0 ? (
-        <CommentList comments={comments} />
+        <CommentList comments={comments} isSignedIn={viewer !== null} />
       ) : (
         <div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
           <MessageCircle aria-hidden="true" className="size-8" />

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createProductAction, toggleProductStatusAction, updateProductAction } from "./actions";
 
 // La acción solo traduce: quién edita sale de la sesión (nunca del formulario) y los errores del
@@ -79,6 +79,7 @@ function editForm(overrides: Record<string, string> = {}) {
     returnWindowDays: "0",
     authenticity: "NOT_APPLICABLE",
     mediaIds: uuid,
+    rightsAttestation: "on",
     // Un navegador manipulado no puede elegir por quién edita.
     sellerUserId: OTHER,
     userId: OTHER,
@@ -189,5 +190,72 @@ describe("toggleProductStatusAction", () => {
       status: "PAUSED",
     });
     expect(indexNow.scheduleIndexNow).toHaveBeenCalledWith(["/producto/airpods-pro-2-abc123"]);
+  });
+});
+
+// Lo prohibido (armas, vapeadores, piratería, venta de facturas…) no se publica a mano: un aviso
+// con la categoría y la liga a los Términos, sin tocar la base ni sancionar la cuenta. Las reglas
+// se prueban en trust/content-policy.test.
+describe("artículos prohibidos al publicar a mano", () => {
+  const IPTV_MESSAGE = expect.stringMatching(
+    /^No se puede publicar\. Tu texto menciona copias sin licencia .*«Artículos prohibidos y restringidos» en los Términos\.$/,
+  );
+  const HELP = { href: "/terminos#prohibidos", label: "Ver qué no se puede publicar" };
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    db.media.findMany.mockResolvedValue([{ id: uuid }]);
+    db.category.findUnique.mockResolvedValue({ id: uuid });
+  });
+  afterEach(() => warn.mockRestore());
+
+  it("al crear: detiene antes de tocar la base y registra solo la categoría", async () => {
+    await expect(
+      createProductAction({}, editForm({ title: "Fire Stick cargado", tags: "tv, iptv" })),
+    ).resolves.toEqual({ error: IPTV_MESSAGE, helpLink: HELP });
+
+    expect(db.media.findMany).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(trust.evaluateProductAuthenticity).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      "[trust] publicación detenida por la política de contenido: piracy (product.create)",
+    );
+  });
+
+  it("al crear: también revisa la publicación que acompaña al producto", async () => {
+    const data = editForm({ title: "Bocina Bluetooth" });
+    data.set("publishToFeed", "on");
+    data.set("postBody", "Vapes desechables 5000 puffs, pregunta");
+
+    const state = await createProductAction({}, data);
+
+    expect(state.error).toContain("vapeadores");
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("al crear: un producto legítimo con palabras parecidas se publica", async () => {
+    await expect(
+      createProductAction(
+        {},
+        editForm({ title: "Cargador para iPhone", description: "Lentes de carey de regalo." }),
+      ),
+    ).rejects.toThrow(/^redirect:\/producto\/cargador-para-iphone-[a-z0-9]+\?nuevo=1$/);
+    expect(db.$transaction).toHaveBeenCalledOnce();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("al editar: detiene sin guardar y conserva el inventario que se mostró", async () => {
+    await expect(
+      updateProductAction({}, editForm({ description: "Facturas deducibles al 3%." })),
+    ).resolves.toEqual({
+      error: expect.stringContaining("compra o venta de facturas"),
+      helpLink: HELP,
+      stockShown: "5",
+    });
+    expect(service.updateProduct).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      "[trust] publicación detenida por la política de contenido: fake_invoices (product.update)",
+    );
   });
 });

@@ -15,6 +15,7 @@ import {
   type ReferencePrice,
   referencePricesSchema,
 } from "./reference-prices";
+import { URGENT_REPORT_REASONS } from "./labels";
 import { isProofMedia } from "./proof-media";
 import { median, type TrustSignal } from "./rules";
 import {
@@ -370,6 +371,27 @@ export async function findReportTarget(
       productId: targetId,
     };
   }
+  if (targetType === "COMMENT") {
+    // Visible si el comentario y su publicación lo están. No se refiere a un producto: reportar un
+    // comentario como «posible falsificación» no pesa en la revisión del producto de la publicación.
+    const comment = await db.comment.findUnique({
+      where: { id: targetId },
+      select: {
+        authorId: true,
+        status: true,
+        post: { select: { status: true, product: { select: { moderationStatus: true } } } },
+      },
+    });
+    if (!comment) return null;
+    return {
+      ownerUserId: comment.authorId,
+      visible:
+        comment.status === "PUBLISHED" &&
+        comment.post.status === "PUBLISHED" &&
+        comment.post.product?.moderationStatus !== "HIDDEN",
+      productId: null,
+    };
+  }
   const post = await db.post.findUnique({
     where: { id: targetId },
     select: {
@@ -576,21 +598,37 @@ export async function findSellerCase(sellerUserId: string, productId: string) {
 
 const QUEUE_LIMIT = 100;
 
-export function listOpenReports() {
-  return db.report.findMany({
-    where: { status: "OPEN" },
-    orderBy: { createdAt: "asc" },
-    take: 300,
-    select: {
-      id: true,
-      targetType: true,
-      targetId: true,
-      reason: true,
-      details: true,
-      createdAt: true,
-      reporter: { select: { profile: { select: { username: true } } } },
-    },
-  });
+const OPEN_REPORT_SELECT = {
+  id: true,
+  targetType: true,
+  targetId: true,
+  reason: true,
+  details: true,
+  createdAt: true,
+  reporter: { select: { profile: { select: { username: true } } } },
+} as const satisfies Prisma.ReportSelect;
+
+/**
+ * Reportes abiertos, lo más antiguo primero. Los urgentes (ADR-076) se leen aparte para que el
+ * límite nunca los deje fuera aunque haya cientos de reportes anteriores de otros motivos.
+ */
+export async function listOpenReports() {
+  const urgent = [...URGENT_REPORT_REASONS];
+  const [urgentReports, otherReports] = await Promise.all([
+    db.report.findMany({
+      where: { status: "OPEN", reason: { in: urgent } },
+      orderBy: { createdAt: "asc" },
+      take: 300,
+      select: OPEN_REPORT_SELECT,
+    }),
+    db.report.findMany({
+      where: { status: "OPEN", reason: { notIn: urgent } },
+      orderBy: { createdAt: "asc" },
+      take: 300,
+      select: OPEN_REPORT_SELECT,
+    }),
+  ]);
+  return [...urgentReports, ...otherReports];
 }
 
 export function listReviewChecks() {
@@ -680,6 +718,22 @@ export function findPostsForQueue(ids: readonly string[]) {
   });
 }
 
+/** Comentarios reportados: texto, autor y su publicación (el enlace de la cola). */
+export function findCommentsForQueue(ids: readonly string[]) {
+  if (ids.length === 0) return Promise.resolve([]);
+  return db.comment.findMany({
+    where: { id: { in: [...ids] } },
+    select: {
+      id: true,
+      body: true,
+      status: true,
+      postId: true,
+      author: { select: { profile: { select: { username: true } } } },
+    },
+  });
+}
+
+/** Lo oculto por el equipo: productos, publicaciones y comentarios (en ese orden). */
 export function listHiddenContent() {
   return Promise.all([
     db.product.findMany({
@@ -701,6 +755,18 @@ export function listHiddenContent() {
       select: {
         id: true,
         body: true,
+        updatedAt: true,
+        author: { select: { profile: { select: { username: true } } } },
+      },
+    }),
+    db.comment.findMany({
+      where: { status: "HIDDEN" },
+      orderBy: { updatedAt: "desc" },
+      take: QUEUE_LIMIT,
+      select: {
+        id: true,
+        body: true,
+        postId: true,
         updatedAt: true,
         author: { select: { profile: { select: { username: true } } } },
       },
@@ -753,6 +819,29 @@ export function setPostModeration(tx: Tx, postId: string, hidden: boolean) {
     where: { id: postId, status: hidden ? "PUBLISHED" : "HIDDEN" },
     data: { status: hidden ? "HIDDEN" : "PUBLISHED" },
   });
+}
+
+/**
+ * Oculta o restaura un comentario y ajusta el contador de su publicación (cuenta solo los
+ * publicados, como al borrarlo su autor). Nunca toca los retirados (REMOVED).
+ */
+export async function setCommentModeration(tx: Tx, commentId: string, hidden: boolean) {
+  const comment = await tx.comment.findUnique({
+    where: { id: commentId },
+    select: { postId: true },
+  });
+  if (!comment) return { count: 0 };
+  const result = await tx.comment.updateMany({
+    where: { id: commentId, status: hidden ? "PUBLISHED" : "HIDDEN" },
+    data: { status: hidden ? "HIDDEN" : "PUBLISHED" },
+  });
+  if (result.count > 0) {
+    await tx.post.updateMany({
+      where: hidden ? { id: comment.postId, commentCount: { gt: 0 } } : { id: comment.postId },
+      data: { commentCount: hidden ? { decrement: 1 } : { increment: 1 } },
+    });
+  }
+  return result;
 }
 
 export function findCheckForReview(tx: Tx, productId: string) {
@@ -841,5 +930,12 @@ export function findPostState(tx: Tx, postId: string) {
   return tx.post.findUnique({
     where: { id: postId },
     select: { id: true, status: true, productId: true },
+  });
+}
+
+export function findCommentState(tx: Tx, commentId: string) {
+  return tx.comment.findUnique({
+    where: { id: commentId },
+    select: { id: true, status: true, postId: true },
   });
 }

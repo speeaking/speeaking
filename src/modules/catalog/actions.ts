@@ -10,11 +10,21 @@ import { track } from "@/modules/analytics/track";
 import { requireOnboardedViewer } from "@/modules/identity/session";
 import { checkCatalogLimit } from "./limits";
 import { scheduleAuthenticityAiSignal } from "@/modules/trust/background";
+import {
+  blockedByPolicy,
+  type PolicyHelpLink,
+  prohibitedInListing,
+} from "@/modules/trust/content-policy";
 import { isProofMediaLinkError, proofMediaIdsAmong } from "@/modules/trust/proof-media";
 import { evaluateProductAuthenticity } from "@/modules/trust/service";
 import { db } from "@/server/db";
 import { scheduleIndexNow } from "@/server/seo/schedule-indexnow";
-import { parseProductForm, productEditMetaSchema, productSlug } from "./schemas";
+import {
+  parseProductForm,
+  type ProductFormInput,
+  productEditMetaSchema,
+  productSlug,
+} from "./schemas";
 import { ProductEditError, setProductStatus, updateProduct } from "./service";
 import type { ToggleTarget } from "./status";
 
@@ -23,11 +33,26 @@ export type ProductFormState = {
   fieldErrors?: Partial<Record<string, string[]>>;
   /** Edición: inventario vigente cuando cambió mientras se editaba (reemplaza el que se mostró). */
   stockShown?: string;
+  /** Liga que explica el error (lo que no se puede publicar, en los Términos). */
+  helpLink?: PolicyHelpLink;
 };
 
 /** Una foto de comprobante de autenticidad (P14) nunca se adjunta a un producto. */
 const PROOF_PHOTO =
   "Esa foto no se puede usar en un producto: es un comprobante de autenticidad. Elige otra.";
+
+/**
+ * Artículo prohibido en el texto (armas, vapeadores, piratería, venta de facturas…; las réplicas
+ * van por la revisión de autenticidad). Incluye el texto de la publicación que lo acompaña.
+ */
+function prohibitedProduct(input: ProductFormInput) {
+  return prohibitedInListing(
+    input.title,
+    input.description,
+    ...input.tags,
+    input.publishToFeed ? (input.postBody ?? "") : "",
+  );
+}
 
 /** Crea un producto (con su costo privado y datos P4) y, si se pide, su publicación en el feed. */
 export async function createProductAction(
@@ -49,6 +74,10 @@ export async function createProductAction(
     };
   }
   const input = parsed.data;
+
+  // Lo prohibido no se publica: un aviso para corregir el texto, nunca una sanción a la cuenta.
+  const prohibited = prohibitedProduct(input);
+  if (prohibited) return blockedByPolicy("product.create", prohibited);
 
   // Autorización: fotos propias que no sean de un comprobante (P14); categoría y comunidad
   // existentes. Toda foto enviada como comprobante tiene su fila en la bitácora (`proofHistory`).
@@ -197,6 +226,9 @@ export async function updateProductAction(
       ...keep,
     };
   }
+  // También al editar: el texto nuevo (o uno de antes de esta regla) se corrige antes de guardar.
+  const prohibited = prohibitedProduct(parsed.data);
+  if (prohibited) return { ...blockedByPolicy("product.update", prohibited), ...keep };
 
   let slug: string;
   try {

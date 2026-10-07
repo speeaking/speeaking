@@ -37,6 +37,14 @@ export const accountNameSchema = z
   })
   .refine((value) => !isPlatformImpersonation(value), RESERVED_NAME_MESSAGE);
 
+/** Mensaje de la casilla «Tengo 18 años o más» (registro y bienvenida con Google). */
+export const ADULT_REQUIRED_MESSAGE = "Para crear una cuenta necesitas tener 18 años o más.";
+
+/** Casilla «Tengo 18 años o más», sin marcar de inicio: llega como "on" solo si la marcó. */
+export const adultDeclaration = z
+  .literal("on", { error: ADULT_REQUIRED_MESSAGE })
+  .transform(() => true);
+
 export const signUpSchema = z
   .object({
     name: accountNameSchema,
@@ -54,6 +62,8 @@ export const signUpSchema = z
     acceptTerms: z
       .literal("on", { error: "Debes aceptar los términos y el aviso de privacidad." })
       .transform(() => true),
+    // Solo personas adultas (ADR-076: CCF arts. 450 y 646; los términos piden 18 años o más).
+    confirmAge: adultDeclaration,
   })
   .refine(({ email, password }) => !passwordContainsEmail(password, email), {
     path: ["password"],

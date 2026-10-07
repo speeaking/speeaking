@@ -10,6 +10,8 @@ export const LEGAL_LINKS: readonly { href: Route; label: string }[] = [
   { href: "/privacidad", label: "Privacidad" },
   { href: "/terminos", label: "Términos" },
   { href: "/cookies", label: "Cookies" },
+  // Canal formal de avisos de la LFDA (art. 114 Octies, ADR-076): siempre a la vista.
+  { href: "/derechos-de-autor" as Route, label: "Derechos de autor" },
   { href: "/precios", label: "Publicidad" },
   { href: "/seguridad", label: "Seguridad" },
   { href: "/apoya", label: "Apoya" },

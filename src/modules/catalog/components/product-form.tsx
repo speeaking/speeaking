@@ -1,6 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
+import Link from "next/link";
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { TextField } from "@/components/forms/text-field";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { ImageUploader } from "@/modules/media/components/image-uploader";
 import { createProductAction, type ProductFormState, updateProductAction } from "../actions";
 import { CONDITION_LABELS } from "../dto";
 import type { ProductFormDefaults } from "../form-defaults";
-import { MAX_PRODUCT_IMAGES } from "../schemas";
+import { MAX_PRODUCT_IMAGES, MIN_WARRANTY_DAYS } from "../schemas";
 import { MarginPreview } from "./margin-preview";
 
 export type { ProductFormDefaults };
@@ -68,7 +69,12 @@ export function ProductForm(props: ProductFormProps) {
   const [price, setPrice] = useState(defaults.price ?? "");
   const [cost, setCost] = useState(defaults.cost ?? "");
   const [national, setNational] = useState(defaults.nationalShippingAvailable ?? true);
-  const [warranty, setWarranty] = useState<string>(defaults.warrantyType ?? "SELLER");
+  // Por omisión «Sin garantía»: una garantía ofrecida es de al menos 90 días (LFPC art. 77).
+  const [warranty, setWarranty] = useState<string>(defaults.warrantyType ?? "NONE");
+  const warrantyDays =
+    defaults.warrantyType && defaults.warrantyType !== "NONE"
+      ? (defaults.warrantyDays ?? "")
+      : String(MIN_WARRANTY_DAYS);
   const [publish, setPublish] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -325,7 +331,8 @@ export function ProductForm(props: ProductFormProps) {
               label="Días de garantía"
               name="warrantyDays"
               inputMode="numeric"
-              defaultValue={defaults.warrantyDays ?? "30"}
+              defaultValue={warrantyDays}
+              description={`Mínimo ${MIN_WARRANTY_DAYS} días, como pide la ley.`}
               errors={errors.warrantyDays}
             />
           </div>
@@ -419,9 +426,39 @@ export function ProductForm(props: ProductFormProps) {
         </Section>
       )}
 
+      {/* Sin marcar en cada alta y edición (LFDA art. 27 y derecho a la propia imagen). */}
+      <div className="flex flex-col gap-1">
+        <label className="flex items-start gap-3 text-sm leading-snug">
+          <input
+            type="checkbox"
+            name="rightsAttestation"
+            required
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+            aria-invalid={errors.rightsAttestation ? true : undefined}
+          />
+          <span>
+            Las fotos, videos y textos son míos o tengo permiso para usarlos (y de las personas que
+            aparecen)
+          </span>
+        </label>
+        <FieldError errors={errors.rightsAttestation} />
+      </div>
+
       {formError ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {formError}
+          {/* Bloqueo por las reglas (ADR-076): la lista completa está en los Términos. */}
+          {!uploading && state.helpLink ? (
+            <>
+              {" "}
+              <Link
+                href={state.helpLink.href}
+                className="font-semibold underline underline-offset-2"
+              >
+                {state.helpLink.label}
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
       <Button type="submit" size="lg" className="h-12 text-base" disabled={pending}>

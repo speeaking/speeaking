@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({
   media: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
+  blockedMediaHash: { findUnique: vi.fn() },
 }));
 const env = vi.hoisted(() => ({
   STORAGE_DRIVER: "local" as "local" | "s3",
@@ -36,6 +38,7 @@ const KEY = "videos/2026/10/video.mp4";
 const original = readFileSync("tests/fixtures/video/video-corto.mp4");
 /** Como lo sube el navegador: sin metadatos (`video-metadata.ts`) y del mismo tamaño. */
 const video = Buffer.from(await (await withoutMetadata(new Blob([original]))).arrayBuffer());
+const videoSha256 = createHash("sha256").update(video).digest("hex");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -45,6 +48,7 @@ beforeEach(() => {
   db.media.findFirst.mockResolvedValue({ id: POSTER });
   db.media.create.mockResolvedValue({ id: "video-1" });
   db.media.update.mockResolvedValue({});
+  db.blockedMediaHash.findUnique.mockResolvedValue(null);
   storage.delete.mockResolvedValue(undefined);
   videoStore.uploadTarget.mockResolvedValue({ url: "/api/uploads/video/video-1", headers: {} });
   videoStore.size.mockResolvedValue(video.byteLength);
@@ -141,7 +145,7 @@ describe("finishVideoUpload", () => {
     durationMs: null,
   };
 
-  it("revisa el archivo guardado y lo deja listo con su duración y medidas", async () => {
+  it("revisa el archivo guardado y lo deja listo con su duración, medidas y huella", async () => {
     db.media.findFirst.mockResolvedValue(row);
 
     await expect(finishVideoUpload(USER, "video-1")).resolves.toEqual({
@@ -156,8 +160,65 @@ describe("finishVideoUpload", () => {
     });
     expect(db.media.update).toHaveBeenCalledWith({
       where: { id: "video-1" },
-      data: { status: "READY", width: 180, height: 320, durationMs: 2000, videoCodec: "avc1" },
+      data: {
+        status: "READY",
+        width: 180,
+        height: 320,
+        durationMs: 2000,
+        videoCodec: "avc1",
+        sha256: videoSha256,
+      },
     });
+    expect(db.blockedMediaHash.findUnique).toHaveBeenCalledWith({
+      where: { sha256: videoSha256 },
+      select: { sha256: true },
+    });
+  });
+
+  it("un video retirado antes no se publica desde ninguna cuenta: se borra y queda en el log (ADR-076)", async () => {
+    db.media.findFirst.mockResolvedValue(row);
+    db.blockedMediaHash.findUnique.mockResolvedValueOnce({ sha256: videoSha256 });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(finishVideoUpload(USER, "video-1")).resolves.toEqual({
+      ok: false,
+      error:
+        "No puedes subir este archivo: se retiró de speeaking por un aviso de derechos o por nuestras reglas.",
+    });
+    expect(db.media.update).toHaveBeenCalledTimes(1);
+    expect(db.media.update).toHaveBeenCalledWith({
+      where: { id: "video-1" },
+      data: { status: "FAILED" },
+    });
+    expect(storage.delete).toHaveBeenCalledWith(KEY);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(String(warn.mock.calls[0]![0])).toContain(videoSha256);
+    expect(String(warn.mock.calls[0]![0])).not.toContain(USER);
+    warn.mockRestore();
+  });
+
+  it("si el archivo se acaba mientras se calcula su huella, se borra como uno que no llegó completo", async () => {
+    db.media.findFirst.mockResolvedValue(row);
+    // La estructura se lee bien; desde la lectura de corrido para la huella, el archivo ya mide un
+    // byte menos (cambió después de medirlo).
+    let shortened = false;
+    videoStore.reader.mockReturnValue(async (start: number, length: number) => {
+      if (length === video.byteLength) shortened = true;
+      const end = shortened ? video.byteLength - 1 : video.byteLength;
+      return video.subarray(start, Math.min(start + length, end));
+    });
+
+    await expect(finishVideoUpload(USER, "video-1")).resolves.toEqual({
+      ok: false,
+      error: "El video no llegó completo. Intenta de nuevo.",
+    });
+    expect(db.media.update).toHaveBeenCalledTimes(1);
+    expect(db.media.update).toHaveBeenCalledWith({
+      where: { id: "video-1" },
+      data: { status: "FAILED" },
+    });
+    expect(storage.delete).toHaveBeenCalledWith(KEY);
+    expect(db.blockedMediaHash.findUnique).not.toHaveBeenCalled();
   });
 
   it("si todavía no llega, lo dice sin borrar nada; si no coincide el tamaño, lo borra", async () => {
@@ -197,6 +258,8 @@ describe("finishVideoUpload", () => {
       data: { status: "FAILED" },
     });
     expect(storage.delete).toHaveBeenCalledWith(KEY);
+    // Lo inválido se descarta con las revisiones baratas, sin leer el archivo completo.
+    expect(db.blockedMediaHash.findUnique).not.toHaveBeenCalled();
   });
 
   it("lo que no es un video se borra con un motivo claro", async () => {

@@ -73,6 +73,7 @@ function form(mediaIds: string[]) {
     warrantyType: "NONE",
     returnWindowDays: "0",
     authenticity: "DECLARED_ORIGINAL",
+    rightsAttestation: "on",
   };
   const data = new FormData();
   for (const [key, value] of Object.entries(values)) data.append(key, value);

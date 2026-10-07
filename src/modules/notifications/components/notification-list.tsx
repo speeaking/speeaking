@@ -4,6 +4,9 @@ import { useState } from "react";
 import {
   MessageCircle,
   AtSign,
+  Copyright,
+  Eye,
+  EyeOff,
   Package,
   Tag,
   Truck,
@@ -37,7 +40,23 @@ const ICONS: Record<Exclude<NotificationKind, "REACTION">, LucideIcon> = {
   ORDER_CANCELLED: XCircle,
   PRODUCT_TAGGED: Tag,
   PRODUCT_TAG_REMOVED: Tag,
+  CONTENT_REMOVED: EyeOff,
+  CONTENT_RESTORED: Eye,
 };
+
+/** Sin persona que lo causara: lo hizo la plataforma (un pedido) o el equipo (un aviso de derechos). */
+function PlaceholderAvatar({ type }: { type: NotificationKind }) {
+  const rights = type === "CONTENT_REMOVED" || type === "CONTENT_RESTORED";
+  return (
+    <span className="grid size-12 place-items-center rounded-full bg-secondary">
+      {rights ? (
+        <Copyright className="size-5 text-muted-foreground" />
+      ) : (
+        <Package className="size-5 text-muted-foreground" />
+      )}
+    </span>
+  );
+}
 
 function Badge({ item }: { item: NotificationItem }) {
   if (item.type === "REACTION") {
@@ -87,9 +106,7 @@ function Row({ item, allowRemoval }: { item: NotificationItem; allowRemoval: boo
                 className="size-12"
               />
             ) : (
-              <span className="grid size-12 place-items-center rounded-full bg-secondary">
-                <Package className="size-5 text-muted-foreground" />
-              </span>
+              <PlaceholderAvatar type={item.type} />
             )}
             <Badge item={item} />
           </span>

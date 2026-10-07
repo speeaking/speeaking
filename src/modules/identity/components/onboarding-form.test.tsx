@@ -60,6 +60,65 @@ describe("OnboardingForm", () => {
     );
   });
 
+  it("con Google pide aceptar términos y declarar 18 años o más, sin marcar (ADR-076)", () => {
+    render(
+      <OnboardingForm
+        communities={communities}
+        suggestedUsername="ana"
+        defaultName="Ana"
+        needsLegalConsent
+      />,
+    );
+
+    const legal = screen.getByRole("checkbox", { name: /Acepto los términos/ });
+    const adult = screen.getByRole("checkbox", { name: "Tengo 18 años o más" });
+    for (const box of [legal, adult]) {
+      expect(box).not.toBeChecked();
+      expect(box).toBeRequired();
+    }
+    expect(adult).toHaveAttribute("name", "confirmAge");
+  });
+
+  it("quien ya las hizo al registrarse no ve esas casillas", () => {
+    renderForm();
+    expect(screen.queryByRole("checkbox", { name: "Tengo 18 años o más" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: /Acepto los términos/ })).toBeNull();
+  });
+
+  it("si falta la edad, regresa al paso 1 con el error", async () => {
+    vi.mocked(completeOnboardingAction).mockResolvedValueOnce({
+      error: "Revisa los datos marcados.",
+      fieldErrors: { confirmAge: ["Para crear una cuenta necesitas tener 18 años o más."] },
+    });
+    render(
+      <OnboardingForm
+        communities={communities}
+        suggestedUsername="ana"
+        defaultName="Ana"
+        needsLegalConsent
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    for (const name of ["gaming", "tecnologia", "comida"]) {
+      await userEvent.click(screen.getByText(name));
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    await userEvent.click(screen.getByRole("button", { name: "Empezar" }));
+
+    expect(
+      await screen.findByText("Para crear una cuenta necesitas tener 18 años o más."),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Cuéntanos de ti");
+  });
+
+  it("«Personalizar mi feed» es opcional y no viene marcada (finalidad secundaria)", () => {
+    renderForm();
+    // Está en el paso 3 (oculto al empezar).
+    expect(
+      screen.getByRole("checkbox", { name: /Personalizar mi feed/, hidden: true }),
+    ).not.toBeChecked();
+  });
+
   it("sin enlace de origen no manda `next`", () => {
     const { container } = renderForm();
     expect(container.querySelector('input[name="next"]')).toBeNull();

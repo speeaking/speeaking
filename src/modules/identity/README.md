@@ -26,6 +26,17 @@ Fases: 1.3 (auth) y 1.4 (perfiles). Ver docs/architecture.md → Estructura.
 - Tope absoluto de sesión: `getSession` (`session.ts`) ignora y borra una sesión con más de 90 días
   de iniciada, aunque Better Auth la haya renovado (SEC-10).
 
+## Mayoría de edad y finalidades secundarias (ADR-076)
+
+- Solo personas de 18 años o más: el registro pide la casilla «Tengo 18 años o más» (sin marcar,
+  `confirmAge` en `signUpSchema`) y guarda `AGE_18` en `UserConsent` con la versión de los términos
+  y la fecha. Una cuenta de Google la marca en la bienvenida junto con términos y aviso
+  (`hasLegalConsents` exige la edad además de términos o aviso; `completeOnboarding` registra las
+  tres). Pendiente fuera de este módulo: pedirla antes de «Vender» y de «Pruébatelo» a las cuentas
+  creadas antes de la casilla.
+- «Personalizar mi feed» en la bienvenida es una finalidad secundaria: la casilla nunca viene
+  marcada (LFPDPPP; Lineamientos Décimo).
+
 ## Volver a aceptar los documentos legales (`consent-refresh.ts`)
 
 - Al registrarse se guardan `TERMS` y `PRIVACY_NOTICE` en `UserConsent` con la versión vigente

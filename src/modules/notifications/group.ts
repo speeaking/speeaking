@@ -1,4 +1,7 @@
 import { siteConfig } from "@/config/site";
+import { formatCaseNumber } from "@/modules/rights/case-number";
+import { RIGHTS_KIND_PHRASE } from "@/modules/rights/labels";
+import type { RightsCaseRef } from "@/modules/rights/notification-key";
 
 /**
  * Agrupar y redactar avisos (ADR-059). Código puro: lo usa la página de avisos y lo prueban las
@@ -18,7 +21,9 @@ export type NotificationKind =
   | "ORDER_DELIVERED"
   | "ORDER_CANCELLED"
   | "PRODUCT_TAGGED"
-  | "PRODUCT_TAG_REMOVED";
+  | "PRODUCT_TAG_REMOVED"
+  | "CONTENT_REMOVED"
+  | "CONTENT_RESTORED";
 
 export type NotificationActor = {
   userId?: string;
@@ -43,6 +48,8 @@ export type NotificationRow = {
   orderTitle: string | null;
   communityName?: string | null;
   communitySlug?: string | null;
+  /** Aviso de derechos (ADR-076): solo en CONTENT_REMOVED y CONTENT_RESTORED. */
+  rightsCase?: RightsCaseRef | null;
 };
 
 export type NotificationItem = {
@@ -61,6 +68,7 @@ export type NotificationItem = {
   orderTitle: string | null;
   href: string;
   communityName?: string | null;
+  rightsCase?: RightsCaseRef | null;
 };
 
 const dayKey = new Intl.DateTimeFormat("en-CA", {
@@ -112,6 +120,12 @@ function hrefFor(
       return "/studio/colaboraciones";
     case "PRODUCT_TAG_REMOVED":
       return `/p/${first.postId}`;
+    // Quien subió el contenido ve el caso: quién avisó, qué reclama y el contra-aviso.
+    case "CONTENT_REMOVED":
+    case "CONTENT_RESTORED":
+      return first.rightsCase
+        ? `/derechos-de-autor/contra-aviso?caso=${formatCaseNumber(first.rightsCase.caseNumber)}`
+        : "/derechos-de-autor#contra-aviso";
     default:
       return `/pedidos/${first.orderId}`;
   }
@@ -157,6 +171,7 @@ export function groupNotifications(
       reactions,
       orderTitle: first.orderTitle,
       communityName: first.communityName,
+      rightsCase: first.rightsCase ?? null,
       href: hrefFor(first.type, first, actors, selfUsername),
     };
   });
@@ -225,7 +240,46 @@ export function notificationSentence(item: NotificationItem): { who: string | nu
         who: actorNames(item.actors),
         what: "quitó la etiqueta de su producto de tu publicación",
       };
+    case "CONTENT_REMOVED":
+    case "CONTENT_RESTORED":
+      return { who: null, what: rightsSentence(item.type, item.rightsCase ?? null) };
   }
+}
+
+const RIGHTS_SUBJECT_NOUNS = {
+  POST: "tu publicación",
+  PRODUCT: "tu producto",
+  CONTENT: "tu contenido",
+} as const;
+
+/** «Se mantiene retirado» concuerda con lo retirado. */
+const RIGHTS_KEPT = {
+  POST: "Tu publicación queda retirada",
+  PRODUCT: "Tu producto queda retirado",
+  CONTENT: "Tu contenido queda retirado",
+} as const;
+
+/**
+ * Retiro, restauración o «se mantiene retirado» por un aviso de derechos (ADR-076); lo hizo el
+ * equipo, no una persona. Al mantenerlo retirado ya no ofrece un contra-aviso: quien avisó acreditó
+ * una acción legal y lo resuelven las autoridades.
+ */
+function rightsSentence(
+  type: "CONTENT_REMOVED" | "CONTENT_RESTORED",
+  rightsCase: RightsCaseRef | null,
+): string {
+  const subject = rightsCase?.subject ?? "CONTENT";
+  const noun = RIGHTS_SUBJECT_NOUNS[subject];
+  if (!rightsCase) {
+    return type === "CONTENT_REMOVED"
+      ? `Retiramos ${noun} por un aviso de derechos. Puedes mandar un contra-aviso.`
+      : `Volvimos a mostrar ${noun}.`;
+  }
+  const caseNumber = formatCaseNumber(rightsCase.caseNumber);
+  if (type === "CONTENT_RESTORED") return `Volvimos a mostrar ${noun} (caso ${caseNumber}).`;
+  return rightsCase.event === "kept"
+    ? `${RIGHTS_KEPT[subject]} (caso ${caseNumber}): quien avisó comprobó que inició una acción legal.`
+    : `Retiramos ${noun} por un aviso ${RIGHTS_KIND_PHRASE[rightsCase.kind]} (caso ${caseNumber}). Puedes mandar un contra-aviso.`;
 }
 
 /** Texto corto de una publicación o comentario para citarlo («…» al cortar). */

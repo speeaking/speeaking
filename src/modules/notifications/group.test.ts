@@ -164,6 +164,103 @@ describe("avisos de colaboraciones (ADR-063)", () => {
   });
 });
 
+describe("avisos de derechos (ADR-076)", () => {
+  const removed = (overrides: Partial<NotificationRow> = {}) =>
+    row({
+      type: "CONTENT_REMOVED",
+      actor: null,
+      reaction: null,
+      postId: null,
+      postExcerpt: null,
+      rightsCase: { caseNumber: 123, subject: "POST", kind: "COPYRIGHT" },
+      ...overrides,
+    });
+
+  it("dice qué se retiró, por qué aviso y que se puede mandar un contra-aviso", () => {
+    const [item] = groupNotifications([removed()], "ana");
+
+    expect(item!.href).toBe("/derechos-de-autor/contra-aviso?caso=DA-000123");
+    expect(notificationSentence(item!)).toEqual({
+      who: null,
+      what: "Retiramos tu publicación por un aviso de derechos de autor (caso DA-000123). Puedes mandar un contra-aviso.",
+    });
+  });
+
+  it("nombra el producto, la marca o la imagen de artista según el caso", () => {
+    const [product] = groupNotifications(
+      [removed({ rightsCase: { caseNumber: 7, subject: "PRODUCT", kind: "TRADEMARK" } })],
+      "ana",
+    );
+    expect(notificationSentence(product!).what).toBe(
+      "Retiramos tu producto por un aviso de marca (caso DA-000007). Puedes mandar un contra-aviso.",
+    );
+    const [other] = groupNotifications(
+      [removed({ rightsCase: { caseNumber: 8, subject: "CONTENT", kind: "PERFORMER_IMAGE" } })],
+      "ana",
+    );
+    expect(notificationSentence(other!).what).toBe(
+      "Retiramos tu contenido por un aviso sobre la imagen o la voz de una persona artista (caso DA-000008). Puedes mandar un contra-aviso.",
+    );
+  });
+
+  it("al restaurar avisa que volvió a mostrarse", () => {
+    const [item] = groupNotifications([removed({ type: "CONTENT_RESTORED" })], "ana");
+
+    expect(item!.href).toBe("/derechos-de-autor/contra-aviso?caso=DA-000123");
+    expect(notificationSentence(item!)).toEqual({
+      who: null,
+      what: "Volvimos a mostrar tu publicación (caso DA-000123).",
+    });
+  });
+
+  it("si se mantiene retirado por una acción legal lo dice, sin ofrecer otro contra-aviso", () => {
+    const [item] = groupNotifications(
+      [
+        removed({
+          rightsCase: { caseNumber: 123, subject: "POST", kind: "COPYRIGHT", event: "kept" },
+        }),
+      ],
+      "ana",
+    );
+    expect(item!.href).toBe("/derechos-de-autor/contra-aviso?caso=DA-000123");
+    expect(notificationSentence(item!).what).toBe(
+      "Tu publicación queda retirada (caso DA-000123): quien avisó comprobó que inició una acción legal.",
+    );
+    const [product] = groupNotifications(
+      [
+        removed({
+          rightsCase: { caseNumber: 9, subject: "PRODUCT", kind: "TRADEMARK", event: "kept" },
+        }),
+      ],
+      "ana",
+    );
+    expect(notificationSentence(product!).what).toBe(
+      "Tu producto queda retirado (caso DA-000009): quien avisó comprobó que inició una acción legal.",
+    );
+  });
+
+  it("cada aviso va solo, aunque sean del mismo día", () => {
+    const items = groupNotifications(
+      [
+        removed(),
+        removed({ rightsCase: { caseNumber: 124, subject: "POST", kind: "COPYRIGHT" } }),
+        removed({ type: "CONTENT_RESTORED" }),
+      ],
+      "ana",
+    );
+    expect(items).toHaveLength(3);
+  });
+
+  it("sin el caso (llave dañada) lleva a la explicación y no inventa un número", () => {
+    const [item] = groupNotifications([removed({ rightsCase: null })], "ana");
+
+    expect(item!.href).toBe("/derechos-de-autor#contra-aviso");
+    expect(notificationSentence(item!).what).toBe(
+      "Retiramos tu contenido por un aviso de derechos. Puedes mandar un contra-aviso.",
+    );
+  });
+});
+
 describe("textos de los avisos", () => {
   it("nombres como Facebook: uno, dos, o dos y cuántas personas más", () => {
     expect(actorNames([person("Ana")])).toBe("Ana");

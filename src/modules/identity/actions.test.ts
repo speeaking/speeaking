@@ -1,5 +1,6 @@
 import { APIError } from "better-auth/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LEGAL_VERSIONS } from "./constants";
 
 // Las acciones deciden el orden: validar → límite de intentos → Better Auth. Aquí se prueba que un
 // intento bloqueado nunca llega a Better Auth (SEC-02), que Better Auth recibe la IP resuelta y no la
@@ -56,6 +57,7 @@ const signUpForm = (overrides: Record<string, string> = {}) =>
     email: "Ana@Example.com",
     password: "una-clave-segura",
     acceptTerms: "on",
+    confirmAge: "on",
     ...overrides,
   });
 
@@ -182,9 +184,25 @@ describe("signUpAction", () => {
       data: [
         expect.objectContaining({ userId: USER_ID, type: "TERMS", granted: true }),
         expect.objectContaining({ userId: USER_ID, type: "PRIVACY_NOTICE", granted: true }),
+        // La declaración de mayoría de edad va con la versión de los términos que la piden.
+        { userId: USER_ID, type: "AGE_18", version: LEGAL_VERSIONS.terms, granted: true },
       ],
     });
     expect(mocks.hash).not.toHaveBeenCalled();
+  });
+
+  it("sin la casilla «Tengo 18 años o más» no crea la cuenta (ADR-076)", async () => {
+    const data = signUpForm();
+    data.delete("confirmAge");
+
+    const state = await signUpAction({}, data);
+
+    expect(state.fieldErrors?.confirmAge).toEqual([
+      "Para crear una cuenta necesitas tener 18 años o más.",
+    ]);
+    expect(mocks.limits.limitSignUp).not.toHaveBeenCalled();
+    expect(mocks.auth.api.signUpEmail).not.toHaveBeenCalled();
+    expect(mocks.db.userConsent.createMany).not.toHaveBeenCalled();
   });
 
   // SEC-11

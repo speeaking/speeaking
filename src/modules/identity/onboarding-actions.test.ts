@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   }),
   cookies: { set: vi.fn() },
   goals: [] as string[],
+  service: {
+    completeOnboarding: vi.fn(async () => ({ joinedCommunityIds: [] as string[] })),
+    hasLegalConsents: vi.fn(async () => true),
+  },
 }));
 
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
@@ -18,8 +22,7 @@ vi.mock("next/headers", () => ({ cookies: async () => mocks.cookies }));
 vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
 vi.mock("./session", () => ({ requireViewer: vi.fn(async () => ({ userId: "u-1" })) }));
 vi.mock("./service", () => ({
-  completeOnboarding: vi.fn(async () => ({ joinedCommunityIds: [] })),
-  hasLegalConsents: vi.fn(async () => true),
+  ...mocks.service,
   OnboardingError: class OnboardingError extends Error {},
 }));
 // El esquema tiene sus propias pruebas: aquí solo importa qué objetivos eligió la persona.
@@ -31,15 +34,17 @@ vi.mock("./onboarding-schema", () => ({
 
 const { completeOnboardingAction } = await import("./onboarding-actions");
 
-function form(next?: string) {
+function form(next?: string, checks: Record<string, string> = {}) {
   const data = new FormData();
   if (next !== undefined) data.set("next", next);
+  for (const [name, value] of Object.entries(checks)) data.set(name, value);
   return data;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.goals = ["BUY"];
+  mocks.service.hasLegalConsents.mockResolvedValue(true);
 });
 
 describe("completeOnboardingAction: adónde lleva al terminar", () => {
@@ -73,5 +78,44 @@ describe("completeOnboardingAction: adónde lleva al terminar", () => {
     await expect(
       completeOnboardingAction({}, form("/p/0199a000-0000-7000-8000-0000000000c1")),
     ).rejects.toThrow("REDIRECT /studio/sube-y-vende");
+  });
+});
+
+describe("completeOnboardingAction: cuenta de Google sin las declaraciones del registro", () => {
+  beforeEach(() => {
+    mocks.service.hasLegalConsents.mockResolvedValue(false);
+  });
+
+  it("exige aceptar términos y declarar 18 años o más, sin terminar la bienvenida", async () => {
+    await expect(completeOnboardingAction({}, form())).resolves.toEqual({
+      error: "Revisa los datos marcados.",
+      fieldErrors: {
+        acceptLegal: ["Acepta los términos y el aviso de privacidad para continuar."],
+        confirmAge: ["Para crear una cuenta necesitas tener 18 años o más."],
+      },
+    });
+    await expect(
+      completeOnboardingAction({}, form(undefined, { acceptLegal: "on" })),
+    ).resolves.toMatchObject({
+      fieldErrors: { confirmAge: ["Para crear una cuenta necesitas tener 18 años o más."] },
+    });
+    expect(mocks.service.completeOnboarding).not.toHaveBeenCalled();
+  });
+
+  it("con ambas casillas, las registra al terminar", async () => {
+    await expect(
+      completeOnboardingAction({}, form(undefined, { acceptLegal: "on", confirmAge: "on" })),
+    ).rejects.toThrow(/^REDIRECT \/$/);
+    expect(mocks.service.completeOnboarding).toHaveBeenCalledWith("u-1", expect.anything(), {
+      legalConsent: true,
+    });
+  });
+
+  it("quien ya las hizo al registrarse no ve ni manda las casillas", async () => {
+    mocks.service.hasLegalConsents.mockResolvedValue(true);
+    await expect(completeOnboardingAction({}, form())).rejects.toThrow(/^REDIRECT \/$/);
+    expect(mocks.service.completeOnboarding).toHaveBeenCalledWith("u-1", expect.anything(), {
+      legalConsent: false,
+    });
   });
 });

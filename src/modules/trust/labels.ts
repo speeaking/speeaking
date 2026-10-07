@@ -4,6 +4,7 @@ import type {
   ReportStatus,
   RiskLevel,
 } from "@/generated/prisma/enums";
+import type { ReportableTarget } from "./schemas";
 
 /** Motivos de reporte tal como los elige quien reporta. */
 export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
@@ -18,15 +19,38 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   MINOR_ACCOUNT: "Cuenta de un menor de edad",
 };
 
-/** Orden en el formulario de reporte. */
+/** Orden en el formulario de reporte («Otro motivo» siempre al final). */
 export const REPORT_REASONS: readonly ReportReason[] = [
   "COUNTERFEIT",
   "SCAM",
   "PROHIBITED",
   "SPAM",
   "OFFENSIVE",
+  "INTIMATE_WITHOUT_CONSENT",
+  "CHILD_SAFETY",
+  "MINOR_ACCOUNT",
   "OTHER",
 ];
+
+/**
+ * Daños graves que van primero en la cola del equipo con la marca «Urgente» (Ley Olimpia y
+ * protección de menores, ADR-076).
+ */
+export const URGENT_REPORT_REASONS: readonly ReportReason[] = [
+  "INTIMATE_WITHOUT_CONSENT",
+  "CHILD_SAFETY",
+];
+
+export function isUrgentReportReason(reason: ReportReason) {
+  return URGENT_REPORT_REASONS.includes(reason);
+}
+
+/** Motivos que tienen sentido para lo que se reporta: «Cuenta de un menor» solo para una persona. */
+export function reportReasonsFor(targetType: ReportableTarget): readonly ReportReason[] {
+  return targetType === "USER"
+    ? REPORT_REASONS
+    : REPORT_REASONS.filter((reason) => reason !== "MINOR_ACCOUNT");
+}
 
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   OPEN: "Abierto",

@@ -72,4 +72,27 @@ describe("NotificationList (ADR-059)", () => {
 
     expect(screen.getByRole("link")).toHaveTextContent("Tu pedido va en camino: Camisa blanca");
   });
+
+  it("un retiro por aviso de derechos lleva al caso y al contra-aviso (ADR-076)", () => {
+    render(
+      <NotificationList
+        items={[
+          item({
+            type: "CONTENT_REMOVED",
+            actors: [],
+            reactions: [],
+            postExcerpt: null,
+            rightsCase: { caseNumber: 123, subject: "PRODUCT", kind: "COPYRIGHT" },
+            href: "/derechos-de-autor/contra-aviso?caso=DA-000123",
+          }),
+        ]}
+      />,
+    );
+
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/derechos-de-autor/contra-aviso?caso=DA-000123");
+    expect(link).toHaveTextContent(
+      "Retiramos tu producto por un aviso de derechos de autor (caso DA-000123). Puedes mandar un contra-aviso.",
+    );
+  });
 });
