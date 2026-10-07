@@ -2242,8 +2242,8 @@ huecos eran estos:
   - `hasMerchantReturnPolicy`.
   - El título suma «· Envío a todo México».
   - La descripción dice el precio y los días de envío y desde dónde se vende.
-- **Organización:** `areaServed` México y `sameAs` con `siteConfig.socialProfiles`, que está vacío
-  hasta que existan los perfiles reales.
+- **Organización:** `areaServed` México y `sameAs` con `siteConfig.socialProfiles`: los perfiles
+  oficiales de Facebook y TikTok (@speeaking).
 - **Comunidades:** título «Hogar: comunidad en México» y una descripción completa.
 - **`/llms.txt`:** qué es speeaking y sus páginas públicas, más las categorías con productos y las
   comunidades reales. Dice que los pagos son simulados mientras lo sean.
@@ -2273,6 +2273,6 @@ huecos eran estos:
 - Pendiente del fundador:
   - Dar de alta `sitemap-index.xml` en Google Search Console.
   - Importar el sitio en Bing Webmaster Tools.
-  - Crear los perfiles @speeaking y agregarlos a `siteConfig.socialProfiles`.
+  - Cuando exista un perfil nuevo (Instagram, YouTube…), agregarlo a `siteConfig.socialProfiles`.
   - Sumar vendedores de varios estados: sin ellos no hay páginas por estado.
   - Merchant Center, solo cuando haya pagos reales.

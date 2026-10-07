@@ -22,7 +22,10 @@ export const siteConfig = {
    * con sus redes para buscadores y asistentes (`sameAs`). Solo los que ya existen: vacío, no se
    * publica nada.
    */
-  socialProfiles: [] as readonly string[],
+  socialProfiles: [
+    "https://www.facebook.com/profile.php?id=61594925560925",
+    "https://www.tiktok.com/@speeaking",
+  ] as readonly string[],
   /**
    * Llave de IndexNow (avisar a Bing y otros buscadores cuando cambia un producto). Es pública por
    * diseño: se sirve en `/indexnow.txt` para comprobar que el aviso viene de este sitio.

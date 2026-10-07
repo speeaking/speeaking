@@ -36,6 +36,15 @@ describe("siteStructuredData (la organización y el sitio, para buscadores y asi
       sameAs: ["https://www.instagram.com/speeaking", "https://www.tiktok.com/@speeaking"],
     });
   });
+
+  it("declara los perfiles oficiales de speeaking en Facebook y TikTok", () => {
+    expect(siteStructuredData()[0]).toMatchObject({
+      sameAs: [
+        "https://www.facebook.com/profile.php?id=61594925560925",
+        "https://www.tiktok.com/@speeaking",
+      ],
+    });
+  });
 });
 
 describe("communitySeo (título y descripción de una comunidad para buscadores)", () => {
