@@ -30,6 +30,7 @@ async function createProduct(page: Page) {
   await page.getByLabel("Tu costo (MXN)").fill(COST.typed);
   await page.getByLabel("Piezas disponibles").fill("5");
   await page.getByLabel("Costo de envío").fill("99");
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
 
   await expect(page).toHaveURL(/\/producto\/lampara-de-escritorio-led-[a-z0-9]+\?nuevo=1/);
@@ -85,6 +86,7 @@ test.describe("editar productos", () => {
     // Un error de validación no borra lo que ya se cambió.
     await page.getByLabel("Nombre del producto").fill(NEW_TITLE);
     await page.getByLabel("Precio (MXN)").fill("abc");
+    await page.getByLabel(/son míos o tengo permiso/).check();
     await page.getByRole("button", { name: "Guardar cambios" }).click();
     await expect(page.getByText("Escribe un precio válido.")).toBeVisible();
     await expect(page.getByLabel("Nombre del producto")).toHaveValue(NEW_TITLE);
@@ -99,6 +101,7 @@ test.describe("editar productos", () => {
     await page.getByLabel("Precio (MXN)").fill("11,000");
     await page.getByLabel("Tu costo (MXN)").fill(NEW_COST.typed);
     await page.getByLabel("Piezas disponibles").fill("3");
+    await page.getByLabel(/son míos o tengo permiso/).check();
     await page.getByRole("button", { name: "Guardar cambios" }).click();
 
     await expect(page).toHaveURL("/studio/productos?guardado=1");

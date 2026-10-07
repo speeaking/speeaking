@@ -36,6 +36,7 @@ async function sellWithAi(page: Page) {
   await chooseImages(page, { name: "airpods.png", mimeType: "image/png", buffer: TINY_PNG });
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Costo de envío").fill("99");
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
 
   await expect(page).toHaveURL(/\/producto\/airpods-pro-2-[a-z0-9]+\?nuevo=1/);

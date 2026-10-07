@@ -24,6 +24,7 @@ export async function register(page: Page, user: TestUser) {
   await page.getByLabel("Correo").fill(user.email);
   await page.getByLabel("Contraseña").fill(user.password);
   await page.getByLabel(/Acepto los/).check();
+  await page.getByLabel("Tengo 18 años o más").check();
   await page.getByRole("button", { name: "Crear cuenta" }).click();
   await expect(page).toHaveURL(/\/bienvenida/);
 }
@@ -86,6 +87,7 @@ export async function createProduct(
   await page.getByLabel("Tu costo (MXN)").fill(cost);
   await page.getByLabel("Piezas disponibles").fill("5");
   await page.getByLabel("Costo de envío").fill("99");
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
   await expect(page).toHaveURL(/\/producto\/[a-z0-9-]+\?nuevo=1/);
   return page.url().split("?")[0]!;

@@ -68,6 +68,7 @@ async function createProduct(page: Page) {
   await page.getByLabel("Tu costo (MXN)").fill(COST.typed);
   await page.getByLabel("Piezas disponibles").fill("7");
   await page.getByLabel("Costo de envío").fill("99");
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
   await expect(page).toHaveURL(/\/producto\/termo-de-acero-para-cafe-[a-z0-9]+\?nuevo=1/);
 }

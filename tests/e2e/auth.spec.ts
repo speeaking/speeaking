@@ -94,6 +94,7 @@ test.describe("cuenta", () => {
     await page.getByLabel("Correo").fill(visitor.email);
     await page.getByLabel("Contraseña").fill(visitor.password);
     await page.getByLabel(/Acepto los/).check();
+    await page.getByLabel("Tengo 18 años o más").check();
     await page.getByRole("button", { name: "Crear cuenta" }).click();
     await expect(page).toHaveURL(/\/bienvenida/);
     await completeOnboarding(page, visitor);

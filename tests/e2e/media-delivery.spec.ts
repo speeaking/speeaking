@@ -98,6 +98,7 @@ async function listProduct(page: Page, title: string) {
   await page.getByLabel("Piezas disponibles").fill("5");
   await page.getByLabel("Costo de envío").fill("99");
   await page.getByLabel("Publicar también en el feed").uncheck();
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
   await expect(page).toHaveURL(/\/producto\/[a-z0-9-]+\?nuevo=1/, { timeout: 45_000 });
   return new URL(page.url()).pathname;

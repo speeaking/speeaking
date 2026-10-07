@@ -62,6 +62,7 @@ async function listReplica(page: Page, title: string, { activateStore = true } =
   await page.getByLabel("Piezas disponibles").fill("5");
   await page.getByLabel("Costo de envío").fill("99");
   await page.getByLabel("¿Es de marca original?").selectOption("DECLARED_ORIGINAL");
+  await page.getByLabel(/son míos o tengo permiso/).check();
   await page.getByRole("button", { name: "Publicar producto" }).click();
   await expect(page).toHaveURL(/\/producto\/airpods-pro-[a-z0-9-]+\?nuevo=1/);
   return page.url().split("?")[0]!;

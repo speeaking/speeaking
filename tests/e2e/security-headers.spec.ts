@@ -180,6 +180,7 @@ test.describe("cabeceras de seguridad (SEC-06)", () => {
     await page.getByLabel("Correo").fill(user.email);
     await page.getByLabel("Contraseña").fill(user.password);
     await page.getByLabel(/Acepto los/).check();
+    await page.getByLabel("Tengo 18 años o más").check();
     await page.getByRole("button", { name: "Crear cuenta" }).click();
     await expect(page).toHaveURL(/\/bienvenida/, { timeout: ACTION_TIMEOUT });
     await expectCleanPage(page, collected, "/bienvenida");
