@@ -1,9 +1,17 @@
 import "server-only";
 import { absoluteUrl } from "@/app/seo";
+import { MIN_PRODUCTS_FOR_PLACE_PAGE, placePath } from "@/modules/catalog/places";
+import { categoryPlaceCounts, placeCounts } from "@/modules/catalog/queries";
 import { db } from "@/server/db";
 
 export const SITEMAP_BATCH_SIZE = 10000;
-export const SITEMAP_KINDS = ["products", "communities", "sellers", "categories"] as const;
+export const SITEMAP_KINDS = [
+  "products",
+  "communities",
+  "sellers",
+  "categories",
+  "places",
+] as const;
 export type SitemapKind = (typeof SITEMAP_KINDS)[number];
 
 const publicProducts = {
@@ -26,14 +34,34 @@ const publicCategories = {
   ],
 };
 
+/**
+ * «Comprar en Jalisco» y «Decoración y plantas en Jalisco»: solo los lugares con al menos
+ * `MIN_PRODUCTS_FOR_PLACE_PAGE` productos a la venta (sin páginas vacías). Son pocas (32 estados por
+ * categoría como máximo), así que se calculan completas.
+ */
+async function placePaths() {
+  const [states, categories] = await Promise.all([placeCounts(), categoryPlaceCounts()]);
+  const paths: string[] = [];
+  for (const place of states.values()) {
+    if (place.count >= MIN_PRODUCTS_FOR_PLACE_PAGE) paths.push(placePath(place.state.slug));
+  }
+  for (const [key, count] of categories) {
+    if (count < MIN_PRODUCTS_FOR_PLACE_PAGE) continue;
+    const slash = key.lastIndexOf("/");
+    paths.push(placePath(key.slice(slash + 1), key.slice(0, slash)));
+  }
+  return paths.sort();
+}
+
 export async function sitemapCounts() {
-  const [products, communities, sellers, categories] = await Promise.all([
+  const [products, communities, sellers, categories, places] = await Promise.all([
     db.product.count({ where: publicProducts }),
     db.community.count(),
     db.profile.count({ where: publicSellers }),
     db.category.count({ where: publicCategories }),
+    placePaths().then((paths) => paths.length),
   ]);
-  return { products, communities, sellers, categories };
+  return { products, communities, sellers, categories, places };
 }
 
 /** Solo URLs públicas; nunca pedidos, mensajes, borradores, productos ocultos ni fotos de prueba. */
@@ -77,6 +105,10 @@ export async function sitemapRows(kind: SitemapKind, page: number) {
       return (
         await db.category.findMany({ ...batch, where: publicCategories, select: { slug: true } })
       ).map((row) => ({ url: absoluteUrl(`/comprar/${encodeURIComponent(row.slug)}`) }));
+    case "places":
+      return (await placePaths())
+        .slice(batch.skip, batch.skip + batch.take)
+        .map((path) => ({ url: absoluteUrl(path) }));
   }
 }
 

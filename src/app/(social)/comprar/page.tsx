@@ -8,9 +8,15 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/track";
 import { SponsoredRow } from "@/modules/billing/components/sponsored-products";
+import { PlaceLinks } from "@/modules/catalog/components/place-links";
 import { ProductCard } from "@/modules/catalog/components/product-card";
 import { ShopEmptyState } from "@/modules/catalog/components/shop-empty-state";
-import { listCategories, listFeaturedProducts, listShopProducts } from "@/modules/catalog/queries";
+import {
+  listCategories,
+  listFeaturedProducts,
+  listShopProducts,
+  placeCounts,
+} from "@/modules/catalog/queries";
 import { getViewer } from "@/modules/identity/session";
 import { parseSearchQuery, SEARCH_MAX_LENGTH } from "@/modules/search/normalize";
 import { StylistCard } from "@/modules/stylist/components/stylist-card";
@@ -33,10 +39,12 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
   const query = search?.text ?? "";
   const categorySlug = typeof categoria === "string" ? categoria : undefined;
 
-  const [viewer, categories, products] = await Promise.all([
+  const [viewer, categories, products, places] = await Promise.all([
     getViewer(),
     listCategories(),
     listShopProducts({ categorySlug, query: search }),
+    // «Compra por estado» solo en la portada de Comprar (la que se indexa).
+    !query && !categorySlug ? placeCounts() : null,
   ]);
   // Destacados (ADR-046) solo en la portada de Comprar: con búsqueda o categoría, los resultados
   // van primero y sin patrocinados en medio.
@@ -150,6 +158,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/comprar">) 
             ))}
           </div>
         )}
+        {places ? <PlaceLinks title="Compra por estado" places={places} /> : null}
       </div>
     </>
   );

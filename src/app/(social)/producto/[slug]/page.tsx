@@ -34,10 +34,12 @@ import { ProductShareButton } from "@/modules/catalog/components/product-share-b
 import { QuickQuestions } from "@/modules/catalog/components/quick-questions";
 import { SaveProductButton } from "@/modules/catalog/components/save-product-button";
 import { CONDITION_LABELS } from "@/modules/catalog/dto";
+import { placePath } from "@/modules/catalog/places";
 import {
   getPublicProduct,
   listFeaturedProducts,
   listRelatedProducts,
+  statePageFor,
 } from "@/modules/catalog/queries";
 import {
   answerQuickQuestion,
@@ -134,7 +136,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         ]
       : undefined;
 
-  const [related, sponsored, postRows, saved, followsSeller] = await Promise.all([
+  const [related, sponsored, postRows, saved, followsSeller, statePage] = await Promise.all([
     listRelatedProducts(categoryId, product.id),
     listFeaturedProducts({
       limit: 1,
@@ -164,6 +166,8 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           select: { followerId: true },
         })
       : null,
+    // «Más productos de Jalisco» solo si esa página ya existe.
+    statePageFor(product.facts.state),
   ]);
   const posts = await hydratePosts(
     postRows.map((row) => row.id),
@@ -278,6 +282,14 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           <MapPin className="size-4" />
           {product.facts.city}, {product.facts.state}
         </p>
+        {statePage ? (
+          <Link
+            href={placePath(statePage.slug) as Route}
+            className="-mt-2 self-start text-sm font-semibold text-primary-text hover:underline"
+          >
+            Más productos de {statePage.name}
+          </Link>
+        ) : null}
 
         {/* Probarse la prenda va antes de comprarla (ADR-046): a la vista, debajo del precio. */}
         {moderation.hidden ? null : (

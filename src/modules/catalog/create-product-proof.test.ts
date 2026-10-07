@@ -41,6 +41,7 @@ vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
 vi.mock("./limits", () => ({ checkCatalogLimit: vi.fn(async () => null) }));
 vi.mock("@/modules/trust/service", () => ({ evaluateProductAuthenticity: vi.fn() }));
 vi.mock("@/modules/trust/background", () => ({ scheduleAuthenticityAiSignal: vi.fn() }));
+vi.mock("@/server/seo/schedule-indexnow", () => ({ scheduleIndexNow: vi.fn() }));
 vi.mock("./service", () => ({
   ProductEditError: class extends Error {},
   updateProduct: vi.fn(),

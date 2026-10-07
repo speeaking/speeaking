@@ -170,3 +170,29 @@ export function productBreadcrumbs(product: PublicProductDTO) {
     ],
   };
 }
+
+/**
+ * «Comprar en Jalisco» o «Decoración y plantas en Jalisco»: el lugar en el título (las búsquedas
+ * «… en Jalisco») y cuántos productos hay, contados por el código.
+ */
+export function placeSeo({
+  stateName,
+  categoryName,
+  count,
+}: {
+  stateName: string;
+  categoryName?: string;
+  count: number;
+}) {
+  const products = count === 1 ? "1 producto" : `${count} productos`;
+  const what = categoryName
+    ? `${products} de ${categoryName.toLocaleLowerCase(siteConfig.locale)}`
+    : products;
+  return {
+    title: categoryName
+      ? `${categoryName} en ${stateName}`
+      : `Compra en ${stateName}: productos de vendedores de ${stateName}`,
+    description: `${what} de vendedores de ${stateName} en ${siteConfig.name}. Revisa fotos, precio y envío de cada tienda, y pregunta antes de comprar.`,
+    heading: categoryName ? `${categoryName} en ${stateName}` : `Compra en ${stateName}`,
+  };
+}

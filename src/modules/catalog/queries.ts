@@ -8,6 +8,15 @@ import { db } from "@/server/db";
 import { getStorage } from "@/server/providers/storage";
 import { type MediaDTO, type PublicProductDTO, toPublicProduct } from "./dto";
 import { editFormDefaults } from "./form-defaults";
+import {
+  aggregateCategoryPlaces,
+  aggregatePlaces,
+  MIN_PRODUCTS_FOR_PLACE_PAGE,
+  type MexicanState,
+  type PlaceCount,
+  stateBySlug,
+  stateFromText,
+} from "./places";
 import { unitEconomics } from "./pricing";
 
 /** Selección pública: sin la relación `cost` (no se consulta, no puede filtrarse). */
@@ -252,6 +261,106 @@ export async function listShopProducts({
     const row = byId.get(id);
     return row ? [toCard(row)] : [];
   });
+}
+
+/**
+ * Lo que entra en «Comprar en …»: a la venta, con existencias, visible (no oculto por moderación) y
+ * de una tienda activa, como en el sitemap (una página indexable no muestra tiendas suspendidas).
+ */
+const FOR_SALE = {
+  status: "ACTIVE" as const,
+  stock: { gt: 0 },
+  ...VISIBLE_PRODUCT,
+  seller: { status: "ACTIVE" as const },
+};
+
+/** La categoría o sus hijas, como en la página de categoría. */
+function inCategory(categorySlug?: string) {
+  return categorySlug
+    ? {
+        OR: [
+          { category: { slug: categorySlug } },
+          { category: { parent: { slug: categorySlug } } },
+        ],
+      }
+    : {};
+}
+
+/**
+ * Productos a la venta por estado canónico (SEO nacional), con las variantes con que se escribió
+ * («CDMX», «Ciudad de México»). Lo que no es un estado reconocido no cuenta.
+ */
+export async function placeCounts(categorySlug?: string): Promise<Map<string, PlaceCount>> {
+  const rows = await db.product.groupBy({
+    by: ["state"],
+    where: { ...FOR_SALE, ...inCategory(categorySlug) },
+    _count: { _all: true },
+  });
+  return aggregatePlaces(rows.map((row) => ({ state: row.state, count: row._count._all })));
+}
+
+/** Productos de un estado (y categoría), lo más reciente primero; `null` si el estado no existe. */
+export async function listPlaceProducts({
+  stateSlug,
+  categorySlug,
+  limit = 48,
+}: {
+  stateSlug: string;
+  categorySlug?: string;
+  limit?: number;
+}): Promise<{ place: PlaceCount; products: ProductCardDTO[] } | null> {
+  const state = stateBySlug(stateSlug);
+  if (!state) return null;
+  const place = (await placeCounts(categorySlug)).get(state.slug) ?? {
+    state,
+    count: 0,
+    values: [],
+  };
+  if (place.values.length === 0) return { place, products: [] };
+  const rows = await db.product.findMany({
+    where: { ...FOR_SALE, ...inCategory(categorySlug), state: { in: place.values } },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+    select: cardSelect,
+  });
+  return { place, products: rows.map(toCard) };
+}
+
+/** La página «Comprar en …» del estado escrito en la ficha, si ya existe (para enlazarla). */
+export async function statePageFor(stateText: string): Promise<MexicanState | null> {
+  const state = stateFromText(stateText);
+  if (!state) return null;
+  const count = (await placeCounts()).get(state.slug)?.count ?? 0;
+  return count >= MIN_PRODUCTS_FOR_PLACE_PAGE ? state : null;
+}
+
+/** Para el sitemap: productos a la venta por «categoría/estado» (la categoría padre suma sus hijas). */
+export async function categoryPlaceCounts(): Promise<Map<string, number>> {
+  const rows = await db.product.groupBy({
+    by: ["state", "categoryId"],
+    where: FOR_SALE,
+    _count: { _all: true },
+  });
+  const categories = await db.category.findMany({
+    where: { id: { in: [...new Set(rows.map((row) => row.categoryId))] } },
+    select: { id: true, slug: true, parent: { select: { slug: true } } },
+  });
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  return aggregateCategoryPlaces(
+    rows.flatMap((row) => {
+      const category = byId.get(row.categoryId);
+      return category
+        ? [
+            {
+              state: row.state,
+              categorySlug: category.slug,
+              parentSlug: category.parent?.slug ?? null,
+              count: row._count._all,
+            },
+          ]
+        : [];
+    }),
+  );
 }
 
 /**

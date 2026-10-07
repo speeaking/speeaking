@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type PublicProductRow, toPublicProduct } from "./dto";
-import { productSeoDescription, productSeoTitle, productStructuredData } from "./seo";
+import { placeSeo, productSeoDescription, productSeoTitle, productStructuredData } from "./seo";
 
 const row: PublicProductRow = {
   id: "0199a000-0000-7000-8000-000000000001",
@@ -124,5 +124,27 @@ describe("título y descripción de la ficha para buscadores", () => {
         product({ nationalShippingAvailable: false, city: "CDMX", state: "cdmx" }),
       ),
     ).toBe("Se vende desde CDMX. Velas de soya con aroma y nombre a tu gusto, hechas en casa.");
+  });
+});
+
+describe("placeSeo: título y descripción de «Comprar en …» (las búsquedas «… en Jalisco»)", () => {
+  it("por estado: dice el lugar y cuántos productos hay (cifra del código)", () => {
+    expect(placeSeo({ stateName: "Jalisco", count: 12 })).toEqual({
+      title: "Compra en Jalisco: productos de vendedores de Jalisco",
+      description:
+        "12 productos de vendedores de Jalisco en speeaking. Revisa fotos, precio y envío de cada tienda, y pregunta antes de comprar.",
+      heading: "Compra en Jalisco",
+    });
+  });
+
+  it("por categoría y estado", () => {
+    expect(
+      placeSeo({ stateName: "Nuevo León", categoryName: "Decoración y plantas", count: 7 }),
+    ).toEqual({
+      title: "Decoración y plantas en Nuevo León",
+      description:
+        "7 productos de decoración y plantas de vendedores de Nuevo León en speeaking. Revisa fotos, precio y envío de cada tienda, y pregunta antes de comprar.",
+      heading: "Decoración y plantas en Nuevo León",
+    });
   });
 });

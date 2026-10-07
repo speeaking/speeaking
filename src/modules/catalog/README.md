@@ -26,3 +26,12 @@ que compartir una publicación (`social/limits.ts`, 60/h por IP y por cuenta).
 - El formulario no se envía mientras una foto se está subiendo (se guardaría sin ella).
 - Pausado: la página pública sigue existiendo (enlaces compartidos) con "Pausado por el vendedor" y
   sin botón de compra; el feed, "Comprar" y los relacionados solo muestran productos activos.
+
+## Buscadores (ADR-073)
+
+- `seo.ts`: título, descripción y datos estructurados de la ficha (envío nacional, devoluciones y
+  lugar de venta), siempre a partir de los datos verificables, nunca de la IA.
+- `places.ts`: el estado escrito por el vendedor se lee como uno de los 32 canónicos. Las páginas
+  «Comprar en …» (`/comprar/en/[estado]` y `/comprar/[categoria]/en/[estado]`) existen solo con al
+  menos `MIN_PRODUCTS_FOR_PLACE_PAGE` (6) productos a la venta de tiendas activas. Con menos dan
+  404 y no entran al sitemap.

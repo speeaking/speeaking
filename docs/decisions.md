@@ -2217,3 +2217,62 @@ pública a una privada recarga la página, y nunca al revés. Pendiente del fund
 `TIKTOK_PIXEL_ID` en Vercel Production y desplegar. En TikTok Events Manager, dejar apagado
 «Automatic Advanced Matching»; los eventos automáticos de interacción solo pueden ocurrir en las
 páginas permitidas.
+
+## ADR-073 · SEO nacional: datos de envío en la ficha, IndexNow, llms.txt y páginas «Comprar en …» por estado
+
+**Contexto.** El fundador quiere que encuentren speeaking en todo México. Tras la auditoría, los
+huecos eran estos:
+
+- La ficha no decía a los buscadores desde dónde se vende ni si hay envío nacional. Google lo pide
+  para mostrar «Envío a todo México» y las devoluciones en los resultados.
+- Los títulos no mencionaban el envío.
+- La organización no declaraba a qué país sirve.
+- Bing, que alimenta la búsqueda de ChatGPT y Copilot, solo se enteraba de un producto nuevo al
+  volver a rastrear.
+- Los asistentes de IA no tenían un resumen del sitio.
+- Nada respondía búsquedas con lugar («comprar en Jalisco», «decoración en Monterrey»).
+
+**Decisión.** El fundador aprobó las fases 1 y 2 de la propuesta:
+
+- **Ficha del producto** (`modules/catalog/seo.ts`). Todo sale de los datos verificables del
+  producto (P4); la IA no escribe nada aquí (P2).
+  - `availableAtOrFrom`: ciudad y estado de venta.
+  - `shippingDetails` solo con envío nacional: precio en centavos y días solo si el vendedor los
+    declaró.
+  - `hasMerchantReturnPolicy`.
+  - El título suma «· Envío a todo México».
+  - La descripción dice el precio y los días de envío y desde dónde se vende.
+- **Organización:** `areaServed` México y `sameAs` con `siteConfig.socialProfiles`, que está vacío
+  hasta que existan los perfiles reales.
+- **Comunidades:** título «Hogar: comunidad en México» y una descripción completa.
+- **`/llms.txt`:** qué es speeaking y sus páginas públicas, más las categorías con productos y las
+  comunidades reales. Dice que los pagos son simulados mientras lo sean.
+- **IndexNow:** al crear, editar, pausar o reactivar un producto, después de responder, se avisa a
+  Bing y a los buscadores que usan IndexNow.
+  - La llave pública está en `/indexnow.txt`.
+  - Solo funciona en producción y solo con URLs propias.
+  - Si el aviso falla, la venta sigue.
+- **Páginas por estado** (`modules/catalog/places.ts`): `/comprar/en/jalisco` y
+  `/comprar/decoracion/en/jalisco`.
+  - El vendedor escribe el estado como quiere («CDMX», «D.F.», «Edo. Méx.»). Se lee como uno de los
+    32 estados canónicos. Lo ambiguo no se adivina, ni «México» ni una ciudad suelta.
+  - Una página existe solo con **6 o más productos a la venta** (activos, con existencias,
+    visibles y de una tienda activa). Con menos responde 404: los buscadores castigan las páginas
+    vacías.
+  - Al cruzar el umbral, la página entra sola al sitemap (`places-0.xml`).
+  - Se enlaza desde Comprar («Compra por estado»), desde cada categoría («Moda por estado») y desde
+    la ficha («Más productos de Ciudad de México»).
+  - Cada página lleva `CollectionPage` + `ItemList` y la ruta de vuelta (`BreadcrumbList`).
+
+**Consecuencias.**
+
+- Las páginas por ciudad quedan para después: la ciudad es texto libre y hay demasiadas variantes
+  para agruparlas sin errores.
+- El encabezado de Comprar sigue siendo «Tienda» porque las pruebas E2E dependen de él. El título
+  para buscadores ya es «Compra productos de vendedores en México».
+- Pendiente del fundador:
+  - Dar de alta `sitemap-index.xml` en Google Search Console.
+  - Importar el sitio en Bing Webmaster Tools.
+  - Crear los perfiles @speeaking y agregarlos a `siteConfig.socialProfiles`.
+  - Sumar vendedores de varios estados: sin ellos no hay páginas por estado.
+  - Merchant Center, solo cuando haya pagos reales.

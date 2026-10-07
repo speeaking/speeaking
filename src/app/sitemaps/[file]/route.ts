@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: RouteContext<"/sitemaps/[file]">) {
   if (!indexingEnabled(env)) return new Response(null, { status: 404 });
-  const match = /^(products|communities|sellers|categories)-(0|[1-9]\d{0,5})\.xml$/.exec(
+  const match = /^(products|communities|sellers|categories|places)-(0|[1-9]\d{0,5})\.xml$/.exec(
     (await params).file,
   );
   if (!match) return new Response(null, { status: 404 });

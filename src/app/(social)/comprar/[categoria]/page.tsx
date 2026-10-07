@@ -5,8 +5,9 @@ import { notFound } from "next/navigation";
 import { absoluteUrl, pageMetadata, NO_INDEX } from "@/app/seo";
 import { PageHeader } from "@/components/layout/page-header";
 import { JsonLd } from "@/components/seo/json-ld";
+import { PlaceLinks } from "@/modules/catalog/components/place-links";
 import { ProductCard } from "@/modules/catalog/components/product-card";
-import { listShopProducts } from "@/modules/catalog/queries";
+import { listShopProducts, placeCounts } from "@/modules/catalog/queries";
 import { db } from "@/server/db";
 
 const getCategory = cache((slug: string) =>
@@ -33,7 +34,10 @@ export async function generateMetadata({ params }: PageProps<"/comprar/[categori
 export default async function CategoryPage({ params }: PageProps<"/comprar/[categoria]">) {
   const category = await getCategory((await params).categoria);
   if (!category) notFound();
-  const products = await listShopProducts({ categorySlug: category.slug, limit: 48 });
+  const [products, places] = await Promise.all([
+    listShopProducts({ categorySlug: category.slug, limit: 48 }),
+    placeCounts(category.slug),
+  ]);
   return (
     <>
       <PageHeader
@@ -82,6 +86,12 @@ export default async function CategoryPage({ params }: PageProps<"/comprar/[cate
           </Link>
         </p>
       )}
+      <PlaceLinks
+        title={`${category.name} por estado`}
+        places={places}
+        categorySlug={category.slug}
+        className="pb-8"
+      />
     </>
   );
 }
