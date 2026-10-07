@@ -1,8 +1,12 @@
 import { KeyRound, Lock, ShieldCheck, Trash2 } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { OPERATOR } from "@/app/(legal)/operator";
+import { PendingData } from "@/app/(legal)/pending-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { siteConfig } from "@/config/site";
+
+const CARD_LINK = "font-semibold text-primary-text underline-offset-2 hover:underline";
 
 export const metadata: Metadata = {
   title: "Seguridad y privacidad",
@@ -72,17 +76,62 @@ export default function SecurityPage() {
           </ul>
         </section>
 
+        {/* ADR-076: a dónde ir según lo que pase. Los motivos son los del formulario de reporte
+            (`trust/labels.ts`); /derechos-de-autor tiene los formularios formales. */}
+        <section className="flex flex-col gap-2 rounded-3xl border bg-card p-5">
+          <h2 className="font-heading text-lg font-bold">Si algo te afecta</h2>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-ink-2">
+            <li>
+              <strong>Algo rompe las reglas:</strong> usa «Reportar» en la publicación, el
+              comentario, el producto o la conversación. Quien lo publicó no sabe quién lo reportó.
+            </li>
+            <li>
+              <strong>
+                Contenido íntimo de alguien sin su permiso, o algo que pone en riesgo a una niña, un
+                niño o un adolescente:
+              </strong>{" "}
+              repórtalo con el motivo «Contenido íntimo sin consentimiento» o «Pone en riesgo a un
+              menor»; esos reportes se atienden primero. Si alguien está en peligro inmediato, llama
+              al 911.
+            </li>
+            <li>
+              <strong>Usan tu obra, tu marca o tu imagen de artista sin permiso:</strong>{" "}
+              <Link href={"/derechos-de-autor#aviso" as Route} className={CARD_LINK}>
+                Mandar un aviso de derechos
+              </Link>
+              . Funciona sin cuenta, y ese aviso no es anónimo.
+            </li>
+            <li>
+              <strong>Retiraron algo tuyo por un aviso:</strong>{" "}
+              <Link href={"/derechos-de-autor#contra-aviso" as Route} className={CARD_LINK}>
+                Responder con un contra-aviso
+              </Link>
+              . Las cuentas que infringen derechos una y otra vez se cierran (ver la{" "}
+              <Link href={"/derechos-de-autor#reincidencia" as Route} className={CARD_LINK}>
+                política de reincidentes
+              </Link>
+              ).
+            </li>
+            <li>
+              <strong>Eres una autoridad:</strong> escríbenos a{" "}
+              <PendingData>{OPERATOR.legalEmail}</PendingData>.
+            </li>
+          </ul>
+        </section>
+
         <section className="flex flex-col gap-2 rounded-3xl border bg-card p-5">
           <h2 className="font-heading text-lg font-bold">Quién responde</h2>
-          {/* Solo lo publicado: el aviso aún dice que el responsable y el medio para ejercer los
-              derechos «se completarán antes del lanzamiento». Al llenarlos, esto dice dónde están. */}
+          {/* Solo lo publicado: el aviso ya explica cómo ejercer los derechos, pero el responsable,
+              su domicilio y el correo siguen marcados como pendientes. Al llenarlos, esto dice
+              dónde están. */}
           <p className="text-sm text-ink-2">
             Una persona, no un buzón automático. El aviso de privacidad explica qué datos tratamos,
-            para qué y tus derechos de acceso, rectificación, cancelación y oposición. El nombre de
-            la persona responsable de tus datos, su domicilio y el medio para ejercer esos derechos
-            todavía no están publicados: se agregarán al aviso antes del lanzamiento. Mientras
-            tanto, desde Ajustes puedes borrar tu historial de búsqueda, tus fotos de prueba o tu
-            cuenta completa. Los términos tienen las reglas de la comunidad.
+            para qué, tus derechos de acceso, rectificación, cancelación y oposición, y cómo y en
+            qué plazos ejercerlos. El nombre de la persona responsable de tus datos, su domicilio y
+            el correo para ejercer esos derechos todavía no están publicados: se agregarán al aviso
+            antes del lanzamiento. Mientras tanto, desde Ajustes puedes borrar tu historial de
+            búsqueda, tus fotos de prueba o tu cuenta completa. Los términos tienen las reglas de la
+            comunidad.
           </p>
           <p className="flex flex-wrap gap-3 text-sm font-semibold text-primary-text">
             <Link href={"/privacidad" as Route} className="underline-offset-2 hover:underline">

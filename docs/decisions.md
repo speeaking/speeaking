@@ -2276,3 +2276,220 @@ huecos eran estos:
   - Cuando exista un perfil nuevo (Instagram, YouTube…), agregarlo a `siteConfig.socialProfiles`.
   - Sumar vendedores de varios estados: sin ellos no hay páginas por estado.
   - Merchant Center, solo cuando haya pagos reales.
+
+## ADR-076 · Contenido de usuarios y derechos: aviso y retirada, reincidencia, contenido y productos prohibidos, mayoría de edad
+
+**Contexto.** El fundador pidió actualizar las políticas legales, cuidar lo que la gente sube, evitar
+problemas de derechos de autor y proteger legalmente a la empresa. Una investigación legal verificada
+(México, 2026-10-07) encontró estos huecos:
+
+- **Derechos de autor.** speeaking es un «Proveedor de Servicios en Línea» (LFDA art. 114 Septies
+  fr. II b y c). Solo lo protege el puerto seguro del art. 114 Octies si cumple sus condiciones, que
+  aplican hoy:
+  - retirar sin demora al recibir un aviso o una orden de autoridad;
+  - tomar medidas razonables para que lo retirado no se vuelva a subir;
+  - avisar a quien publicó cuando retira algo por su cuenta;
+  - tener una política pública para cerrar cuentas reincidentes;
+  - no obtener un beneficio de una infracción que puede controlar.
+
+  Los `/terminos` publicados no tenían canal formal ni política de reincidentes. Además decían
+  «Quien reporta es anónimo para quien vende», y eso contradice el contra-aviso, que la ley obliga a
+  enviar a quien avisó. No retirar tras un aviso es también una multa propia (art. 232 Quinquies
+  fr. II: 1,000 a 20,000 UMA).
+
+- **Reglamento de la LFDA** (DOF 24-09-2026, arts. 37 Bis a 37 Nonies). Entra en vigor 90 días
+  hábiles después, hacia febrero de 2027 (fecha por confirmar). Fija:
+  - qué lleva el aviso y qué lleva el contra-aviso;
+  - un formulario claro y accesible, con correo alterno;
+  - que no se puede condicionar el retiro a certificados de registro;
+  - la restauración entre 10 y 15 días hábiles después de un contra-aviso.
+- **Imagen y voz.** La reforma del 14-05-2026 dejó el art. 87 solo para la imagen y la voz de las
+  personas artistas, incluidos los resultados de IA. La imagen de las demás personas se rige por la
+  ley civil (CCF art. 1916 y la ley de la CDMX) y por la de datos personales.
+- **Contenido y artículos prohibidos.**
+  - Ley Olimpia (LGAMVLV arts. 20 Quáter y 20 Sexies): también el contenido íntimo simulado.
+  - LGPSEDMTP arts. 16, 17 y 33: material sexual de menores y medios que facilitan la trata.
+  - LFAFE art. 52: armas, accesorios, partes y componentes, prohibidos por internet.
+  - LGS arts. 282 Quater y 456 Bis: vapeadores (1 a 8 años).
+  - CFF art. 113 Bis: venta de facturas.
+- **Datos personales.** La LFPDPPP nueva (DOF 20-03-2025) cambió la autoridad: ahora es la
+  Secretaría Anticorrupción y Buen Gobierno. El aviso no tenía responsable, procedimiento ARCO,
+  forma de revocar, sección de menores, seguridad ni decisiones automatizadas. Tampoco nombraba a los
+  encargados que producción ya usa: el proveedor de IA seguía «pendiente».
+- **Consumidor** (LFPC arts. 1, 85 y 90). Eran nulos:
+  - «no da derecho a devolución por diferencias con la simulación» de «Pruébatelo»;
+  - cambiar los términos sin aviso ni salida;
+  - una sección «Cuenta» que permitía suspender sin motivo ni revisión.
+
+**Decisión.** Un solo conjunto de cambios, con la misma versión de los textos legales:
+
+1. **Base de datos** (commit 86b371d):
+   - `RightsNotice`, `RightsNoticeTarget` y `CounterNotice`, con las fechas del caso y quién
+     decidió;
+   - `BlockedMediaHash` y `Media.sha256`;
+   - motivos de reporte `INTIMATE_WITHOUT_CONSENT`, `CHILD_SAFETY` y `MINOR_ACCOUNT`;
+   - `ConsentType.AGE_18`;
+   - avisos `CONTENT_REMOVED` y `CONTENT_RESTORED`.
+2. **`/derechos-de-autor`.** El aviso funciona sin cuenta y da un número de caso («DA-…») por cada
+   cuenta que subió el contenido señalado (un caso por cuenta: estado, contra-aviso y reincidencia
+   son de una sola persona). El nombre y contacto de quien avisa llegan a quien subió el contenido
+   solo cuando se retira. Tiene
+   casillas sin marcar para la declaración bajo protesta y la multa, y advierte que el nombre y el
+   contacto se comparten. Quien subió el contenido recibe el aviso en la campana
+   (`CONTENT_REMOVED`) y responde desde ahí con un contra-aviso. Si hay Resend, también se mandan
+   por correo el acuse, el aviso y la copia del contra-aviso. El equipo atiende los avisos en una
+   fila propia (`/admin/avisos`) y ve las faltas de cada cuenta (`rights/strikes.ts`); el cierre
+   lo decide una persona. Anclas: `#aviso`, `#contra-aviso` y `#reincidencia`.
+3. **Lo retirado no vuelve.** Se guarda la huella SHA-256 de cada archivo. Un archivo idéntico a uno
+   retirado no se puede subir desde ninguna cuenta (`modules/rights/stay-down.ts`). Hoy solo bloquea
+   lo retirado por un aviso de derechos (`rights/service.ts`); el bloqueo por contenido íntimo, por
+   riesgo para menores o por moderación ya tiene sus motivos en `blockMediaHashes`, pero la
+   moderación todavía no lo llama (ver «Lo que el producto aún no hace»).
+4. **Reportes.** «Contenido íntimo sin consentimiento» y «Pone en riesgo a un menor», con cola
+   prioritaria, y «Cuenta de un menor de edad». Los comentarios ya se pueden reportar y ocultar.
+5. **Mayoría de edad.** Casilla «Tengo 18 años o más» al crear la cuenta (`AGE_18`).
+6. **Al subir.**
+   - Casilla de derechos al publicar un producto y aviso en el compositor de publicaciones.
+   - Freno determinista de artículos prohibidos en productos y publicaciones hechos a mano.
+7. **Textos legales.** `LEGAL_VERSIONS.terms` y `.privacyNotice` pasan a 2026-10-08, y
+   `COOKIES_NOTICE_UPDATED` también. El dato que falta se ve marcado como pendiente
+   (`app/(legal)/operator.ts` y `pending-data.tsx`); nunca se inventa.
+   - **Términos.** Secciones nuevas:
+     - «Quiénes somos y cómo contactarnos», con «Quejas y aclaraciones»;
+     - «Edad mínima: 18 años»;
+     - «Tu contenido y el permiso que nos das»;
+     - «Reglas de la comunidad: lo que no se puede subir»;
+     - «Derechos de autor y marcas: avisos, contra-avisos y reincidentes»;
+     - «Si vendes: permiso sobre tus productos y fotos»;
+     - «Publicidad pagada e infracciones», en la parte de quien vende, no en la del saldo;
+     - «Artículos prohibidos y restringidos»;
+     - «Inteligencia artificial y "Pruébatelo"»;
+     - «Moderación, sanciones y cómo pedir revisión», en lugar de «Cuenta»;
+     - «Cambios» y «Ley aplicable, PROFECO y tribunales».
+
+     En «Pruébatelo», en lugar de negar la devolución dice: «Tus derechos de cancelación, garantía
+     y devolución frente a quien vende no cambian por ella».
+
+   - **Aviso de privacidad.**
+     - La LFPDPPP de 2025 y la SABG.
+     - «Responsable y contacto de datos».
+     - ARCO con 20 + 15 días hábiles, gratis, con comprobación de identidad y sin prometer una
+       descarga que no existe.
+     - «Cómo revocar tu consentimiento».
+     - «Avisos de derechos, reportes y solicitudes de autoridades».
+     - La huella de los archivos.
+     - «Menores de edad», «Seguridad y vulneraciones» y «Decisiones automatizadas y tu derecho a
+       oponerte».
+     - Encargados con nombre y país: Vercel Inc. (`iad1`), Neon (Databricks, Inc.), Cloudflare,
+       Inc. (R2 y Turnstile), Resend y OpenRouter, Inc., con proveedores de cero retención. Google
+       LLC aparece como responsable por su cuenta, no como encargado.
+     - «Pruébatelo»: sin reconocimiento ni plantilla biométrica, sin entrenar modelos y cuidada como
+       dato sensible.
+   - **Cookies.** Cloudflare Turnstile como tecnología necesaria del registro, de la recuperación
+     de contraseña y del formulario de avisos de derechos.
+   - **`/seguridad`.** La tarjeta «Si algo te afecta»: «Reportar», los motivos urgentes, el 911,
+     aviso y contra-aviso, la política de reincidentes y el contacto para autoridades.
+   - **`docs/legal`.** 02 (A11 bis, A15, B2, C4 y anexos 1 y 2) y 00 §4.2 corregidos según la
+     investigación.
+
+**Reglas fijadas** (propuestas de la investigación; el fundador puede cambiarlas):
+
+- **Falta.** Un aviso de derechos por el que se retiró algo y que no se revierte (uno por aviso,
+  aunque señale varias cosas, `rights/strikes.ts`). Con 3 faltas en 12 meses se cierran la cuenta y
+  su tienda. Una cuenta dedicada a la piratería se cierra a la primera.
+  - Cuentan publicaciones, comentarios, fotos de perfil, videos y productos. El código cuenta por
+    cuenta; quien decide el cierre puede sumar las de otras cuentas de la misma persona.
+  - Quien tuvo una cuenta cerrada no abre otra.
+  - La falta se quita si prospera el contra-aviso o si quien avisó retira su aviso.
+  - Lo decide una persona.
+- **Anonimato.** Los avisos formales no son anónimos; los reportes con «Reportar» sí.
+- **Marcas.** Vía contractual, con el número de registro del IMPI. No se aceptan avisos sobre
+  control de precios ni sobre contratos de distribución.
+- **Plazos.**
+  - Pedir revisión: 30 días naturales; respuesta en 5 días hábiles, por una persona distinta cuando
+    se pueda.
+  - Quejas: acuse en 1 día hábil y respuesta en 10.
+  - Cambios a los términos: aviso con 15 días naturales.
+- **Licencia de contenido.** No exclusiva y gratuita, para cualquier país, solo dentro de
+  speeaking. Dura mientras el contenido esté publicado, más los respaldos de la base (hoy, 7 días en
+  Neon) y la conservación legal. Fuera de speeaking hace falta un permiso aparte. Sin entrenar
+  modelos y sin renunciar a los derechos morales (LFDA art. 19).
+- **Licencia de las tiendas.** Cubre la tienda, la búsqueda, los looks, «Patrocinado», las
+  colaboraciones y «Pruébatelo». La tienda garantiza sus derechos y responde ante reclamos de
+  terceros.
+
+**Base legal.**
+
+- **Derechos de autor:** LFDA arts. 19, 21, 27, 30, 87, 114 Septies, 114 Octies fr. II a) a e), III
+  y IV, 148 y 232 Quinquies; RLFDA arts. 37 Ter a 37 Nonies (DOF 24-09-2026); SCJN AI 217/2020 y
+  249/2020 (3-06-2024).
+- **Marcas:** LFPPI arts. 344 fr. VII, 355 y 386 a 388.
+- **Datos personales:** LFPDPPP (DOF 20-03-2025) arts. 7, 8, 15, 19, 26, 28 a 34, 35, 36 y 40.
+- **Consumidor:** LFPC arts. 1, 76 BIS, 85, 90 y 99; NMX-COE-001-SCFI-2018.
+- **Menores y contenido íntimo:** CCF arts. 450 y 646; LGAMVLV arts. 20 Quáter y 20 Sexies;
+  LGPSEDMTP arts. 16, 17 y 33; LGDNNA art. 12.
+- **Artículos:** LFAFE arts. 52 y 83 Sexies; LGS arts. 282 Quater y 456 Bis; LGCT arts. 16 y 23; CFF
+  art. 113 Bis; LGVS arts. 51 y 60 Bis 1 y 2.
+
+**Consecuencias.**
+
+- Quien aceptó una versión anterior ve el aviso para volver a aceptar los términos y el aviso de
+  privacidad.
+- Las páginas siguen con el letrero «Borrador para revisión legal». Se quita solo en la versión que
+  apruebe el abogado.
+- **Pendiente del fundador.**
+  - Datos del operador en `src/app/(legal)/operator.ts`: razón social o nombre completo, RFC,
+    domicilio para notificaciones, teléfono, horario, `soporte@`, `privacidad@`, `derechos@` con su
+    alterno, `legal@` y la persona o el área de datos personales. Al llenarlos, sube las dos
+    versiones y actualiza «Quién responde» en `/seguridad`.
+  - Plazos de conservación de los expedientes de avisos, del historial de moderación y de la
+    actividad.
+  - Si se devuelven los días de destacado ya pagados de un producto retirado.
+  - La empresa de TikTok de la cuenta de anunciante.
+  - Prohibiciones de piloto que la ley no exige. No se publicaron: alcohol, animales vivos, CBD,
+    juguetes para adultos, aerosoles y paralizadores, y medicamentos veterinarios.
+  - El plazo para responder un aviso de marca.
+  - Agente DMCA en EE. UU. y música en los videos.
+  - La cláusula de tribunales para tiendas y la etiqueta «Publicidad · Colaboración».
+  - Confirmar los plazos propuestos de 30/5, 1/10 y 15 días.
+- **Para el abogado.**
+  - La fecha exacta en que entra en vigor el Reglamento.
+  - Si retirar en 24 a 48 horas es «expedito».
+  - Si «Pruébatelo», los looks y «Patrocinado» quedan fuera del puerto seguro.
+  - Cómo se cumplen los arts. 30 a 33 de la LFDA en una licencia gratuita aceptada con un clic.
+  - Con qué base de la LFPDPPP se manda el nombre de quien avisa, y si la copia del contra-aviso
+    puede ir sin el domicilio.
+  - Si la foto de «Pruébatelo» es dato sensible.
+  - Ante qué autoridad se reporta el material sexual de menores y cómo preservarlo.
+  - El alcance del art. 33 de la LGPSEDMTP, la eliminación de EXIF y el caso Richter.
+  - Que los teléfonos de la PROFECO sigan vigentes.
+  - Si las cláusulas de «tú respondes por ese reclamo» (contenido) y de indemnizar (tiendas) valen
+    frente a personas consumidoras y a tiendas que son personas físicas o microempresas (LFPC
+    art. 2 fr. I y art. 90 fr. II y III).
+  - Cómo se cumplen los 15 días de aviso de un cambio si la nueva versión aplica al aceptarla: hoy
+    el aviso aparece cuando se publica la versión; no hay forma de anunciar una versión futura.
+- **Lo que el producto aún no hace.** Los textos no lo prometen:
+  - Aviso con el motivo dentro de la app cuando el equipo oculta algo por su cuenta. Los términos
+    dicen que lo oculto se ve marcado («Oculto por moderación» en el Studio; «Oculta por
+    moderación» en «Mi contenido») y que el motivo se pide al correo de soporte. Recomendado:
+    `CONTENT_REMOVED` desde `applyModerationAction` (LFDA art. 114 Octies fr. II b). Un comentario
+    oculto ni siquiera se marca en «Mi contenido».
+  - Bloquear la huella de lo que la moderación retira por contenido íntimo o por riesgo para
+    menores: `blockMediaHashes` ya acepta esos motivos, pero solo lo llama `rights/service.ts`.
+  - Días hábiles con el calendario oficial: los términos lo prometen, pero `rights/business-days.ts`
+    solo descuenta fines de semana. Mientras tanto, el equipo revisa los días festivos antes de
+    restaurar; agregar el calendario federal antes de que haya volumen.
+  - «Reportar» en el perfil: hoy una cuenta (también la de un menor) solo se reporta desde una
+    conversación.
+  - Botón «Pedir revisión» (hoy se pide por correo).
+  - Controles contra volver a registrarse.
+  - Conservación por orden de autoridad (legal hold). Hoy borrar una cuenta y las tareas de limpieza
+    pueden borrar evidencia.
+  - Aceptación aparte de la política para vendedores (`SELLER_POLICY`).
+  - Pausar los días de destacado de un producto retirado.
+  - Archivo público de versiones anteriores, exportar datos y formulario ARCO dentro de la app.
+  - Salvaguardas de imagen de «Pruébatelo» y metadatos de autoría en las fotos.
+  - Correo garantizado: sin Resend no hay correos, por eso los textos solo prometen el número de
+    caso y el aviso en la campana.
+  - El contra-aviso no pide el carácter (titular o representante) ni el correo alterno que exigirá
+    el art. 37 Septies del Reglamento cuando entre en vigor.

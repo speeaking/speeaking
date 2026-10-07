@@ -18,7 +18,11 @@ export const LEGAL_VERSIONS = {
   // (ADR-071).
   // 2026-10-07: la página por fin dice lo que anotó la versión 2026-09-30 (su texto no había
   // cambiado): «Pruébatelo» lo paga la tienda o la plataforma, nunca quien compra (ADR-046).
-  terms: "2026-10-07",
+  // 2026-10-08: quién opera (datos del fundador pendientes), 18 años o más, permiso sobre el
+  // contenido y las fotos de productos, reglas de la comunidad, artículos prohibidos, avisos y
+  // contra-avisos de derechos con política de reincidentes, moderación con revisión, 15 días de
+  // aviso de cambios, PROFECO y tribunales; «Pruébatelo» ya no niega la devolución (ADR-076).
+  terms: "2026-10-08",
   // 2026-09-26: proveedor externo de IA como encargado (nombre y país pendientes antes de activarlo),
   // kit de anuncios, eventos anónimos y reglas de «Gente de tus comunidades» (ADR-030, ADR-038).
   // 2026-09-27: publicaciones que ves en pantalla (ADR-037), señal opcional de IA de autenticidad,
@@ -31,7 +35,11 @@ export const LEGAL_VERSIONS = {
   // 2026-10-06: medición de anuncios con el pixel de TikTok, solo con permiso (ADR-072).
   // 2026-10-07: «Entrar con Google» con Google LLC (EE. UU.) como encargado; el botón ya estaba
   // activo en producción sin nombrarlo (ADR-049, docs/deploy.md 6 bis.0).
-  privacyNotice: "2026-10-07",
+  // 2026-10-08: LFPDPPP de 2025 y SABG, responsable (datos pendientes), ARCO con plazos y cómo
+  // revocar, encargados con nombre y país (OpenRouter como proveedor de IA; Google como
+  // responsable por su cuenta), avisos de derechos y autoridades, huella de archivos retirados,
+  // menores, seguridad y decisiones automatizadas (ADR-076).
+  privacyNotice: "2026-10-08",
   personalization: "2026-09-24",
   // Texto del ajuste «Aparecer en sugerencias». 2026-09-26: con quienes se siguen mutuamente, a quién
   // sigues cuenta como señal sin decir quién (ADR-030, SEC-17; SEC-34 pedía subirla).

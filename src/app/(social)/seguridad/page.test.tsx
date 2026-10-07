@@ -23,4 +23,31 @@ describe("Seguridad y privacidad", () => {
       "/terminos",
     );
   });
+
+  it("«Si algo te afecta» lleva a Reportar, a los avisos de derechos y al camino urgente (ADR-076)", () => {
+    render(<SecurityPage />);
+
+    const section = screen.getByRole("heading", { name: "Si algo te afecta" }).parentElement!;
+    // Los motivos prioritarios con su nombre en el formulario de reporte (`trust/labels.ts`).
+    expect(section).toHaveTextContent("«Reportar»");
+    expect(section).toHaveTextContent("«Contenido íntimo sin consentimiento»");
+    expect(section).toHaveTextContent("«Pone en riesgo a un menor»");
+    expect(section).toHaveTextContent("llama al 911");
+    expect(screen.getByRole("link", { name: "Mandar un aviso de derechos" })).toHaveAttribute(
+      "href",
+      "/derechos-de-autor#aviso",
+    );
+    expect(screen.getByRole("link", { name: "Responder con un contra-aviso" })).toHaveAttribute(
+      "href",
+      "/derechos-de-autor#contra-aviso",
+    );
+    expect(screen.getByRole("link", { name: "política de reincidentes" })).toHaveAttribute(
+      "href",
+      "/derechos-de-autor#reincidencia",
+    );
+    // El correo para autoridades aún no existe: se ve como pendiente, no inventado.
+    expect(
+      screen.getByText("[Correo para autoridades y asuntos legales — pendiente]"),
+    ).toBeInTheDocument();
+  });
 });

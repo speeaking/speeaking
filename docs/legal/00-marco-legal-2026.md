@@ -590,23 +590,52 @@ intención [1, art. 60].
   - tienen una **política pública de terminación de cuentas de infractores reincidentes**;
   - no reciben un beneficio financiero atribuible a la infracción cuando pueden controlarla.
 - **Aviso y contra-aviso:**
-  - el aviso trae: nombre y contacto, contenido, derecho y ubicación;
+  - el aviso trae, como mínimo: nombre y contacto, contenido, derecho y ubicación;
   - el usuario puede mandar un **contra-aviso**; el contenido se restaura salvo que el titular inicie
     un procedimiento en **15 días hábiles**;
-  - **no hay obligación de monitorear**.
-- La SCJN validó el mecanismo de aviso y retiro en la AI 217/2020 y su acumulada (3 de junio de 2024;
-  secundaria) [18].
-- **Acción:** poner en los términos la política de derechos de autor (aviso, contra-aviso y
-  reincidentes) y un canal para avisos.
+  - **no hay obligación de monitorear** (fr. IV), pero se permite buscar por cuenta propia el
+    contenido que atenta contra la dignidad humana o hace apología de la violencia o del delito.
+- **No retirar también se multa** (corregido 2026-10-07, ADR-076): el proveedor que no retira de
+  forma expedita tras un aviso o una orden comete una infracción propia de 1,000 a 20,000 UMA
+  (art. 232 Quinquies fr. II), y lo mismo si no entrega a una autoridad, dentro de un procedimiento,
+  los datos que identifican al presunto infractor (fr. III). No es solo perder el puerto seguro.
+- **Reglamento** (agregado 2026-10-07, ADR-076): el decreto del DOF del 24-09-2026 agregó los arts.
+  37 Bis a 37 Nonies al Reglamento de la LFDA. Entra en vigor 90 días hábiles después de publicado
+  (hacia principios de febrero de 2027; **fecha por confirmar**) y los avisos anteriores siguen las
+  reglas previas (transitorio Segundo). Dispone:
+  - contenido del aviso (art. 37 Quáter): ubicación, descripción de los hechos, nombre y carácter
+    (titular o representante, y a quién representa), contacto y correo alterno, domicilio,
+    declaración **bajo protesta de decir verdad** y reconocimiento expreso de la multa del art. 232
+    Quinquies;
+  - el proveedor **no puede condicionar el retiro** a certificados de registro, títulos ni otros
+    documentos (art. 37 Quinquies);
+  - formulario **claro y accesible** con correo alterno (art. 37 Sexies);
+  - contenido del contra-aviso (art. 37 Septies): nombre y carácter, contacto y correo alterno,
+    domicilio, y la licencia o el contrato, o la declaración bajo protesta de que el uso cabe en una
+    excepción o la obra es de dominio público, más el reconocimiento de la multa;
+  - copia inmediata del contra-aviso a quien avisó (art. 37 Octies) y restauración entre **10 y 15
+    días hábiles** después del contra-aviso, salvo que quien avisó acredite en 15 días hábiles un
+    procedimiento (art. 37 Nonies);
+  - «material» incluye la imagen y la voz de las personas artistas del art. 87 (art. 37 Ter fr. VI).
+- **SCJN** (corregido 2026-10-07, ADR-076): en la AI 217/2020 y su acumulada 249/2020 (Pleno,
+  3-06-2024) la acción fue procedente pero infundada. Se reconoció la validez del art. 114 Octies
+  fr. I b), fr. II a) numeral 1 y párrafo segundo, d) y e), y fr. III, y de los arts. 232 Bis a 232
+  Sexies. La fr. II b) (retiro voluntario de buena fe) se **desestimó**: 6 votos por la invalidez, se
+  necesitaban 8, así que sigue vigente. Nada se invalidó y no hay jurisprudencia [18].
+- **Acción:** hecho en ADR-076 (sección «Derechos de autor y marcas» en `/terminos`, formularios en
+  `/derechos-de-autor`, política de reincidentes y archivos retirados que no se vuelven a subir).
 - **Contenido generado con IA:**
-  - la Segunda Sala de la SCJN resolvió (AD 6/2025, 14-07-2025) que lo generado **exclusivamente**
-    por IA no se protege por derecho de autor, y que la intervención humana significativa sí puede
-    protegerse [19] (secundaria);
-  - consecuencia para los términos: speeaking no promete derechos exclusivos sobre los textos de IA; el
-    vendedor los revisa y edita;
-  - la reforma del 14-05-2026 exige consentimiento expreso para usar la imagen o la voz de artistas,
-    **incluidos los resultados de IA** [17, art. 87]. Prohibir en las reglas de contenido los clones
-    de voz o imagen sin permiso.
+  - la Segunda Sala de la SCJN resolvió el AD 6/2025 el **2 de julio de 2025** (la nota aclaratoria
+    de la Corte es del 14-07-2025): lo generado **exclusivamente** por IA no se protege por derecho de
+    autor, y la intervención humana significativa sí puede protegerse [19] (secundaria);
+  - consecuencia para los términos: speeaking no promete derechos exclusivos sobre los textos ni las
+    imágenes de IA; el vendedor los revisa y edita;
+  - la reforma del 14-05-2026 **limitó el art. 87** a la imagen, incluida la voz, de las personas
+    artistas intérpretes o ejecutantes y sus personajes, **incluidos los resultados de IA** [17,
+    art. 87]; el art. 118 fr. VII les da derecho a oponerse a clones de IA. Ya no protege el
+    «retrato» de cualquier persona: la imagen de las demás se rige por la ley civil (CCF art. 1916 y
+    la ley de la CDMX) y por la de datos personales. Las reglas de contenido prohíben los clones de
+    voz o imagen de artistas y el uso de la imagen de cualquier persona sin su consentimiento.
 - **Licencia de contenido:** los términos necesitan una licencia **no exclusiva** del usuario a
   speeaking para alojar, mostrar y adaptar (formatos, recortes) su contenido mientras esté publicado.
   Redacción: **[VERIFICAR CON ABOGADO]**.

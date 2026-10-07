@@ -51,6 +51,14 @@ Publicar una promesa que el producto no cumple sería publicidad engañosa [11, 
 | 19  | Consentimiento expreso al subir comprobantes (C11)                                                      | No hay casilla                                                                                                                                    | Casilla sin marcar al subir (00 §2.3) **[VERIFICAR CON ABOGADO]**                                                                                               |
 | 20  | Retiramos CLABE e instrucciones de depósito de comentarios y publicaciones (C7)                         | Solo hay filtros de CLABE para la IA; nada en `social/` ni `catalog/`                                                                             | Filtro al publicar y comentar (el plan §7.2 lo da por existente)                                                                                                |
 
+**Estado al 2026-10-07 (ADR-076).** Construidos en ese conjunto de cambios: #1 (casilla «Tengo 18
+años o más», `ConsentType.AGE_18`), #10 (formularios de aviso y contra-aviso en `/derechos-de-autor`
+y fila del equipo separada de los reportes) y #14 (freno determinista de artículos prohibidos en
+productos y publicaciones hechos a mano), además de los archivos retirados que no se vuelven a subir.
+Siguen pendientes: #3 (`SELLER_POLICY`), #8 (aviso con motivo dentro de la app y «Pedir revisión»;
+los términos dicen «tomamos medidas razonables para avisarte») y #16. #15: las faltas se cuentan
+con los avisos (`rights/strikes.ts`) y el cierre lo decide una persona.
+
 ---
 
 ## Parte A. Términos y condiciones de uso
@@ -353,8 +361,10 @@ Reglas:
   quien la vende con las condiciones de su ficha. No son una oferta de speeaking y pueden dejar de
   estar disponibles.
 - **«Pruébatelo»:** imagen generada con IA, orientativa; no garantiza talla, color, caída ni el
-  aspecto real; no da derecho a devolución por diferencias con la simulación (aplican las condiciones
-  de devolución de cada vendedor). Quien sube la foto declara que es suya y que es mayor de edad;
+  aspecto real. La simulación es una imagen generada con IA, orientativa, y no forma parte de la
+  descripción del producto; los derechos de cancelación, garantía y devolución frente a quien vende
+  no cambian por ella (corregido 2026-10-07, ADR-076: la frase anterior negaba la devolución, nula
+  por LFPC arts. 1 y 90). Quien sube la foto declara que es suya y que es mayor de edad;
   prohibido subir fotos de terceros.
 - **Quién paga la simulación (actualizado 2026-09-30, ADR-046):** para quien compra es gratis
   siempre. La paga la tienda del producto principal (si activa «Ver cómo me veo», con tope diario)
@@ -535,32 +545,58 @@ No puedes usar speeaking para:
   «calidad espejo». Tampoco se permiten copias no autorizadas de libros, cursos, películas, música,
   software o videojuegos.
 - **Si no es de la marca,** publícalo como «genérico» sin usar la marca como si fuera suya.
-- **Aviso de titulares.** Si eres titular de una marca o de derechos de autor (o su representante)
-  y crees que algo en speeaking los infringe, mándanos un aviso con los datos del **anexo 1** por
-  [URL DEL FORMULARIO DE AVISOS] o [CORREO DE SOPORTE].
-- **Qué hacemos:** revisamos el aviso; si procede, retiramos o inhabilitamos el contenido **sin
-  demora**, tomamos medidas razonables para que no se vuelva a subir y avisamos a quien lo publicó,
-  con el motivo y la forma de responder. Confirmamos que recibimos el aviso en un máximo de 2 días
-  hábiles.
+- **Quién responde por qué.** speeaking guarda y muestra lo que suben las personas usuarias, a
+  petición de ellas. No lo revisa antes de que se publique y no tiene la obligación de vigilar todo
+  lo que se sube. Lo que publican las cuentas «Equipo speeaking» y lo que generan sus funciones de IA
+  («Pruébatelo», looks del estilista) es responsabilidad de speeaking.
+- **Aviso de titulares.** Si eres titular de derechos de autor, de una marca registrada o eres una
+  persona artista cuya imagen o voz se usa sin permiso (o su representante), mándanos un aviso con
+  los datos del **anexo 1** por el formulario de `/derechos-de-autor#aviso` (funciona sin cuenta) o
+  a [CORREO PARA AVISOS DE DERECHOS] o [CORREO ALTERNO]. Es gratis.
+- **Qué hacemos:** te mostramos un número de caso; una persona del equipo revisa el aviso y, si
+  procede, retira o inhabilita el contenido **sin demora**, toma medidas razonables para que el
+  mismo archivo no se vuelva a subir desde ninguna cuenta y avisa a quien lo publicó, con el motivo
+  y la forma de responder. Un aviso que trae los datos mínimos de la ley no se detiene porque falten
+  los demás.
+- **Los avisos formales no son anónimos.** Quien publicó recibe el nombre y el contacto de quien
+  avisa; quien avisa recibe la copia del contra-aviso, con nombre, contacto y domicilio. Los
+  reportes de la comunidad con «Reportar» sí son anónimos.
 - **Contra-aviso.** Si retiramos algo tuyo y crees que es un error, puedes mandar un contra-aviso con
-  los datos del **anexo 2**. Se lo pasamos a quien mandó el aviso. En derechos de autor, volvemos a
-  habilitar el contenido salvo que esa persona inicie un procedimiento judicial o administrativo,
-  una denuncia penal o un mecanismo alterno de solución dentro de **15 días hábiles** desde que le
-  informamos del contra-aviso. En marcas seguimos el mismo procedimiento.
+  los datos del **anexo 2** por `/derechos-de-autor#contra-aviso`. Se lo enviamos de inmediato a
+  quien mandó el aviso. En derechos de autor volvemos a habilitar el contenido **entre 10 y 15 días
+  hábiles** después de recibir el contra-aviso completo, salvo que quien avisó acredite, dentro de
+  **15 días hábiles** desde que le informamos, un procedimiento judicial o administrativo, una
+  denuncia penal o un mecanismo alterno (avenencia, mediación, conciliación o arbitraje ante el
+  INDAUTOR). Días hábiles según el calendario oficial federal.
+- **Marcas** (vía contractual): el mismo canal, con el número de registro en el IMPI. No se aceptan
+  avisos sobre control de precios ni contratos de distribución. Quien vende responde con su
+  comprobante o la autorización de la marca y decide una persona del equipo.
 - **Declarar en falso tiene consecuencias.** En derechos de autor, una declaración falsa en un aviso
   o contra-aviso se puede multar con 1,000 a 20,000 UMA, además de la responsabilidad por daños.
-- **Reincidentes.** Cerramos las cuentas que infringen de forma reiterada (ver C14).
+- **Reincidentes.** Cada aviso por el que se retira algo y que no se revierte es una falta (una por
+  aviso, aunque señale varias cosas). Con **3 faltas en 12 meses** se cierran la cuenta y su tienda;
+  las cuentas dedicadas a la piratería, a la primera. Cuentan publicaciones, comentarios, fotos de
+  perfil, videos y productos, y se pueden sumar las de otras cuentas de la misma persona; quien
+  tuvo una cuenta cerrada no abre otra; la falta se quita si prospera el contra-aviso o se retira el
+  aviso. Ver también C14.
 - **No certificamos autenticidad.** Ver A16.
 
-> **Fundamento y notas.** Infracciones de marca: usar una marca sin consentimiento y ofrecer en
-> venta productos con marcas alteradas [16, arts. 386 y 387]; multas [16, art. 388]; delito de
-> falsificación [16, art. 402]. Piratería de obras: delito [41, art. 424 bis]. Puerto seguro de
-> derechos de autor: retiro expedito, medidas contra la resubida, aviso al afectado, **política
-> pública de terminación de cuentas de reincidentes**, contenido mínimo del aviso, contra-aviso y 15
-> días hábiles [17, art. 114 Octies fr. II y III]. Multa por falsa declaración [17, art. 232
-> Quinquies fr. I]. **[VERIFICAR CON ABOGADO]:** la LFPPI no trae puerto seguro para marcas (00 §4.1);
-> aplicar el mismo procedimiento a marcas es una decisión nuestra, y hay que confirmar la
-> redacción. El plazo de 2 días hábiles es **[DECISIÓN DEL FUNDADOR]**.
+> **Fundamento y notas.** Actualizado el 2026-10-07 (ADR-076) y publicado en `/terminos` como
+> «Derechos de autor y marcas: avisos, contra-avisos y reincidentes». Infracciones de marca: usar una
+> marca sin consentimiento y ofrecer en venta productos con marcas alteradas [16, arts. 386 y 387];
+> multas [16, art. 388]; delito de falsificación [16, art. 402]. Piratería de obras: delito [41,
+> art. 424 bis]. Puerto seguro de derechos de autor: retiro expedito, medidas contra la resubida,
+> aviso al afectado en retiros voluntarios, **política pública de terminación de cuentas de
+> reincidentes**, contenido mínimo del aviso, contra-aviso y 15 días hábiles [17, art. 114 Octies
+> fr. II y III]. Reglamento LFDA arts. 37 Ter a 37 Nonies (DOF 24-09-2026; vigor hacia febrero de
+> 2027): contenido del aviso y del contra-aviso, prohibición de exigir certificados, formulario
+> accesible con correo alterno, copia del contra-aviso y restauración en 10 a 15 días hábiles (00
+> §4.2). Multa por falsa declaración y por no retirar [17, art. 232 Quinquies fr. I y II]. El canal no
+> es anónimo porque la ley obliga a enviar el contra-aviso (RLFDA art. 37 Octies; LFPDPPP art. 36
+> fr. I). **[VERIFICAR CON ABOGADO]:** la LFPPI no trae puerto seguro para marcas (00 §4.1); aplicar
+> un procedimiento propio a marcas es una decisión nuestra. Base de la LFPDPPP para mandar el nombre
+> y contacto de quien avisa a quien publicó (hoy: lo acepta al enviar el aviso). El umbral de 3 en 12
+> meses y el plazo de respuesta en marcas son **[DECISIÓN DEL FUNDADOR]**.
 
 ### A16. Revisión de autenticidad: medimos riesgo, no acusamos
 
@@ -743,6 +779,37 @@ los términos.
 | Rifas, sorteos y apuestas               | Rifas, boletos, apuestas o sorteos con premio; también «tandas» (por política)                                                                                   | Los sorteos requieren permiso de la Secretaría de Gobernación [43, arts. 2o.–4o.]; nada de sorteos en el piloto (plan §7.1); tandas: política de speeaking |
 | Publicidad escondida                    | Promocionar algo que te pagaron o te regalaron sin decirlo                                                                                                       | Identifica el contenido pagado con «#Publicidad» durante todo el contenido [14]                                                                            |
 
+**Agregado el 2026-10-07 (ADR-076), publicado en `/terminos` como «Reglas de la comunidad: lo que
+no se puede subir».** Además de la tabla:
+
+- **Contenido íntimo sin consentimiento, real o simulado**, editado o hecho con IA; amenazar con
+  compartirlo; pedirle a una herramienta de IA desnudos o imágenes sexuales de una persona real
+  [LGAMVLV arts. 20 Quáter y 20 Sexies; CPF arts. 199 Octies a 199 Decies].
+- **Contenido sexual con menores**, real, simulado, dibujado o hecho con IA, y el contacto con fines
+  sexuales: se retira, se reporta a las autoridades y la cuenta se cierra sin posibilidad de pedir
+  revisión [LGPSEDMTP arts. 16 y 17; CPF art. 202 en lo que subsista; LGDNNA art. 12].
+- **Exponer a menores** (humillar, exhibir, identificar como víctimas) y fotos de hijas o hijos de
+  otras personas sin permiso de quien ejerce la patria potestad [LGDNNA arts. 76 y 80].
+- **Imagen o voz de otra persona** sin consentimiento; expreso si es para vender o anunciar [CCF
+  art. 1916 fr. IV; ley de la CDMX sobre la propia imagen, arts. 18, 19 y 26].
+- **Clones de artistas** con IA, «parecidos» o simulaciones de voz sin autorización [LFDA arts. 87 y
+  118 fr. VII].
+- **Difamar** con hechos falsos; opinar y criticar sí se vale [CCF arts. 1916 y 1916 Bis].
+- **Servicios sexuales**, «acompañantes», masajes eróticos y ofertas de trabajo o modelaje que
+  esconden un reclutamiento [LGPSEDMTP arts. 32, 33 y 106].
+- **Promover vapeadores, tabaco o drogas** aunque no tengan precio (también reseñas y «unboxings»)
+  [LGS arts. 282 Quater y 456 Bis; LGCT art. 23; CPF art. 194 fr. IV].
+- **IA que engaña:** las imágenes o videos realistas hechos o editados con IA se etiquetan [LFPC
+  art. 32].
+- **Piratería** (películas, series, música, libros, cursos o PDF, programas, juegos, cuentas de
+  streaming compartidas) y **música comercial sin licencia** en videos; en videos de tiendas, solo
+  música propia, con licencia o sin música [LFDA arts. 27, 131 y 231; CPF art. 424 bis].
+- **Quitar marcas de agua o créditos** [LFDA art. 232 Quáter] y **copiar fotos o textos** de otras
+  tiendas, marcas o plataformas [LFDA arts. 13 fr. XII y 27].
+- **Lo que sí se vale:** cita breve con crédito, crítica o reseña, obras en la vía pública [LFDA
+  art. 148]. Memes y parodias con obras ajenas no tienen excepción clara: se retiran si el titular
+  reclama. Base de los filtros propios: LFDA art. 114 Octies fr. IV.
+
 > **Fundamento y notas.** Las reglas marcadas «Política de speeaking» son decisiones de producto, no
 > obligaciones legales que hayamos verificado. **[VERIFICAR CON ABOGADO]:** que las reglas de
 > contenido no restrinjan de más la libertad de expresión en una red social privada y que la
@@ -876,6 +943,31 @@ No puedes vender, ofrecer ni promover:
 | Documentos, cuentas y datos             | Identificaciones oficiales, placas, uniformes o insignias oficiales, bases de datos, cuentas de redes, seguidores y reseñas                                                        | Política de speeaking                                                                                                                                                                                                                                                                   |
 | Servicios financieros y dinero          | Préstamos, «tandas», inversiones, criptoactivos, cambio de divisas, tarjetas de regalo y saldo                                                                                     | Política de speeaking                                                                                                                                                                                                                                                                   |
 | Productos retirados o inseguros         | Productos retirados del mercado por la autoridad o con alertas sanitarias o de seguridad                                                                                           | Política de speeaking                                                                                                                                                                                                                                                                   |
+
+**Agregado el 2026-10-07 (ADR-076), publicado en `/terminos` como «Artículos prohibidos y
+restringidos».** Además de la tabla:
+
+- **Accesorios, partes y componentes de armas** (cargadores, miras, silenciadores): prohibida su
+  venta por internet [LFAFE art. 52, DOF 29-05-2025]; archivos o planos para imprimir armas en 3D,
+  kits de conversión y visores nocturnos, térmicos u holográficos [LFAFE art. 83 Sexies].
+- **Vapeadores:** venderlos o anunciarlos es delito, de 1 a 8 años [LGS art. 456 Bis].
+- **Piratería y elusión:** IPTV pirata, «box» o «firestick» cargados, decodificadores, cuentas premium
+  compartidas, «cracks», activadores y «desbloqueo»; equipos no homologados e inhibidores de señal
+  [LFDA arts. 232 Bis y 232 Ter; CPF arts. 426 y 424 bis].
+- **Personajes y marcas sin licencia** en ropa estampada o mercancía [LFDA arts. 88 y 173] y
+  **productos con la imagen de una persona artista** sin licencia [LFDA art. 87].
+- **Facturas o CFDI a la venta** [CFF art. 113 Bis: 2 a 9 años también para quien permite el
+  anuncio].
+- **Fauna protegida:** carey, huevos de tortuga, loros, guacamayas y pericos nativos [LGVS arts. 60
+  Bis 1 y 60 Bis 2; CPF art. 420].
+- **Productos retirados por la PROFECO o la COFEPRIS** o con alertas [LFPC art. 25 BIS].
+- **Con condiciones:** copias industriales de diseños de pueblos y comunidades indígenas o
+  afromexicanas solo con autorización de la comunidad, y quien es artesana o artesano dice de qué
+  comunidad viene su trabajo [LFDA arts. 157 a 161 y 229 fr. XIII; LFPPCPCIA art. 69].
+- La lista publicada dice que **no es exhaustiva**. No se publicaron las prohibiciones de piloto que
+  la ley no exige y el fundador aún no confirma: alcohol, animales vivos (salvo fauna protegida),
+  CBD, juguetes para adultos, aerosoles y paralizadores, medicamentos veterinarios
+  **[DECISIÓN DEL FUNDADOR]**.
 
 > **Fundamento y notas.** La lista no es exhaustiva: también está prohibido todo lo que prohíba la
 > ley aunque no aparezca aquí. Las filas con «Política de speeaking» o **[DECISIÓN DEL FUNDADOR]** no
@@ -1102,46 +1194,84 @@ respeta las garantías y devoluciones de lo que ya vendiste.
 
 ---
 
-## Anexo 1. Aviso para titulares de marcas y derechos de autor
+## Anexo 1. Aviso para titulares de derechos de autor, marcas e imagen de artistas
 
-Mándalo por [URL DEL FORMULARIO DE AVISOS] o a [CORREO DE SOPORTE] con el asunto «Aviso de
-derechos». Debe incluir:
+Mándalo por el formulario de `/derechos-de-autor#aviso` (funciona sin cuenta) o a [CORREO PARA
+AVISOS DE DERECHOS] o [CORREO ALTERNO] con el asunto «Aviso de derechos».
 
-1. **Quién avisa:** nombre del titular o de su representante legal, y un medio de contacto para
-   recibir notificaciones.
-2. **Qué derecho:** en marcas, el número de registro en el IMPI y el producto o servicio que protege;
-   en derechos de autor, la obra y tu interés o derecho sobre ella.
-3. **Qué contenido:** la liga de cada producto o publicación que reclamas.
-4. **Por qué infringe:** una explicación breve.
-5. **Representación:** si actúas por otra persona, el documento que lo acredita.
-6. **Declaración:** que la información es verdadera y que actúas de buena fe.
+**Lo mínimo que pide la ley** (con esto el aviso no se detiene):
 
-Confirmamos que lo recibimos en un máximo de 2 días hábiles. Quien publicó el contenido recibe la
-información necesaria para responder, que puede incluir tu nombre y tu medio de contacto.
+1. **Quién avisa:** nombre del titular o de su representante, y un medio de contacto para recibir
+   notificaciones.
+2. **Qué contenido:** qué contenido infringe tus derechos.
+3. **Qué derecho:** tu interés o derecho sobre la obra (en marcas, ver abajo).
+4. **Dónde está:** la dirección (URL) de cada producto o publicación en speeaking.
 
-> **Fundamento y notas.** Contenido mínimo del aviso de derechos de autor: nombre y contacto,
-> contenido, interés o derecho y ubicación electrónica [17, art. 114 Octies fr. III]. El número de
-> registro del IMPI es requisito nuestro para marcas **[DECISIÓN DEL FUNDADOR]**. Compartir los datos
-> de quien avisa con quien publicó: mencionarlo en el aviso de privacidad **[VERIFICAR CON
-> ABOGADO]**.
+**Lo que además pide el Reglamento** (arts. 37 Quáter; obligatorio cuando entre en vigor):
+
+5. **Los hechos:** una descripción breve de por qué infringe.
+6. **Carácter:** si eres titular o representante y, si representas, el nombre completo o la razón
+   social de quien representas.
+7. **Contacto:** teléfono o correo y, si lo tienes, un correo alterno.
+8. **Domicilio.**
+9. **Declaración bajo protesta de decir verdad** de que la información es verdadera, de que, según
+   tu conocimiento de buena fe, el uso no está autorizado, y de que eres titular o representante
+   autorizado.
+10. **Reconocimiento expreso** de la multa del art. 232 Quinquies de la LFDA (1,000 a 20,000 UMA) por
+    avisos con información falsa.
+
+**Opcional:** documentos que lo prueben (registro, contrato, poder, número de reserva de derechos).
+Nunca condicionamos el retiro a certificados de registro, títulos ni pruebas de representación.
+
+**Marcas** (procedimiento propio, fuera de la LFDA): además, el número de registro en el IMPI y el
+producto o servicio que protege. No se aceptan avisos sobre control de precios ni contratos de
+distribución.
+
+Te mostramos un número de caso. **Quien publicó el contenido recibe tu nombre y tu medio de
+contacto**; el formulario te lo advierte antes de enviarlo.
+
+> **Fundamento y notas.** Actualizado el 2026-10-07 (ADR-076). Contenido mínimo del aviso de
+> derechos de autor: nombre y contacto, contenido, interés o derecho y ubicación electrónica [17,
+> art. 114 Octies fr. III]. Reglamento LFDA arts. 37 Quáter (contenido), 37 Quinquies (no exigir
+> documentos: por eso el documento de representación pasó a ser opcional) y 37 Sexies (formulario
+> claro y accesible con correo alterno), DOF 24-09-2026; los avisos anteriores a su entrada en vigor
+> siguen las reglas previas (transitorio Segundo). El número de registro del IMPI es requisito
+> nuestro solo para marcas **[DECISIÓN DEL FUNDADOR]**; el Reglamento no lo impide porque las marcas
+> no son derechos de la LFDA. Compartir los datos de quien avisa con quien publicó no lo exige la ley:
+> hoy se apoya en que quien avisa lo acepta al enviar **[VERIFICAR CON ABOGADO: base en la LFPDPPP]**.
+> El acuse por correo solo sale si Resend está configurado (`rights/email.ts`); sin él, el
+> formulario muestra el número de caso y no promete correo.
 
 ## Anexo 2. Contra-aviso
 
-Si retiramos tu contenido y crees que es un error, mándanos:
+Si retiramos tu contenido por un aviso y crees que es un error, mándanos por
+`/derechos-de-autor#contra-aviso`:
 
-1. Tu nombre y un medio de contacto.
-2. El contenido retirado (la liga o el nombre del producto).
-3. **La prueba** de que eres titular o tienes autorización para ese uso (por ejemplo, licencia,
-   factura de compra del producto original), o por qué tu uso está permitido por la ley.
-4. La declaración de que la información es verdadera.
-5. Tu aceptación de que enviemos el contra-aviso a quien mandó el aviso.
+1. Tu nombre completo y tu carácter (titular o representante, y a quién representas).
+2. Tus datos de contacto y, si lo tienes, un correo alterno.
+3. Tu domicilio.
+4. El contenido retirado (la liga o el nombre del producto).
+5. **Por qué tu uso es válido:** el contrato o la licencia que te autoriza, o tu declaración bajo
+   protesta de decir verdad de que el uso cabe en una excepción de la ley (art. 148: cita con
+   crédito, crítica, obras en la vía pública…) o de que la obra es de dominio público.
+6. Tu reconocimiento expreso de la multa del art. 232 Quinquies de la LFDA por declaraciones
+   falsas.
 
-Le enviamos tu contra-aviso a quien mandó el aviso. En derechos de autor, volvemos a habilitar el
-contenido salvo que esa persona inicie un procedimiento judicial o administrativo, una denuncia penal
-o un mecanismo alterno de solución dentro de 15 días hábiles.
+**Por ley enviamos una copia de tu contra-aviso, con tu nombre, tus datos de contacto y tu
+domicilio, a quien presentó el aviso.** En derechos de autor volvemos a habilitar el contenido entre
+10 y 15 días hábiles después de recibir el contra-aviso completo, salvo que quien avisó acredite,
+dentro de 15 días hábiles desde que le informamos, un procedimiento judicial o administrativo, una
+denuncia penal o un mecanismo alterno (avenencia, mediación, conciliación o arbitraje ante el
+INDAUTOR).
 
-> **Fundamento y notas.** [17, art. 114 Octies fr. III, párrafos segundo y tercero]; multa por falsa
-> declaración [17, art. 232 Quinquies fr. I].
+> **Fundamento y notas.** Actualizado el 2026-10-07 (ADR-076): se agregaron el domicilio, el correo
+> alterno y el reconocimiento de la multa, y la «aceptación de que enviemos el contra-aviso» se
+> cambió por un aviso informativo, porque el envío lo exige la ley y no depende del consentimiento.
+> [17, art. 114 Octies fr. III, párrafos segundo y tercero]; Reglamento LFDA arts. 37 Septies
+> (contenido; el proveedor no valida los documentos), 37 Octies (copia inmediata) y 37 Nonies
+> (restaurar en 10 a 15 días hábiles); LFPDPPP art. 36 fr. I; multa por falsa declaración [17,
+> art. 232 Quinquies fr. I]. El modelo `CounterNotice` aún no guarda el carácter ni el correo
+> alterno: hay que agregarlos antes de que entre en vigor el Reglamento.
 
 ---
 
