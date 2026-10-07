@@ -90,7 +90,7 @@ test.describe("editar productos", () => {
     await expect(page.getByLabel("Nombre del producto")).toHaveValue(NEW_TITLE);
 
     // Otra foto que pasa a ser la portada: el servidor guarda el orden elegido.
-    await page.getByLabel("Elegir imágenes").setInputFiles(image("lampara-2.png"));
+    await chooseImages(page, image("lampara-2.png"));
     await expect(page.locator('input[name="mediaIds"]')).toHaveCount(2);
     const [first, second] = await mediaIds(page);
     await page.getByRole("button", { name: "Mover foto 2 a la izquierda" }).click();

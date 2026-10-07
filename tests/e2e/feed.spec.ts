@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { registerAndOnboard, TINY_PNG } from "./helpers";
+import { chooseImages, registerAndOnboard, TINY_PNG } from "./helpers";
 
 test.describe("feed", () => {
   test("sin sesión se ve contenido y el comercio aparece integrado, no como catálogo", async ({
@@ -59,11 +59,7 @@ test.describe("feed", () => {
     await expect(createOptions.first()).toContainText("Publicación");
     await page.goto("/crear/publicacion");
     await page.getByLabel("¿Qué quieres compartir?").fill("Mi primera publicación de prueba 🎉");
-    await page.getByLabel("Elegir imágenes").setInputFiles({
-      name: "foto.png",
-      mimeType: "image/png",
-      buffer: TINY_PNG,
-    });
+    await chooseImages(page, { name: "foto.png", mimeType: "image/png", buffer: TINY_PNG });
     await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
     await page.getByRole("button", { name: "Publicar" }).click();
 
@@ -86,7 +82,8 @@ test.describe("feed", () => {
     await registerAndOnboard(page);
     await page.goto("/crear/publicacion");
     await page.getByLabel("¿Qué quieres compartir?").fill("Cinco fotos de mi cocina nueva");
-    await page.getByLabel("Elegir imágenes").setInputFiles(
+    await chooseImages(
+      page,
       Array.from({ length: 5 }, (_, index) => ({
         name: `foto-${index + 1}.png`,
         mimeType: "image/png",

@@ -86,6 +86,8 @@ test.describe("estilista", () => {
     await page.goto("/producto/camisa-blanca-vestir-demo?probar=1");
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText(/Es gratis para ti/)).toBeVisible();
+    // Sin `chooseImages`: el diálogo va en un portal que solo existe en el navegador, así que su
+    // campo ya es de React cuando aparece.
     await dialog
       .getByLabel("Elegir imágenes")
       .setInputFiles({ name: "yo.png", mimeType: "image/png", buffer: TINY_PNG });

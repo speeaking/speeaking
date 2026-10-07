@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { config } from "dotenv";
 import { Client } from "pg";
-import { completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
+import { chooseImages, completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
 
 // Kit de anuncios (Studio → Contenido) y /admin/ia, con el proveedor de IA simulado (sin red ni
 // costo). Corre igual en desarrollo (`pnpm dev`: el simulador es lo normal y se etiqueta como IA) y
@@ -50,9 +50,7 @@ async function createProduct(page: Page) {
   await page.getByLabel("Estado").fill("CDMX");
   await page.getByRole("button", { name: "Activar mi tienda" }).click();
 
-  await page
-    .getByLabel("Elegir imágenes")
-    .setInputFiles({ name: "termo.png", mimeType: "image/png", buffer: TINY_PNG });
+  await chooseImages(page, { name: "termo.png", mimeType: "image/png", buffer: TINY_PNG });
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Nombre del producto").fill(TITLE);
   await page

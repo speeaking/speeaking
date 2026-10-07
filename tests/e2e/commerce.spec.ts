@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { registerAndOnboard, TINY_PNG } from "./helpers";
+import { chooseImages, registerAndOnboard, TINY_PNG } from "./helpers";
 
 const SALE_TEXT = "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.";
 
@@ -33,11 +33,7 @@ async function sellWithAi(page: Page) {
   // P3: el formulario llega prellenado con la propuesta.
   await expect(page.getByLabel("Nombre del producto")).toHaveValue("AirPods Pro 2");
   await expect(page.getByLabel("Precio (MXN)")).toHaveValue("3499");
-  await page.getByLabel("Elegir imágenes").setInputFiles({
-    name: "airpods.png",
-    mimeType: "image/png",
-    buffer: TINY_PNG,
-  });
+  await chooseImages(page, { name: "airpods.png", mimeType: "image/png", buffer: TINY_PNG });
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Costo de envío").fill("99");
   await page.getByRole("button", { name: "Publicar producto" }).click();

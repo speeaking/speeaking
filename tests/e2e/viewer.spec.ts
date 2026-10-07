@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { registerAndOnboard, TINY_PNG } from "./helpers";
+import { chooseImages, registerAndOnboard, TINY_PNG } from "./helpers";
 
 // Visor de la capa (ADR-064): al abrir una publicación con fotos desde un mosaico, en escritorio la
 // foto queda a la izquierda, ajustada a la ventana, y los comentarios a la derecha; en teléfono va
@@ -12,7 +12,7 @@ test("abrir una foto del mosaico muestra el visor, sin un feed debajo", async ({
   await registerAndOnboard(page);
   await page.goto("/crear/publicacion");
   await page.getByLabel("¿Qué quieres compartir?").fill("Dos fotos del mercado de hoy");
-  await page.getByLabel("Elegir imágenes").setInputFiles([
+  await chooseImages(page, [
     { name: "uno.png", mimeType: "image/png", buffer: TINY_PNG },
     { name: "dos.png", mimeType: "image/png", buffer: TINY_PNG },
   ]);

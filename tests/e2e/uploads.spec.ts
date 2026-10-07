@@ -2,7 +2,7 @@ import { request as httpRequest } from "node:http";
 import { deflateSync } from "node:zlib";
 import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
-import { completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
+import { chooseImages, completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
 
 /**
  * Subidas y `/media` contra el servidor real (SEC-03, SEC-12, SEC-13, SEC-14). Cada prueba usa una
@@ -215,11 +215,7 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
     const uploaded = page.waitForResponse(
       (response) => response.url().endsWith("/api/uploads") && response.status() === 201,
     );
-    await page.getByLabel("Elegir imágenes").setInputFiles({
-      name: "foto.png",
-      mimeType: "image/png",
-      buffer: TINY_PNG,
-    });
+    await chooseImages(page, { name: "foto.png", mimeType: "image/png", buffer: TINY_PNG });
     const { url: attachedUrl } = (await (await uploaded).json()) as { url: string };
     await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
     expect((await fetch(`${baseURL}${attachedUrl}`)).status).toBe(404);

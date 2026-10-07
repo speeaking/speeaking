@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
+import { chooseImages, completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
 
 // P14: riesgo de falsificación, no certificación. Un vendedor publica «AirPods Pro réplica AAA»
 // como original a $300 → quien compra ve «Autenticidad sin verificar» y puede reportarlo; el
@@ -45,7 +45,7 @@ async function listReplica(page: Page, title: string, { activateStore = true } =
     await page.getByRole("button", { name: "Activar mi tienda" }).click();
   }
 
-  await page.getByLabel("Elegir imágenes").setInputFiles(image("airpods.png"));
+  await chooseImages(page, image("airpods.png"));
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Nombre del producto").fill(title);
   await page.getByLabel("Descripción").fill("Audífonos inalámbricos con estuche de carga.");
@@ -72,7 +72,7 @@ async function submitProof(page: Page, title: string, file: string) {
   );
   await page.goto((await proofLink.getAttribute("href"))!);
   await expect(page.getByRole("heading", { name: "Te pedimos un comprobante" })).toBeVisible();
-  await page.getByLabel("Elegir imágenes").setInputFiles(image(file));
+  await chooseImages(page, image(file));
   const proofInput = page.locator('input[name="proofMediaIds"]');
   await expect(proofInput).toHaveCount(1);
   const proofId = await proofInput.inputValue();

@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { type APIRequestContext, type Browser, expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
-import { register, type TestUser, uniqueUser } from "./helpers";
+import { chooseImages, register, type TestUser, uniqueUser } from "./helpers";
 
 // ADR-039: las fotos subidas se entregan por `/media/<clave>?w=N` (loader propio de `next/image`),
 // que autoriza cada petición. Ninguna página pide `/_next/image` para `/media`, y la foto de un
@@ -77,9 +77,7 @@ async function listProduct(page: Page, title: string) {
   await page.getByLabel("Ciudad").fill("Ciudad de México");
   await page.getByLabel("Estado").fill("CDMX");
   await page.getByRole("button", { name: "Activar mi tienda" }).click();
-  await page
-    .getByLabel("Elegir imágenes")
-    .setInputFiles({ name: "termo.jpg", mimeType: "image/jpeg", buffer: photo });
+  await chooseImages(page, { name: "termo.jpg", mimeType: "image/jpeg", buffer: photo });
   // La primera subida compila `/api/uploads` en el servidor de desarrollo.
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1, { timeout: 60_000 });
   await page.getByLabel("Nombre del producto").fill(title);
