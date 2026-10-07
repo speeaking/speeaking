@@ -78,6 +78,29 @@ describe("contentSecurityPolicy (SEC-06)", () => {
     );
   });
 
+  it("pixel de TikTok: solo analytics.tiktok.com y solo con TIKTOK_PIXEL_ID configurado", () => {
+    const withPixel = directives(
+      contentSecurityPolicy("abc", { isDev: false, isHttps: true, tiktokPixelEnabled: true }),
+    );
+
+    expect(withPixel.get("script-src")).toEqual([
+      "'self'",
+      "'nonce-abc'",
+      "'strict-dynamic'",
+      "https://analytics.tiktok.com",
+    ]);
+    expect(withPixel.get("connect-src")).toEqual(["'self'", "https://analytics.tiktok.com"]);
+    expect(withPixel.get("img-src")).toEqual([
+      "'self'",
+      "data:",
+      "blob:",
+      "https://analytics.tiktok.com",
+    ]);
+    // Nada más cambia: sin marcos ni formularios hacia TikTok.
+    expect(withPixel.has("frame-src")).toBe(false);
+    expect(withPixel.get("form-action")).toEqual(["'self'"]);
+  });
+
   it("sin https no sube las peticiones (rompería `next start` en http://localhost)", () => {
     const http = directives(contentSecurityPolicy("abc", { isDev: false, isHttps: false }));
 
