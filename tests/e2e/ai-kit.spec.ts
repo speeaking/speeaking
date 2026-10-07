@@ -3,7 +3,14 @@ import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { config } from "dotenv";
 import { Client } from "pg";
-import { chooseImages, completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
+import {
+  chooseImages,
+  completeOnboarding,
+  expectStreamedNotFoundPage,
+  register,
+  TINY_PNG,
+  uniqueUser,
+} from "./helpers";
 
 // Kit de anuncios (Studio → Contenido) y /admin/ia, con el proveedor de IA simulado (sin red ni
 // costo). Corre igual en desarrollo (`pnpm dev`: el simulador es lo normal y se etiqueta como IA) y
@@ -208,6 +215,9 @@ function makeAdmin(email: string, ...flags: string[]) {
   });
 }
 
+/** Lo que /admin/ia muestra a ADMIN y nadie más debe ver, ni en la página ni en el HTML. */
+const ADMIN_AI_TEXTS = ["Administración", "Gasto del mes", "Modelo por tarea", "Presupuesto de IA"];
+
 /**
  * Tarea que cada proyecto cambia en /admin/ia. Ninguna otra prueba depende de su ruta y cada
  * proyecto (móvil y escritorio corren en paralelo) usa la suya, así nunca chocan. Se deja como estaba.
@@ -290,11 +300,12 @@ test("/admin/ia: solo ADMIN; rutas, gasto y evaluaciones; un cambio queda como d
 }, testInfo) => {
   test.setTimeout(240_000);
   const { task, label } = ADMIN_TASKS[testInfo.project.name === "mobile" ? "mobile" : "desktop"];
-  const anonymous = await page.goto("/admin/ia");
-  expect(anonymous?.status()).toBe(404);
+  // Sin el rol, /admin/ia es «no encontrada» como una ruta inexistente (200 con `noindex`:
+  // transmite con el `loading.tsx` raíz) y no deja ver rutas ni gasto.
+  await expectStreamedNotFoundPage(page, "/admin/ia", { hidden: ADMIN_AI_TEXTS });
 
   const user = await registerSeller(page);
-  expect((await page.goto("/admin/ia"))?.status()).toBe(404);
+  await expectStreamedNotFoundPage(page, "/admin/ia", { hidden: ADMIN_AI_TEXTS });
 
   const tag = randomUUID().slice(0, 8);
   const ids = { discard: randomUUID(), stale: randomUUID() };
@@ -393,5 +404,5 @@ test("/admin/ia: solo ADMIN; rutas, gasto y evaluaciones; un cambio queda como d
     await resetTaskRoute(task);
     await deleteTestDecisions([ids.discard, ids.stale], user.email);
   }
-  expect((await page.goto("/admin/ia"))?.status()).toBe(404);
+  await expectStreamedNotFoundPage(page, "/admin/ia", { hidden: ADMIN_AI_TEXTS });
 });

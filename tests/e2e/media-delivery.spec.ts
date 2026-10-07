@@ -8,7 +8,17 @@ import { chooseImages, register, type TestUser, uniqueUser } from "./helpers";
 // producto que el equipo oculta da 404 a los demás en cuanto se oculta, aunque su variante ya se
 // hubiera pedido (y guardado en la caché de variantes) antes.
 
-const PUBLIC_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
+/**
+ * Foto de un producto (o avatar) visible: cinco minutos y luego revalidar, nunca `immutable` ni
+ * `stale-while-revalidate` (ocultarla tiene que llegar pronto a navegadores y CDN; SEC-14).
+ */
+const PUBLIC_CACHE = "public, max-age=300, must-revalidate";
+/**
+ * Foto ligada a una publicación (con audiencia editable, docs/post-audience.md): se autoriza en cada
+ * petición y no se guarda. Las semillas de Comprar comparten la foto entre el producto y su
+ * publicación, así que también salen así.
+ */
+const POST_MEDIA_CACHE = "private, no-store";
 const WIDTHS = "256|384|640|828|1080|1600";
 /** `/media/<clave>?w=<ancho>` dentro del HTML (src, srcset o preload). */
 const MEDIA_VARIANT_URL = new RegExp(`/media/[a-z0-9/_-]+\\.(?:webp|jpg|png)\\?w=(?:${WIDTHS})\\b`);
@@ -126,11 +136,13 @@ test.describe("entrega de fotos por /media (ADR-039)", () => {
       expect(optimized.status(), `/_next/image ${target}`).toBe(404);
     }
 
-    // Variante pública: caché de una hora (no inmutable) y validador.
+    // Variante pública con validador. Su caché depende de a qué está ligada: solo al producto (caché
+    // corta, la otra prueba lo fija) o también a su publicación (sin caché, como las semillas). En
+    // ningún caso `immutable` ni `stale-while-revalidate`.
     const variant = await request.get(url!);
     expect(variant.status()).toBe(200);
     expect(variant.headers()["content-type"]).toMatch(/^image\//);
-    expect(variant.headers()["cache-control"]).toBe(PUBLIC_CACHE);
+    expect([PUBLIC_CACHE, POST_MEDIA_CACHE]).toContain(variant.headers()["cache-control"]);
     const etag = variant.headers()["etag"];
     expect(etag).toBeTruthy();
     const revalidated = await request.get(url!, { headers: { "If-None-Match": etag! } });

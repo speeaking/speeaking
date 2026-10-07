@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
-import { completeOnboarding, register, uniqueUser } from "./helpers";
+import { completeOnboarding, expectStreamedNotFoundPage, register, uniqueUser } from "./helpers";
 
 // Redacción diaria (ADR-066): la IA deja borradores y solo el equipo decide qué se publica. En la
 // suite la IA es simulada (y con `pnpm start` la redacción no redacta con el simulador), así que el
@@ -38,9 +38,11 @@ test("el equipo ajusta y publica un borrador como la cuenta editorial, y descart
   await completeOnboarding(page, user);
   await expect(page).toHaveURL("/");
 
-  // Sin el rol, la redacción no existe (el mismo 404 que una ruta inexistente).
-  const blocked = await page.goto("/admin/redaccion");
-  expect(blocked?.status()).toBe(404);
+  // Sin el rol, la redacción no existe: la misma página «no encontrada» que una ruta inexistente
+  // (200 con `noindex`: transmite con el `loading.tsx` raíz).
+  await expectStreamedNotFoundPage(page, "/admin/redaccion", {
+    hidden: ["Redacción", "Administración", "La IA redacta y tú publicas"],
+  });
 
   makeAdmin(user.email);
   const tag = `${testInfo.project.name} ${user.id}`;

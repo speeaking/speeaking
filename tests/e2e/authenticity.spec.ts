@@ -1,6 +1,13 @@
 import { execSync } from "node:child_process";
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { chooseImages, completeOnboarding, register, TINY_PNG, uniqueUser } from "./helpers";
+import {
+  chooseImages,
+  completeOnboarding,
+  expectStreamedNotFoundPage,
+  register,
+  TINY_PNG,
+  uniqueUser,
+} from "./helpers";
 
 // P14: riesgo de falsificación, no certificación. Un vendedor publica «AirPods Pro réplica AAA»
 // como original a $300 → quien compra ve «Autenticidad sin verificar» y puede reportarlo; el
@@ -138,9 +145,12 @@ test("una réplica declarada original: sin verificar para quien compra, reporte,
   const proofPath = `/admin/moderacion/prueba/${proofId}`;
   expect((await buyer.page.request.get(proofPath)).status()).toBe(404);
 
-  // El equipo: cola de moderación con la revisión, el comprobante y el reporte.
+  // El equipo: cola de moderación con la revisión, el comprobante y el reporte. Sin el rol, la cola
+  // es «no encontrada» (200 con `noindex`: transmite con el `loading.tsx` raíz) y no deja ver nada.
   const admin = await newAccount(browser, isMobile);
-  expect((await admin.page.goto("/admin/moderacion"))?.status()).toBe(404);
+  await expectStreamedNotFoundPage(admin.page, "/admin/moderacion", {
+    hidden: ["Moderación", title, proofId],
+  });
   makeAdmin(admin.user.email);
   try {
     await admin.page.goto("/admin/moderacion");

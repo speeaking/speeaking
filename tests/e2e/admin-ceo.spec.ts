@@ -3,13 +3,14 @@ import { randomUUID } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { config } from "dotenv";
 import { Client } from "pg";
-import { completeOnboarding, register, uniqueUser } from "./helpers";
+import { completeOnboarding, expectStreamedNotFoundPage, register, uniqueUser } from "./helpers";
 
 // Motor de automejora en /admin (Reporte semanal, Decisiones, Experimentos). Solo ADMIN lo ve; a los
-// demás les responde el mismo 404 que una ruta inexistente. Las acciones del equipo se prueban con
-// datos sembrados que NO cambian el feed de nadie: una propuesta de riesgo alto (solo propuesta), una
-// de riesgo bajo que se rechaza, un cambio «aplicado» cuyo valor anterior es el vigente (revertirlo no
-// mueve nada) y un experimento con 0 % al tratamiento.
+// demás les responde la misma página «no encontrada» que a una ruta inexistente (200 con `noindex`:
+// transmite con el `loading.tsx` raíz). Las acciones del equipo se prueban con datos sembrados que
+// NO cambian el feed de nadie: una propuesta de riesgo alto (solo propuesta), una de riesgo bajo que
+// se rechaza, un cambio «aplicado» cuyo valor anterior es el vigente (revertirlo no mueve nada) y un
+// experimento con 0 % al tratamiento.
 
 config({ quiet: true });
 
@@ -30,11 +31,10 @@ function makeAdmin(email: string, ...flags: string[]) {
 }
 
 async function expectNotFound(page: Page, path: string) {
-  const response = await page.goto(path);
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  await expectStreamedNotFoundPage(page, path, {
+    hidden: ["Administración", "Reporte semanal", "Decisiones", "Experimentos", "autonomía"],
+  });
   await expect(page).not.toHaveTitle(/Administración|Decisiones|Experimentos|Reporte/);
-  await expect(page.getByText("Administración")).toHaveCount(0);
 }
 
 async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> {
@@ -161,7 +161,10 @@ async function confirmInDialog(page: Page, button: string) {
   await expect(dialog).toBeHidden();
 }
 
-test("sin sesión, las páginas del motor y el cron responden 404", async ({ page, request }) => {
+test("sin sesión, las páginas del motor son «no encontrada» y el cron responde 404", async ({
+  page,
+  request,
+}) => {
   for (const path of CEO_PAGES) await expectNotFound(page, path);
   expect((await request.post("/api/cron/daily")).status()).toBe(404);
   expect((await request.get("/api/cron/daily")).status()).toBe(404);
@@ -174,7 +177,7 @@ test("sin sesión, las páginas del motor y el cron responden 404", async ({ pag
 test.describe("con una cuenta del equipo", () => {
   test.describe.configure({ mode: "serial" });
 
-  test("sin el rol ADMIN es 404; con el rol decide, prueba y cambia la autonomía", async ({
+  test("sin el rol ADMIN es «no encontrada»; con el rol decide, prueba y cambia la autonomía", async ({
     page,
   }, testInfo) => {
     // Cambia estado global (autonomía, un experimento): una sola vez, no en paralelo por proyecto.

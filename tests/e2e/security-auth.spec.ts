@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type APIResponse, expect, type Page, test } from "@playwright/test";
 import { completeOnboarding, register, type TestUser } from "./helpers";
 
 /**
@@ -37,6 +37,23 @@ async function attemptSignIn(page: Page, email: string, password: string) {
   await submitSignIn(page, email, password);
   await expect(page.getByLabel("Contraseña")).toHaveValue("");
   return page.locator("form").getByRole("alert");
+}
+
+/**
+ * Adónde manda una respuesta: la cabecera `Location` de un 3xx o, si la página ya transmitía (el
+ * `loading.tsx` raíz cubre /entrar y /bienvenida), la `<meta id="__next-page-redirect"
+ * http-equiv="refresh" content="…;url=…">` que Next inserta en un 200 y que el navegador sigue
+ * (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/redirect.md`). `null` si no
+ * redirige.
+ */
+async function redirectTarget(response: APIResponse) {
+  if (response.status() >= 300 && response.status() < 400) {
+    return response.headers().location ?? null;
+  }
+  const html = await response.text();
+  const tag = html.match(/<meta[^>]*id="__next-page-redirect"[^>]*>/)?.[0];
+  const url = tag?.match(/content="\d+;url=([^"]*)"/)?.[1];
+  return url === undefined ? null : url.replaceAll("&amp;", "&");
 }
 
 async function fillSignUp(page: Page, user: Pick<TestUser, "name" | "email" | "password">) {
@@ -85,6 +102,7 @@ test.describe("límite de intentos (SEC-02)", () => {
 test.describe("redirección después de entrar (SEC-04)", () => {
   test("con sesión, un `next` que se normaliza a otro dominio vuelve al inicio", async ({
     page,
+    baseURL,
   }) => {
     await register(page, fixUser());
 
@@ -97,12 +115,19 @@ test.describe("redirección después de entrar (SEC-04)", () => {
       "/./\\evil.example",
     ]) {
       // `page.request` comparte las cookies de la página: responde como a quien ya tiene sesión.
+      // La página transmite (200 con la redirección en el HTML) o responde 307; en los dos casos el
+      // destino es el inicio, nunca el `next` normalizado.
       const response = await page.request.get(`/entrar?next=${encodeURIComponent(next)}`, {
         maxRedirects: 0,
       });
-      expect(response.status(), next).toBe(307);
-      expect(response.headers().location, next).toBe("/");
+      expect([200, 307], next).toContain(response.status());
+      expect(await redirectTarget(response), next).toBe("/");
     }
+
+    // Y el navegador, que sigue esa redirección, se queda en el sitio.
+    await page.goto(`/entrar?next=${encodeURIComponent("/.//evil.example/phish")}`);
+    await expect(page).toHaveURL("/");
+    expect(new URL(page.url()).host).toBe(new URL(baseURL!).host);
   });
 
   test("la cadena /bienvenida → /entrar termina dentro del sitio", async ({ page, baseURL }) => {
@@ -111,11 +136,14 @@ test.describe("redirección después de entrar (SEC-04)", () => {
     await completeOnboarding(page, user);
     await expect(page).toHaveURL("/");
 
-    // Ya incorporado: /bienvenida manda a `next` sin mostrar el onboarding.
+    // Ya incorporado: /bienvenida manda a `next` sin mostrar el onboarding; este se normaliza a otro
+    // dominio, así que manda al inicio (por 307 o por la redirección en el HTML de un 200).
     const direct = await page.request.get("/bienvenida?next=%2F.%2F%2Fevil.example%2Fentrar", {
       maxRedirects: 0,
     });
-    expect(direct.headers().location).toBe("/");
+    expect([200, 307]).toContain(direct.status());
+    expect(await redirectTarget(direct)).toBe("/");
+    expect(await direct.text()).not.toContain("Cuéntanos de ti");
 
     // Sin sesión: el proxy manda a /entrar con la cadena anidada y, al entrar, se queda en el sitio.
     await page.context().clearCookies();

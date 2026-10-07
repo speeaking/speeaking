@@ -16,10 +16,17 @@ function fixUser() {
   };
 }
 
-/** Búsqueda real: la página la registra en segundo plano (`after`). */
+/**
+ * Búsqueda real en Productos: la página la registra en segundo plano (`after`). Solo las búsquedas
+ * comerciales guardan su texto (Productos, o Todo cuando devuelve productos): buscar a una persona no
+ * deja su nombre como intención de compra (`src/modules/search/README.md`, P5).
+ */
 async function search(page: Page, text: string) {
-  await page.goto(`/buscar?q=${encodeURIComponent(text)}`);
-  await expect(page.getByRole("heading", { name: "Buscar" })).toBeVisible();
+  await page.goto(`/buscar?q=${encodeURIComponent(text)}&tipo=productos`);
+  await expect(page.getByRole("heading", { level: 1, name: "Buscar" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Buscar en" }).getByRole("link", { name: "Productos" }),
+  ).toHaveAttribute("aria-current", "page");
 }
 
 function searches(page: Page) {

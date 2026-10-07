@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { chooseImages, registerAndOnboard, TINY_PNG } from "./helpers";
+import { chooseImages, registerAndOnboard, TINY_PNG, waitForHydration } from "./helpers";
 
 const SALE_TEXT = "Tengo 50 AirPods Pro 2. Me costaron $2,400 y quiero venderlos a $3,499.";
 
@@ -52,8 +52,38 @@ async function newBuyer(browser: Browser, isMobile: boolean) {
   return { context, page };
 }
 
-/** Enlace al carrito de la navegación (barra superior en móvil, lateral en escritorio). */
-const cartLink = (page: Page) => page.getByRole("link", { name: /^Carrito/ });
+/**
+ * Piezas del carrito según la navegación. En escritorio, el ícono de la barra superior («Carrito
+ * (n)»). En móvil el carrito vive en el menú de tu cuenta (c52810a, docs/social-activity.md): la
+ * opción dice «Carrito (n)», o solo «Carrito» si está vacío.
+ */
+async function expectCartCount(page: Page, isMobile: boolean, count: number) {
+  if (!isMobile) {
+    await expect(page.getByRole("link", { name: /^Carrito/ })).toHaveAccessibleName(
+      `Carrito (${count})`,
+    );
+    return;
+  }
+  const account = page
+    .getByRole("navigation", { name: "Navegación principal" })
+    .getByRole("button", { name: /^Tu cuenta:/ });
+  await waitForHydration(account);
+  await account.click();
+  const cart = page.getByRole("menuitem", { name: /^Carrito/ });
+  await expect(cart).toHaveAccessibleName(count ? `Carrito (${count})` : "Carrito");
+  await page.keyboard.press("Escape");
+  await expect(cart).toBeHidden();
+}
+
+/**
+ * «Comprar ahora» en la ficha. El botón solo actúa con React (no es un formulario): un clic antes de
+ * que la página termine de cargar se pierde y el checkout nunca abre.
+ */
+async function buyNow(page: Page) {
+  const button = page.getByRole("button", { name: "Comprar ahora" });
+  await waitForHydration(button);
+  await button.click();
+}
 
 async function fillAddress(page: Page) {
   await page.getByLabel("Quién recibe").fill("Ana López");
@@ -99,9 +129,9 @@ test.describe("comercio", () => {
 
     const { context, page: buyer } = await newBuyer(browser, isMobile);
     await buyer.goto(productUrl);
-    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await buyNow(buyer);
     await expect(buyer).toHaveURL("/checkout");
-    await expect(cartLink(buyer)).toHaveAccessibleName(/1/);
+    await expectCartCount(buyer, isMobile, 1);
 
     // Un error de validación no borra lo que ya escribió.
     await fillAddress(buyer);
@@ -118,7 +148,7 @@ test.describe("comercio", () => {
 
     await expect(buyer).toHaveURL(/\/checkout\/pago\/mock_/);
     // El carrito se vació al confirmar: la navegación ya no muestra la pieza (antes de pagar).
-    await expect(cartLink(buyer)).not.toHaveAccessibleName(/1/);
+    await expectCartCount(buyer, isMobile, 0);
     await buyer.getByRole("button", { name: "Pagar (simulado)" }).click();
     await expect(buyer).toHaveURL(/\/pedidos\/[0-9a-f-]{36}$/);
     await expect(buyer.getByRole("heading", { level: 1, name: "Pagado" })).toBeVisible();
@@ -185,7 +215,7 @@ test.describe("comercio", () => {
 
     const { context, page: buyer } = await newBuyer(browser, isMobile);
     await buyer.goto(productUrl);
-    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await buyNow(buyer);
     await fillAddress(buyer);
     await buyer.getByRole("button", { name: "Continuar al pago" }).click();
     await expect(buyer).toHaveURL(/\/checkout\/pago\/mock_/);
@@ -194,7 +224,7 @@ test.describe("comercio", () => {
 
     await expect(buyer.getByRole("heading", { level: 1, name: "Pago rechazado" })).toBeVisible();
     await expect(buyer.getByText("Cancelado")).toBeVisible();
-    await expect(cartLink(buyer)).toHaveAccessibleName(/1/);
+    await expectCartCount(buyer, isMobile, 1);
 
     // Volver a intentar: el producto está otra vez en el carrito, con el envío a domicilio.
     await buyer.getByRole("link", { name: "Volver a intentar" }).click();
@@ -226,18 +256,19 @@ test.describe("comercio", () => {
     await buyer.goto(productUrl);
     const plus = buyer.getByRole("button", { name: "Agregar una pieza" });
     const pieces = buyer.locator('span[aria-live="polite"]').first();
+    await waitForHydration(plus);
     for (let piece = 2; piece <= 10; piece++) {
       await plus.click();
       await expect(pieces).toHaveText(String(piece));
     }
-    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await buyNow(buyer);
     await fillAddress(buyer);
     await buyer.getByRole("button", { name: "Continuar al pago" }).click();
     await expect(buyer).toHaveURL(/\/checkout\/pago\/mock_/);
 
     // Una pieza más del mismo producto ya no se aparta: el checkout avisa y no reserva.
     await buyer.goto(productUrl);
-    await buyer.getByRole("button", { name: "Comprar ahora" }).click();
+    await buyNow(buyer);
     await expect(buyer).toHaveURL("/checkout");
     await buyer.getByRole("button", { name: "Continuar al pago" }).click();
     await expect(buyer.getByText(/Ya apartaste el máximo de 10 piezas/)).toBeVisible();

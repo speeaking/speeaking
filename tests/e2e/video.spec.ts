@@ -1,10 +1,23 @@
 import { readFileSync } from "node:fs";
-import { expect, test } from "@playwright/test";
-import { registerAndOnboard, TINY_PNG } from "./helpers";
+import { expect, type Page, test } from "@playwright/test";
+import { registerAndOnboard, TINY_PNG, waitForHydration } from "./helpers";
 
 // Videos cortos (ADR-062). En las pruebas el almacenamiento es el disco: el navegador sube el
 // archivo a la ruta local de desarrollo (en producción, directo a R2 con una URL firmada).
 const VIDEO = readFileSync("tests/fixtures/video/video-corto.mp4");
+
+/**
+ * «Video» en «Añadir a tu publicación» (cf289a4: un botón que se queda presionado, ya no un radio).
+ * Un clic antes de que React tome el botón no cambia nada: se espera a que la página cargue.
+ */
+async function chooseVideoMode(page: Page) {
+  const video = page
+    .getByRole("group", { name: "Añadir a tu publicación" })
+    .getByRole("button", { name: "Video" });
+  await waitForHydration(video);
+  await video.click();
+  await expect(video).toHaveAttribute("aria-pressed", "true");
+}
 
 test("publicar un video corto: se sube, el servidor lo revisa y se reproduce en su publicación", async ({
   page,
@@ -12,7 +25,7 @@ test("publicar un video corto: se sube, el servidor lo revisa y se reproduce en 
   test.slow();
   await registerAndOnboard(page);
   await page.goto("/crear/publicacion");
-  await page.getByRole("radio", { name: "Video" }).click();
+  await chooseVideoMode(page);
   await page
     .getByLabel("Elegir video")
     .setInputFiles({ name: "video-corto.mp4", mimeType: "video/mp4", buffer: VIDEO });
@@ -44,7 +57,7 @@ test("publicar un video corto: se sube, el servidor lo revisa y se reproduce en 
 test("lo que no es un video se rechaza al revisarlo, con un motivo claro", async ({ page }) => {
   await registerAndOnboard(page);
   await page.goto("/crear/publicacion");
-  await page.getByRole("radio", { name: "Video" }).click();
+  await chooseVideoMode(page);
   // Una foto con nombre y tipo de video: el navegador no la abre y el servidor la revisa.
   await page
     .getByLabel("Elegir video")

@@ -8,7 +8,14 @@ test.describe("cuenta", () => {
     await completeOnboarding(page, user, { lookingFor: "audífonos para el metro" });
 
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
+    // El inicio ya no tiene un «Para ti» visible (su h1 es solo para lectores de pantalla): el
+    // compositor saluda por su nombre a la cuenta recién creada.
+    const firstName = user.name.split(" ")[0];
+    await expect(
+      page
+        .getByRole("region", { name: "Crear publicación" })
+        .getByRole("link", { name: `¿Qué quieres compartir, ${firstName}?` }),
+    ).toBeVisible();
 
     await page.goto("/perfil");
     await expect(page).toHaveURL(`/u/${user.username}`);
@@ -50,12 +57,27 @@ test.describe("cuenta", () => {
     await expect(password).toHaveValue("clave-visible-123");
   });
 
-  test("elegir 'Vender' en el onboarding lleva directo a Sube y vende", async ({ page }) => {
+  test("elegir 'Vender' en el onboarding empieza en el feed y Sube y vende queda en Crear", async ({
+    page,
+  }) => {
+    // Desde f1ea818 toda cuenta nueva empieza en el feed con «¡Listo, …!» (red social primero) y
+    // vender se abre desde sus accesos, como Crear.
     const user = uniqueUser();
     await register(page, user);
     await completeOnboarding(page, user, { sell: true });
 
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("region", { name: `¡Listo, ${user.name.split(" ")[0]}!` }),
+    ).toBeVisible();
+
+    await page.goto("/crear");
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: /^Sube y vende/ })
+      .click();
     await expect(page).toHaveURL("/studio/sube-y-vende");
+    await expect(page.getByLabel("¿Qué quieres vender hoy?")).toBeVisible();
   });
 
   test("cerrar sesión e iniciar sesión de nuevo", async ({ page, isMobile }) => {

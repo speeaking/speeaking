@@ -1,52 +1,73 @@
 import { expect, type Page, test } from "@playwright/test";
 import { registerAndOnboard } from "./helpers";
 
-/** Navegación principal visible: columna izquierda en escritorio, barra inferior en móvil. */
+/** Navegación principal visible: columna izquierda en escritorio, secciones bajo el logo en móvil. */
 const mainNav = (page: Page) =>
   page.getByRole("navigation", { name: "Navegación principal" }).first();
 
 test.describe("navegación", () => {
   test("las secciones principales responden y marcan la activa", async ({ page, isMobile }) => {
+    // c52810a (docs/social-activity.md): en móvil, Inicio, Reels, Tienda, Notificaciones y Perfil
+    // bajo el logo; en escritorio, sin sesión, la columna lleva Inicio, Videos / Reels, Descubrir y
+    // Tienda. `heading: null`: el inicio no tiene h1 visible; se reconoce por su compositor.
     const sections = [
-      { name: "Descubrir", url: "/descubrir", heading: "Descubrir" },
-      { name: "Comprar", url: "/comprar", heading: "Comprar" },
-      { name: "Inicio", url: "/", heading: "Para ti" },
+      ...(isMobile ? [] : [{ name: "Descubrir", url: "/descubrir", heading: "Descubrir" }]),
+      { name: isMobile ? "Reels" : "Videos / Reels", url: "/videos", heading: "Videos / Reels" },
+      { name: "Tienda", url: "/comprar", heading: "Tienda" },
+      { name: "Inicio", url: "/", heading: null },
     ];
 
     await page.goto("/");
     const nav = mainNav(page);
+    const marked = nav.locator('[aria-current="page"]');
 
     for (const section of sections) {
       await nav.getByRole("link", { name: section.name, exact: true }).click();
       await expect(page).toHaveURL(section.url);
-      await expect(page.getByRole("heading", { level: 1, name: section.heading })).toBeVisible();
+      await expect(
+        section.heading
+          ? page.getByRole("heading", { level: 1, name: section.heading })
+          : page.getByRole("main").getByRole("region", { name: "Crear publicación" }),
+      ).toBeVisible();
+      // Exactamente una sección marcada: la que se abrió.
+      await expect(marked).toHaveCount(1);
       await expect(nav.getByRole("link", { name: section.name, exact: true })).toHaveAttribute(
         "aria-current",
         "page",
       );
     }
 
-    // Una comunidad pertenece a Descubrir: la pestaña sigue marcada.
+    // Una comunidad pertenece a Descubrir: en la columna de escritorio sigue marcada. En móvil
+    // Descubrir no es pestaña («Explorar comunidades» vive en el menú de la cuenta) y ninguna se
+    // marca (src/config/navigation.test.ts).
     await page.goto("/c/gaming");
-    await expect(nav.getByRole("link", { name: "Descubrir", exact: true })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await expect(page.getByRole("heading", { level: 1, name: "Gaming" })).toBeVisible();
+    if (isMobile) {
+      await expect(marked).toHaveCount(0);
+    } else {
+      await expect(marked).toHaveCount(1);
+      await expect(nav.getByRole("link", { name: "Descubrir", exact: true })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    }
 
     const banner = page.getByRole("banner");
     if (isMobile) {
-      // Perfil y Crear requieren sesión: llevan a "Entrar" y recuerdan a dónde volver.
+      // Perfil y Notificaciones requieren sesión: llevan a «Entrar» y recuerdan a dónde volver.
       await nav.getByRole("link", { name: "Perfil", exact: true }).click();
       await expect(page).toHaveURL(/\/entrar\?next=%2Fperfil/);
       await page.goto("/");
-      await nav.getByRole("link", { name: "Crear" }).click();
-      await expect(page).toHaveURL(/\/entrar\?next=%2Fcrear/);
-      // El visitante ve «Únete» en la barra superior.
+      await nav.getByRole("link", { name: "Notificaciones", exact: true }).click();
+      await expect(page).toHaveURL(/\/entrar\?next=%2Favisos/);
+      // El visitante ve «Únete» en la barra superior; el «+» de Crear solo aparece con sesión.
       await page.goto("/");
       await expect(banner.getByRole("link", { name: "Únete" })).toHaveAttribute(
         "href",
         "/registro",
       );
+      await expect(banner.getByRole("button", { name: "Crear publicación" })).toHaveCount(0);
+      await expect(banner.getByRole("link", { name: "Crear publicación" })).toHaveCount(0);
     } else {
       // Sin sesión: ni Guardados ni Mis pedidos; la barra ofrece Entrar y Crear cuenta.
       await expect(nav.getByRole("link", { name: "Guardados" })).toHaveCount(0);
@@ -82,19 +103,32 @@ test.describe("navegación", () => {
     const nav = mainNav(page);
 
     if (isMobile) {
-      // Perfil se marca en el perfil propio, en Ajustes y en Guardados; Comprar en los pedidos.
+      // Con sesión, la pestaña Perfil es el menú de la cuenta (un botón, no un enlace: c52810a,
+      // docs/social-activity.md), así que su marca es la raya de color de la pestaña. Se marca en el
+      // perfil propio, en Ajustes y en Guardados, sin que otra pestaña quede marcada; Tienda, en los
+      // pedidos.
+      const marked = nav.locator('[aria-current="page"]');
+      const profileTab = nav
+        .getByRole("listitem")
+        .filter({ has: page.getByRole("button", { name: /^Tu cuenta/ }) })
+        .locator(":scope > div");
+      const profileUnderline = () =>
+        profileTab.evaluate((element) => getComputedStyle(element).borderBottomColor);
+      const transparent = "rgba(0, 0, 0, 0)";
+
+      await expect.poll(profileUnderline).toBe(transparent);
       for (const url of [`/u/${user.username}`, "/ajustes", "/guardados"]) {
         await page.goto(url);
-        await expect(nav.getByRole("link", { name: "Perfil", exact: true })).toHaveAttribute(
-          "aria-current",
-          "page",
-        );
+        await expect.poll(profileUnderline, url).not.toBe(transparent);
+        await expect(marked, url).toHaveCount(0);
       }
       await page.goto("/pedidos");
-      await expect(nav.getByRole("link", { name: "Comprar", exact: true })).toHaveAttribute(
+      await expect(nav.getByRole("link", { name: "Tienda", exact: true })).toHaveAttribute(
         "aria-current",
         "page",
       );
+      await expect(marked).toHaveCount(1);
+      await expect.poll(profileUnderline).toBe(transparent);
       return;
     }
 
@@ -152,7 +186,10 @@ test.describe("navegación", () => {
     isMobile,
   }) => {
     await page.goto("/");
-    const input = page.getByRole("searchbox", { name: "Buscar comunidades, temas o productos" });
+    // f244990: la búsqueda también encuentra personas, publicaciones y videos (y filtra por tipo).
+    const input = page.getByRole("searchbox", {
+      name: "Buscar personas, comunidades, publicaciones, videos o productos",
+    });
 
     if (isMobile) {
       await page.getByRole("banner").getByRole("link", { name: "Buscar" }).click();
@@ -169,7 +206,8 @@ test.describe("navegación", () => {
     await input.fill("tecnologia");
     await input.press("Enter");
 
-    await expect(page).toHaveURL("/buscar?q=tecnologia");
+    // El formulario manda también el tipo elegido («todo» por omisión).
+    await expect(page).toHaveURL("/buscar?q=tecnologia&tipo=todo");
     await expect(input).toHaveValue("tecnologia");
     const found = page.getByRole("main").getByRole("region", { name: "Comunidades", exact: true });
     await expect(found.getByRole("link", { name: /^Tecnología/ })).toBeVisible();

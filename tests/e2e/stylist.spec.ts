@@ -10,9 +10,12 @@ test.describe("estilista", () => {
   test("una persona visitante pide un look y recibe combinaciones con productos reales", async ({
     page,
   }) => {
-    // Red social primero: el inicio no abre con el estilista; su entrada está arriba de Comprar.
+    // Red social primero: el inicio no abre con el estilista; su entrada está arriba de la Tienda.
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
+    // El inicio ya cargó cuando aparece su compositor (su h1 es solo para lectores de pantalla).
+    await expect(
+      page.getByRole("main").getByRole("region", { name: "Crear publicación" }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "¿Qué necesitas?" })).toHaveCount(0);
     await page.goto("/comprar");
     await expect(page.getByRole("heading", { name: "¿Qué necesitas?" })).toBeVisible();

@@ -32,7 +32,9 @@ test.describe("smoke", () => {
     test.skip(isMobile, "En móvil no hay columnas laterales.");
     const nav = page.getByRole("navigation", { name: "Navegación principal" }).first();
     const rightRail = page.getByRole("complementary", { name: "Más para ti" });
-    const search = page.getByRole("searchbox", { name: "Buscar comunidades, temas o productos" });
+    const search = page.getByRole("searchbox", {
+      name: "Buscar personas, comunidades, publicaciones, videos o productos",
+    });
 
     // [ancho, columna izquierda con texto, columna derecha visible]
     const layouts = [

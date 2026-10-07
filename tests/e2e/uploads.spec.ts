@@ -189,7 +189,7 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
     expect((await valid.json()).error).toMatch(/^Demasiados intentos\. Intenta de nuevo en/);
   });
 
-  test("SEC-14: sin adjuntar solo la ve su dueño y sin caché; adjunta es pública con caché corta", async ({
+  test("SEC-14: sin adjuntar solo la ve su dueño y sin caché; adjunta a una publicación pública la ven todos, sin caché", async ({
     page,
     baseURL,
   }) => {
@@ -209,8 +209,9 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
     // Anónimo (otro sitio, un enlace compartido): no existe.
     expect((await fetch(`${baseURL}${orphanUrl}`)).status).toBe(404);
 
-    // Adjuntada a una publicación: pública, sin caché inmutable de un año.
+    // Adjuntada a una publicación pública (la audiencia por omisión): la ve cualquiera.
     await page.goto("/crear/publicacion");
+    await expect(page.locator('input[name="audience"]')).toHaveValue("PUBLIC");
     await page.getByLabel("¿Qué quieres compartir?").fill("Foto para probar /media");
     const uploaded = page.waitForResponse(
       (response) => response.url().endsWith("/api/uploads") && response.status() === 201,
@@ -224,10 +225,9 @@ test.describe("subidas (SEC-03, SEC-12, SEC-13, SEC-14)", () => {
 
     const anonymous = await fetch(`${baseURL}${attachedUrl}`);
     expect(anonymous.status).toBe(200);
-    // Sin `immutable`: ocultar una foto surte efecto en navegadores en máximo una hora (ADR-039).
-    expect(anonymous.headers.get("cache-control")).toBe(
-      "public, max-age=3600, stale-while-revalidate=86400",
-    );
+    // La audiencia de una publicación se puede cambiar (docs/post-audience.md): su foto se autoriza
+    // en cada petición y ni el navegador ni una CDN la guardan.
+    expect(anonymous.headers.get("cache-control")).toBe("private, no-store");
     expect(anonymous.headers.get("content-type")).toBe("image/webp");
     // La otra sigue privada.
     expect((await fetch(`${baseURL}${orphanUrl}`)).status).toBe(404);

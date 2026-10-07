@@ -35,16 +35,30 @@ test.describe("perfil (ADR-058)", () => {
     await expect(page).toHaveURL(`/u/${me.username}`);
     await expect(page.getByText("Vendo plantas y macetas pintadas a mano")).toBeVisible();
     await expect(page.getByText("Guadalajara")).toBeVisible();
-    const cover = page.locator('[data-slot="profile-cover"] img').first();
-    await expect(cover).toHaveAttribute("src", /\/media\//);
+    // La portada va primero; el avatar, encima de ella (un <img> simple, sin variantes).
+    const images = page.locator('[data-slot="profile-cover"] img');
+    await expect(images).toHaveCount(2);
+    const coverPath = new URL((await images.nth(0).getAttribute("src"))!, page.url()).pathname;
+    const avatarPath = new URL((await images.nth(1).getAttribute("src"))!, page.url()).pathname;
+    expect(coverPath).toMatch(/^\/media\//);
+    expect(avatarPath).toMatch(/^\/media\//);
+    expect(avatarPath).not.toBe(coverPath);
 
-    // La portada se sirve también a quien no tiene sesión (es pública mientras sea su portada).
+    // La foto de perfil identifica a la persona: se sirve también a quien no tiene sesión. La
+    // portada es contenido personal (54f37e8, docs/friendships.md): solo su dueño y sus amigos.
     const visitor = await browser.newContext();
-    const coverSrc = new URL((await cover.getAttribute("src"))!, page.url());
-    const mediaPath = decodeURIComponent(coverSrc.searchParams.get("url") ?? coverSrc.pathname);
-    const response = await visitor.request.get(new URL(mediaPath, page.url()).toString());
-    expect(response.status()).toBe(200);
-    await visitor.close();
+    try {
+      const avatar = await visitor.request.get(new URL(avatarPath, page.url()).toString());
+      expect(avatar.status()).toBe(200);
+      expect(avatar.headers()["cache-control"]).toBe("public, max-age=300, must-revalidate");
+      const coverForVisitor = await visitor.request.get(new URL(coverPath, page.url()).toString());
+      expect(coverForVisitor.status()).toBe(404);
+    } finally {
+      await visitor.close();
+    }
+    const ownCover = await page.request.get(coverPath);
+    expect(ownCover.status()).toBe(200);
+    expect(ownCover.headers()["cache-control"]).toBe("private, no-store");
   });
 
   test("lo que escribe la persona se muestra como texto: un intento de XSS no corre", async ({

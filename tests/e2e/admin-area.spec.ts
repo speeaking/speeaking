@@ -1,9 +1,10 @@
 import { execSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
-import { completeOnboarding, register, uniqueUser } from "./helpers";
+import { completeOnboarding, expectStreamedNotFoundPage, register, uniqueUser } from "./helpers";
 
 // /admin: solo el rol ADMIN (que solo da scripts/make-admin.ts) la ve. A cualquier otra persona le
-// responde el mismo 404 que una ruta inexistente: no se anuncia ni redirige a iniciar sesión.
+// responde la misma página «no encontrada» que una ruta inexistente: no se anuncia ni redirige a
+// iniciar sesión. Como transmite (`loading.tsx` raíz), el estado es 200 con `noindex`, no 404.
 
 function ceoUser() {
   const user = uniqueUser();
@@ -21,19 +22,16 @@ function makeAdmin(email: string, ...flags: string[]) {
 }
 
 async function expectNotFound(page: Page, path: string) {
-  const response = await page.goto(path);
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  await expectStreamedNotFoundPage(page, path, { hidden: ["Administración", "Resumen"] });
   await expect(page).not.toHaveTitle(/Administración/);
-  await expect(page.getByText("Administración")).toHaveCount(0);
 }
 
-test("sin sesión, /admin es un 404 como cualquier ruta inexistente", async ({ page }) => {
+test("sin sesión, /admin es «no encontrada» como cualquier ruta inexistente", async ({ page }) => {
   await expectNotFound(page, "/admin");
   expect(page.url()).toMatch(/\/admin$/);
 });
 
-test("una persona sin el rol ADMIN recibe 404; con el rol ve el área; al quitarlo, 404", async ({
+test("una persona sin el rol ADMIN recibe «no encontrada»; con el rol ve el área; al quitarlo, otra vez", async ({
   page,
 }) => {
   test.setTimeout(180_000);

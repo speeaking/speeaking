@@ -115,3 +115,34 @@ export async function waitForHydration(locator: Locator) {
       }),
   );
 }
+
+/**
+ * «No encontrada» de una página que transmite: el `loading.tsx` raíz cubre casi todas, así que
+ * cuando `notFound()` llega la respuesta ya empezó y Next no puede cambiar el estado HTTP. Responde
+ * 200 con la página «No encontramos esta página» y el `<meta name="robots" content="noindex">` que
+ * inserta Next (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md`,
+ * «Status Codes»). Se acepta también un 404 de verdad, nunca una redirección (no se anuncia el área
+ * ni se manda a iniciar sesión) y nada de `hidden` aparece en la página ni en el HTML (que incluye
+ * la carga RSC).
+ */
+export async function expectStreamedNotFoundPage(
+  page: Page,
+  path: string,
+  { hidden = [] }: { hidden?: readonly string[] } = {},
+) {
+  const response = await page.goto(path);
+  expect(response, path).not.toBeNull();
+  expect([200, 404], `${path}: estado ${response!.status()}`).toContain(response!.status());
+  expect(new URL(page.url()).pathname, path).toBe(new URL(path, page.url()).pathname);
+  await expect(
+    page.getByRole("heading", { name: "No encontramos esta página" }),
+    path,
+  ).toBeVisible();
+  // El `noindex` exacto es el de Next para «no encontrada» (el del layout dice «noindex, follow»).
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first(), path).toBeAttached();
+  const html = await response!.text();
+  for (const text of hidden) {
+    expect(html, `${path}: el HTML no debe decir «${text}»`).not.toContain(text);
+    await expect(page.getByText(text), `${path}: «${text}» en la página`).toHaveCount(0);
+  }
+}

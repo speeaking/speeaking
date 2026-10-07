@@ -6,24 +6,29 @@ import { registerAndOnboard, waitForHydration } from "./helpers";
 
 test("«Crear» abre sus opciones y la publicación se escribe encima del feed; al cerrar sigues ahí", async ({
   page,
+  isMobile,
 }) => {
   test.slow();
   await registerAndOnboard(page);
   await expect(page).toHaveURL("/");
 
-  // «Crear» (arriba en escritorio, el «+» de abajo en teléfono) abre un menú, no otra página.
-  const create = page.getByRole("button", { name: "Crear", exact: true });
+  // «Crear» abre un menú, no otra página: en escritorio, el botón de la barra; en teléfono, el «+»
+  // «Crear publicación» del encabezado (c52810a: la barra de abajo ya no lleva «Crear»).
+  const create = page
+    .getByRole("banner")
+    .getByRole("button", { name: isMobile ? "Crear publicación" : "Crear", exact: true });
   await expect(create).toHaveAttribute("aria-haspopup", "menu");
+  // Antes de que React tome la barra es solo el enlace a /crear.
+  await waitForHydration(create);
   await create.click();
   await page.getByRole("menuitem", { name: /^Publicación/ }).click();
 
   const composer = page.getByRole("dialog", { name: "Crear publicación" });
   await expect(composer).toBeVisible();
   await expect(page).toHaveURL("/crear/publicacion");
-  // El feed sigue detrás (tapado por la ventana: fuera del árbol accesible mientras está abierta).
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Para ti", includeHidden: true }),
-  ).toBeAttached();
+  // El feed sigue detrás (tapado por la ventana: fuera del árbol accesible mientras está abierta,
+  // por eso se busca por CSS): el compositor del inicio sigue en <main>.
+  await expect(page.locator('main section[aria-label="Crear publicación"]')).toBeAttached();
 
   const text = `Escrita encima del feed ${Date.now()}`;
   await composer.getByLabel("¿Qué quieres compartir?").fill(text);

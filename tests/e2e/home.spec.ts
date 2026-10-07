@@ -1,15 +1,39 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { completeOnboarding, register, uniqueUser } from "./helpers";
 
 /** Enlaces que abren una publicación: /p/<id> o /p/<id>?foto=N, sin el panel de comentarios. */
 const OPEN_POST = 'main article a[href^="/p/"]:not([href*="/comentarios"])';
 
+/**
+ * El primer enlace del feed que abre una publicación: lo llevan las fotos (las de solo texto se
+ * abren desde «Comentar», ADR-057). El feed es de todos y las publicaciones de otras pruebas (casi
+ * todas de solo texto y públicas) pueden llenar la primera página: si no hay ninguna con foto, se
+ * baja para que el feed cargue más hasta encontrarla.
+ */
+async function firstPostToOpen(page: Page) {
+  const open = page.locator(OPEN_POST).first();
+  await expect(async () => {
+    if ((await open.count()) === 0) {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    }
+    expect(await open.count()).toBeGreaterThan(0);
+  }).toPass({ timeout: 45_000 });
+  await open.scrollIntoViewIfNeeded();
+  return open;
+}
+
 test.describe("inicio: visitante", () => {
-  test("sin banner rosa: el feed empieza arriba con su subtítulo", async ({ page }) => {
+  test("sin banner rosa: el feed empieza arriba, con el compositor primero", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
-    await expect(page.getByText("Lo más nuevo de las comunidades")).toBeVisible();
+    // Sin «Para ti» ni subtítulo visibles (11568a7): el único h1 es una frase para buscadores y
+    // lectores de pantalla, y lo primero que se ve en <main> es el compositor, pegado arriba.
+    const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const composer = main.getByRole("region", { name: "Crear publicación" });
+    await expect(composer).toBeVisible();
+    const [mainBox, composerBox] = await Promise.all([main.boundingBox(), composer.boundingBox()]);
+    expect(composerBox!.y - mainBox!.y, "espacio sobre el compositor").toBeLessThanOrEqual(16);
     await expect(
       page.getByText("Descubre contenido, productos y personas de tu comunidad."),
     ).toHaveCount(0);
@@ -62,7 +86,7 @@ test.describe("inicio: visitante", () => {
   }) => {
     await page.goto("/");
     // El enlace que abre la publicación (no «Comentar», que abre el panel de comentarios, ADR-057).
-    const open = page.locator(OPEN_POST).first();
+    const open = await firstPostToOpen(page);
     await expect(open).toBeVisible();
     await open.click();
 
@@ -70,8 +94,10 @@ test.describe("inicio: visitante", () => {
     const layer = page.getByRole("dialog", { name: "Publicación" });
     await expect(layer).toBeVisible();
     await expect(layer.getByRole("heading", { name: /^Comentarios/ })).toBeVisible();
-    // El feed sigue detrás (la capa lo deja inerte para lectores: por eso se busca por CSS, no por rol).
-    await expect(page.locator("main h1")).toHaveText("Para ti");
+    // El feed sigue detrás (la capa lo deja inerte para lectores: por eso se busca por CSS, no por
+    // rol): su compositor y la publicación que se abrió siguen en <main>.
+    await expect(page.locator('main section[aria-label="Crear publicación"]')).toBeAttached();
+    await expect(open).toBeAttached();
 
     await page.goBack();
     await expect(page).toHaveURL("/");
@@ -109,7 +135,7 @@ test.describe("inicio: visitante", () => {
 
   test("una publicación compartida invita a unirse a su comunidad", async ({ page }) => {
     await page.goto("/");
-    await page.locator(OPEN_POST).first().click();
+    await (await firstPostToOpen(page)).click();
     await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}/);
 
     const prompt = page.getByRole("region", { name: /^Únete a .+ en speeaking$/ });
@@ -201,7 +227,9 @@ test.describe("inicio: con sesión", () => {
     await expect(welcome).toHaveCount(0);
 
     await page.reload();
-    await expect(page.getByRole("heading", { level: 1, name: "Para ti" })).toBeVisible();
+    // El inicio ya cargó cuando aparece su compositor (sin «Para ti» visible: su h1 es solo para
+    // lectores de pantalla). La bienvenida va justo antes, en el mismo render.
+    await expect(page.getByRole("region", { name: "Crear publicación" })).toBeVisible();
     await expect(page.getByRole("region", { name: "¡Listo, Prueba!" })).toHaveCount(0);
   });
 });
