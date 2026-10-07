@@ -1,5 +1,6 @@
 import type { Metadata, Route } from "next";
 import { redirect } from "next/navigation";
+import { TikTokRegistration } from "@/components/analytics/tiktok-registration";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { OnboardingForm } from "@/modules/identity/components/onboarding-form";
 import {
@@ -42,12 +43,15 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/bienv
   const preselected = join.filter((slug) => known.has(slug));
 
   return (
-    <OnboardingForm
-      communities={communities}
-      suggestedUsername={suggestedUsername}
-      defaultName={viewer.profile?.displayName ?? viewer.name}
-      preselected={preselected}
-      needsLegalConsent={!legalAccepted}
-    />
+    <>
+      <TikTokRegistration />
+      <OnboardingForm
+        communities={communities}
+        suggestedUsername={suggestedUsername}
+        defaultName={viewer.profile?.displayName ?? viewer.name}
+        preselected={preselected}
+        needsLegalConsent={!legalAccepted}
+      />
+    </>
   );
 }

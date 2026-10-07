@@ -45,6 +45,8 @@ export function createNonce(): string {
  *   `blob:` es la vista previa local del video elegido.
  * - Turnstile: solo `challenges.cloudflare.com`, con el nonce existente para sus scripts y permiso
  *   de iframe/conexión cuando ambas claves están configuradas. No cambia `frame-ancestors`.
+ * - Pixel de TikTok Ads: solo `analytics.tiktok.com` (SDK, eventos e imagen de respaldo) y solo
+ *   con `TIKTOK_PIXEL_ID` configurado. El SDK lo inserta el bundle (`src/lib/tiktok-pixel.ts`).
  */
 export function contentSecurityPolicy(
   nonce: string,
@@ -54,24 +56,27 @@ export function contentSecurityPolicy(
     storageOrigin = null,
     googleOAuthEnabled = false,
     turnstileEnabled = false,
+    tiktokPixelEnabled = false,
   }: {
     isDev: boolean;
     isHttps: boolean;
     storageOrigin?: string | null;
     googleOAuthEnabled?: boolean;
     turnstileEnabled?: boolean;
+    tiktokPixelEnabled?: boolean;
   },
 ): string {
   const storage = storageOrigin ? ` ${storageOrigin}` : "";
   const turnstile = turnstileEnabled ? " https://challenges.cloudflare.com" : "";
+  const tiktok = tiktokPixelEnabled ? " https://analytics.tiktok.com" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${turnstile}${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${turnstile}${tiktok}${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${tiktok}`,
     `media-src 'self' blob:${storage}`,
     "font-src 'self'",
-    `connect-src 'self'${storage}${turnstile}`,
+    `connect-src 'self'${storage}${turnstile}${tiktok}`,
     // Debe estar en el documento inicial también al llegar al formulario por navegación de Next.
     ...(turnstileEnabled ? [`frame-src 'self'${turnstile}`] : []),
     "object-src 'none'",

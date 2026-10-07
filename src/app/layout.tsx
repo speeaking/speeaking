@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import { headers } from "next/headers";
+import { TikTokPixel } from "@/components/analytics/tiktok-pixel";
 import { AppStartupImages } from "@/components/brand/app-startup-images";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Saltar al contenido
         </a>
+        {env.TIKTOK_PIXEL_ID ? <TikTokPixel pixelId={env.TIKTOK_PIXEL_ID} /> : null}
         <ThemeProvider nonce={nonce}>
           {children}
           {/* Debajo de la barra superior: 116 px en móvil y 64 px en escritorio, más 8 px de aire

@@ -87,6 +87,11 @@ export const serverEnvSchema = z
     TURNSTILE_SECRET_KEY: optional(
       z.string().regex(/^[A-Za-z0-9_-]{20,100}$/, "Clave de Turnstile inválida."),
     ),
+    // Pixel de TikTok Ads (mide los registros de las campañas). Con el id, el layout raíz carga
+    // el pixel y la CSP autoriza `analytics.tiktok.com`; sin él no se carga nada de TikTok.
+    TIKTOK_PIXEL_ID: optional(
+      z.string().regex(/^[A-Z0-9]{16,32}$/, "Id de pixel de TikTok inválido."),
+    ),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     BETTER_AUTH_SECRET: z.string().min(32, "Debe tener al menos 32 caracteres."),
     STORAGE_DRIVER: z
