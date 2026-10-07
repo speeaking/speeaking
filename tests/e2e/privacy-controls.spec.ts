@@ -56,7 +56,8 @@ test("historial de búsqueda: sin ligar antes del onboarding, visible, borrable 
   // Antes de decidir sobre la personalización: la búsqueda se guarda anónima.
   await search(page, before);
   await page.goto("/bienvenida");
-  await completeOnboarding(page, user);
+  // Para ver su historial, la persona activa «Personalizar mi feed» (ya no viene marcada).
+  await completeOnboarding(page, user, { personalize: true });
   await expect(page).toHaveURL("/");
 
   await search(page, first);

@@ -66,7 +66,8 @@ test("una pieza en pantalla más de 1 s cuenta exactamente una vez; un destello 
   test.setTimeout(150_000);
   const user = intUser();
   await register(page, user);
-  await completeOnboarding(page, user);
+  // Con «Personalizar mi feed» activada la impresión queda ligada a la cuenta (sin ella, anónima).
+  await completeOnboarding(page, user, { personalize: true });
   // Con el servidor de desarrollo ocupado, preparar el feed puede tardar más de 15 s.
   await expect(page).toHaveURL("/", { timeout: 60_000 });
   const userId = await userIdOf(user.email);

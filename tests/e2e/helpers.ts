@@ -33,7 +33,7 @@ export async function register(page: Page, user: TestUser) {
 export async function completeOnboarding(
   page: Page,
   user: TestUser,
-  options: { sell?: boolean; lookingFor?: string } = {},
+  options: { sell?: boolean; lookingFor?: string; personalize?: boolean } = {},
 ) {
   await page.getByLabel("Nombre de usuario").fill(user.username);
   await page.getByText("Entretenerme").click();
@@ -46,6 +46,9 @@ export async function completeOnboarding(
   await page.getByRole("button", { name: "Siguiente" }).click();
 
   if (options.lookingFor) await page.getByLabel("¿Qué buscas?").fill(options.lookingFor);
+  // «Personalizar mi feed» ya no viene marcada (finalidad secundaria, LFPDPPP; ADR-076): sin ella la
+  // búsqueda no se liga a la cuenta y las impresiones van anónimas.
+  if (options.personalize) await page.getByLabel(/Personalizar mi feed/).check();
   await page.getByRole("button", { name: "Empezar" }).click();
 }
 

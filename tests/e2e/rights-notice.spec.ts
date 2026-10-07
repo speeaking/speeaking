@@ -42,7 +42,7 @@ test("aviso de derechos sin cuenta: número de caso, el equipo retira y quien pu
   const kind = claimant.getByLabel(/^Derechos de autor \(foto/);
   await waitForHydration(kind);
   await kind.check();
-  await claimant.getByLabel("Soy titular del derecho").check();
+  await claimant.getByRole("radio", { name: "Soy titular del derecho" }).check();
   await claimant.getByLabel("Tu nombre completo o razón social").fill("Fotógrafa de Prueba");
   await claimant.getByLabel("Correo", { exact: true }).fill(`e2e.avisa.${Date.now()}@example.com`);
   await claimant
