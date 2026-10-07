@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { register, TINY_PNG, type TestUser, uniqueUser } from "./helpers";
+import { chooseImages, register, TINY_PNG, type TestUser, uniqueUser } from "./helpers";
 
 // P14: el equipo oculta un producto (después de un reporte) y desaparece de todo lo público: el
 // feed («Siguiendo»), la búsqueda, Comprar, «También te puede gustar», el carrito y su página; su
@@ -75,9 +75,7 @@ async function listProduct(
     await page.getByLabel("Estado").fill("CDMX");
     await page.getByRole("button", { name: "Activar mi tienda" }).click();
   }
-  await page
-    .getByLabel("Elegir imágenes")
-    .setInputFiles({ name: "termo.png", mimeType: "image/png", buffer: TINY_PNG });
+  await chooseImages(page, { name: "termo.png", mimeType: "image/png", buffer: TINY_PNG });
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Nombre del producto").fill(title);
   await page.getByLabel("Descripción").fill("Termo de acero inoxidable de 1 litro.");

@@ -56,6 +56,18 @@ export async function activateStore(page: Page) {
 }
 
 /**
+ * Elige imágenes en el `ImageUploader`. `setInputFiles` llena el campo oculto sin pasar por
+ * «Agregar» (que solo abre el selector con la página ya cargada): justo después de `goto`, o de
+ * activar la tienda antes de que cargue la página, el `change` llega antes que React, se pierde y no
+ * se sube nada. Por eso espera a que React tome el campo.
+ */
+export async function chooseImages(page: Page, files: Parameters<Locator["setInputFiles"]>[0]) {
+  const input = page.getByLabel("Elegir imágenes");
+  await waitForHydration(input);
+  await input.setInputFiles(files);
+}
+
+/**
  * Vendedor nuevo: activa su tienda y publica un producto a mano con foto. Devuelve la URL pública.
  * `title` distinto por prueba evita chocar con lo que otras pruebas publican en paralelo.
  */
@@ -65,9 +77,7 @@ export async function createProduct(
 ) {
   await page.goto("/studio/productos/nuevo");
   await activateStore(page);
-  await page
-    .getByLabel("Elegir imágenes")
-    .setInputFiles({ name: "producto.png", mimeType: "image/png", buffer: TINY_PNG });
+  await chooseImages(page, { name: "producto.png", mimeType: "image/png", buffer: TINY_PNG });
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Nombre del producto").fill(title);
   await page.getByLabel("Descripción").fill("Producto de prueba publicado a mano.");

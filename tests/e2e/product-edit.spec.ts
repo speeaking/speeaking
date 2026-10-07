@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { registerAndOnboard, TINY_PNG } from "./helpers";
+import { chooseImages, registerAndOnboard, TINY_PNG } from "./helpers";
 
 const TITLE = "Lámpara de escritorio LED";
 const NEW_TITLE = "Lámpara de escritorio LED Pro";
@@ -21,7 +21,7 @@ async function createProduct(page: Page) {
   await page.goto("/studio/productos/nuevo");
   await activateStore(page);
 
-  await page.getByLabel("Elegir imágenes").setInputFiles(image("lampara.png"));
+  await chooseImages(page, image("lampara.png"));
   await expect(page.locator('input[name="mediaIds"]')).toHaveCount(1);
   await page.getByLabel("Nombre del producto").fill(TITLE);
   await page.getByLabel("Descripción").fill("Lámpara LED con brazo flexible y tres tonos de luz.");
