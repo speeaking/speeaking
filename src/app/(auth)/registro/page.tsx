@@ -25,8 +25,8 @@ export default async function SignUpPage({ searchParams }: PageProps<"/registro"
   const requested = parseJoinSlugs(unirse);
   const catalog = requested.length > 0 ? await listCommunities() : [];
   const joining = requested.flatMap((slug) => catalog.filter((c) => c.slug === slug));
-  // Después de crear la cuenta, la bienvenida llega con esas comunidades ya marcadas.
-  // Al terminar las preferencias, la nueva cuenta empieza en el feed.
+  // Después de crear la cuenta, la bienvenida llega con esas comunidades ya marcadas y regresa a
+  // `next` al terminar (ver ../unirse.ts).
   const formNext =
     joining.length > 0
       ? onboardingPath({ join: joining.map((community) => community.slug), next: safeNext })

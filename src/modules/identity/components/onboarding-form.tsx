@@ -52,12 +52,15 @@ export function OnboardingForm({
   communities,
   suggestedUsername,
   defaultName,
+  next,
   preselected = [],
   needsLegalConsent = false,
 }: {
   communities: Community[];
   suggestedUsername: string;
   defaultName: string;
+  /** Adónde regresa al terminar (ya validado en el servidor): la publicación o comunidad de origen. */
+  next?: string;
   /** La cuenta llegó por Google y aún no acepta términos ni aviso (ADR-049): casilla obligatoria. */
   needsLegalConsent?: boolean;
   /**
@@ -174,6 +177,8 @@ export function OnboardingForm({
       noValidate
       className="flex flex-col gap-6"
     >
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+
       <div className="flex flex-col gap-3">
         <div className="flex gap-1.5" aria-hidden="true">
           {STEP_TITLES.map((title, index) => (

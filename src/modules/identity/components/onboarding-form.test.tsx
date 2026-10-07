@@ -46,6 +46,25 @@ describe("OnboardingForm", () => {
     vi.useRealTimers();
   });
 
+  it("lleva el enlace de origen a la acción para regresar ahí al terminar (ADR-022)", () => {
+    const { container } = render(
+      <OnboardingForm
+        communities={communities}
+        suggestedUsername="ana"
+        defaultName="Ana"
+        next="/p/0199a000-0000-7000-8000-0000000000c1"
+      />,
+    );
+    expect(container.querySelector('input[type="hidden"][name="next"]')).toHaveValue(
+      "/p/0199a000-0000-7000-8000-0000000000c1",
+    );
+  });
+
+  it("sin enlace de origen no manda `next`", () => {
+    const { container } = renderForm();
+    expect(container.querySelector('input[name="next"]')).toBeNull();
+  });
+
   it("al avanzar refleja el paso en la URL, sube la página y enfoca el título", async () => {
     renderForm();
 

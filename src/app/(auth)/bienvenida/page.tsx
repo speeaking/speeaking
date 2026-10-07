@@ -51,6 +51,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/bienv
         communities={communities}
         suggestedUsername={suggestedUsername}
         defaultName={viewer.profile?.displayName ?? viewer.name}
+        next={safeNext || undefined}
         preselected={preselected}
         needsLegalConsent={!legalAccepted}
       />

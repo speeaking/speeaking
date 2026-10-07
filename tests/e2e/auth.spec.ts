@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { completeOnboarding, register, registerAndOnboard, uniqueUser } from "./helpers";
+import {
+  completeOnboarding,
+  register,
+  registerAndOnboard,
+  uniqueUser,
+  waitForHydration,
+} from "./helpers";
 
 test.describe("cuenta", () => {
   test("registro + onboarding de 3 pasos lleva al feed y crea el perfil", async ({ page }) => {
@@ -57,27 +63,42 @@ test.describe("cuenta", () => {
     await expect(password).toHaveValue("clave-visible-123");
   });
 
-  test("elegir 'Vender' en el onboarding empieza en el feed y Sube y vende queda en Crear", async ({
-    page,
-  }) => {
-    // Desde f1ea818 toda cuenta nueva empieza en el feed con «¡Listo, …!» (red social primero) y
-    // vender se abre desde sus accesos, como Crear.
+  test("elegir 'Vender' en el onboarding lleva directo a Sube y vende", async ({ page }) => {
+    // ADR-022 y P6: quien viene a vender entra a «¿Qué quieres vender hoy?».
     const user = uniqueUser();
     await register(page, user);
     await completeOnboarding(page, user, { sell: true });
 
-    await expect(page).toHaveURL("/");
-    await expect(
-      page.getByRole("region", { name: `¡Listo, ${user.name.split(" ")[0]}!` }),
-    ).toBeVisible();
-
-    await page.goto("/crear");
-    await page
-      .getByRole("main")
-      .getByRole("link", { name: /^Sube y vende/ })
-      .click();
     await expect(page).toHaveURL("/studio/sube-y-vende");
     await expect(page.getByLabel("¿Qué quieres vender hoy?")).toBeVisible();
+  });
+
+  test("quien se registra desde una publicación compartida regresa a ella al terminar", async ({
+    page,
+  }) => {
+    // P1 «compartir afuera, descubrir adentro»: el enlace compartido no se pierde en el registro.
+    const author = await registerAndOnboard(page);
+    await page.goto("/crear/publicacion");
+    const text = page.getByLabel("¿Qué quieres compartir?");
+    await waitForHydration(text);
+    await text.fill(`Les comparto esto, ${author.username}`);
+    await page.getByRole("button", { name: "Publicar" }).click();
+    await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
+    const postPath = new URL(page.url()).pathname;
+
+    // Una persona sin cuenta llega con el enlace de «Únete» de esa publicación.
+    await page.context().clearCookies();
+    const visitor = uniqueUser();
+    await page.goto(`/registro?next=${encodeURIComponent(postPath)}`);
+    await page.getByLabel("Nombre", { exact: true }).fill(visitor.name);
+    await page.getByLabel("Correo").fill(visitor.email);
+    await page.getByLabel("Contraseña").fill(visitor.password);
+    await page.getByLabel(/Acepto los/).check();
+    await page.getByRole("button", { name: "Crear cuenta" }).click();
+    await expect(page).toHaveURL(/\/bienvenida/);
+    await completeOnboarding(page, visitor);
+
+    await expect(page).toHaveURL(postPath);
   });
 
   test("cerrar sesión e iniciar sesión de nuevo", async ({ page, isMobile }) => {
