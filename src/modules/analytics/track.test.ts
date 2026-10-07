@@ -46,9 +46,10 @@ beforeEach(() => {
 describe("track (SEC-20)", () => {
   it("lee la IP dentro de la petición y la pasa para deduplicar lo anónimo", async () => {
     track(anonymousView);
+    // Antes de `after`: ahí un Server Component ya no puede leer las cabeceras.
+    expect(headers).toHaveBeenCalled();
     await runAfter();
 
-    expect(headers).toHaveBeenCalledOnce();
     expect(filterTrustedEvents).toHaveBeenCalledWith([anonymousView], { ip: "203.0.113.7" });
     expect(db.analyticsEvent.createMany).toHaveBeenCalledOnce();
   });
@@ -62,8 +63,38 @@ describe("track (SEC-20)", () => {
     track({ ...anonymousView, userId: "0199a000-0000-7000-8000-000000000001" });
     await runAfter();
 
-    expect(headers).not.toHaveBeenCalled();
+    expect(clientIp).not.toHaveBeenCalled();
     expect(filterTrustedEvents).toHaveBeenCalledWith(expect.any(Array), { ip: null });
+  });
+
+  it.each([
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+    "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ChatGPT-User/1.0)",
+  ])("un rastreador (%s) no cuenta como interés de una persona", async (userAgent) => {
+    headers.mockResolvedValue(new Headers({ "user-agent": userAgent }));
+
+    track(anonymousView);
+    await runAfter();
+
+    expect(filterTrustedEvents).not.toHaveBeenCalled();
+    expect(db.analyticsEvent.createMany).not.toHaveBeenCalled();
+  });
+
+  it("un navegador de una persona sí se registra", async () => {
+    headers.mockResolvedValue(
+      new Headers({
+        "user-agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
+        "x-forwarded-for": "203.0.113.7",
+      }),
+    );
+
+    track(anonymousView);
+    await runAfter();
+
+    expect(db.analyticsEvent.createMany).toHaveBeenCalledOnce();
   });
 
   it("fuera de una petición (scripts) no falla: sin IP", async () => {

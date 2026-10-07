@@ -8,6 +8,8 @@ const getAIRoute = vi.hoisted(() => vi.fn(async () => route));
 
 vi.mock("@/server/env", () => ({ env }));
 vi.mock("@/server/providers/ai", () => ({ getAIRoute }));
+// `aiErrorMessage` vive junto a los límites (`rate-limit`), que importan la base: aquí no se usa.
+vi.mock("@/server/db", () => ({ db: {} }));
 
 const { aiAvailability, aiErrorMode, assertAiAvailable, simulatedRecord } =
   await import("./availability");

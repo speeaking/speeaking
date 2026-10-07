@@ -13,6 +13,8 @@ const db = vi.hoisted(() => ({
   post: { create: vi.fn() },
   authenticityCheck: { findMany: vi.fn(async () => []) },
   authenticityProofHistory: { findMany: vi.fn(async () => []) },
+  // La publicación se crea en una transacción (por la comunidad): aquí corre con el mismo cliente.
+  $transaction: vi.fn(),
 }));
 const redirect = vi.hoisted(() =>
   vi.fn((url: string) => {
@@ -34,6 +36,7 @@ vi.mock("@/modules/identity/session", () => ({
 vi.mock("@/modules/analytics/track", () => ({ track: vi.fn() }));
 vi.mock("@/modules/notifications/notify", () => ({
   notifyComment: vi.fn(),
+  notifyMentions: vi.fn(),
   notifyReaction: vi.fn(),
   removeReactionNotification: vi.fn(),
   notifyProductTagged,
@@ -74,6 +77,7 @@ const created = () => db.post.create.mock.calls[0]![0].data;
 beforeEach(() => {
   vi.clearAllMocks();
   db.post.create.mockResolvedValue({ id: POST });
+  db.$transaction.mockImplementation(async (run: (tx: typeof db) => unknown) => run(db));
 });
 
 describe("createPostAction con un producto propio", () => {

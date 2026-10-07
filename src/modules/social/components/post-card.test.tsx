@@ -11,6 +11,15 @@ import { PostCard } from "./post-card";
 vi.mock("../actions", () => ({ reactAction: vi.fn(), toggleSaveAction: vi.fn() }));
 vi.mock("../context-actions", () => ({ getPostContextAction: vi.fn() }));
 vi.mock("../interaction-actions", () => ({ recordShareAction: vi.fn() }));
+vi.mock("../post-text-actions", () => ({ getPostTextAction: vi.fn() }));
+vi.mock("../delete-post-action", () => ({ deletePostAction: vi.fn() }));
+vi.mock("../audience-actions", () => ({ changePostAudienceAction: vi.fn() }));
+vi.mock("@/modules/voice/actions", () => ({
+  interpretVoiceAction: vi.fn(),
+  findVoiceFriendsAction: vi.fn(),
+  prepareVoiceShareAction: vi.fn(),
+  confirmVoiceShareAction: vi.fn(),
+}));
 // Micro-respuestas (ADR-052): la vibración y los avisos se observan, no se ejecutan.
 vi.mock("@/lib/haptics", () => ({ tapHaptic: vi.fn() }));
 vi.mock("sonner", () => ({

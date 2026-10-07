@@ -44,7 +44,10 @@ storage.original = await sharp({
   .webp()
   .toBuffer();
 
-const PUBLIC_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
+/** Solo producto visible, avatar o portada pública (SEC-14). */
+const PUBLIC_CACHE = "public, max-age=300, must-revalidate";
+/** Lo privado y todo lo que está en una publicación: su audiencia puede cambiar. */
+const PRIVATE_CACHE = "private, no-store";
 
 function request(key: string, search = "") {
   return GET(new Request(`http://localhost/media/${key}${search}`), {
@@ -101,9 +104,16 @@ describe.skipIf(!databaseUrl)("GET /media contra PostgreSQL (SEC-14)", () => {
     });
     getSession.mockResolvedValue(null);
 
+    // Pública por omisión (docs/post-audience.md), pero sin caché: la audiencia puede cambiar.
     const published = await request(media.storageKey);
     expect(published.status).toBe(200);
-    expect(published.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(published.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
+
+    // «Solo yo»: deja de servirse en la siguiente petición; vuelve al regresar a Público.
+    await db.post.update({ where: { id: post.id }, data: { audience: "ONLY_ME" } });
+    expect((await request(media.storageKey)).status).toBe(404);
+    await db.post.update({ where: { id: post.id }, data: { audience: "PUBLIC" } });
+    expect((await request(media.storageKey)).status).toBe(200);
 
     await db.post.update({ where: { id: post.id }, data: { status: "REMOVED" } });
     expect((await request(media.storageKey)).status).toBe(404);
@@ -111,7 +121,7 @@ describe.skipIf(!databaseUrl)("GET /media contra PostgreSQL (SEC-14)", () => {
     getSession.mockResolvedValue({ user: { id: user.id } });
     const asOwner = await request(media.storageKey);
     expect(asOwner.status).toBe(200);
-    expect(asOwner.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(asOwner.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
   });
 
   it("producto oculto: sus fotos (y las de su publicación) solo para su dueño y el equipo", async () => {
@@ -140,6 +150,8 @@ describe.skipIf(!databaseUrl)("GET /media contra PostgreSQL (SEC-14)", () => {
     });
     categoryId = category.id;
     const photo = await newMedia(owner.id);
+    // Otra foto de la ficha que no está en la publicación.
+    const gallery = await newMedia(owner.id);
     const product = await db.product.create({
       data: {
         sellerId: seller.id,
@@ -151,7 +163,7 @@ describe.skipIf(!databaseUrl)("GET /media contra PostgreSQL (SEC-14)", () => {
         stock: 1,
         city: "Ciudad de México",
         state: "CDMX",
-        media: { create: [{ mediaId: photo.id }] },
+        media: { create: [{ mediaId: photo.id }, { mediaId: gallery.id, position: 1 }] },
       },
       select: { id: true },
     });
@@ -167,13 +179,18 @@ describe.skipIf(!databaseUrl)("GET /media contra PostgreSQL (SEC-14)", () => {
     });
 
     getSession.mockResolvedValue(null);
+    // También está en la publicación: pública, pero sin caché (la audiencia puede cambiar).
     const visible = await request(photo.storageKey);
     expect(visible.status).toBe(200);
-    expect(visible.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(visible.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
+    // Solo en la ficha: caché pública corta.
+    const onlyProduct = await request(gallery.storageKey, "?w=640");
+    expect(onlyProduct.status).toBe(200);
+    expect(onlyProduct.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
     // La variante que pide `next/image` queda en la caché de variantes (ADR-039).
     const variant = await request(photo.storageKey, "?w=640");
     expect(variant.status).toBe(200);
-    expect(variant.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(variant.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
     expect(storage.variants.has(variantKey(photo.storageKey, 640))).toBe(true);
     // La variante guardada no se puede pedir por su propia clave: no tiene fila en `media`.
     expect((await request(variantKey(photo.storageKey, 640))).status).toBe(404);

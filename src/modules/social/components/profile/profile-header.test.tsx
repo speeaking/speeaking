@@ -6,6 +6,7 @@ import { ProfileHeader, type ProfileHeaderProps } from "./profile-header";
 // de eso, solo se comprueba qué se pinta.
 vi.mock("@/modules/identity/actions", () => ({ signOutAction: vi.fn() }));
 vi.mock("../../follow-actions", () => ({ toggleFollowAction: vi.fn() }));
+vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   usePathname: () => "/u/ana",

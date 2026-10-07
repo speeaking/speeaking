@@ -269,12 +269,14 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
         // Un fallo temporal conserva el último conteo conocido.
       }
     };
-    const timer = window.setInterval(() => void refresh(), 60000);
-    document.addEventListener("visibilitychange", refresh);
+    // Los manejadores de eventos no esperan promesas: `refresh` ya atrapa sus errores.
+    const poll = () => void refresh();
+    const timer = window.setInterval(poll, 60000);
+    document.addEventListener("visibilitychange", poll);
     return () => {
       disposed = true;
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refresh);
+      document.removeEventListener("visibilitychange", poll);
     };
   }, [viewer?.username, viewer?.onboarded]);
 
@@ -306,7 +308,9 @@ export function TopBar({ viewer }: { viewer: ViewerSummary }) {
                 trigger={
                   <Link
                     href="/mensajes"
-                    aria-label={`Mensajes (${unread.messages} sin leer)`}
+                    aria-label={
+                      unread.messages > 0 ? `Mensajes (${unread.messages} sin leer)` : "Mensajes"
+                    }
                     className={cn(mobileIcon, "relative")}
                   >
                     <MessageCircle className="size-5" />

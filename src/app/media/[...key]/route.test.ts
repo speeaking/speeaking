@@ -73,7 +73,13 @@ const OWNER = "0199a000-0000-7000-8000-000000000001";
 const ADMIN = "0199a000-0000-7000-8000-0000000000ad";
 const STRANGER = "0199a000-0000-7000-8000-0000000000ff";
 const KEY = "images/2026/09/0199a000-0000-7000-8000-00000000000a.webp";
-const PUBLIC_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
+/** Producto visible, avatar o portada pública: cinco minutos y revalidar (SEC-14, sin `stale-…`). */
+const PUBLIC_CACHE = "public, max-age=300, must-revalidate";
+/**
+ * Lo privado y todo lo que está en una publicación, aunque sea pública: su audiencia puede cambiar,
+ * así que ni el navegador ni una CDN guardan la respuesta (docs/post-audience.md).
+ */
+const PRIVATE_CACHE = "private, no-store";
 const ORIGINAL_WIDTH = 1200;
 
 let original: Buffer;
@@ -106,12 +112,19 @@ const row = (links: number, status = "READY") => {
   return { id: MEDIA_ID, ownerId: OWNER, status, width: ORIGINAL_WIDTH };
 };
 
+/** Solo en un producto visible (sin publicación): pública y con `PUBLIC_CACHE`. */
+const productRow = () => {
+  publicProductLink.mockResolvedValue({ mediaId: MEDIA_ID });
+  return row(0);
+};
+
 const as = (userId: string | null) =>
   getSession.mockResolvedValue(userId ? { user: { id: userId } } : null);
 
 /** El producto de la foto se oculta por moderación: ya nada público la tiene. */
 function hide() {
   findUnique.mockResolvedValue(row(0));
+  publicProductLink.mockResolvedValue(null);
   hiddenProductLinks.mockResolvedValue(1);
 }
 
@@ -137,14 +150,15 @@ describe("GET /media/[...key]: videos cortos (ADR-062)", () => {
   const VIDEO_KEY = "videos/2026/10/0199a000-0000-7000-8000-00000000000c.mp4";
   const video = (links: number) => ({ ...row(links), kind: "VIDEO" });
 
-  it("público: el almacenamiento lo entrega (nunca se carga en la app), caché solo del navegador", async () => {
+  it("publicado: el almacenamiento lo entrega (nunca se carga en la app) y no se guarda la respuesta", async () => {
     findUnique.mockResolvedValue(video(1));
 
     const response = await request(VIDEO_KEY);
 
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toBe("https://r2/firmada");
-    expect(response.headers.get("Cache-Control")).toBe("private, max-age=600");
+    // La audiencia de la publicación puede cambiar: cada petición vuelve a autorizar.
+    expect(response.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
     expect(response.headers.get("Content-Security-Policy")).toContain("sandbox");
     expect(deliverVideo).toHaveBeenCalledWith(VIDEO_KEY, expect.any(Request), expect.any(Object));
     expect(get).not.toHaveBeenCalled();
@@ -166,14 +180,22 @@ describe("GET /media/[...key]: videos cortos (ADR-062)", () => {
     expect((await request()).status).toBe(404);
 
     posterOfLink.mockResolvedValue({ id: "video" });
+    getSession.mockClear();
     const response = await request();
     expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    // Es parte de la publicación: tampoco se guarda.
+    expect(response.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
+    expect(getSession).not.toHaveBeenCalled();
     expect(posterOfLink).toHaveBeenCalledWith({
       where: {
         posterId: MEDIA_ID,
         postLinks: {
-          some: { post: { status: "PUBLISHED", AND: [expect.any(Object)] } },
+          some: {
+            post: {
+              status: "PUBLISHED",
+              AND: [expect.any(Object), { audience: "PUBLIC" }],
+            },
+          },
         },
       },
       select: { id: true },
@@ -182,14 +204,13 @@ describe("GET /media/[...key]: videos cortos (ADR-062)", () => {
 });
 
 describe("GET /media/[...key] (SEC-14)", () => {
-  it("adjunta: pública con caché de una hora (no inmutable)", async () => {
+  it("en una publicación pública: la ve cualquiera, pero sin caché (su audiencia puede cambiar)", async () => {
     findUnique.mockResolvedValue(row(1));
 
     const response = await request();
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
-    expect(response.headers.get("Cache-Control")).not.toContain("immutable");
+    expect(response.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
     expect(response.headers.get("Content-Type")).toBe("image/webp");
     expect(response.headers.get("Content-Security-Policy")).toContain("sandbox");
     expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
@@ -197,17 +218,29 @@ describe("GET /media/[...key] (SEC-14)", () => {
     expect(getSession).not.toHaveBeenCalled();
   });
 
-  it("adjunta solo a un producto visible (sin publicación): también pública", async () => {
-    findUnique.mockResolvedValue(row(0));
+  it("también en una publicación aunque la foto además sea de un producto visible", async () => {
+    findUnique.mockResolvedValue(row(1));
     publicProductLink.mockResolvedValue({ mediaId: MEDIA_ID });
 
     const response = await request();
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(response.headers.get("Cache-Control")).toBe(PRIVATE_CACHE);
   });
 
-  it("foto de perfil o portada de alguien (ADR-058): pública, sin sesión", async () => {
+  it("solo en un producto visible: pública con caché corta (cinco minutos, nunca inmutable)", async () => {
+    findUnique.mockResolvedValue(productRow());
+
+    const response = await request();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    expect(response.headers.get("Cache-Control")).not.toContain("immutable");
+    expect(response.headers.get("Cache-Control")).not.toContain("stale-while-revalidate");
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it("foto de perfil o portada pública (ADR-058): pública, sin sesión", async () => {
     findUnique.mockResolvedValue(row(0));
     profileLink.mockResolvedValue({ userId: OWNER });
 
@@ -215,9 +248,12 @@ describe("GET /media/[...key] (SEC-14)", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe(PUBLIC_CACHE);
+    // La portada solo es pública en perfiles que publican para todos (editorial y cuenta oficial).
     expect(profileLink).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { OR: [{ avatarMediaId: MEDIA_ID }, { coverMediaId: MEDIA_ID }] },
+        where: {
+          OR: [{ avatarMediaId: MEDIA_ID }, { coverMediaId: MEDIA_ID, OR: expect.any(Array) }],
+        },
       }),
     );
   });
@@ -262,14 +298,20 @@ describe("GET /media/[...key] (SEC-14)", () => {
       width: true,
       kind: true,
     });
+    // Un producto retirado (ARCHIVED) ya no presta sus fotos al público: solo las ve su dueño.
     expect(publicProductLink).toHaveBeenCalledWith({
-      where: { mediaId: MEDIA_ID, product: { moderationStatus: "VISIBLE" } },
+      where: {
+        mediaId: MEDIA_ID,
+        product: { moderationStatus: "VISIBLE", status: { in: ["ACTIVE", "PAUSED", "SOLD_OUT"] } },
+      },
       select: { mediaId: true },
     });
     const postQuery = publicPostLink.mock.calls[0]![0];
     expect(postQuery.where.mediaId).toBe(MEDIA_ID);
     expect(postQuery.where.post).toMatchObject({ status: "PUBLISHED" });
     expect(JSON.stringify(postQuery.where.post)).toContain('{"productId":null}');
+    // Solo la audiencia Público cuenta como pública; Amigos y Solo yo se autorizan por persona.
+    expect(postQuery.where.post.AND).toContainEqual({ audience: "PUBLIC" });
   });
 
   it("de un producto oculto (sin nada público): su dueño y el equipo; 404 a los demás", async () => {
@@ -386,7 +428,7 @@ describe("GET /media/[...key] (SEC-14)", () => {
   });
 
   it("pública y sin comprobante: la caché pública nunca se da a lo privado", async () => {
-    findUnique.mockResolvedValue(row(1));
+    findUnique.mockResolvedValue(productRow());
     currentProofs.mockResolvedValue([{ proofMediaIds: ["0199a000-0000-7000-8000-0000000000cc"] }]);
 
     const response = await request();
@@ -429,7 +471,7 @@ describe("GET /media/[...key]?w=N: variantes (ADR-039)", () => {
   });
 
   it("genera la variante WebP del ancho pedido, la guarda y la reutiliza", async () => {
-    findUnique.mockResolvedValue(row(1));
+    findUnique.mockResolvedValue(productRow());
 
     const first = await request(KEY, { search: "?w=640" });
 
@@ -537,7 +579,7 @@ describe("GET /media/[...key]?w=N: variantes (ADR-039)", () => {
   });
 
   it("cola llena u original ilegible: entrega el original sin caché", async () => {
-    findUnique.mockResolvedValue(row(1));
+    findUnique.mockResolvedValue(productRow());
     resizeFailure.error = new ImageBusyError();
 
     const busy = await request(KEY, { search: "?w=640" });
@@ -565,7 +607,7 @@ describe("GET /media/[...key]?w=N: variantes (ADR-039)", () => {
 
 describe("GET /media/[...key]: ETag / If-None-Match", () => {
   it("304 sin cuerpo con el mismo validador y la misma caché", async () => {
-    findUnique.mockResolvedValue(row(1));
+    findUnique.mockResolvedValue(productRow());
     const first = await request(KEY, { search: "?w=640" });
     const etag = first.headers.get("ETag");
     expect(etag).toMatch(/^"[A-Za-z0-9_-]{32}"$/);

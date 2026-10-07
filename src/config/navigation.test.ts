@@ -37,7 +37,7 @@ describe("isNavItemActive", () => {
   });
 
   it("las secciones hijas (`also`) respetan el límite de segmento", () => {
-    const discover = byLabel(socialNav, "Descubrir");
+    const discover = byLabel(sideNav, "Descubrir");
 
     expect(isNavItemActive("/c/gaming", discover)).toBe(true);
     expect(isNavItemActive("/c", discover)).toBe(true);
@@ -45,29 +45,49 @@ describe("isNavItemActive", () => {
   });
 });
 
-describe("barra inferior (móvil)", () => {
-  it("tiene como máximo 5 pestañas", () => {
+// docs/social-activity.md: en móvil las secciones van bajo el logo; Crear, Mensajes y Buscar
+// viven en el encabezado y «Explorar comunidades» en el menú de la cuenta.
+describe("secciones principales (móvil)", () => {
+  it("tiene como máximo 5 pestañas: Inicio, Reels, Tienda, Notificaciones y Perfil", () => {
     expect(socialNav.length).toBeLessThanOrEqual(5);
+    expect(socialNav.map((item) => item.label)).toEqual([
+      "Inicio",
+      "Reels",
+      "Tienda",
+      "Notificaciones",
+      "Perfil",
+    ]);
   });
 
   it.each([
     ["/", "Inicio"],
-    ["/descubrir", "Descubrir"],
-    ["/c/gaming", "Descubrir"],
-    ["/buscar", "Descubrir"],
-    ["/crear/publicacion", "Crear"],
-    ["/comprar", "Comprar"],
-    ["/producto/audifonos-pro", "Comprar"],
-    ["/carrito", "Comprar"],
-    ["/checkout", "Comprar"],
-    ["/checkout/pago/mock_123", "Comprar"],
-    ["/pedidos", "Comprar"],
-    ["/pedidos/0199a0b2-0000-7000-8000-000000000000", "Comprar"],
+    ["/videos", "Reels"],
+    ["/comprar", "Tienda"],
+    ["/comprar/ropa", "Tienda"],
+    ["/producto/audifonos-pro", "Tienda"],
+    ["/carrito", "Tienda"],
+    ["/checkout", "Tienda"],
+    ["/checkout/pago/mock_123", "Tienda"],
+    ["/pedidos", "Tienda"],
+    ["/pedidos/0199a0b2-0000-7000-8000-000000000000", "Tienda"],
+    ["/estilista", "Tienda"],
+    ["/probar/0199a0b2-0000-7000-8000-000000000000", "Tienda"],
+    ["/avisos", "Notificaciones"],
     ["/perfil", "Perfil"],
     ["/ajustes", "Perfil"],
     ["/guardados", "Perfil"],
+    ["/mensajes", "Perfil"],
+    ["/personas", "Perfil"],
+    ["/crear/publicacion", "Perfil"],
+    ["/creadores", "Perfil"],
   ])("en %s marca solo %s", (pathname, label) => {
     expect(activeLabels(socialNav, pathname, "sofia")).toEqual([label]);
+  });
+
+  it("lo que vive fuera de las pestañas (comunidades y búsqueda) no marca ninguna", () => {
+    for (const pathname of ["/descubrir", "/c/gaming", "/buscar"]) {
+      expect(activeLabels(socialNav, pathname, "sofia")).toEqual([]);
+    }
   });
 
   it("marca Perfil en el perfil propio, aunque la URL cambie mayúsculas", () => {
@@ -88,25 +108,34 @@ describe("barra inferior (móvil)", () => {
 });
 
 describe("columna izquierda (escritorio)", () => {
-  it("lleva Inicio, Descubrir, Comprar, Guardados y Mis pedidos, en ese orden", () => {
+  it("lleva las secciones en este orden", () => {
     expect(sideNav.map((item) => item.label)).toEqual([
       "Inicio",
+      "Videos / Reels",
       "Descubrir",
-      "Comprar",
+      "Tienda",
       "Estilista",
       "Guardados",
+      "Mis amigos",
+      "Notificaciones",
       "Mis pedidos",
     ]);
   });
 
   it.each([
     ["/", "Inicio"],
+    ["/videos", "Videos / Reels"],
+    ["/descubrir", "Descubrir"],
     ["/c/deportes", "Descubrir"],
-    ["/producto/tenis", "Comprar"],
-    ["/carrito", "Comprar"],
-    ["/checkout", "Comprar"],
+    ["/buscar", "Descubrir"],
+    ["/producto/tenis", "Tienda"],
+    ["/carrito", "Tienda"],
+    ["/checkout", "Tienda"],
     ["/estilista", "Estilista"],
+    ["/probar", "Estilista"],
     ["/guardados", "Guardados"],
+    ["/personas", "Mis amigos"],
+    ["/avisos", "Notificaciones"],
     ["/pedidos", "Mis pedidos"],
     ["/pedidos/0199a0b2-0000-7000-8000-000000000000", "Mis pedidos"],
   ])("en %s marca solo %s", (pathname, label) => {

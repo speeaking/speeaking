@@ -8,6 +8,8 @@ const db = vi.hoisted(() => ({
   post: { create: vi.fn() },
   authenticityCheck: { findMany: vi.fn() },
   authenticityProofHistory: { findMany: vi.fn() },
+  // La publicación se crea en una transacción (por la comunidad): aquí corre con el mismo cliente.
+  $transaction: vi.fn(),
 }));
 const redirect = vi.hoisted(() =>
   vi.fn((url: string) => {
@@ -51,6 +53,7 @@ beforeEach(() => {
   db.authenticityCheck.findMany.mockResolvedValue([]);
   db.authenticityProofHistory.findMany.mockResolvedValue([]);
   db.post.create.mockResolvedValue({ id: "0199a000-0000-7000-8000-0000000000aa" });
+  db.$transaction.mockImplementation(async (run: (tx: typeof db) => unknown) => run(db));
 });
 
 describe("createPostAction con video (ADR-062)", () => {

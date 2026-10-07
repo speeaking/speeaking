@@ -1,7 +1,18 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { NotificationItem } from "../group";
 import { NotificationList } from "./notification-list";
+
+// Las acciones reales viven en el servidor (sesión, base de datos): aquí no se ejecutan.
+vi.mock("../actions", () => ({ markNotificationGroupReadAction: vi.fn(async () => 0) }));
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/avisos",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 
 const at = new Date("2026-10-01T15:00:00Z");
 const item = (overrides: Partial<NotificationItem>): NotificationItem => ({

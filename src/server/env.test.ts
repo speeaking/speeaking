@@ -1,8 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { aiProviderConfig, serverEnvSchema, simulatedAIAllowed } from "./env-schema";
+import { EditorialStorageProvider } from "./providers/storage/editorial-storage";
 import { createStorage, s3StorageConfig } from "./providers/storage/factory";
 import { LocalStorageProvider } from "./providers/storage/local-storage";
 import { S3StorageProvider } from "./providers/storage/s3-storage";
+
+/**
+ * Las imágenes editoriales del despliegue van encima (`EditorialStorageProvider`); cualquier otra
+ * clave la atiende el proveedor configurado.
+ */
+async function expectDelegatesTo(
+  storage: ReturnType<typeof createStorage>,
+  provider: typeof LocalStorageProvider | typeof S3StorageProvider,
+) {
+  const get = vi.spyOn(provider.prototype, "get").mockResolvedValue(null);
+  try {
+    expect(storage).toBeInstanceOf(EditorialStorageProvider);
+    await storage.get("images/2026/09/0199a000-0000-7000-8000-00000000000a.webp");
+    expect(get).toHaveBeenCalledOnce();
+  } finally {
+    get.mockRestore();
+  }
+}
 
 const valid = {
   DATABASE_URL: "postgresql://u:p@localhost:5434/speeaking",
@@ -468,13 +487,13 @@ describe("serverEnvSchema", () => {
         .map((issue) => issue.path.join("."))
         .filter((path) => path.startsWith("STORAGE_") || path.startsWith("S3_"));
 
-    it("por omisión es el disco local y no pide nada más fuera de producción", () => {
+    it("por omisión es el disco local y no pide nada más fuera de producción", async () => {
       const env = serverEnvSchema.parse(valid);
       expect(env.STORAGE_DRIVER).toBe("local");
       expect(env.STORAGE_LOCAL_ROOT).toBe(".data/uploads");
       expect(env.ALLOW_LOCAL_STORAGE).toBe(false);
       expect(env.S3_REGION).toBe("auto");
-      expect(createStorage(env)).toBeInstanceOf(LocalStorageProvider);
+      await expectDelegatesTo(createStorage(env), LocalStorageProvider);
     });
 
     it("en producción el disco local FALLA salvo decisión explícita (espejo de SEC-01)", () => {
@@ -502,7 +521,7 @@ describe("serverEnvSchema", () => {
       expect(storageIssues({ ...production, VERCEL: "1", ...r2 })).toEqual([]);
     });
 
-    it("acepta Cloudflare R2 en producción y arma el proveedor S3", () => {
+    it("acepta Cloudflare R2 en producción y arma el proveedor S3", async () => {
       expect(storageIssues({ ...production, ...r2 })).toEqual([]);
       const env = serverEnvSchema.parse({ ...production, ...r2 });
       expect(s3StorageConfig(env)).toEqual({
@@ -512,7 +531,7 @@ describe("serverEnvSchema", () => {
         accessKeyId: r2.S3_ACCESS_KEY_ID,
         secretAccessKey: secret,
       });
-      expect(createStorage(env)).toBeInstanceOf(S3StorageProvider);
+      await expectDelegatesTo(createStorage(env), S3StorageProvider);
       expect(serverEnvSchema.parse({ ...valid, ...r2, S3_REGION: "" }).S3_REGION).toBe("auto");
       expect(serverEnvSchema.parse({ ...valid, ...r2, S3_REGION: "us-east-1" }).S3_REGION).toBe(
         "us-east-1",

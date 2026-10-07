@@ -427,10 +427,12 @@ Vercel Cron (09:00 UTC) ──▶ /api/cron/daily (Bearer CRON_SECRET)
 **Pendiente.** `attachDatabasePool` (`@vercel/functions`) para cerrar conexiones inactivas antes de
 que Vercel suspenda una instancia; alerta externa del cron; copia periódica del bucket. El CDN de
 Vercel usa el `Cache-Control` de las funciones cuando no hay `CDN-Cache-Control`: las fotos públicas
-de `/media` (`public, max-age=3600, stale-while-revalidate=86400`) quedan en su caché, así que el
-retiro de una foto (SEC-14, ventana de ADR-039) depende de cómo Vercel revalide ante el 404; se
-comprueba en el primer despliegue (`docs/deploy.md`, paso 13) y, si pasa de una hora, se fija
-`Vercel-CDN-Cache-Control` en la ruta.
+de `/media` que no están en una publicación (producto visible, avatar, portada pública:
+`public, max-age=300, must-revalidate`) quedan en su caché, así que su retiro (SEC-14, ventana de
+ADR-039) depende de cómo Vercel revalide ante el 404; se comprueba en el primer despliegue
+(`docs/deploy.md`, paso 13) y, si pasa de cinco minutos, se fija `Vercel-CDN-Cache-Control` en la
+ruta. Las fotos y videos de publicaciones van con `private, no-store`: su audiencia puede cambiar
+(`docs/post-audience.md`).
 
 ## Núcleo de IA y compra asistida (ADR-043 a ADR-045)
 

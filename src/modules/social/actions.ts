@@ -70,16 +70,13 @@ export async function reactAction(
   const next = parsed.data;
   const limited = await checkSocialLimit("like", viewer.userId);
   if (!limited.ok) return { ok: false, error: limited.error };
+  // Reaccionar, cambiar o leer el contador exige poder ver la publicación (su audiencia); si no,
+  // la consulta lanza P2025 y la transacción se deshace. Quitar la propia reacción, no.
   const readablePost = {
     id: postId,
     status: "PUBLISHED" as const,
     AND: [POST_WITH_VISIBLE_PRODUCT, postVisibleTo(viewer.userId)],
   };
-  const accessible = await db.post.findFirst({
-    where: readablePost,
-    select: { id: true },
-  });
-  if (!accessible) return { ok: false, error: "Esta publicación ya no está disponible." };
 
   const key = { userId: viewer.userId, postId };
   const likeCount = { select: { likeCount: true, authorId: true } } as const;
@@ -96,7 +93,7 @@ export async function reactAction(
       if (previous !== null && (next === null || next === previous)) {
         await tx.like.delete({ where: { userId_postId: key } });
         const post = await tx.post.update({
-          where: readablePost,
+          where: { id: postId },
           data: { likeCount: { decrement: 1 } },
           ...likeCount,
         });

@@ -88,11 +88,8 @@ export async function getPublicProfile(
   if (!profile) return null;
   const isPlatformAccount = isPlatformAdministrator(profile.user.email, profile.role);
   const publicAccount = profile.isEditorial || isPlatformAccount;
-  const friendship = publicAccount
-    ? "unavailable"
-    : await friendshipWith(viewerId, profile.userId);
-  const canViewPersonal =
-    viewerId === profile.userId || friendship === "friends" || publicAccount;
+  const friendship = publicAccount ? "unavailable" : await friendshipWith(viewerId, profile.userId);
+  const canViewPersonal = viewerId === profile.userId || friendship === "friends" || publicAccount;
 
   // Lo «en común» (ADR-055) solo tiene sentido con sesión y en un perfil ajeno: gente que sigues
   // que también sigue este perfil, y comunidades donde están los dos. Datos propios (principio 6).

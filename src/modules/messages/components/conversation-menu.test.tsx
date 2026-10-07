@@ -8,7 +8,10 @@ const router = vi.hoisted(() => ({ refresh: vi.fn() }));
 
 vi.mock("../actions", () => actions);
 vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => router }));
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("next/navigation", () => ({ useRouter: () => router, usePathname: () => "/mensajes" }));
 vi.mock("next/link", () => ({
   default: ({
     href,

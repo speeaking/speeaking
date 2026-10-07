@@ -3,16 +3,24 @@ import { parseSearchQuery } from "./normalize";
 
 const db = vi.hoisted(() => ({
   $queryRaw: vi.fn(),
+  user: { findMany: vi.fn() },
   community: { findMany: vi.fn() },
   product: { findMany: vi.fn() },
 }));
 const hydratePosts = vi.hoisted(() => vi.fn());
+/** Relación de quien busca con cada persona (amistad, seguir): se prueba en `relationships`. */
+const hydrateContacts = vi.hoisted(() =>
+  vi.fn(async (_viewerId: string | null, people: { id: string }[]) =>
+    people.map((person) => ({ userId: person.id })),
+  ),
+);
 
 vi.mock("@/server/db", () => ({ db }));
 vi.mock("@/server/providers/storage", () => ({
   getStorage: () => ({ publicUrl: (key: string) => `/media/${key}` }),
 }));
 vi.mock("@/modules/social/post-queries", () => ({ hydratePosts }));
+vi.mock("@/modules/relationships/queries", () => ({ hydrateContacts }));
 
 const { productCardsByIds, searchEverything } = await import("./queries");
 
@@ -120,9 +128,14 @@ describe("productCardsByIds", () => {
 describe("searchEverything", () => {
   it("conserva el orden de relevancia de la búsqueda en cada sección", async () => {
     db.$queryRaw
+      .mockResolvedValueOnce([{ id: A }, { id: B }]) // personas
       .mockResolvedValueOnce([{ id: B }, { id: A }]) // comunidades
       .mockResolvedValueOnce([]) // productos
       .mockResolvedValueOnce([{ id: A }]); // publicaciones
+    db.user.findMany.mockResolvedValue([
+      { id: B, profile: { username: "b", displayName: "B", avatarUrl: null } },
+      { id: A, profile: { username: "a", displayName: "A", avatarUrl: null } },
+    ]);
     db.community.findMany.mockResolvedValue([
       { id: A, slug: "a", name: "A" },
       { id: B, slug: "b", name: "B" },
@@ -131,6 +144,13 @@ describe("searchEverything", () => {
 
     const results = await searchEverything(parseSearchQuery("tecnologia")!, null);
 
+    expect(results.people).toEqual([{ userId: A }, { userId: B }]);
+    // Solo identidad pública de cuentas con perfil terminado, sin cuentas editoriales.
+    expect(db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: [A, B] }, profile: { onboardedAt: { not: null }, isEditorial: false } },
+      }),
+    );
     expect(results.communities.map((community) => community.id)).toEqual([B, A]);
     expect(results.products).toEqual([]);
     expect(db.product.findMany).not.toHaveBeenCalled();

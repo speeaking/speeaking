@@ -67,10 +67,11 @@ describe("checkSocialLimit (SEC-15)", () => {
   });
 
   it("todas las acciones tienen al menos una regla por cuenta y límites holgados pero finitos", () => {
-    for (const rules of Object.values(SOCIAL_LIMITS)) {
+    for (const [action, rules] of Object.entries(SOCIAL_LIMITS)) {
       expect(rules.some((rule) => rule.subject === "user")).toBe(true);
       for (const rule of rules) {
-        expect(rule.limit).toBeGreaterThanOrEqual(5);
+        // Crear una comunidad es raro y abre un espacio público nuevo: 3 al día por cuenta.
+        expect(rule.limit).toBeGreaterThanOrEqual(action === "createCommunity" ? 3 : 5);
         expect(Number.isInteger(rule.windowSeconds)).toBe(true);
       }
     }

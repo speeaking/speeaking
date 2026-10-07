@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
+import type * as CommunitiesService from "@/modules/communities/service";
 
 const db = vi.hoisted(() => {
   const tx = {
     communityMembership: { findUnique: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
     community: { update: vi.fn(), findUniqueOrThrow: vi.fn() },
+    communityRemoval: { findUnique: vi.fn() },
+    communityInvitation: { deleteMany: vi.fn() },
+    notification: { deleteMany: vi.fn() },
     savedItem: { deleteMany: vi.fn(), create: vi.fn() },
     post: { update: vi.fn(), findUniqueOrThrow: vi.fn() },
     product: { update: vi.fn() },
@@ -21,7 +25,7 @@ const db = vi.hoisted(() => {
     user: { findUnique: vi.fn() },
     follow: { findUnique: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
     comment: { findFirst: vi.fn(), create: vi.fn() },
-    post: { update: vi.fn() },
+    post: { update: vi.fn(), findFirst: vi.fn() },
     // Función (transacción interactiva) o arreglo de operaciones (transacción por lotes).
     $transaction: vi.fn(async (run: unknown) =>
       Array.isArray(run) ? Promise.all(run) : (run as (client: typeof tx) => unknown)(tx),
@@ -38,9 +42,13 @@ const notify = vi.hoisted(() => ({
   notifyReaction: vi.fn(),
   removeReactionNotification: vi.fn(),
   notifyComment: vi.fn(),
+  notifyMentions: vi.fn(),
+  notifyProductTagged: vi.fn(),
   notifyFollow: vi.fn(),
   removeFollowNotification: vi.fn(),
 }));
+/** El candado de la comunidad es SQL (`FOR UPDATE`): aquí devuelve la comunidad bloqueada. */
+const lockCommunity = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath, refresh: vi.fn() }));
@@ -48,16 +56,24 @@ vi.mock("@/modules/identity/session", () => ({ getViewer, requireOnboardedViewer
 vi.mock("@/modules/analytics/track", () => ({ track }));
 vi.mock("./limits", () => ({ checkSocialLimit }));
 vi.mock("@/modules/notifications/notify", () => notify);
+vi.mock("@/modules/communities/service", async (importActual) => ({
+  ...(await importActual<typeof CommunitiesService>()),
+  lockCommunity,
+}));
 
 const { toggleFollowAction } = await import("./follow-actions");
 const { toggleMembershipAction } = await import("./community-actions");
 const { createCommentAction, createPostAction, reactAction, toggleSaveAction } =
   await import("./actions");
 const { recordShareAction } = await import("./interaction-actions");
+const { CommunityError } = await import("@/modules/communities/service");
+const { postVisibleTo } = await import("@/modules/relationships/privacy");
 
 const VIEWER = "0199a000-0000-7000-8000-00000000000a";
 const OTHER = "0199a000-0000-7000-8000-00000000000b";
 const TARGET = "0199a000-0000-7000-8000-0000000000c1";
+/** Solo se interactúa con lo publicado que la persona puede ver (docs/post-audience.md). */
+const VISIBLE_TO_VIEWER = expect.arrayContaining([postVisibleTo(VIEWER)]);
 
 function prismaError(code: string) {
   return new Prisma.PrismaClientKnownRequestError(`error ${code}`, {
@@ -73,6 +89,8 @@ beforeEach(() => {
   db.tx.communityMembership.createMany.mockResolvedValue({ count: 1 });
   checkSocialLimit.mockResolvedValue({ ok: true });
   db.tx.like.groupBy.mockResolvedValue([]);
+  lockCommunity.mockResolvedValue({ id: TARGET, slug: "gaming", ownerId: null, isOfficial: true });
+  db.tx.communityRemoval.findUnique.mockResolvedValue(null);
 });
 
 const LIMITED = {
@@ -174,7 +192,41 @@ describe("toggleMembershipAction", () => {
     expect(db.tx.community.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { memberCount: { increment: 1 } } }),
     );
+    // Con la comunidad bloqueada (`FOR UPDATE`) mientras cambia el contador.
+    expect(lockCommunity).toHaveBeenCalledWith(db.tx, TARGET);
+    // Unirse consume las invitaciones pendientes.
+    expect(db.tx.communityInvitation.deleteMany).toHaveBeenCalledWith({
+      where: { userId: VIEWER, communityId: TARGET },
+    });
     expect(revalidatePath).toHaveBeenCalledWith("/(social)", "layout");
+  });
+
+  it("quien la creó no puede salir sin transferir la propiedad", async () => {
+    lockCommunity.mockResolvedValue({
+      id: TARGET,
+      slug: "mia",
+      ownerId: VIEWER,
+      isOfficial: false,
+    });
+    db.tx.communityMembership.findUnique.mockResolvedValue({ userId: VIEWER });
+
+    await expect(toggleMembershipAction(TARGET, false)).resolves.toEqual({
+      ok: false,
+      error: "Transfiere la propiedad a otro miembro antes de salir.",
+    });
+    expect(db.tx.communityMembership.deleteMany).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("a quien retiraron no puede volver a unirse por su cuenta", async () => {
+    db.tx.communityMembership.findUnique.mockResolvedValue(null);
+    db.tx.communityRemoval.findUnique.mockResolvedValue({ userId: VIEWER });
+
+    await expect(toggleMembershipAction(TARGET, true)).resolves.toEqual({
+      ok: false,
+      error: "Tu acceso fue retirado. Un administrador debe permitirte volver o invitarte.",
+    });
+    expect(db.tx.communityMembership.createMany).not.toHaveBeenCalled();
   });
 
   it("«Deshacer» (join = true) sobre una membresía que ya existe no cuenta doble", async () => {
@@ -222,12 +274,18 @@ describe("toggleMembershipAction", () => {
       ok: false,
       error: "Esa comunidad ya no existe.",
     });
+
+    lockCommunity.mockRejectedValue(new CommunityError("Esa comunidad ya no existe."));
+    await expect(toggleMembershipAction(TARGET)).resolves.toEqual({
+      ok: false,
+      error: "Esa comunidad ya no existe.",
+    });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 
 describe("toggleSaveAction", () => {
-  it("solo guarda publicaciones PUBLISHED", async () => {
+  it("solo guarda publicaciones PUBLISHED que la persona puede ver", async () => {
     db.tx.savedItem.deleteMany.mockResolvedValue({ count: 0 });
     db.tx.post.update.mockRejectedValue(prismaError("P2025"));
 
@@ -236,7 +294,9 @@ describe("toggleSaveAction", () => {
       error: "Esta publicación ya no está disponible.",
     });
     expect(db.tx.post.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: TARGET, status: "PUBLISHED" } }),
+      expect.objectContaining({
+        where: { id: TARGET, status: "PUBLISHED", AND: VISIBLE_TO_VIEWER },
+      }),
     );
     expect(db.tx.savedItem.create).not.toHaveBeenCalled();
   });
@@ -299,7 +359,7 @@ describe("reactAction (ADR-054)", () => {
     });
     expect(db.tx.post.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: TARGET, status: "PUBLISHED" },
+        where: { id: TARGET, status: "PUBLISHED", AND: VISIBLE_TO_VIEWER },
         data: { likeCount: { increment: 1 } },
       }),
     );
@@ -374,7 +434,7 @@ describe("reactAction (ADR-054)", () => {
     expect(track).not.toHaveBeenCalled();
   });
 
-  it("solo se reacciona a publicaciones PUBLISHED", async () => {
+  it("solo se reacciona a publicaciones PUBLISHED que la persona puede ver", async () => {
     db.tx.like.findUnique.mockResolvedValue(null);
     db.tx.post.update.mockRejectedValue(prismaError("P2025"));
 
@@ -383,6 +443,22 @@ describe("reactAction (ADR-054)", () => {
       error: "Esta publicación ya no está disponible.",
     });
     expect(db.tx.like.create).not.toHaveBeenCalled();
+  });
+
+  it("cambiar la reacción en algo que ya no ve se rechaza (la transacción se deshace)", async () => {
+    db.tx.like.findUnique.mockResolvedValue({ kind: "LIKE" });
+    db.tx.post.findUniqueOrThrow.mockRejectedValue(prismaError("P2025"));
+
+    await expect(reactAction(TARGET, "WOW")).resolves.toEqual({
+      ok: false,
+      error: "Esta publicación ya no está disponible.",
+    });
+    expect(db.tx.post.findUniqueOrThrow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: TARGET, status: "PUBLISHED", AND: VISIBLE_TO_VIEWER },
+      }),
+    );
+    expect(notify.notifyReaction).not.toHaveBeenCalled();
   });
 
   it("un tipo de reacción desconocido (llega del cliente) se rechaza sin tocar la base", async () => {
@@ -449,6 +525,20 @@ describe("límites de frecuencia (SEC-15)", () => {
       postId: TARGET,
       commentId: "comentario-1",
     });
+    // Las menciones no le mandan un segundo aviso a quien publicó (docs/social-activity.md).
+    expect(notify.notifyMentions).toHaveBeenCalledWith({
+      actorId: VIEWER,
+      postId: TARGET,
+      commentId: "comentario-1",
+      body: "¡Felicidades!",
+      skipRecipientId: OTHER,
+    });
+    // Solo se comenta lo que la persona puede ver.
+    expect(db.post.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: TARGET, status: "PUBLISHED", AND: VISIBLE_TO_VIEWER },
+      }),
+    );
   });
 
   it("comentar dos veces seguidas el mismo texto en la misma publicación se rechaza", async () => {
@@ -476,11 +566,30 @@ describe("límites de frecuencia (SEC-15)", () => {
 
   it("compartir sin cuenta cuenta por IP; con el límite agotado no registra el evento", async () => {
     getViewer.mockResolvedValue(null);
+    db.post.findFirst.mockResolvedValue({ id: TARGET });
     checkSocialLimit.mockResolvedValue(LIMITED);
 
     await recordShareAction(TARGET, "copy");
 
     expect(checkSocialLimit).toHaveBeenCalledWith("share", null);
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("compartir algo que la persona no puede ver no registra nada", async () => {
+    getViewer.mockResolvedValue(null);
+    db.post.findFirst.mockResolvedValue(null);
+
+    await recordShareAction(TARGET, "native");
+
+    // Sin sesión solo cuenta lo Público.
+    expect(db.post.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: TARGET,
+        status: "PUBLISHED",
+        AND: expect.arrayContaining([postVisibleTo(null)]),
+      },
+      select: { id: true },
+    });
     expect(track).not.toHaveBeenCalled();
   });
 });

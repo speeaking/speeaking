@@ -13,6 +13,9 @@ const actions = vi.hoisted(() => ({
 
 vi.mock("../actions", () => actions);
 vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn() }));
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (

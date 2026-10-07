@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NavCommunities, ViewerSummary } from "@/modules/identity/viewer-summary";
-import { BottomNav } from "./bottom-nav";
+import { MobileNav } from "./mobile-nav";
 import { SideNav } from "./side-nav";
 import { TopBar } from "./top-bar";
 
@@ -33,7 +33,13 @@ vi.mock("@/modules/identity/actions", () => ({ signOutAction: vi.fn() }));
 vi.mock("@/modules/notifications/actions", () => ({
   loadNotificationsAction: vi.fn(async () => []),
   markNotificationsReadAction: vi.fn(async () => 0),
+  markNotificationGroupReadAction: vi.fn(async () => 0),
+  getUnreadNotificationCountAction: vi.fn(async () => 0),
 }));
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
 vi.mock("@/modules/trust/actions", () => ({ reportAction: vi.fn(async () => ({})) }));
 vi.mock("@/modules/messages/actions", () => ({
   loadInboxAction: vi.fn(async () => []),
@@ -78,44 +84,46 @@ beforeEach(() => {
   navigation.search = "";
 });
 
-describe("BottomNav", () => {
+// Móvil (docs/social-activity.md): cinco secciones bajo el logo; Crear y Mensajes en el encabezado.
+describe("MobileNav", () => {
   it.each([
-    ["/c/gaming", "Descubrir"],
-    ["/producto/tenis", "Comprar"],
-    ["/checkout", "Comprar"],
-    ["/pedidos/123", "Comprar"],
+    ["/videos", "Reels"],
+    ["/producto/tenis", "Tienda"],
+    ["/checkout", "Tienda"],
+    ["/pedidos/123", "Tienda"],
+    ["/avisos", "Notificaciones"],
     ["/ajustes", "Perfil"],
     ["/u/sofia", "Perfil"],
   ])("en %s marca %s", (pathname, label) => {
     navigation.pathname = pathname;
-    render(<BottomNav viewer={viewer} />);
+    render(<MobileNav viewer={viewer} />);
 
-    const current = screen.getAllByRole("link").filter((link) => link.ariaCurrent === "page");
+    const current = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page");
     expect(current).toHaveLength(1);
     expect(current[0]).toHaveAccessibleName(label);
   });
 
-  it("muestra el avatar de quien navega en Perfil (y el ícono si no hay sesión)", () => {
-    const { container, rerender } = render(<BottomNav viewer={viewer} />);
-    const profile = screen.getByRole("link", { name: "Perfil" });
-    expect(within(profile).getByText("SR")).toBeInTheDocument();
-    expect(container.querySelectorAll("svg")).toHaveLength(4);
+  it("Notificaciones dice cuántas hay sin leer", () => {
+    render(<MobileNav viewer={viewer} notifications={3} />);
 
-    rerender(<BottomNav viewer={null} />);
-    expect(within(screen.getByRole("link", { name: "Perfil" })).queryByText("SR")).toBeNull();
+    expect(screen.getByRole("link", { name: "Notificaciones (3 sin leer)" })).toHaveAttribute(
+      "href",
+      "/avisos",
+    );
   });
 
-  it("con sesión, «Crear» abre sus opciones ahí mismo; sin sesión lleva a /crear", async () => {
-    const { unmount } = render(<BottomNav viewer={viewer} />);
-    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
-    expect(await screen.findByRole("menuitem", { name: /^Publicación/ })).toHaveAttribute(
-      "href",
-      "/crear/publicacion",
+  it("con sesión, Perfil es el menú de la cuenta; sin sesión, un enlace a /perfil", () => {
+    const { unmount } = render(
+      <MobileNav viewer={viewer} accountMenu={<button type="button">Tu cuenta</button>} />,
     );
+    expect(screen.getByRole("button", { name: "Tu cuenta" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Perfil" })).toBeNull();
     unmount();
 
-    render(<BottomNav viewer={null} />);
-    expect(screen.getByRole("link", { name: "Crear" })).toHaveAttribute("href", "/crear");
+    render(<MobileNav viewer={null} />);
+    expect(screen.getByRole("link", { name: "Perfil" })).toHaveAttribute("href", "/perfil");
   });
 });
 
@@ -129,7 +137,17 @@ describe("SideNav", () => {
       within(nav)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Inicio", "Descubrir", "Comprar", "Estilista", "Guardados", "Mis pedidos"]);
+    ).toEqual([
+      "Inicio",
+      "Videos / Reels",
+      "Descubrir",
+      "Tienda",
+      "Estilista",
+      "Guardados",
+      "Mis amigos",
+      "Notificaciones",
+      "Mis pedidos",
+    ]);
     expect(within(nav).getByRole("link", { name: "Descubrir" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -186,7 +204,7 @@ describe("SideNav", () => {
       within(nav)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Inicio", "Descubrir", "Comprar"]);
+    ).toEqual(["Inicio", "Videos / Reels", "Descubrir", "Tienda"]);
     const all = screen.getByRole("region", { name: "Comunidades" });
     expect(within(all).getAllByRole("link")).toHaveLength(2);
     expect(screen.queryByRole("region", { name: "Tus comunidades" })).toBeNull();
@@ -202,28 +220,37 @@ describe("SideNav", () => {
 });
 
 describe("TopBar", () => {
-  it("con sesión: búsqueda, Crear, campana, mensajes, carrito con su número y menú de la cuenta", () => {
+  it("con sesión: búsqueda, Crear, notificaciones, mensajes, carrito con su número y menú de la cuenta", () => {
     render(<TopBar viewer={{ ...viewer!, unreadNotifications: 3, unreadMessages: 1 }} />);
 
-    expect(screen.getByRole("searchbox", { name: /Buscar comunidades/ })).toHaveAttribute(
-      "name",
-      "q",
-    );
+    expect(
+      screen.getByRole("searchbox", { name: /^Buscar personas, comunidades/ }),
+    ).toHaveAttribute("name", "q");
     for (const cart of screen.getAllByRole("link", { name: /^Carrito/ })) {
       expect(cart).toHaveAccessibleName("Carrito (2)");
     }
-    expect(screen.getByRole("button", { name: "Tu cuenta: Sofía Ramos" })).toBeInTheDocument();
-    // La campana (ADR-059) y los mensajes abren su recuadro ahí mismo (ADR-068): son botones, con
-    // su número en el nombre, en móvil y en escritorio.
-    expect(screen.getAllByRole("button", { name: /^Avisos/ })).toHaveLength(2);
-    for (const bell of screen.getAllByRole("button", { name: /^Avisos/ })) {
-      expect(bell).toHaveAccessibleName("Avisos (3 sin leer)");
-    }
-    for (const chat of screen.getAllByRole("button", { name: /^Mensajes/ })) {
-      expect(chat).toHaveAccessibleName("Mensajes (1 sin leer)");
-    }
-    expect(screen.queryByRole("link", { name: /^Avisos|^Mensajes/ })).toBeNull();
+    // Escritorio y Perfil de las secciones móviles abren el mismo menú de la cuenta.
+    expect(screen.getAllByRole("button", { name: "Tu cuenta: Sofía Ramos" })).toHaveLength(2);
+    // La campana (ADR-059) abre su recuadro ahí mismo en escritorio (ADR-068); en móvil es la
+    // sección Notificaciones. Las dos dicen cuántas hay sin leer.
+    expect(screen.getByRole("button", { name: "Notificaciones (3 sin leer)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notificaciones (3 sin leer)" })).toHaveAttribute(
+      "href",
+      "/avisos",
+    );
+    // Mensajes abre su recuadro ahí mismo, en móvil y en escritorio.
+    const chats = screen.getAllByRole("button", { name: /^Mensajes/ });
+    expect(chats).toHaveLength(2);
+    for (const chat of chats) expect(chat).toHaveAccessibleName("Mensajes (1 sin leer)");
     expect(screen.queryByRole("link", { name: "Únete" })).toBeNull();
+  });
+
+  it("sin mensajes nuevos, el botón no anuncia un cero", () => {
+    render(<TopBar viewer={viewer} />);
+
+    for (const chat of screen.getAllByRole("button", { name: /^Mensajes/ })) {
+      expect(chat).toHaveAccessibleName("Mensajes");
+    }
   });
 
   it("«Crear» abre sus opciones ahí mismo; «Publicación» abre la ventana para escribir", async () => {
@@ -236,11 +263,15 @@ describe("TopBar", () => {
       "href",
       "/crear/publicacion",
     );
+    expect(within(menu).getByRole("menuitem", { name: /^Comunidad o grupo/ })).toHaveAttribute(
+      "href",
+      "/crear/comunidad",
+    );
     expect(within(menu).getByRole("menuitem", { name: /^Producto a mano/ })).toHaveAttribute(
       "href",
       "/studio/productos/nuevo",
     );
-    expect(within(menu).getAllByRole("menuitem")).toHaveLength(4);
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(5);
   });
 
   it("al ver los avisos, el globo de la campana se apaga sin recargar la página", async () => {
@@ -263,12 +294,19 @@ describe("TopBar", () => {
     vi.mocked(markNotificationsReadAction).mockResolvedValueOnce(1);
     render(<TopBar viewer={{ ...viewer!, unreadNotifications: 1 }} />);
 
-    await userEvent.click(screen.getAllByRole("button", { name: "Avisos (1 sin leer)" })[0]!);
+    await userEvent.click(screen.getByRole("button", { name: "Notificaciones (1 sin leer)" }));
 
     expect(await screen.findByText("empezó a seguirte")).toBeInTheDocument();
     expect(markNotificationsReadAction).toHaveBeenCalledTimes(1);
-    // Con el panel abierto, el resto de la página queda fuera del árbol accesible (`hidden`).
-    expect(await screen.findAllByRole("button", { name: "Avisos", hidden: true })).toHaveLength(2);
+    // Con el panel abierto, el resto de la página queda fuera del árbol accesible (`hidden`): la
+    // campana y la sección móvil ya no anuncian nada sin leer.
+    expect(
+      await screen.findByRole("button", { name: "Notificaciones", hidden: true }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Notificaciones", hidden: true })).toHaveAttribute(
+      "href",
+      "/avisos",
+    );
   });
 
   it("sin sesión: Entrar y Crear cuenta en escritorio, Únete en móvil, sin carrito", () => {
@@ -286,7 +324,7 @@ describe("TopBar", () => {
     navigation.search = "q=tenis+para+correr";
     render(<TopBar viewer={null} />);
 
-    expect(screen.getByRole("searchbox", { name: /Buscar comunidades/ })).toHaveValue(
+    expect(screen.getByRole("searchbox", { name: /^Buscar personas, comunidades/ })).toHaveValue(
       "tenis para correr",
     );
   });

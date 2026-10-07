@@ -21,16 +21,24 @@ export function VideoFeed({
   const request = useRef<AbortController | null>(null);
   const sentinel = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    request.current?.abort();
-    request.current = null;
+  // El servidor puede volver a pintar la página (p. ej. al publicar un video): se adopta la nueva
+  // durante el render, como en `FeedList`, en vez de copiarla en un efecto.
+  const [served, setServed] = useState(initialPage);
+  if (served !== initialPage) {
+    setServed(initialPage);
     setItems(initialPage.items);
     setCursor(initialPage.nextCursor);
     setStatus("idle");
-    return () => {
+  }
+
+  // Una carga en curso pertenece a la página anterior (o a un componente que ya no está): se cancela.
+  useEffect(
+    () => () => {
       request.current?.abort();
-    };
-  }, [initialPage]);
+      request.current = null;
+    },
+    [initialPage],
+  );
 
   const loadMore = useCallback(async () => {
     if (!cursor || request.current) return;

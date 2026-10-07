@@ -4,11 +4,20 @@ import type { FeedItemDTO } from "../dto";
 import { FeedList } from "./feed-list";
 
 vi.mock("@/modules/social/actions", () => ({
-  toggleLikeAction: vi.fn(),
+  reactAction: vi.fn(),
   toggleSaveAction: vi.fn(),
 }));
 vi.mock("@/modules/social/context-actions", () => ({ getPostContextAction: vi.fn() }));
 vi.mock("@/modules/social/interaction-actions", () => ({ recordShareAction: vi.fn() }));
+vi.mock("@/modules/social/post-text-actions", () => ({ getPostTextAction: vi.fn() }));
+vi.mock("@/modules/social/delete-post-action", () => ({ deletePostAction: vi.fn() }));
+vi.mock("@/modules/social/audience-actions", () => ({ changePostAudienceAction: vi.fn() }));
+vi.mock("@/modules/voice/actions", () => ({
+  interpretVoiceAction: vi.fn(),
+  findVoiceFriendsAction: vi.fn(),
+  prepareVoiceShareAction: vi.fn(),
+  confirmVoiceShareAction: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/",

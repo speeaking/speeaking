@@ -9,6 +9,8 @@ const quickTryOnAction = vi.hoisted(() => vi.fn());
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock("../actions", () => ({ quickTryOnAction }));
 vi.mock("@/modules/commerce/actions", () => ({ addToCartAction: vi.fn(), buyNowAction: vi.fn() }));
+// Compartir el look (enlace o chat) es otra acción de servidor: aquí no se ejecuta.
+vi.mock("../share-actions", () => ({ shareLookAction: vi.fn(), revokeLookAction: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 

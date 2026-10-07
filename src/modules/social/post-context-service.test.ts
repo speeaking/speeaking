@@ -93,11 +93,13 @@ describe("getPostContext (ADR-060)", () => {
 
     expect(result).toMatchObject({ ok: true, simulated: true, cached: false });
     expect(result.ok && result.summary).not.toMatch(/55 1234/);
+    // Cabe en una parte: una sola llamada, sin síntesis. Nunca se registra el texto.
+    expect(reserveAiRequest).toHaveBeenCalledOnce();
     expect(reserveAiRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: null,
         feature: "POST_CONTEXT",
-        input: { postId: POST },
+        input: { postId: POST, part: 0, merging: false },
         featureDailyCapMicros: 500_000,
       }),
     );
@@ -111,6 +113,23 @@ describe("getPostContext (ADR-060)", () => {
         }),
       }),
     );
+  });
+
+  it("una publicación muy larga se lee completa: por partes y luego una síntesis (docs/long-posts.md)", async () => {
+    // ≈18,000 caracteres: tres partes de hasta 8,000.
+    const body = "Los vecinos acordaron reparar la bomba de agua esta semana. ".repeat(300);
+    db.post.findFirst.mockResolvedValue({ id: POST, body, context: null });
+
+    await expect(getPostContext(POST, VIEWER, { checkLimit: allow })).resolves.toMatchObject({
+      ok: true,
+    });
+    const inputs = reserveAiRequest.mock.calls.map(([request]) => request.input);
+    expect(inputs).toEqual([
+      { postId: POST, part: 0, merging: false },
+      { postId: POST, part: 1, merging: false },
+      { postId: POST, part: 2, merging: false },
+      { postId: POST, part: 3, merging: true },
+    ]);
   });
 
   it("si el modelo falla, la solicitud queda FAILED y no se guarda nada", async () => {

@@ -23,6 +23,10 @@ vi.mock("react", async (importOriginal) => {
 vi.mock("./engine", () => ({ recommendationEngine: { getFeed: vi.fn() } }));
 // El carrusel de productos (ADR-051) se prueba aparte; aquí la página va sin él.
 vi.mock("./product-carousel", () => ({ pickFeedProducts: vi.fn(async () => null) }));
+// Los videos de la vitrina superior consultan la base; aquí no se usan.
+vi.mock("@/modules/social/video-queries", () => ({
+  listHomeReelVideos: vi.fn(async () => ({ items: [], platformUpdateId: null })),
+}));
 
 const { recommendationEngine } = await import("./engine");
 const { getHomeFirstPage } = await import("./first-page");

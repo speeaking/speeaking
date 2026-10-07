@@ -7,9 +7,18 @@ import type { NotificationItem } from "../group";
 const actions = vi.hoisted(() => ({
   loadNotificationsAction: vi.fn(),
   markNotificationsReadAction: vi.fn(),
+  markNotificationGroupReadAction: vi.fn(async () => 0),
 }));
 
 vi.mock("../actions", () => actions);
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
     <a href={href} {...props}>
@@ -50,7 +59,7 @@ describe("NotificationsPanel (ADR-068)", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Avisos" }));
 
-    expect(screen.getByRole("dialog", { name: "Avisos" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Notificaciones" })).toBeInTheDocument();
     expect(await screen.findByText("comentó tu publicación")).toBeInTheDocument();
     expect(screen.getByText("«¡La de mi barrio!»")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Beto comentó/ })).toHaveAttribute(
@@ -83,6 +92,7 @@ describe("NotificationsPanel (ADR-068)", () => {
     expect(await screen.findByText("No pudimos cargar tus avisos.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(await screen.findByText(/Todavía no tienes avisos/)).toBeInTheDocument();
+    // Vacío: dice qué va a llegar ahí (docs/social-activity.md).
+    expect(await screen.findByText(/Aquí verás las respuestas, menciones/)).toBeInTheDocument();
   });
 });

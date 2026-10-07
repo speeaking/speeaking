@@ -71,9 +71,11 @@ describe("RecommendationEngine: «Siguiendo»", () => {
     const page = await recommendationEngine.getFeed({ viewerId: VIEWER, following: true });
 
     expect(queries.loadCandidates).toHaveBeenCalledTimes(1);
+    // Con quien ve: la audiencia de cada publicación (Amigos, Solo yo) se filtra en la consulta.
     expect(vi.mocked(queries.loadCandidates).mock.calls[0]![1]).toEqual({
       communityId: undefined,
       authorIds: [FRIEND],
+      viewerId: VIEWER,
     });
     expect(page.items.map((item) => item.id)).toEqual(["p1"]);
   });
@@ -101,7 +103,21 @@ describe("RecommendationEngine: «Siguiendo»", () => {
 
     await recommendationEngine.getFeed({ viewerId: VIEWER, communityId: "c1" });
 
-    expect(vi.mocked(queries.loadCandidates).mock.calls[0]![1]).toEqual({ communityId: "c1" });
+    expect(vi.mocked(queries.loadCandidates).mock.calls[0]![1]).toEqual({
+      communityId: "c1",
+      viewerId: VIEWER,
+    });
+  });
+
+  it("sin sesión los candidatos se piden sin persona (solo lo Público)", async () => {
+    vi.mocked(queries.loadCandidates).mockResolvedValue([]);
+
+    await recommendationEngine.getFeed({ viewerId: null });
+
+    expect(vi.mocked(queries.loadCandidates).mock.calls[0]![1]).toEqual({
+      communityId: undefined,
+      viewerId: null,
+    });
   });
 });
 

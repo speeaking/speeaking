@@ -25,7 +25,13 @@ vi.mock("next/link", () => ({
 vi.mock("@/modules/notifications/actions", () => ({
   loadNotificationsAction: vi.fn(async () => []),
   markNotificationsReadAction: vi.fn(async () => 0),
+  markNotificationGroupReadAction: vi.fn(async () => 0),
+  getUnreadNotificationCountAction: vi.fn(async () => 0),
 }));
+vi.mock("@/modules/identity/content-removal-actions", () => ({
+  removeOwnContentAction: vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/modules/relationships/actions", () => ({ friendshipAction: vi.fn() }));
 vi.mock("@/modules/messages/actions", () => ({
   loadInboxAction: vi.fn(async () => []),
   loadThreadAction: vi.fn(async () => null),
@@ -79,8 +85,11 @@ describe("enlace a Administración", () => {
 
   it("menú de la cuenta: solo para ADMIN", async () => {
     const user = userEvent.setup();
+    // El mismo menú está en la barra de escritorio y en Perfil de las secciones móviles.
+    const accountButton = () =>
+      screen.getAllByRole("button", { name: "Tu cuenta: Sofía Ramos" })[0]!;
     const { unmount } = render(<TopBar viewer={admin} />);
-    await user.click(screen.getByRole("button", { name: "Tu cuenta: Sofía Ramos" }));
+    await user.click(accountButton());
     expect(await screen.findByRole("menuitem", { name: "Administración" })).toHaveAttribute(
       "href",
       "/admin/resumen",
@@ -88,7 +97,7 @@ describe("enlace a Administración", () => {
     unmount();
 
     render(<TopBar viewer={person} />);
-    await user.click(screen.getByRole("button", { name: "Tu cuenta: Sofía Ramos" }));
+    await user.click(accountButton());
     expect(await screen.findByRole("menuitem", { name: "Ajustes" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Administración" })).toBeNull();
   });
