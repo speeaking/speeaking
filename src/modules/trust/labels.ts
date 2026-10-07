@@ -13,6 +13,9 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   SPAM: "Spam",
   OFFENSIVE: "Contenido ofensivo",
   OTHER: "Otro motivo",
+  INTIMATE_WITHOUT_CONSENT: "Contenido íntimo sin consentimiento",
+  CHILD_SAFETY: "Pone en riesgo a un menor",
+  MINOR_ACCOUNT: "Cuenta de un menor de edad",
 };
 
 /** Orden en el formulario de reporte. */

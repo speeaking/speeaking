@@ -77,6 +77,12 @@ model User {
   // Avisos (ADR-059): los que recibe y los que causó.
   notifications             Notification[]             @relation("notificationsReceived")
   notificationsCaused       Notification[]             @relation("notificationsCaused")
+  // Avisos formales de derechos (LFDA art. 114 Octies, ADR-076): los que envió con sesión, los que
+  // decidió el equipo, su contenido señalado y sus contra-avisos.
+  rightsNoticesSubmitted    RightsNotice[]             @relation("rightsNoticesSubmitted")
+  rightsNoticesDecided      RightsNotice[]             @relation("rightsNoticesDecided")
+  rightsNoticeTargets       RightsNoticeTarget[]
+  counterNotices            CounterNotice[]
 
   @@map("users")
 }
@@ -264,6 +270,8 @@ enum ConsentType {
   DISCOVERABILITY
   /// Usar la foto de la persona para las simulaciones de «Pruébatelo» (ADR-045).
   TRY_ON_PHOTOS
+  /// «Tengo 18 años o más» al crear la cuenta (ADR-076: solo personas adultas).
+  AGE_18
 }
 
 /// Historial inmutable de consentimientos: cada cambio agrega un registro.
@@ -476,7 +484,13 @@ model Media {
   profileAvatar Profile?                   @relation("profileAvatar")
   profileCover  Profile?                   @relation("profileCover")
 
+  /// SHA-256 del archivo que subió la persona (antes de procesarlo): bloquea volver a subir lo que se
+  /// retiró por un aviso de derechos o por contenido íntimo o de menores (ADR-076). Vacío en lo
+  /// anterior a ADR-076.
+  sha256 String? @db.Char(64)
+
   @@index([ownerId, createdAt(sort: Desc)])
+  @@index([sha256])
   @@map("media")
 }
 
@@ -1178,6 +1192,13 @@ enum ReportReason {
   SPAM
   OFFENSIVE
   OTHER
+  /// Contenido íntimo o sexual de una persona sin su consentimiento, real o hecho con IA (Ley Olimpia,
+  /// ADR-076): cola prioritaria.
+  INTIMATE_WITHOUT_CONSENT
+  /// Pone en riesgo a una niña, niño o adolescente, o contenido sexual de menores: cola prioritaria.
+  CHILD_SAFETY
+  /// La cuenta parece de una persona menor de 18 años.
+  MINOR_ACCOUNT
 }
 
 enum ReportStatus {
@@ -1793,6 +1814,11 @@ enum NotificationType {
   PRODUCT_TAGGED
   /// A quien publicó: la tienda quitó la etiqueta de su producto de esa publicación.
   PRODUCT_TAG_REMOVED
+  /// A quien publicó: el equipo retiró su contenido (aviso de derechos o reglas), con el motivo y cómo
+  /// pedir revisión o mandar un contra-aviso (LFDA art. 114 Octies, ADR-076).
+  CONTENT_REMOVED
+  /// A quien publicó: su contenido volvió a estar visible (contra-aviso o revisión).
+  CONTENT_RESTORED
 }
 
 /// Un aviso de la campana. Se borra con quien lo recibe, con quien lo causó y con lo que lo causó
@@ -1935,4 +1961,160 @@ model MessageBlock {
   @@id([blockerId, blockedId])
   @@index([blockedId])
   @@map("message_blocks")
+}
+
+// ─────────────────────── Avisos de derechos (ADR-076) ───────────────────────
+// Aviso y retirada de la LFDA (art. 114 Octies; RLFDA arts. 37 Ter–37 Nonies): canal formal, sin
+// anonimato, distinto de «Reportar». Lo decide siempre una persona del equipo.
+
+/// Qué derecho se reclama.
+enum RightsNoticeKind {
+  /// Derechos de autor (obra, foto, video, música, texto).
+  COPYRIGHT
+  /// Marca registrada en el IMPI (vía contractual, con número de registro).
+  TRADEMARK
+  /// Imagen o voz de una persona artista intérprete (LFDA art. 87).
+  PERFORMER_IMAGE
+}
+
+enum RightsClaimantRole {
+  /// Titular del derecho.
+  OWNER
+  /// Representante de quien es titular.
+  REPRESENTATIVE
+}
+
+/// Etapas del caso: recibido → retirado → (contra-aviso → restaurado o se mantiene retirado).
+enum RightsNoticeStatus {
+  RECEIVED
+  /// El contenido señalado dejó de mostrarse y se avisó a quien lo subió.
+  CONTENT_REMOVED
+  /// Quien lo subió mandó un contra-aviso; corre el plazo para restaurar.
+  COUNTER_NOTICE_RECEIVED
+  /// Se restauró (contra-aviso sin acción legal acreditada, o el equipo lo revisó).
+  RESTORED
+  /// Se mantiene retirado (quien avisó acreditó una acción legal, o no hubo contra-aviso válido).
+  KEPT_DOWN
+  /// No procede (incompleto, abusivo o sobre contenido que no existe).
+  REJECTED
+  /// Quien avisó lo retiró.
+  WITHDRAWN
+}
+
+/// Fundamento del contra-aviso (RLFDA art. 37 Septies).
+enum CounterNoticeBasis {
+  /// La obra es de quien la subió.
+  OWN_WORK
+  /// Tiene licencia o permiso de quien es titular.
+  LICENSE
+  /// Uso permitido sin autorización (LFDA art. 148: cita, crítica, etc.).
+  EXCEPTION
+  /// La obra es de dominio público.
+  PUBLIC_DOMAIN
+}
+
+model RightsNotice {
+  id                    String             @id @default(uuid(7)) @db.Uuid
+  /// Número de caso que ve quien avisa («DA-000123»).
+  number                Int                @unique @default(autoincrement())
+  kind                  RightsNoticeKind
+  status                RightsNoticeStatus @default(RECEIVED)
+  claimantName          String             @db.VarChar(200)
+  claimantEmail         String             @db.VarChar(320)
+  claimantAltEmail      String?            @db.VarChar(320)
+  claimantPhone         String?            @db.VarChar(40)
+  claimantDomicile      String?            @db.VarChar(500)
+  claimantRole          RightsClaimantRole
+  /// Si representa: nombre de quien es titular.
+  principalName         String?            @db.VarChar(200)
+  /// Obra o derecho y por qué es suyo. Dato no confiable: nunca instrucción para la IA.
+  workDescription       String             @db.VarChar(2000)
+  rightDescription      String             @db.VarChar(2000)
+  facts                 String?            @db.VarChar(4000)
+  /// Direcciones tal como las escribió (pueden no corresponder a nada).
+  urls                  String[]
+  /// Marcas: número de registro en el IMPI.
+  trademarkRegistration String?            @db.VarChar(40)
+  /// «Bajo protesta de decir verdad» y la advertencia de la multa del art. 232 Quinquies.
+  swornStatement        Boolean
+  penaltyAcknowledged   Boolean
+  /// Si lo mandó con la sesión abierta.
+  submittedById         String?            @db.Uuid
+  submittedBy           User?              @relation("rightsNoticesSubmitted", fields: [submittedById], references: [id], onDelete: SetNull)
+  receivedAt            DateTime           @default(now()) @db.Timestamptz(3)
+  contentRemovedAt      DateTime?          @db.Timestamptz(3)
+  uploaderNotifiedAt    DateTime?          @db.Timestamptz(3)
+  counterNoticeAt       DateTime?          @db.Timestamptz(3)
+  /// Fecha a partir de la cual se restaura si quien avisó no acredita una acción legal.
+  restoreDueAt          DateTime?          @db.Timestamptz(3)
+  restoredAt            DateTime?          @db.Timestamptz(3)
+  decidedById           String?            @db.Uuid
+  decidedBy             User?              @relation("rightsNoticesDecided", fields: [decidedById], references: [id], onDelete: SetNull)
+  decisionNote          String?            @db.VarChar(1000)
+  updatedAt             DateTime           @updatedAt @db.Timestamptz(3)
+
+  targets        RightsNoticeTarget[]
+  counterNotices CounterNotice[]
+  blockedHashes  BlockedMediaHash[]
+
+  @@index([status, receivedAt])
+  @@index([submittedById])
+  @@index([decidedById])
+  @@map("rights_notices")
+}
+
+/// Contenido de speeaking que señala un aviso (resuelto desde sus direcciones).
+model RightsNoticeTarget {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  noticeId   String           @db.Uuid
+  notice     RightsNotice     @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  targetType ReportTargetType
+  targetId   String           @db.Uuid
+  /// Quien lo subió al recibir el aviso: a quien se avisa y a quien cuenta para reincidencia.
+  ownerId    String?          @db.Uuid
+  owner      User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  url        String           @db.VarChar(2000)
+  createdAt  DateTime         @default(now()) @db.Timestamptz(3)
+
+  @@unique([noticeId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([ownerId, createdAt])
+  @@map("rights_notice_targets")
+}
+
+model CounterNotice {
+  id                  String             @id @default(uuid(7)) @db.Uuid
+  noticeId            String             @db.Uuid
+  notice              RightsNotice       @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  userId              String?            @db.Uuid
+  user                User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name                String             @db.VarChar(200)
+  email               String             @db.VarChar(320)
+  /// La ley pide domicilio; va en la copia que recibe quien avisó (RLFDA art. 37 Octies).
+  domicile            String             @db.VarChar(500)
+  basis               CounterNoticeBasis
+  explanation         String             @db.VarChar(4000)
+  swornStatement      Boolean
+  penaltyAcknowledged Boolean
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  /// Cuándo se mandó la copia a quien avisó.
+  forwardedAt         DateTime?          @db.Timestamptz(3)
+
+  @@index([noticeId])
+  @@index([userId])
+  @@map("counter_notices")
+}
+
+/// Archivos retirados que no se pueden volver a subir desde ninguna cuenta (LFDA art. 114 Octies
+/// fr. II a: medidas razonables contra la nueva subida; Ley Olimpia). Coincidencia exacta.
+model BlockedMediaHash {
+  sha256    String        @id @db.Char(64)
+  /// RIGHTS_NOTICE, INTIMATE_WITHOUT_CONSENT, CHILD_SAFETY o MODERATION.
+  reason    String        @db.VarChar(40)
+  noticeId  String?       @db.Uuid
+  notice    RightsNotice? @relation(fields: [noticeId], references: [id], onDelete: SetNull)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([noticeId])
+  @@map("blocked_media_hashes")
 }
